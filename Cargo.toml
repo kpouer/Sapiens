@@ -4,3 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+ab_glyph = "0.2.32"
+eframe = "0.31"
+egui = "0.31"
+sys-locale = "0.3.2"
+log = "0.4.34"
+
+[features]
+default = []
+OLD_VERSION = []
