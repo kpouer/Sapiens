@@ -9,7 +9,6 @@ use crate::acam::Color2Index;
 use crate::shared::RGBColor;
 use std::os::raw::c_short;
 
-#[unsafe(no_mangle)]
-pub extern "C" fn SapColor2Index(rgb: *mut RGBColor) -> c_short {
+pub(crate) fn SapColor2Index(rgb: &RGBColor) -> c_short {
     Color2Index(rgb)
 }

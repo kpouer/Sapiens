@@ -18,54 +18,62 @@ use std::sync::atomic::AtomicPtr;
 // Types repr(C)
 // ---------------------------------------------------------------------------
 
-pub type Boolean = bool;
-pub type Handle = *mut *mut c_void;
-pub type Ptr = *mut u8;
-pub type CGrafPtr = *mut c_void;
-pub type DialogPtr = *mut c_void;
-pub type RgnHandle = *mut c_void;
-pub type ControlHandle = *mut c_void;
-pub type Cursor = *mut c_void;
-pub type SndListHandle = *mut *mut c_void;
+pub(crate) type Boolean = bool;
+pub(crate) type Handle = *mut *mut c_void;
+pub(crate) type Ptr = *mut u8;
+pub(crate) type CGrafPtr = *mut c_void;
+pub(crate) type DialogPtr = *mut c_void;
+pub(crate) type RgnHandle = *mut c_void;
+pub(crate) type ControlHandle = *mut c_void;
+pub(crate) type Cursor = *mut c_void;
+pub(crate) type SndListHandle = *mut *mut c_void;
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
-pub struct Pic {
-    pub picSize: ::std::os::raw::c_short,
-    pub picFrame: Rect,
+pub(crate) struct Pic {
+    pub(crate) picSize: ::std::os::raw::c_short,
+    pub(crate) picFrame: Rect,
 }
-pub type PicHandle = *mut *mut Pic;
-pub type TEHandle = *mut *mut TEText;
+pub(crate) type PicHandle = *mut *mut Pic;
+pub(crate) type TEHandle = *mut *mut TEText;
 
-pub type StringPtr = *mut u8;
-pub type KeyMap = *mut u64;
-pub type ControlActionProcPtr = ::std::option::Option<
+pub(crate) type StringPtr = *mut u8;
+pub(crate) type KeyMap = *mut u64;
+pub(crate) type ControlActionProcPtr = ::std::option::Option<
     unsafe extern "C" fn(control: ControlHandle, part: ::std::os::raw::c_short),
 >;
 
-pub type ControlActionUPP = ControlActionProcPtr;
+pub(crate) type ControlActionUPP = ControlActionProcPtr;
 
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
-pub struct Point {
-    pub v: i16,
-    pub h: i16,
+pub(crate) struct Point {
+    pub(crate) v: i16,
+    pub(crate) h: i16,
+}
+
+impl Point {
+    pub(crate) const fn zoom(mut self, zoom: f32) -> Point {
+        self.v = (self.v as f32 / zoom) as i16;
+        self.h = (self.h as f32 / zoom) as i16;
+        self
+    }
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
-pub struct Rect {
-    pub top: i16,
-    pub left: i16,
-    pub bottom: i16,
-    pub right: i16,
+pub(crate) struct Rect {
+    pub(crate) top: i16,
+    pub(crate) left: i16,
+    pub(crate) bottom: i16,
+    pub(crate) right: i16,
 }
 
 impl Rect {
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.right <= self.left || self.bottom <= self.top
     }
 
-    pub fn intersect(&self, other: &Rect) -> Rect {
+    pub(crate) fn intersect(&self, other: &Rect) -> Rect {
         Rect {
             left: self.left.max(other.left),
             top: self.top.max(other.top),
@@ -74,7 +82,7 @@ impl Rect {
         }
     }
 
-    pub fn union(&self, other: &Rect) -> Rect {
+    pub(crate) fn union(&self, other: &Rect) -> Rect {
         if self.is_empty() {
             return *other;
         }
@@ -92,48 +100,48 @@ impl Rect {
 
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
-pub struct RGBColor {
-    pub red: u16,
-    pub green: u16,
-    pub blue: u16,
+pub(crate) struct RGBColor {
+    pub(crate) red: u16,
+    pub(crate) green: u16,
+    pub(crate) blue: u16,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug)]
-pub struct EventRecord {
-    pub what: i16,
-    pub message: i64,
-    pub when: i64,
-    pub where_: Point,
-    pub modifiers: i16,
+pub(crate) struct EventRecord {
+    pub(crate) what: i16,
+    pub(crate) message: i64,
+    pub(crate) when: i64,
+    pub(crate) where_: Point,
+    pub(crate) modifiers: i16,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug)]
-pub struct FontInfo {
-    pub ascent: i16,
-    pub descent: i16,
-    pub widening: i16,
-    pub leading: i16,
+pub(crate) struct FontInfo {
+    pub(crate) ascent: i16,
+    pub(crate) descent: i16,
+    pub(crate) widening: i16,
+    pub(crate) leading: i16,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
-pub struct SFReply {
-    pub good: Boolean,
-    pub vRefNum: i16,
-    pub fType: i64,
-    pub fName: [i8; 64],
+pub(crate) struct SFReply {
+    pub(crate) good: Boolean,
+    pub(crate) vRefNum: i16,
+    pub(crate) fType: i64,
+    pub(crate) fName: [i8; 64],
 }
 
 #[repr(C)]
-pub struct QDGlobals {
-    pub screenBits: QDGlobalsScreenBits,
+pub(crate) struct QDGlobals {
+    pub(crate) screenBits: QDGlobalsScreenBits,
 }
 
 #[repr(C)]
-pub struct QDGlobalsScreenBits {
-    pub bounds: Rect,
+pub(crate) struct QDGlobalsScreenBits {
+    pub(crate) bounds: Rect,
 }
 
 // ---------------------------------------------------------------------------
@@ -141,42 +149,45 @@ pub struct QDGlobalsScreenBits {
 // ---------------------------------------------------------------------------
 
 /// Port de dessin : fenêtre ou offscreen. C'est l'objet pointé par
-/// `CGrafPtr`/`WindowPtr` côté C (`AcamGetInfoOffscreen` y donne accès).
+/// `CGrafPtr`/`WindowPtr` côté C ; `crate::port` en est le gestionnaire.
 /// Le tampon contient les indices 0..255 de la LUT système.
 #[repr(C)]
-pub struct SapPort {
-    pub bounds: Rect, // top, left, bottom, right
-    pub row_bytes: i16,
-    pub depth: i16,
-    pub pixels: *mut u8,
-    pub pixel_len: usize,
-    pub pen_loc: Point,  // v, h : position du crayon
-    pub pen_size: Point, // h = largeur, v = hauteur
-    pub pen_mode: i16,
-    pub fore_index: u8,
-    pub back_index: u8,
-    pub clip: Rect,
-    pub open_rgn: u8,
-    pub open_acc: Rect,
+pub(crate) struct SapPort {
+    pub(crate) bounds: Rect, // top, left, bottom, right
+    pub(crate) row_bytes: i16,
+    pub(crate) depth: i16,
+    pub(crate) pixels: *mut u8,
+    pub(crate) pixel_len: usize,
+    pub(crate) pen_loc: Point,  // v, h : position du crayon
+    pub(crate) pen_size: Point, // h = largeur, v = hauteur
+    pub(crate) pen_mode: i16,
+    pub(crate) fore_index: u8,
+    pub(crate) back_index: u8,
+    pub(crate) clip: Rect,
+    pub(crate) open_rgn: u8,
+    pub(crate) open_acc: Rect,
     // État texte (QuickDraw) : champ poubelle côté C (`BitMap` opaque).
-    pub tx_font: i16,
-    pub tx_size: i16,
-    pub tx_face: i16,
+    pub(crate) tx_font: i16,
+    pub(crate) tx_size: i16,
+    pub(crate) tx_face: i16,
+    /// Facteur d'échelle de ce port : 1.0 sauf pour la fenêtre principale,
+    /// qui suit le menu « Échelle » (`SapZoom`).
+    pub(crate) zoom: f32,
 }
 
 /// Port graphique courant (ce que dessine le C).
-pub static CURRENT_PORT: AtomicPtr<SapPort> = AtomicPtr::new(std::ptr::null_mut());
+pub(crate) static CURRENT_PORT: AtomicPtr<SapPort> = AtomicPtr::new(std::ptr::null_mut());
 
 /// Port de la fenêtre principale (`mainWindow`).
-pub static WINDOW_PORT: AtomicPtr<SapPort> = AtomicPtr::new(std::ptr::null_mut());
+pub(crate) static WINDOW_PORT: AtomicPtr<SapPort> = AtomicPtr::new(std::ptr::null_mut());
 
 // ---------------------------------------------------------------------------
 // Registre des allocations (Ptr/Handle) pour pouvoir les libérer
 // ---------------------------------------------------------------------------
 
-pub static ALLOCS: Mutex<Vec<(usize, usize)>> = Mutex::new(Vec::new());
+pub(crate) static ALLOCS: Mutex<Vec<(usize, usize)>> = Mutex::new(Vec::new());
 
-pub fn alloc_pixels(len: usize) -> *mut u8 {
+pub(crate) fn alloc_pixels(len: usize) -> *mut u8 {
     let mut v: Vec<u8> = vec![0u8; len.max(1)];
     let p = v.as_mut_ptr();
     std::mem::forget(v);
@@ -184,7 +195,7 @@ pub fn alloc_pixels(len: usize) -> *mut u8 {
     p
 }
 
-pub fn free_pixels(ptr: *mut u8) {
+pub(crate) fn free_pixels(ptr: *mut u8) {
     if ptr.is_null() {
         return;
     }
@@ -207,7 +218,7 @@ pub fn free_pixels(ptr: *mut u8) {
 /// 40 gris (12,18,...,246). L'index 0 est noir, un gris bien distinct est
 /// l'index 255 si besoin. Utilisée par `Color2Index`, `Index2Color` et le
 /// rendu egui.
-pub const LUT: [[u8; 3]; 256] = build_lut();
+pub(crate) const LUT: [[u8; 3]; 256] = build_lut();
 
 const fn build_lut() -> [[u8; 3]; 256] {
     let mut l = [[0u8; 3]; 256];
@@ -237,7 +248,7 @@ const fn gray(k: u32) -> u8 {
 }
 
 /// Indice de la LUT le plus proche d'une couleur 8 bits par composante.
-pub fn rgb_to_index(r: u8, g: u8, b: u8) -> u8 {
+pub(crate) fn rgb_to_index(r: u8, g: u8, b: u8) -> u8 {
     let mut best = 0u8;
     let mut best_d = i32::MAX;
     for (i, c) in LUT.iter().enumerate() {
@@ -254,7 +265,7 @@ pub fn rgb_to_index(r: u8, g: u8, b: u8) -> u8 {
 }
 
 #[inline]
-pub fn lut_rgb(index: u8) -> (u8, u8, u8) {
+pub(crate) fn lut_rgb(index: u8) -> (u8, u8, u8) {
     (
         LUT[index as usize][0],
         LUT[index as usize][1],
@@ -266,12 +277,12 @@ pub fn lut_rgb(index: u8) -> (u8, u8, u8) {
 // Constantes QuickDraw
 // ---------------------------------------------------------------------------
 
-pub const BLACK_COLOR: i16 = 33;
-pub const WHITE_COLOR: i16 = 30;
-pub const PAT_COPY: i16 = 8;
-pub const PAT_OR: i16 = 9;
-pub const PAT_XOR: i16 = 10;
-pub const PAT_BIC: i16 = 11;
+pub(crate) const BLACK_COLOR: i16 = 33;
+pub(crate) const WHITE_COLOR: i16 = 30;
+pub(crate) const PAT_COPY: i16 = 8;
+pub(crate) const PAT_OR: i16 = 9;
+pub(crate) const PAT_XOR: i16 = 10;
+pub(crate) const PAT_BIC: i16 = 11;
 
 // ---------------------------------------------------------------------------
 // Entrées
@@ -279,18 +290,18 @@ pub const PAT_BIC: i16 = 11;
 
 /// État des entrées posé par egui (thread principal) et lu par le C.
 #[derive(Clone, Copy, Default)]
-pub struct InputState {
+pub(crate) struct InputState {
     /// Position souris normalisée (0..1) dans la fenêtre egui.
-    pub mouse_h: f32,
-    pub mouse_v: f32,
-    pub button: bool,
+    pub(crate) mouse_h: f32,
+    pub(crate) mouse_v: f32,
+    pub(crate) button: bool,
     /// État clavier aligné sur `KeyMap` du C (`unsigned long[4]`, soit 4 mots
     /// de 64 bits). Pour un keycode Mac `k` (0..127), le bit `((k^24)&31)`
     /// du mot `k>>5` est posé, conformément à `KeyPressed` (SAPWCLAV.C).
-    pub keymap: [u64; 4],
+    pub(crate) keymap: [u64; 4],
 }
 
-pub static INPUT: Mutex<InputState> = Mutex::new(InputState {
+pub(crate) static INPUT: Mutex<InputState> = Mutex::new(InputState {
     mouse_h: 0.5,
     mouse_v: 0.5,
     button: false,

@@ -5,6 +5,7 @@
 **********************************************************************/
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
 
 // Port Rust de "Sources/SAPTXT_fr.C" : textes de la langue francaise.
 // Donnees pures, aucune fonction. Chaines en MacRoman brut ; les
@@ -15,8 +16,21 @@ use super::saptxt::{nomref, sc};
 use crate::sapiens::{NB_MOTS_BKMOTS, reference};
 use std::os::raw::c_char;
 
-#[unsafe(no_mangle)]
-pub static mut refer1_fr: [reference; 47] = [
+pub(crate) struct Saptxt_fr {
+    pub(crate) refer0: [reference; 12],
+    pub(crate) refer1: [reference; 47],
+    pub(crate) refer2: [reference; 29],
+    pub(crate) refer3: [reference; 27],
+    pub(crate) mescon: [*mut c_char; 138],
+    pub(crate) bkmots: [*mut c_char; NB_MOTS_BKMOTS as usize],
+    pub(crate) scenme: [*mut c_char; 14],
+    pub(crate) app: [*mut c_char; 23],
+}
+
+impl Default for Saptxt_fr {
+    fn default() -> Self {
+        Self {
+            refer1: [
     reference {
         nomref: nomref(b"SA PROTECTION"),
         param1: 0x3F,
@@ -252,10 +266,8 @@ pub static mut refer1_fr: [reference; 47] = [
         param1: 0,
         param2: 0,
     },
-];
-
-#[unsafe(no_mangle)]
-pub static mut refer0_fr: [reference; 12] = [
+            ],
+            refer0: [
     reference {
         nomref: nomref(b"OBSERVER"),
         param1: 0x3,
@@ -316,10 +328,8 @@ pub static mut refer0_fr: [reference; 12] = [
         param1: 0,
         param2: 0,
     },
-];
-
-#[unsafe(no_mangle)]
-pub static mut refer2_fr: [reference; 29] = [
+            ],
+            refer2: [
     reference {
         nomref: nomref(b"QUI ES-TU ?"),
         param1: 0x0,
@@ -465,10 +475,8 @@ pub static mut refer2_fr: [reference; 29] = [
         param1: 0,
         param2: 0,
     },
-];
-
-#[unsafe(no_mangle)]
-pub static mut refer3_fr: [reference; 27] = [
+            ],
+            refer3: [
     reference {
         nomref: nomref(b"PAYSAGE"),
         param1: 0x1,
@@ -604,10 +612,8 @@ pub static mut refer3_fr: [reference; 27] = [
         param1: 0,
         param2: 0,
     },
-];
-
-#[unsafe(no_mangle)]
-pub static mut mescon_fr: [*mut c_char; 138] = [
+            ],
+            mescon: [
     sc(b"MERCI DU CADEAU \x00"),
     sc(b"MERCI  \x00"),
     sc(b"MERCI AMI \x00"),
@@ -746,10 +752,8 @@ pub static mut mescon_fr: [*mut c_char; 138] = [
     sc(b"Tu es mort ! La partie est finie...\x00"),
     sc(b"Je cr&& le monde...\x00"),
     sc(b"$END$\x00"),
-];
-
-#[unsafe(no_mangle)]
-pub static mut bkmots_fr: [*mut c_char; NB_MOTS_BKMOTS as usize] = [
+            ],
+            bkmots: [
     sc(b"$0\x00"), // nomsecondaire
     sc(b"$1\x00"), // nomjoueur
     sc(b"$2\x00"), // nomadversaire
@@ -796,10 +800,8 @@ pub static mut bkmots_fr: [*mut c_char; NB_MOTS_BKMOTS as usize] = [
     sc(b"$4\x00"), // Nomcopain
     sc(b"ton Compagnon\x00"),
     sc(b"$END$\x00"),
-];
-
-#[unsafe(no_mangle)]
-pub static mut scenme_fr: [*mut c_char; 14] = [
+            ],
+            scenme: [
     sc(b"Enfant,la Tribu a faim,\r            rapporte des vivres.\x00"),
     sc(b"     Les Jeunes ont mang& des baies\r               V&n&neuses.\r Il nous faut le rem%de des Yeux-Malins.\x00"),
     sc(b"Les Bras-de-Roc nous ont lanc& un d&fi.\rVa,combats leur Chef et vole-lui sa Hache\x00"),
@@ -814,10 +816,8 @@ pub static mut scenme_fr: [*mut c_char; 14] = [
     sc(b"Ce soft a &t& d&velopp& en C (Didier)\ret en Assembleur (Olivier).\rLes d&cors sont de Didier Guillion,\rLa musique est de Gilles Soulet,\rinterpr&t&e par 'Digital Music Associates'\rsampl&e aux laboratoires 'Myriad Records'.\rLa mise en sc%ne est de D et O Guillion.\rEffets sp&ciaux et trucages: J-M Georges\r\r  R&alis& de Juillet $ Aout MCMLXXXVII  \r             $ Toulouse.\r Copyright D&O Guillion 1986-1996,99,01,05,17\x00"),
     sc(b"Ont collabor& $ la r&alisation de SAPIENS:\r\rY.Basquet:Support logistique et magn&tique\rJ-M Georges: Hard, Interruptions, clavier,\r              disquette.\rG.Soulet: Composition de la musique.\rGuyon James:Traduction en Anglais.\rD.Carri%re: Principe du Sampling.\rJ-F Cassan: Soutien moral et Vodka Orange.\rP.Guegan: Inventeur des b&n&fices n&gatifs\rMotorola: Adressages indirects index&s\r         avec d&placement par rapport $ PC\x00"),
     sc(b"$END$\x00"),
-];
-
-#[unsafe(no_mangle)]
-pub static mut app_fr: [*mut c_char; 23] = [
+            ],
+            app: [
     sc(b"Agilit&\x00"),
     sc(b"Force\x00"),
     sc(b"Charisme\x00"),
@@ -841,4 +841,7 @@ pub static mut app_fr: [*mut c_char; 23] = [
     sc(b"Lapin \x00"),
     sc(b" Coq  \x00"),
     sc(b"$END$\x00"),
-];
+            ],
+        }
+    }
+}

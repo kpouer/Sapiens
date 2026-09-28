@@ -5,6 +5,7 @@
 **********************************************************************/
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
 
 // Port Rust de "Sources/SAPTXT_gb.C" : textes de la langue anglaise.
 // Donnees pures, aucune fonction. Chaines en MacRoman brut ; les
@@ -15,8 +16,21 @@ use super::saptxt::{nomref, sc};
 use crate::sapiens::{NB_MOTS_BKMOTS, reference};
 use std::os::raw::c_char;
 
-#[unsafe(no_mangle)]
-pub static mut refer1_gb: [reference; 47] = [
+pub(crate) struct Saptxt_gb {
+    pub(crate) refer0: [reference; 12],
+    pub(crate) refer1: [reference; 47],
+    pub(crate) refer2: [reference; 29],
+    pub(crate) refer3: [reference; 27],
+    pub(crate) mescon: [*mut c_char; 138],
+    pub(crate) bkmots: [*mut c_char; NB_MOTS_BKMOTS as usize],
+    pub(crate) scenme: [*mut c_char; 14],
+    pub(crate) app: [*mut c_char; 23],
+}
+
+impl Default for Saptxt_gb {
+    fn default() -> Self {
+        Self {
+            refer1: [
     reference {
         nomref: nomref(b"HIS PROTECTION"),
         param1: 0x3F,
@@ -252,10 +266,8 @@ pub static mut refer1_gb: [reference; 47] = [
         param1: 0,
         param2: 0,
     },
-];
-
-#[unsafe(no_mangle)]
-pub static mut refer0_gb: [reference; 12] = [
+            ],
+            refer0: [
     reference {
         nomref: nomref(b"LOOK"),
         param1: 0x03,
@@ -316,10 +328,8 @@ pub static mut refer0_gb: [reference; 12] = [
         param1: 0,
         param2: 0,
     },
-];
-
-#[unsafe(no_mangle)]
-pub static mut refer2_gb: [reference; 29] = [
+            ],
+            refer2: [
     reference {
         nomref: nomref(b"WHO ARE YOU?"),
         param1: 0x00,
@@ -465,10 +475,8 @@ pub static mut refer2_gb: [reference; 29] = [
         param1: 0,
         param2: 0,
     },
-];
-
-#[unsafe(no_mangle)]
-pub static mut refer3_gb: [reference; 27] = [
+            ],
+            refer3: [
     reference {
         nomref: nomref(b"LANDSCAPE"),
         param1: 0x01,
@@ -604,10 +612,8 @@ pub static mut refer3_gb: [reference; 27] = [
         param1: 0,
         param2: 0,
     }, // Don't translate this
-];
-
-#[unsafe(no_mangle)]
-pub static mut mescon_gb: [*mut c_char; 138] = [
+            ],
+            mescon: [
     sc(b"THANK YOU FOR THE GIFT \x00"),
     sc(b"THANKS \x00"),
     sc(b"THANK FRIEND \x00"),
@@ -746,10 +752,8 @@ pub static mut mescon_gb: [*mut c_char; 138] = [
     sc(b"You are dead ! The game is over...\x00"),
     sc(b"I am building the world....\x00"),
     sc(b"$END$\x00"), // Don't translate this
-];
-
-#[unsafe(no_mangle)]
-pub static mut bkmots_gb: [*mut c_char; NB_MOTS_BKMOTS as usize] = [
+            ],
+            bkmots: [
     sc(b"$0\x00"), // nomsecondaire // Don't translate this
     sc(b"$1\x00"), // nomjoueur// Don't translate this
     sc(b"$2\x00"), // nomadversaire// Don't translate this
@@ -796,10 +800,8 @@ pub static mut bkmots_gb: [*mut c_char; NB_MOTS_BKMOTS as usize] = [
     sc(b"$4\x00"), // Nomcopain // Don't translate this
     sc(b"your friend\x00"),
     sc(b"$END$\x00"), // Don't translate this
-];
-
-#[unsafe(no_mangle)]
-pub static mut scenme_gb: [*mut c_char; 14] = [
+            ],
+            scenme: [
     sc(b"The tribe's children are hungry,\r        bring back food.\x00"),
     sc(b"   Young people have eaten poisonous\r                 berries.\r        We need the Eagle-Eyes medecine.\x00"),
     sc(b"The Stone-Arms have challenged us to\r                a fight.\r   Go,fight with their chief and steal\r                his axe.\x00"),
@@ -814,10 +816,8 @@ pub static mut scenme_gb: [*mut c_char; 14] = [
     sc(b"\x00"),
     sc(b"\x00"),
     sc(b"$END$\x00"), // Don't translate this
-];
-
-#[unsafe(no_mangle)]
-pub static mut app_gb: [*mut c_char; 23] = [
+            ],
+            app: [
     sc(b"Agility\x00"),
     sc(b"Strength\x00"),
     sc(b"Charisma\x00"),
@@ -841,4 +841,7 @@ pub static mut app_gb: [*mut c_char; 23] = [
     sc(b"Rabbit\x00"),
     sc(b"Turkey\x00"),
     sc(b"$END$\x00"), // Don't translate this
-];
+            ],
+        }
+    }
+}

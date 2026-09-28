@@ -470,7 +470,7 @@ unsafe fn fdt_state(p: *mut SapPort) -> (Fam, bool, i16) {
 // ---------------------------------------------------------------------------
 
 #[unsafe(no_mangle)]
-pub extern "C" fn TextFont(font: i16) {
+pub(crate) extern "C" fn TextFont(font: i16) {
     let p = cur_port();
     if p.is_null() {
         return;
@@ -479,7 +479,7 @@ pub extern "C" fn TextFont(font: i16) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn TextSize(size: i16) {
+pub(crate) extern "C" fn TextSize(size: i16) {
     let p = cur_port();
     if p.is_null() {
         return;
@@ -488,7 +488,7 @@ pub extern "C" fn TextSize(size: i16) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn TextFace(face: i16) {
+pub(crate) extern "C" fn TextFace(face: i16) {
     let p = cur_port();
     if p.is_null() {
         return;
@@ -497,12 +497,12 @@ pub extern "C" fn TextFace(face: i16) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn GetStdFont() -> i16 {
+pub(crate) extern "C" fn GetStdFont() -> i16 {
     0 // geneva
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn GetFontInfo(info: *mut FontInfo) {
+pub(crate) extern "C" fn GetFontInfo(info: *mut FontInfo) {
     if info.is_null() {
         return;
     }
@@ -524,7 +524,7 @@ pub extern "C" fn GetFontInfo(info: *mut FontInfo) {
 
 /// Largeur (en pixels) d'un caractère dans la fonte courante du port.
 #[unsafe(no_mangle)]
-pub extern "C" fn CharWidth(c: i8) -> i16 {
+pub(crate) extern "C" fn CharWidth(c: i8) -> i16 {
     let p = cur_port();
     if p.is_null() {
         return 0;
@@ -537,7 +537,7 @@ pub extern "C" fn CharWidth(c: i8) -> i16 {
 
 /// Dessine un caractère à la position courante (baseline = pen_loc).
 #[unsafe(no_mangle)]
-pub extern "C" fn DrawChar(c: i8) {
+pub(crate) extern "C" fn DrawChar(c: i8) {
     let p = cur_port();
     if p.is_null() {
         return;
@@ -552,7 +552,7 @@ pub extern "C" fn DrawChar(c: i8) {
 
 /// Dessine une chaîne Pascal (1er octet = longueur), avance le crayon.
 #[unsafe(no_mangle)]
-pub extern "C" fn DrawString(s: StringPtr) {
+pub(crate) extern "C" fn DrawString(s: StringPtr) {
     if s.is_null() {
         return;
     }
@@ -576,7 +576,7 @@ pub extern "C" fn DrawString(s: StringPtr) {
 
 /// Largeur d'une chaîne Pascal dans la fonte courante.
 #[unsafe(no_mangle)]
-pub extern "C" fn StringWidth(s: StringPtr) -> i16 {
+pub(crate) extern "C" fn StringWidth(s: StringPtr) -> i16 {
     if s.is_null() {
         return 0;
     }
@@ -599,8 +599,7 @@ pub extern "C" fn StringWidth(s: StringPtr) -> i16 {
 /// `just` : 0 = gauche (teJustLeft), 1 = centré (teJustCenter), 2 = droite
 /// (teJustRight). Le texte est centré verticalement dans le rectangle, clippé
 /// par pixel au port (via `plot`).
-#[unsafe(no_mangle)]
-pub extern "C" fn TextBox(text: *const c_void, length: i64, b: *const Rect, just: i16) {
+pub(crate) fn TextBox(text: *const c_void, length: i64, b: *const Rect, just: i16) {
     if text.is_null() || b.is_null() {
         return;
     }
@@ -685,6 +684,7 @@ mod tests {
                     tx_font: 0,
                     tx_size: 12,
                     tx_face: 0,
+                    zoom: 1.0,
                 }),
             };
             // le pointeur de tampon est posé après la construction (self.buf
@@ -797,14 +797,12 @@ mod tests {
             bottom: 50,
             right: 180,
         };
-        unsafe {
-            TextBox(
-                text.as_ptr() as *const c_void,
-                text.len() as i64,
-                &boxr,
-                1, // teJustCenter
-            );
-        }
+        TextBox(
+            text.as_ptr() as *const c_void,
+            text.len() as i64,
+            &boxr,
+            1, // teJustCenter
+        );
         CURRENT_PORT.store(old, Ordering::SeqCst);
         let n = t.count();
         assert!(n > 100, "trop peu de pixels tracés : {n}");

@@ -9,8 +9,8 @@ use std::mem::size_of;
 use std::os::raw::{c_char, c_int, c_long, c_short, c_void};
 
 use crate::acam::{
-    AcamGetPortOffscreen, AcamSetPortOffscreen, BlockMove, DisposHandle, FAUX, FrameRect,
-    GetHandleSize, GetIndString, NewHandleClear, PtoCstr, SetHandleSize, VRAI,
+    BlockMove, DisposHandle, FAUX, FrameRect, GetHandleSize, GetIndString, NewHandleClear, PtoCstr,
+    SetHandleSize, VRAI,
 };
 use crate::cbridge::{
     DateTimeRec, DialogPtr, ModalFilterUPP, RSRC_TEXT_CARTE_ENREG, THPrint, TPPrPort, TPrStatus,
@@ -19,19 +19,20 @@ use crate::cbridge::{
 };
 use crate::langue::Langue::FR;
 use crate::sapiens::sapwind::{
-    CloseDialogue, DefAfficheItem, GetRectItem, GetValBouton, GetValItem, GetVersionSapiens,
-    OuvreDialogue, SetValBouton,
+    DefAfficheItem, GetRectItem, GetValBouton, GetValItem, GetVersionSapiens, OuvreDialogue,
+    SetValBouton,
 };
 use crate::sapiens::{DLOG_COORDONNEES, iPrAbort};
-use crate::shared::{Boolean, CGrafPtr, EventRecord, Handle, Ptr, Rect, TEHandle};
+use crate::shared::{Boolean, EventRecord, Handle, Ptr, Rect, TEHandle};
 use crate::stubs::{
     CarboniseGetDialogKeyboardFocusItem, CarboniseSetCursorArrow, CarboniseSetPatBlack,
-    CarboniseSetPortDialog, CarboniseShowDialog, CurResFile, DetachResource,
-    DisposeRoutineDescriptor, DlgCut, GetResource, GetTime, HLock, HUnlock, ModalDialog, PrClose,
-    PrCloseDoc, PrClosePage, PrError, PrJobDialog, PrOpen, PrOpenDoc, PrOpenPage, PrPicFile,
-    PrSetError, PrStlDialog, PrintDefault, SelIText, TEInsert, TENew, TEUpdate, UseResFile,
+    CarboniseShowDialog, CurResFile, DetachResource, DisposeRoutineDescriptor, DlgCut, GetResource,
+    GetTime, HLock, HUnlock, ModalDialog, PrClose, PrCloseDoc, PrClosePage, PrError, PrJobDialog,
+    PrOpen, PrOpenDoc, PrOpenPage, PrPicFile, PrSetError, PrStlDialog, PrintDefault, SelIText,
+    TEInsert, TENew, TEUpdate, UseResFile,
 };
 use crate::text::{TextFont, TextSize};
+use crate::{Sapiens, port};
 
 const TAILLE_STR: usize = 128;
 const TAILLE_STR_REM: usize = 255;
@@ -71,15 +72,28 @@ const i_rect2: c_short = 16;
 
 const STR_COMMENTAIRE: c_short = 100;
 
-/*******************************************************************
-                        GetCommentaire
-********************************************************************/
-static mut commentaire: [c_char; 255] = [0; 255];
-unsafe fn GetCommentaire(index: c_short) -> *mut c_char {
-    let p = &raw mut commentaire as *mut c_char;
-    GetIndString(p as *mut u8, STR_COMMENTAIRE, index - 44);
-    PtoCstr(p as *mut u8);
-    p
+pub(crate) struct Sapbonc {
+    commentaire: [c_char; 255],
+}
+
+impl Default for Sapbonc {
+    fn default() -> Self {
+        Self {
+            commentaire: [0; 255],
+        }
+    }
+}
+
+impl Sapbonc {
+    /*******************************************************************
+                            GetCommentaire
+    ********************************************************************/
+    unsafe fn GetCommentaire(&mut self, index: c_short) -> *mut c_char {
+        let p = &raw mut self.commentaire as *mut c_char;
+        GetIndString(p as *mut u8, STR_COMMENTAIRE, index - 44);
+        PtoCstr(p as *mut u8);
+        p
+    }
 }
 
 /******************************************************************************************
@@ -92,7 +106,7 @@ unsafe extern "C" fn VectFrameRect(window: DialogPtr, itemid: c_short) {
 
         GetRectItem(window, itemid, &raw mut r);
         CarboniseSetPatBlack();
-        FrameRect(&raw mut r);
+        FrameRect(&r);
     }
 }
 
@@ -105,12 +119,10 @@ unsafe extern "C" fn dlgFilter(
     _item: *mut c_short,
 ) -> Boolean {
     unsafe {
-        let mut gbak: CGrafPtr = core::ptr::null_mut();
         let mut car: u8 = 0;
         let mut result: Boolean = FAUX;
 
-        AcamGetPortOffscreen(&raw mut gbak);
-        CarboniseSetPortDialog(dlg);
+        let _g = port::on(dlg);
         let ev = *event;
         if ev.what as u32 == keyDown || ev.what as u32 == autoKey {
             car = (ev.message & charCodeMask as i64) as u8;
@@ -125,99 +137,96 @@ unsafe extern "C" fn dlgFilter(
                 result = VRAI;
             }
         }
-        AcamSetPortOffscreen(gbak);
         result
     }
 }
 
-/******************************************************************************************
-                                        GetCoordonnees
-******************************************************************************************/
-unsafe fn GetCoordonnees(c: *mut Coordonnees) -> Boolean {
-    unsafe {
-        let mut dialog: DialogPtr = core::ptr::null_mut();
-        let mut item: c_short = 0;
-        let mut chaine: [c_char; 255] = [0; 255];
-        let mut gbak: CGrafPtr = core::ptr::null_mut();
-        let mut d: DateTimeRec = DateTimeRec::default();
-        let mut modalUPP: ModalFilterUPP = core::ptr::null_mut();
+impl Sapiens {
+    /******************************************************************************************
+                                            GetCoordonnees
+    ******************************************************************************************/
+    unsafe fn GetCoordonnees(&self, c: *mut Coordonnees) -> Boolean {
+        unsafe {
+            let mut dialog: DialogPtr = core::ptr::null_mut();
+            let mut item: c_short = 0;
+            let mut chaine: [c_char; 255] = [0; 255];
+            let mut d: DateTimeRec = DateTimeRec::default();
+            let mut modalUPP: ModalFilterUPP = core::ptr::null_mut();
 
-        AcamGetPortOffscreen(&raw mut gbak);
-        dialog = OuvreDialogue(DLOG_COORDONNEES as c_short);
-        if dialog.is_null() {
-            AcamSetPortOffscreen(gbak);
-            return FAUX;
-        }
-        SetValBouton(dialog, i_normal, VRAI);
-        SetValBouton(dialog, i_liquide, VRAI);
-        DefAfficheItem(dialog, i_rect1, Some(VectFrameRect));
-        DefAfficheItem(dialog, i_rect2, Some(VectFrameRect));
-        CarboniseSetCursorArrow();
-        modalUPP = dlgFilter as *const () as *mut c_void;
-        CarboniseShowDialog(dialog);
-        loop {
-            ModalDialog(modalUPP, &raw mut item);
-            match item {
-                i_normal | i_disque => {
-                    SetValBouton(dialog, i_normal, item == i_normal);
-                    SetValBouton(dialog, i_disque, item == i_disque);
+            let _g = port::preserve();
+            dialog = OuvreDialogue(DLOG_COORDONNEES as c_short);
+            if dialog.is_null() {
+                return FAUX;
+            }
+            SetValBouton(dialog, i_normal, VRAI);
+            SetValBouton(dialog, i_liquide, VRAI);
+            DefAfficheItem(dialog, i_rect1, Some(VectFrameRect));
+            DefAfficheItem(dialog, i_rect2, Some(VectFrameRect));
+            CarboniseSetCursorArrow();
+            modalUPP = dlgFilter as *const () as *mut c_void;
+            CarboniseShowDialog(dialog);
+            loop {
+                ModalDialog(modalUPP, &raw mut item);
+                match item {
+                    i_normal | i_disque => {
+                        SetValBouton(dialog, i_normal, item == i_normal);
+                        SetValBouton(dialog, i_disque, item == i_disque);
+                    }
+                    i_liquide | i_cheque => {
+                        SetValBouton(dialog, i_liquide, item == i_liquide);
+                        SetValBouton(dialog, i_cheque, item == i_cheque);
+                    }
+                    _ => {}
                 }
-                i_liquide | i_cheque => {
-                    SetValBouton(dialog, i_liquide, item == i_liquide);
-                    SetValBouton(dialog, i_cheque, item == i_cheque);
+                if item == i_imprimer || item == i_annuler {
+                    break;
                 }
-                _ => {}
             }
-            if item == i_imprimer || item == i_annuler {
-                break;
-            }
-        }
-        if item == i_imprimer {
-            core::ptr::write_bytes(c as *mut Coordonnees, 0, 1);
-            GetVersionSapiens(chaine.as_mut_ptr());
-            sprintf(
-                (*c).version.as_mut_ptr(),
-                b"%s \0".as_ptr() as *const c_char,
-                chaine.as_ptr(),
-            );
-            /* Branche MAC : sur PC on ajoute "PC" */
-            strcat(
-                (*c).version.as_mut_ptr(),
-                b"Mac\0".as_ptr() as *const c_char,
-            );
-            GetTime(&raw mut d);
-            if version == FR as i16 {
+            if item == i_imprimer {
+                core::ptr::write_bytes(c as *mut Coordonnees, 0, 1);
+                GetVersionSapiens(chaine.as_mut_ptr());
                 sprintf(
-                    (*c).date.as_mut_ptr(),
-                    b"%d/%d/%d\0".as_ptr() as *const c_char,
-                    d.day as c_int,
-                    d.month as c_int,
-                    d.year as c_int,
+                    (*c).version.as_mut_ptr(),
+                    b"%s \0".as_ptr() as *const c_char,
+                    chaine.as_ptr(),
                 );
-            } else {
-                sprintf(
-                    (*c).date.as_mut_ptr(),
-                    b"%d/%d/%d\0".as_ptr() as *const c_char,
-                    d.month as c_int,
-                    d.day as c_int,
-                    d.year as c_int,
+                /* Branche MAC : sur PC on ajoute "PC" */
+                strcat(
+                    (*c).version.as_mut_ptr(),
+                    b"Mac\0".as_ptr() as *const c_char,
                 );
+                GetTime(&raw mut d);
+                if version == FR as i16 {
+                    sprintf(
+                        (*c).date.as_mut_ptr(),
+                        b"%d/%d/%d\0".as_ptr() as *const c_char,
+                        d.day as c_int,
+                        d.month as c_int,
+                        d.year as c_int,
+                    );
+                } else {
+                    sprintf(
+                        (*c).date.as_mut_ptr(),
+                        b"%d/%d/%d\0".as_ptr() as *const c_char,
+                        d.month as c_int,
+                        d.day as c_int,
+                        d.year as c_int,
+                    );
+                }
+                GetValItem(dialog, i_nom, (*c).nom.as_mut_ptr());
+                GetValItem(dialog, i_adresse, (*c).adresse.as_mut_ptr());
+                GetValItem(dialog, i_codePostal, (*c).codePostal.as_mut_ptr());
+                GetValItem(dialog, i_Ville, (*c).ville.as_mut_ptr());
+                GetValItem(dialog, i_Pays, (*c).pays.as_mut_ptr());
+                GetValItem(dialog, i_Email, (*c).eMail.as_mut_ptr());
+                (*c).isProchaineVersion = GetValBouton(dialog, i_disque) != 0;
+                (*c).isLiquide = GetValBouton(dialog, i_liquide) != 0;
+                GetValItem(dialog, i_trouve, (*c).trouve.as_mut_ptr());
+                GetValItem(dialog, i_remarque, (*c).remarque.as_mut_ptr());
             }
-            GetValItem(dialog, i_nom, (*c).nom.as_mut_ptr());
-            GetValItem(dialog, i_adresse, (*c).adresse.as_mut_ptr());
-            GetValItem(dialog, i_codePostal, (*c).codePostal.as_mut_ptr());
-            GetValItem(dialog, i_Ville, (*c).ville.as_mut_ptr());
-            GetValItem(dialog, i_Pays, (*c).pays.as_mut_ptr());
-            GetValItem(dialog, i_Email, (*c).eMail.as_mut_ptr());
-            (*c).isProchaineVersion = GetValBouton(dialog, i_disque) != 0;
-            (*c).isLiquide = GetValBouton(dialog, i_liquide) != 0;
-            GetValItem(dialog, i_trouve, (*c).trouve.as_mut_ptr());
-            GetValItem(dialog, i_remarque, (*c).remarque.as_mut_ptr());
+            DisposeRoutineDescriptor(modalUPP as *mut c_void);
+            item == i_imprimer
         }
-        DisposeRoutineDescriptor(modalUPP as *mut c_void);
-        CloseDialogue(dialog, DLOG_COORDONNEES as c_short);
-        AcamSetPortOffscreen(gbak);
-        item == i_imprimer
     }
 }
 
@@ -264,178 +273,179 @@ unsafe fn Subst(h: Handle, str1: Ptr, str2: Ptr) {
     }
 }
 
-/******************************************************************************************
-                                        DoPrintBonCommande
-******************************************************************************************/
-#[unsafe(no_mangle)]
-pub extern "C" fn DoPrintBonCommande() {
-    unsafe {
-        let mut PrtPort: TPPrPort = core::ptr::null_mut();
-        let mut rpage: Rect = Rect::default();
-        let mut prStatus: TPrStatus = TPrStatus::default();
-        let mut gbak: CGrafPtr = core::ptr::null_mut();
-        let mut hprint: THPrint = core::ptr::null_mut();
-        let mut h: Handle = core::ptr::null_mut();
-        let mut texte: TEHandle = core::ptr::null_mut();
-        let mut appResFile: c_short = 0;
-        let mut printResFile: c_short = 0;
-        let mut c: Coordonnees = core::mem::zeroed();
+impl Sapiens {
+    /******************************************************************************************
+                                            DoPrintBonCommande
+    ******************************************************************************************/
+    #[unsafe(no_mangle)]
+    pub(crate) extern "C" fn DoPrintBonCommande(&mut self) {
+        unsafe {
+            let mut PrtPort: TPPrPort = core::ptr::null_mut();
+            let mut rpage: Rect = Rect::default();
+            let mut prStatus: TPrStatus = TPrStatus::default();
+            let mut hprint: THPrint = core::ptr::null_mut();
+            let mut h: Handle = core::ptr::null_mut();
+            let mut texte: TEHandle = core::ptr::null_mut();
+            let mut appResFile: c_short = 0;
+            let mut printResFile: c_short = 0;
+            let mut c: Coordonnees = core::mem::zeroed();
 
-        if !GetCoordonnees(&raw mut c) {
-            return;
-        }
-        AcamGetPortOffscreen(&raw mut gbak);
-        appResFile = CurResFile();
-        /* On Initialise le driver imprimante */
-        PrSetError(noErr as c_short);
-        PrOpen();
-        if PrError() == noErr as c_short {
-            printResFile = CurResFile();
-            hprint = NewHandleClear(size_of::<TPrint>() as c_long) as THPrint;
-            if !hprint.is_null() {
-                PrintDefault(hprint);
-                if PrStlDialog(hprint) {
-                    /* On demande de les modifier et de confirmer l'impression*/
-                    if PrJobDialog(hprint) {
-                        UseResFile(printResFile);
-                        PrtPort = PrOpenDoc(hprint, core::ptr::null_mut(), core::ptr::null_mut());
-                        if PrError() == noErr as c_short {
-                            /* On la ouvert */
-                            PrOpenPage(PrtPort, core::ptr::null_mut());
+            if !self.GetCoordonnees(&raw mut c) {
+                return;
+            }
+            let _g = port::preserve();
+            appResFile = CurResFile();
+            /* On Initialise le driver imprimante */
+            PrSetError(noErr as c_short);
+            PrOpen();
+            if PrError() == noErr as c_short {
+                printResFile = CurResFile();
+                hprint = NewHandleClear(size_of::<TPrint>() as c_long) as THPrint;
+                if !hprint.is_null() {
+                    PrintDefault(hprint);
+                    if PrStlDialog(hprint) {
+                        /* On demande de les modifier et de confirmer l'impression*/
+                        if PrJobDialog(hprint) {
+                            UseResFile(printResFile);
+                            PrtPort =
+                                PrOpenDoc(hprint, core::ptr::null_mut(), core::ptr::null_mut());
                             if PrError() == noErr as c_short {
-                                UseResFile(appResFile);
-                                rpage = (**hprint).prInfo.rPage;
-                                h = GetResource(
-                                    0x54455854, /* 'TEXT' */
-                                    RSRC_TEXT_CARTE_ENREG as c_short,
-                                );
-                                UseResFile(printResFile);
-                                if !h.is_null() {
-                                    DetachResource(h);
-                                    TextFont(courier as c_short);
-                                    TextSize(12);
-                                    texte = TENew(&raw const rpage, &raw const rpage);
-                                    if !texte.is_null() {
-                                        Subst(
-                                            h,
-                                            b"$1\0".as_ptr() as Ptr,
-                                            c.version.as_mut_ptr() as Ptr,
-                                        );
-                                        Subst(
-                                            h,
-                                            b"$2\0".as_ptr() as Ptr,
-                                            c.nom.as_mut_ptr() as Ptr,
-                                        );
-                                        Subst(
-                                            h,
-                                            b"$3\0".as_ptr() as Ptr,
-                                            c.date.as_mut_ptr() as Ptr,
-                                        );
-                                        Subst(
-                                            h,
-                                            b"$4\0".as_ptr() as Ptr,
-                                            c.adresse.as_mut_ptr() as Ptr,
-                                        );
-                                        Subst(
-                                            h,
-                                            b"$5\0".as_ptr() as Ptr,
-                                            c.codePostal.as_mut_ptr() as Ptr,
-                                        );
-                                        Subst(
-                                            h,
-                                            b"$6\0".as_ptr() as Ptr,
-                                            c.ville.as_mut_ptr() as Ptr,
-                                        );
-                                        Subst(
-                                            h,
-                                            b"$7\0".as_ptr() as Ptr,
-                                            c.pays.as_mut_ptr() as Ptr,
-                                        );
-                                        if strlen(c.eMail.as_ptr()) > 0 {
+                                /* On la ouvert */
+                                PrOpenPage(PrtPort, core::ptr::null_mut());
+                                if PrError() == noErr as c_short {
+                                    UseResFile(appResFile);
+                                    rpage = (**hprint).prInfo.rPage;
+                                    h = GetResource(
+                                        0x54455854, /* 'TEXT' */
+                                        RSRC_TEXT_CARTE_ENREG as c_short,
+                                    );
+                                    UseResFile(printResFile);
+                                    if !h.is_null() {
+                                        DetachResource(h);
+                                        TextFont(courier as c_short);
+                                        TextSize(12);
+                                        texte = TENew(&raw const rpage, &raw const rpage);
+                                        if !texte.is_null() {
                                             Subst(
                                                 h,
-                                                b"$8\0".as_ptr() as Ptr,
-                                                c.eMail.as_mut_ptr() as Ptr,
+                                                b"$1\0".as_ptr() as Ptr,
+                                                c.version.as_mut_ptr() as Ptr,
                                             );
-                                        } else {
                                             Subst(
                                                 h,
-                                                b"$8\0".as_ptr() as Ptr,
-                                                GetCommentaire(46) as Ptr,
-                                            ); /* Non */
+                                                b"$2\0".as_ptr() as Ptr,
+                                                c.nom.as_mut_ptr() as Ptr,
+                                            );
+                                            Subst(
+                                                h,
+                                                b"$3\0".as_ptr() as Ptr,
+                                                c.date.as_mut_ptr() as Ptr,
+                                            );
+                                            Subst(
+                                                h,
+                                                b"$4\0".as_ptr() as Ptr,
+                                                c.adresse.as_mut_ptr() as Ptr,
+                                            );
+                                            Subst(
+                                                h,
+                                                b"$5\0".as_ptr() as Ptr,
+                                                c.codePostal.as_mut_ptr() as Ptr,
+                                            );
+                                            Subst(
+                                                h,
+                                                b"$6\0".as_ptr() as Ptr,
+                                                c.ville.as_mut_ptr() as Ptr,
+                                            );
+                                            Subst(
+                                                h,
+                                                b"$7\0".as_ptr() as Ptr,
+                                                c.pays.as_mut_ptr() as Ptr,
+                                            );
+                                            if strlen(c.eMail.as_ptr()) > 0 {
+                                                Subst(
+                                                    h,
+                                                    b"$8\0".as_ptr() as Ptr,
+                                                    c.eMail.as_mut_ptr() as Ptr,
+                                                );
+                                            } else {
+                                                Subst(
+                                                    h,
+                                                    b"$8\0".as_ptr() as Ptr,
+                                                    self.sapbonc.GetCommentaire(46) as Ptr,
+                                                ); /* Non */
+                                            }
+                                            if c.isLiquide {
+                                                Subst(
+                                                    h,
+                                                    b"$9\0".as_ptr() as Ptr,
+                                                    self.sapbonc.GetCommentaire(49) as Ptr,
+                                                );
+                                            } else {
+                                                Subst(
+                                                    h,
+                                                    b"$9\0".as_ptr() as Ptr,
+                                                    self.sapbonc.GetCommentaire(50) as Ptr,
+                                                );
+                                            }
+                                            if c.isProchaineVersion {
+                                                Subst(
+                                                    h,
+                                                    b"$A\0".as_ptr() as Ptr,
+                                                    self.sapbonc.GetCommentaire(48) as Ptr,
+                                                );
+                                            } else {
+                                                Subst(
+                                                    h,
+                                                    b"$A\0".as_ptr() as Ptr,
+                                                    self.sapbonc.GetCommentaire(47) as Ptr,
+                                                );
+                                            }
+                                            Subst(
+                                                h,
+                                                b"$B\0".as_ptr() as Ptr,
+                                                c.trouve.as_mut_ptr() as Ptr,
+                                            );
+                                            Subst(
+                                                h,
+                                                b"$C\0".as_ptr() as Ptr,
+                                                c.remarque.as_mut_ptr() as Ptr,
+                                            );
+                                            HLock(h);
+                                            TEInsert(*h as *const c_void, GetHandleSize(h), texte);
+                                            HUnlock(h);
+                                            /* On affiche la page */
+                                            TEUpdate(&raw const rpage, texte);
                                         }
-                                        if c.isLiquide {
-                                            Subst(
-                                                h,
-                                                b"$9\0".as_ptr() as Ptr,
-                                                GetCommentaire(49) as Ptr,
-                                            );
-                                        } else {
-                                            Subst(
-                                                h,
-                                                b"$9\0".as_ptr() as Ptr,
-                                                GetCommentaire(50) as Ptr,
-                                            );
-                                        }
-                                        if c.isProchaineVersion {
-                                            Subst(
-                                                h,
-                                                b"$A\0".as_ptr() as Ptr,
-                                                GetCommentaire(48) as Ptr,
-                                            );
-                                        } else {
-                                            Subst(
-                                                h,
-                                                b"$A\0".as_ptr() as Ptr,
-                                                GetCommentaire(47) as Ptr,
-                                            );
-                                        }
-                                        Subst(
-                                            h,
-                                            b"$B\0".as_ptr() as Ptr,
-                                            c.trouve.as_mut_ptr() as Ptr,
-                                        );
-                                        Subst(
-                                            h,
-                                            b"$C\0".as_ptr() as Ptr,
-                                            c.remarque.as_mut_ptr() as Ptr,
-                                        );
-                                        HLock(h);
-                                        TEInsert(*h as *const c_void, GetHandleSize(h), texte);
-                                        HUnlock(h);
-                                        /* On affiche la page */
-                                        TEUpdate(&raw const rpage, texte);
+                                        DisposHandle(h);
                                     }
-                                    DisposHandle(h);
                                 }
+                                PrClosePage(PrtPort); /* Impression de la page */
                             }
-                            PrClosePage(PrtPort); /* Impression de la page */
+                            PrCloseDoc(PrtPort);
                         }
-                        PrCloseDoc(PrtPort);
-                    }
-                    /* Si selection papier JOB OK */
-                    else {
+                        /* Si selection papier JOB OK */
+                        else {
+                            PrSetError(iPrAbort as c_short);
+                        }
+                        if PrError() == noErr as c_short && (**hprint).prJob.bJDocLoop == 1 {
+                            PrPicFile(
+                                hprint,
+                                core::ptr::null_mut(),
+                                core::ptr::null_mut(),
+                                core::ptr::null_mut(),
+                                &raw mut prStatus,
+                            );
+                        }
+                    } else {
                         PrSetError(iPrAbort as c_short);
                     }
-                    if PrError() == noErr as c_short && (**hprint).prJob.bJDocLoop == 1 {
-                        PrPicFile(
-                            hprint,
-                            core::ptr::null_mut(),
-                            core::ptr::null_mut(),
-                            core::ptr::null_mut(),
-                            &raw mut prStatus,
-                        );
-                    }
-                } else {
-                    PrSetError(iPrAbort as c_short);
+                    /* Liberation du hprint */
+                    DisposHandle(hprint as Handle);
                 }
-                /* Liberation du hprint */
-                DisposHandle(hprint as Handle);
             }
+            UseResFile(appResFile);
+            PrClose();
         }
-        UseResFile(appResFile);
-        PrClose();
-        AcamSetPortOffscreen(gbak);
     }
 }
 

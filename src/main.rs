@@ -3,21 +3,47 @@
 //! et un thread qui égrène `sapiensTimer` toutes les 11 ms (comme le timer
 //! du Mac d'origine).
 
-use std::ffi::CStr;
-use std::os::raw::c_char;
-use std::sync::atomic::Ordering;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
-pub mod acam;
-pub mod cbridge;
-pub mod langue;
-pub mod sapiens;
-pub mod shared;
-pub mod stubs;
-pub mod text;
+pub(crate) mod acam;
+pub(crate) mod cbridge;
+mod exchange;
+pub(crate) mod langue;
+pub(crate) mod port;
+pub(crate) mod sapiens;
+pub(crate) mod shared;
+pub(crate) mod stubs;
+pub(crate) mod text;
 
+use crate::acam::Random;
+use crate::exchange::{Cursor, get_cursor, set_menu_command};
 use crate::langue::{LangMode, Langue, effective_lang, load_lang_mode, save_lang_mode};
-use crate::sapiens::sapwind::{DoMenuCommand, SapZoom};
+use crate::sapiens::sap3d::Sap3d;
+use crate::sapiens::sapbonc::Sapbonc;
+use crate::sapiens::sapcomb::Sapcomb;
+use crate::sapiens::sapenreg::Sapenreg;
+use crate::sapiens::sapgest::Sapgest;
+use crate::sapiens::sapglob::Sapglob;
+use crate::sapiens::saplist::Saplist;
+use crate::sapiens::saprel::Saprel;
+use crate::sapiens::sapscrollbar::Sapscrollbar;
+use crate::sapiens::saptxt::Saptxt;
+use crate::sapiens::saptxt_es::Saptxt_es;
+use crate::sapiens::saptxt_fr::Saptxt_fr;
+use crate::sapiens::saptxt_gb::Saptxt_gb;
+use crate::sapiens::sapw3d::Sapw3d;
+use crate::sapiens::sapwarb::Sapwarb;
+use crate::sapiens::sapwbrt::Sapwbrt;
+use crate::sapiens::sapwcar::Sapwcar;
+use crate::sapiens::sapwcart::Sapwcart;
+use crate::sapiens::sapwclav::{Sapwclav, Souris};
+use crate::sapiens::sapwcvt::Sapwcvt;
+use crate::sapiens::sapwind::SapWind;
+use crate::sapiens::sapwmess::Sapwmess;
+use crate::sapiens::sapwmus::Sapwmus;
 use eframe::egui;
+use egui::CursorIcon;
 use shared::{INPUT, SapPort, WINDOW_PORT, lut_rgb};
 
 fn main() {
@@ -41,7 +67,11 @@ fn main() {
     acam::set_game_language(effective_lang(lang_mode));
 
     // Compteur 11 ms pour sapiensTimer (SAPWCLAV.C).
-    std::thread::spawn(timer_loop);
+    let sapiens_timer = Arc::new(AtomicU64::new(0));
+    std::thread::spawn({
+        let t = sapiens_timer.clone();
+        move || timer_loop(t)
+    });
 
     // Le code C (boucle infinie du jeu original).
     std::thread::Builder::new()
@@ -52,10 +82,16 @@ fn main() {
             // exactement 640x400 et son contenu occupe tout le buffer. Avec
             // SapZoom=2 l'écran était 1280x800 mais le champ du jeu restait
             // en 640x400, d'où un rendu décalé.
-            SapZoom = 1.0;
+            let mut sapwind = SapWind::default();
+            sapwind.set_zoom(1.0);
             // Pointeurs auto-reférents de SAPGLOB.C (debban, peuple, soma...).
-            sapiens::sapglob::init_glob();
-            sapiens::saplist::sapiens_main();
+            let mut sapiens = Sapiens {
+                sapwclav: Sapwclav::with_sapiens_timer(sapiens_timer),
+                sapwind,
+                ..Default::default()
+            };
+            sapiens.init_glob();
+            sapiens.sapiens_main();
         })
         .expect("échec du thread C");
 
@@ -77,10 +113,10 @@ fn main() {
     std::process::exit(0);
 }
 
-fn timer_loop() {
+fn timer_loop(t: Arc<AtomicU64>) {
     loop {
         std::thread::sleep(std::time::Duration::from_millis(11));
-        acam::bump_sapiens_timer();
+        t.fetch_add(1, Ordering::Relaxed);
     }
 }
 
@@ -104,6 +140,35 @@ fn render_language_menu(ui: &mut egui::Ui, mode: &mut LangMode) {
     });
 }
 
+#[derive(Default)]
+struct Sapiens {
+    souris: Souris,
+    sapwclav: Sapwclav,
+    sapwind: SapWind,
+    sapcomb: Sapcomb,
+    sapglob: Sapglob,
+    sap3d: Sap3d,
+    sapw3d: Sapw3d,
+    sapwbrt: Sapwbrt,
+    random: Random,
+    sapbonc: Sapbonc,
+    saplist: Saplist,
+    sapwmus: Sapwmus,
+    sapwarb: Sapwarb,
+    sapwcar: Sapwcar,
+    sapwcart: Sapwcart,
+    saprel: Saprel,
+    sapscrollbar: Sapscrollbar,
+    sapwmess: Sapwmess,
+    sapgest: Sapgest,
+    sapenreg: Sapenreg,
+    sapwcvt: Sapwcvt,
+    saptxt: Saptxt,
+    saptxt_fr: Saptxt_fr,
+    saptxt_gb: Saptxt_gb,
+    saptxt_es: Saptxt_es,
+}
+
 struct SapiensApp {
     tex: Option<egui::TextureHandle>,
     dump: Option<PortDumper>,
@@ -112,7 +177,7 @@ struct SapiensApp {
 
 impl SapiensApp {
     fn new(lang_mode: LangMode) -> Self {
-        SapiensApp {
+        Self {
             tex: None,
             dump: PortDumper::from_env(),
             lang_mode,
@@ -120,8 +185,18 @@ impl SapiensApp {
     }
 }
 
+impl From<Cursor> for CursorIcon {
+    fn from(value: Cursor) -> Self {
+        match value {
+            Cursor::Hidden => CursorIcon::None,
+            Cursor::Default => CursorIcon::Default,
+        }
+    }
+}
+
 impl eframe::App for SapiensApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        ctx.set_cursor_icon(get_cursor().into());
         // Le Rust est autoritaire sur la langue : on réimpose la sélection
         // (un `Sapiens.cfg` chargé par ChargePref pourrait la remettre en
         // cause au démarrage).
@@ -175,9 +250,7 @@ impl eframe::App for SapiensApp {
             });
         });
         if let Some(r) = command {
-            unsafe {
-                DoMenuCommand(r as std::os::raw::c_long);
-            }
+            set_menu_command(r);
         }
 
         record_input(ctx);
@@ -327,9 +400,7 @@ fn handle_shortcuts(ctx: &egui::Context) {
         }
     }
     if let Some(r) = trigger {
-        unsafe {
-            DoMenuCommand(r as std::os::raw::c_long);
-        }
+        set_menu_command(r);
     }
 }
 
@@ -458,27 +529,5 @@ impl PortDumper {
                 Err(e) => eprintln!("dump échec {path}: {e}"),
             }
         }
-    }
-}
-
-pub fn c_char_ptr_to_chars(ptr: *mut c_char) -> Vec<char> {
-    if ptr.is_null() {
-        return Vec::new();
-    }
-
-    unsafe { CStr::from_ptr(ptr).to_string_lossy().chars().collect() }
-}
-
-pub fn c_char_ptr_to_u8(ptr: *mut c_char) -> Vec<u8> {
-    if ptr.is_null() {
-        return Vec::new();
-    }
-
-    unsafe {
-        CStr::from_ptr(ptr)
-            .to_string_lossy()
-            .chars()
-            .map(|c| c as u8)
-            .collect()
     }
 }

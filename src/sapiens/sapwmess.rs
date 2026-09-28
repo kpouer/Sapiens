@@ -1,106 +1,97 @@
 /****************************************************************************
             Encadre et efface le message
 *****************************************************************************/
-use crate::acam::{
-    AcamGetPortOffscreen, AcamSetPortOffscreen, CarboniseGetWindowPort, CarboniseSetPortWindow,
-    InsetRect, SetRect,
-};
+use crate::acam::{InsetRect, SetRect};
 use crate::sapiens::sapwbrt::{CopyOffscreen, DoEraseRect, DoFrameRect, DoPenSize, DoScrollRect};
-use crate::sapiens::sapwclav::eff_sour;
-use crate::sapiens::sapwind::{debecr, mainWindow};
-use crate::shared::{CGrafPtr, Rect};
+use crate::shared::Rect;
 use crate::stubs::CarboniseInvalRect;
-use std::os::raw::{c_short, c_void};
+use crate::{Sapiens, port};
+use std::os::raw::c_short;
 
-#[unsafe(no_mangle)]
-pub static mut rMess: Rect = Rect {
-    top: 208,
-    left: 32,
-    bottom: 224,
-    right: 606,
-};
+pub(crate) struct Sapwmess {
+    pub(crate) rMess: Rect,
+}
 
-pub fn framebadass() {
-    let mut gbak = CGrafPtr::default();
-    AcamGetPortOffscreen(&mut gbak as *mut _);
+impl Default for Sapwmess {
+    fn default() -> Self {
+        Self {
+            rMess: Rect {
+                top: 208,
+                left: 32,
+                bottom: 224,
+                right: 606,
+            },
+        }
+    }
+}
 
-    unsafe {
-        AcamSetPortOffscreen(debecr);
-        let mut r = rMess;
+impl Sapiens {
+    pub(crate) fn framebadass(&self) {
+        let _g = port::on(self.sapwind.debecr);
+        let mut r = self.sapwmess.rMess;
         InsetRect(&mut r as *mut _ as *mut _, -1, -1);
         DoEraseRect(&mut r);
         DoFrameRect(&mut r);
         DoPenSize(1, 1);
-        AcamSetPortOffscreen(gbak);
     }
-}
 
-/****************************************************************************
-            TfrBadAss
-Le message s'affiche sur debecr, on le transfere sur le reel
-*****************************************************************************/
-#[unsafe(no_mangle)]
-pub extern "C" fn TfrBadAss() {
-    eff_sour();
-    unsafe {
+    /****************************************************************************
+                TfrBadAss
+    Le message s'affiche sur debecr, on le transfere sur le reel
+    *****************************************************************************/
+    #[unsafe(no_mangle)]
+    pub(crate) extern "C" fn TfrBadAss(&mut self) {
+        self.eff_sour();
         CopyOffscreen(
-            debecr,
-            CarboniseGetWindowPort(mainWindow),
-            &raw mut rMess,
-            &raw mut rMess,
+            self.sapwind.debecr,
+            self.sapwind.mainWindow,
+            &raw mut self.sapwmess.rMess,
+            &raw mut self.sapwmess.rMess,
         );
-        CarboniseInvalRect(&raw const rMess);
+        CarboniseInvalRect(&raw const self.sapwmess.rMess);
     }
-}
 
-/****************************************************************************
-            Effacement du message
-*****************************************************************************/
-#[unsafe(no_mangle)]
-pub extern "C" fn efbadass() {
-    unsafe {
-        let mut gbak: *mut c_void = core::ptr::null_mut();
-
-        AcamGetPortOffscreen(&raw mut gbak);
-        AcamSetPortOffscreen(debecr);
-        DoEraseRect(&raw mut rMess);
-        AcamSetPortOffscreen(gbak);
-    }
-}
-
-/****************************************************************************
-            Scrolling du message
-*****************************************************************************/
-#[unsafe(no_mangle)]
-pub extern "C" fn scrollbadass() {
-    unsafe {
-        let mut i: c_short;
-        let mut gbak: *mut c_void = core::ptr::null_mut();
-        let mut reff: Rect = Rect {
-            top: 0,
-            left: 0,
-            bottom: 0,
-            right: 0,
-        };
-
-        eff_sour();
-        AcamGetPortOffscreen(&raw mut gbak);
-        CarboniseSetPortWindow(mainWindow);
-        SetRect(
-            &raw mut reff,
-            rMess.left,
-            rMess.top,
-            rMess.left + 8,
-            rMess.bottom,
-        );
-        i = 0;
-        while i < rMess.right - rMess.left {
-            DoScrollRect(&raw mut rMess, 8, 0, core::ptr::null_mut());
-            DoEraseRect(&raw mut reff);
-            i += 8;
+    /****************************************************************************
+                Effacement du message
+    *****************************************************************************/
+    #[unsafe(no_mangle)]
+    pub(crate) extern "C" fn efbadass(&mut self) {
+        unsafe {
+            let _g = port::on(self.sapwind.debecr);
+            DoEraseRect(&raw mut self.sapwmess.rMess);
         }
-        efbadass();
-        AcamSetPortOffscreen(gbak);
+    }
+
+    /****************************************************************************
+                Scrolling du message
+    *****************************************************************************/
+    pub(crate) fn scrollbadass(&mut self) {
+        unsafe {
+            let mut i: c_short;
+            let mut reff: Rect = Rect {
+                top: 0,
+                left: 0,
+                bottom: 0,
+                right: 0,
+            };
+
+            self.eff_sour();
+            let _g = port::on(self.sapwind.mainWindow);
+            SetRect(
+                &raw mut reff,
+                self.sapwmess.rMess.left,
+                self.sapwmess.rMess.top,
+                self.sapwmess.rMess.left + 8,
+                self.sapwmess.rMess.bottom,
+            );
+            i = 0;
+            while i < self.sapwmess.rMess.right - self.sapwmess.rMess.left {
+                DoScrollRect(&raw mut self.sapwmess.rMess, 8, 0, core::ptr::null_mut());
+                DoEraseRect(&raw mut reff);
+                i += 8;
+            }
+            self.efbadass();
+        }
     }
 }
 

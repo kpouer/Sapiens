@@ -2,31 +2,52 @@
 #![allow(non_snake_case)]
 #![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
 use crate::acam::{
-    AcamGetPortOffscreen, AcamSetPortOffscreen, ClipRect, DisposeRgn, GetClip, MoveTo, NewRgn,
-    RGBForeColor, SetClip, SetPt, SetRect,
+    ClipRect, DisposeRgn, GetClip, MoveTo, NewRgn, RGBForeColor, SetClip, SetPt, SetRect,
 };
 use crate::cbridge::Collapse;
 use crate::langue::Langue::ES;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
-use crate::sapiens::sapglob::{colaff, linaff};
-use crate::sapiens::saptxt::{
-    CvtCar, CvtCarLissage, GetBkMot, langue, nomadversaire, nomcopain, nomjoueur, nomsecondaire,
-    nomtribu,
-};
-use crate::sapiens::sapwbrt::{AffmobCar, DoEraseRect, DoPaintRect, TabMob};
-use crate::sapiens::sapwind::{Ecran1, Fonte10, Fonte14, debecr};
-use crate::sapiens::sapwmess::rMess;
+use crate::sapiens::saptxt::{CvtCar, CvtCarLissage, langue};
+use crate::sapiens::sapwbrt::{DoEraseRect, DoPaintRect};
 use crate::sapiens::{NB_MOTS_BKMOTS, POLICE_LISSAGE, STYLE_LISSAGE};
 use crate::shared::{Boolean, CGrafPtr, FontInfo, Point, RGBColor, Rect, RgnHandle};
 use crate::stubs::CarboniseSetPatBlack;
 use crate::text::{CharWidth, DrawChar, GetFontInfo, TextFace, TextFont, TextSize};
+use crate::{Sapiens, port};
 use std::os::raw::{c_char, c_int, c_short};
-use std::ptr::{addr_of, addr_of_mut, null_mut};
+use std::ptr::{addr_of, addr_of_mut};
 
 const ECHELLE: i16 = 2;
 
-#[unsafe(no_mangle)]
-pub static mut LissagePolice: Boolean = true;
+/* Etat mutable de SAPWCAR.C, ex-`static mut`, regroupe dans cette
+structure, champ de `Sapiens`. */
+pub(crate) struct Sapwcar {
+    /* ex-`LissagePolice` */
+    pub(crate) lissage_police: Boolean,
+    /* ex-`indexWhite` */
+    index_white: c_short,
+    /* ex-`indexBlack` */
+    index_black: c_short,
+    /* ex-`indexBrown` */
+    index_brown: c_short,
+    /* ex-`indexGray` */
+    index_gray: c_short,
+    /* ex-`ptEcrCar` */
+    pt_ecr_car: Point,
+}
+
+impl Default for Sapwcar {
+    fn default() -> Self {
+        Self {
+            lissage_police: true,
+            index_white: 0,
+            index_black: 0,
+            index_brown: 0,
+            index_gray: 0,
+            pt_ecr_car: Point { v: 0, h: 0 },
+        }
+    }
+}
 
 static rgbWhite: RGBColor = RGBColor {
     red: 0xFFFF,
@@ -48,75 +69,72 @@ static rgbGray: RGBColor = RGBColor {
     green: 50000,
     blue: 50000,
 };
-static mut indexWhite: c_short = 0;
-static mut indexBlack: c_short = 0;
-static mut indexBrown: c_short = 0;
-static mut indexGray: c_short = 0;
 
-#[unsafe(no_mangle)]
-static mut ptEcrCar: Point = Point { v: 0, h: 0 };
+impl Sapiens {
+    /*************************************************************************
+                        InitCouleurFontes
+    **************************************************************************/
+    #[unsafe(no_mangle)]
+    pub(crate) unsafe extern "C" fn InitCouleurFontes(&mut self) {
+        let _g = port::on(self.sapwind.Ecran1);
+        self.sapwcar.index_white = SapColor2Index(&rgbWhite) as c_short;
+        self.sapwcar.index_black = SapColor2Index(&rgbBlack) as c_short;
+        self.sapwcar.index_brown = SapColor2Index(&rgbBrown) as c_short;
+        self.sapwcar.index_gray = SapColor2Index(&rgbGray) as c_short;
+    }
 
-/*************************************************************************
-                    InitCouleurFontes
-**************************************************************************/
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitCouleurFontes() {
-    let mut gbak: CGrafPtr = null_mut();
-    AcamGetPortOffscreen(&mut gbak);
-    AcamSetPortOffscreen(Ecran1);
-    *addr_of_mut!(indexWhite) = SapColor2Index(addr_of!(rgbWhite) as *mut _) as c_short;
-    *addr_of_mut!(indexBlack) = SapColor2Index(addr_of!(rgbBlack) as *mut _) as c_short;
-    *addr_of_mut!(indexBrown) = SapColor2Index(addr_of!(rgbBrown) as *mut _) as c_short;
-    *addr_of_mut!(indexGray) = SapColor2Index(addr_of!(rgbGray) as *mut _) as c_short;
-    AcamSetPortOffscreen(gbak);
+    /*************************************************************************
+                        Gotoxy
+    Positionne l'ecriture des caracteres en y et x
+    => position en colonne et ligne caracteres
+    **************************************************************************/
+    pub(crate) fn Gotoxy(&mut self, x: c_short, y: c_short) {
+        unsafe {
+            SetPt(
+                &raw mut self.sapwcar.pt_ecr_car,
+                (x * ECHELLE) * 6,
+                (y * ECHELLE) * 7 - 1,
+            );
+            *addr_of_mut!(self.sapglob.colaff) = x;
+            *addr_of_mut!(self.sapglob.linaff) = y;
+        }
+    }
 }
 
-/*************************************************************************
-                    Gotoxy
-Positionne l'ecriture des caracteres en y et x
-=> position en colonne et ligne caracteres
-**************************************************************************/
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Gotoxy(x: c_short, y: c_short) {
-    SetPt(
-        addr_of_mut!(ptEcrCar),
-        (x * ECHELLE) * 6,
-        (y * ECHELLE) * 7 - 1,
-    );
-    *addr_of_mut!(colaff) = x;
-    *addr_of_mut!(linaff) = y;
+impl Sapiens {
+    /*************************************************************************
+                        GotoxyPixel
+    Positionne l'ecriture des caracteres en y et x pixel
+    => position en colonne et ligne caracteres
+    **************************************************************************/
+    #[unsafe(no_mangle)]
+    pub(crate) unsafe extern "C" fn GotoxyPixel(&mut self, x: c_short, y: c_short) {
+        SetPt(&raw mut self.sapwcar.pt_ecr_car, x, y);
+    }
 }
 
-/*************************************************************************
-                    GotoxyPixel
-Positionne l'ecriture des caracteres en y et x pixel
-=> position en colonne et ligne caracteres
-**************************************************************************/
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GotoxyPixel(x: c_short, y: c_short) {
-    SetPt(addr_of_mut!(ptEcrCar), x, y);
-}
-
-/*************************************************************************
-                    TailleCar
-**************************************************************************/
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TailleCar(car: c_short, taille: c_short) -> c_short {
-    if LissagePolice || langue == ES as c_short {
-        /* ES Pour les caracteres speciaux */
-        let car = CvtCarLissage(car);
-        TextFont(POLICE_LISSAGE as i16);
-        TextSize(taille);
-        TextFace(STYLE_LISSAGE as i16);
-        return CharWidth(car as i8);
-    } else {
-        let car = CvtCar(car);
-        if taille == 10 {
-            let num = Fonte10 + car - 31;
-            return (*addr_of!(TabMob))[num as usize].nbcol + 2;
+impl Sapiens {
+    /*************************************************************************
+                        TailleCar
+    **************************************************************************/
+    #[unsafe(no_mangle)]
+    pub(crate) unsafe extern "C" fn TailleCar(&self, car: c_short, taille: c_short) -> c_short {
+        if self.sapwcar.lissage_police || langue() == ES as c_short {
+            /* ES Pour les caracteres speciaux */
+            let car = CvtCarLissage(car);
+            TextFont(POLICE_LISSAGE as i16);
+            TextSize(taille);
+            TextFace(STYLE_LISSAGE as i16);
+            return CharWidth(car as i8);
         } else {
-            let num = Fonte14 + car - 31;
-            return (*addr_of!(TabMob))[num as usize].nbcol + 3;
+            let car = CvtCar(car);
+            if taille == 10 {
+                let num = self.sapwind.Fonte10 + car - 31;
+                return (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 2;
+            } else {
+                let num = self.sapwind.Fonte14 + car - 31;
+                return (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 3;
+            }
         }
     }
 }
@@ -124,15 +142,15 @@ pub unsafe extern "C" fn TailleCar(car: c_short, taille: c_short) -> c_short {
 /*************************************************************************
                     SetColorFont
 **************************************************************************/
-unsafe fn SetColorFont(id: c_short) {
-    if id == indexWhite {
-        RGBForeColor(addr_of!(rgbWhite));
-    } else if id == indexBlack {
-        RGBForeColor(addr_of!(rgbBlack));
-    } else if id == indexBrown {
-        RGBForeColor(addr_of!(rgbBrown));
-    } else if id == indexGray {
-        RGBForeColor(addr_of!(rgbGray));
+unsafe fn SetColorFont(sapwcar: &Sapwcar, id: c_short) {
+    if id == sapwcar.index_white {
+        RGBForeColor(&rgbWhite);
+    } else if id == sapwcar.index_black {
+        RGBForeColor(&rgbBlack);
+    } else if id == sapwcar.index_brown {
+        RGBForeColor(&rgbBrown);
+    } else if id == sapwcar.index_gray {
+        RGBForeColor(&rgbGray);
     } else {
         Collapse(
             c"SetColorFont: %d unknown".as_ptr() as *mut c_char,
@@ -141,51 +159,92 @@ unsafe fn SetColorFont(id: c_short) {
     }
 }
 
-/*************************************************************************
-                    AffCarBrt
-Affiche un caractere brut à la position courante
-=> Caractere à afficher
-**************************************************************************/
-unsafe fn AffCarBrt(car: c_short, couleur: c_short, couleurOmbre: c_short, taille: c_short) {
-    if LissagePolice || langue == ES as c_short {
-        /* ES Pour les caracteres speciaux */
-        let mut info = FontInfo::default();
-        let mut dx: c_short = 0;
-        let dy: c_short = 0;
-        let mut car = CvtCarLissage(car);
-        if car == '<' as c_short {
-            car = 0xC9;
-            dx -= 1;
-        }
-        if car == '>' as c_short {
-            car = 0xC9;
-            dx -= 1;
-        }
-        TextFont(POLICE_LISSAGE as i16);
-        TextSize(taille);
-        TextFace(STYLE_LISSAGE as i16);
-        GetFontInfo(&mut info);
-        SetColorFont(couleurOmbre);
-        MoveTo(ptEcrCar.h + dx, ptEcrCar.v + 1 + info.ascent + dy + 1);
-        DrawChar(car as i8);
-        SetColorFont(couleur);
-        MoveTo(ptEcrCar.h + dx, ptEcrCar.v + info.ascent + dy);
-        DrawChar(car as i8);
-        ptEcrCar.h += CharWidth(car as i8);
-    } else {
-        let car = CvtCar(car);
-        let num: c_short;
-        if taille == 10 {
-            num = Fonte10 + car - 31;
-            AffmobCar(num, ptEcrCar.h + 1, ptEcrCar.v + 1, couleurOmbre);
-            AffmobCar(num, ptEcrCar.h, ptEcrCar.v, couleur);
-            ptEcrCar.h += (*addr_of!(TabMob))[num as usize].nbcol + 2;
+impl Sapiens {
+    /*************************************************************************
+                        AffCarBrt
+    Affiche un caractere brut à la position courante
+    => Caractere à afficher
+    **************************************************************************/
+    unsafe fn AffCarBrt(
+        &mut self,
+        car: c_short,
+        couleur: c_short,
+        couleurOmbre: c_short,
+        taille: c_short,
+    ) {
+        if self.sapwcar.lissage_police || langue() == ES as c_short {
+            /* ES Pour les caracteres speciaux */
+            let mut info = FontInfo::default();
+            let mut dx: c_short = 0;
+            let dy: c_short = 0;
+            let mut car = CvtCarLissage(car);
+            if car == '<' as c_short {
+                car = 0xC9;
+                dx -= 1;
+            }
+            if car == '>' as c_short {
+                car = 0xC9;
+                dx -= 1;
+            }
+            TextFont(POLICE_LISSAGE as i16);
+            TextSize(taille);
+            TextFace(STYLE_LISSAGE as i16);
+            GetFontInfo(&mut info);
+            SetColorFont(&self.sapwcar, couleurOmbre);
+            MoveTo(
+                self.sapwcar.pt_ecr_car.h + dx,
+                self.sapwcar.pt_ecr_car.v + 1 + info.ascent + dy + 1,
+            );
+            DrawChar(car as i8);
+            SetColorFont(&self.sapwcar, couleur);
+            MoveTo(
+                self.sapwcar.pt_ecr_car.h + dx,
+                self.sapwcar.pt_ecr_car.v + info.ascent + dy,
+            );
+            DrawChar(car as i8);
+            self.sapwcar.pt_ecr_car.h += CharWidth(car as i8);
         } else {
-            num = Fonte14 + car - 31;
-            AffmobCar(num, ptEcrCar.h + 2, ptEcrCar.v + 1, couleurOmbre);
-            AffmobCar(num, ptEcrCar.h + 1, ptEcrCar.v, couleur);
-            AffmobCar(num, ptEcrCar.h, ptEcrCar.v, couleur);
-            ptEcrCar.h += (*addr_of!(TabMob))[num as usize].nbcol + 3;
+            let car = CvtCar(car);
+            let num: c_short;
+            if taille == 10 {
+                num = self.sapwind.Fonte10 + car - 31;
+                self.AffmobCar(
+                    num,
+                    self.sapwcar.pt_ecr_car.h + 1,
+                    self.sapwcar.pt_ecr_car.v + 1,
+                    couleurOmbre,
+                );
+                self.AffmobCar(
+                    num,
+                    self.sapwcar.pt_ecr_car.h,
+                    self.sapwcar.pt_ecr_car.v,
+                    couleur,
+                );
+                self.sapwcar.pt_ecr_car.h +=
+                    (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 2;
+            } else {
+                num = self.sapwind.Fonte14 + car - 31;
+                self.AffmobCar(
+                    num,
+                    self.sapwcar.pt_ecr_car.h + 2,
+                    self.sapwcar.pt_ecr_car.v + 1,
+                    couleurOmbre,
+                );
+                self.AffmobCar(
+                    num,
+                    self.sapwcar.pt_ecr_car.h + 1,
+                    self.sapwcar.pt_ecr_car.v,
+                    couleur,
+                );
+                self.AffmobCar(
+                    num,
+                    self.sapwcar.pt_ecr_car.h,
+                    self.sapwcar.pt_ecr_car.v,
+                    couleur,
+                );
+                self.sapwcar.pt_ecr_car.h +=
+                    (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 3;
+            }
         }
     }
 }
@@ -193,139 +252,161 @@ unsafe fn AffCarBrt(car: c_short, couleur: c_short, couleurOmbre: c_short, taill
 /*************************************************************************
                     GetStrBkMot
 **************************************************************************/
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetStrBkMot(car: c_short) -> *mut c_char {
-    let vide: *mut c_char = c"".as_ptr() as *mut c_char;
-    let bkmots = GetBkMot();
-    let mut p: *mut c_char = vide;
-    let car = car - 129;
-    if car < NB_MOTS_BKMOTS as c_short {
-        p = *bkmots.add(car as usize);
-        if *p == b'$' as c_char {
-            /* Substitution */
-            let c = *p.add(1);
-            if c == b'0' as c_char {
-                p = addr_of!(nomsecondaire) as *mut c_char;
-            } else if c == b'1' as c_char {
-                p = addr_of!(nomjoueur) as *mut c_char;
-            } else if c == b'2' as c_char {
-                p = addr_of!(nomadversaire) as *mut c_char;
-            } else if c == b'3' as c_char {
-                p = addr_of!(nomtribu) as *mut c_char;
-            } else if c == b'4' as c_char {
-                p = addr_of!(nomcopain) as *mut c_char;
+impl Sapiens {
+    pub(crate) unsafe fn GetStrBkMot(&self, car: c_short) -> *mut c_char {
+        let vide: *mut c_char = c"".as_ptr() as *mut c_char;
+        let bkmots = self.GetBkMot();
+        let mut p: *mut c_char = vide;
+        let car = car - 129;
+        if car < NB_MOTS_BKMOTS as c_short {
+            p = *bkmots.add(car as usize);
+            if *p == b'$' as c_char {
+                /* Substitution */
+                let c = *p.add(1);
+                if c == b'0' as c_char {
+                    p = addr_of!(self.saptxt.nomsecondaire) as *mut c_char;
+                } else if c == b'1' as c_char {
+                    p = addr_of!(self.saptxt.nomjoueur) as *mut c_char;
+                } else if c == b'2' as c_char {
+                    p = addr_of!(self.saptxt.nomadversaire) as *mut c_char;
+                } else if c == b'3' as c_char {
+                    p = addr_of!(self.saptxt.nomtribu) as *mut c_char;
+                } else if c == b'4' as c_char {
+                    p = addr_of!(self.saptxt.nomcopain) as *mut c_char;
+                }
             }
+        } else {
+            eprintln!("GetStrBkMot error");
         }
-    } else {
-        eprintln!("GetStrBkMot error");
+        p
     }
-    p
 }
 
-/*************************************************************************
-                    AffCarBank
-Affiche un caractere sur le port en entrée
-**************************************************************************/
-unsafe fn AffCarBank(
-    port: CGrafPtr,
-    car: c_short,
-    couleur1: c_short,
-    couleur2: c_short,
-    taille: c_short,
-) {
-    let mut gbak: CGrafPtr = null_mut();
-    AcamGetPortOffscreen(&mut gbak);
-    AcamSetPortOffscreen(port);
-    if car > 128 {
-        let mut p = GetStrBkMot(car);
+impl Sapiens {
+    /*************************************************************************
+                        AffCarBank
+    Affiche un caractere sur le port en entrée
+    **************************************************************************/
+    unsafe fn AffCarBank(
+        &mut self,
+        port: CGrafPtr,
+        car: c_short,
+        couleur1: c_short,
+        couleur2: c_short,
+        taille: c_short,
+    ) {
+        let _g = port::on(port);
+        if car > 128 {
+            let mut p = self.GetStrBkMot(car);
+            while *p != 0 {
+                self.AffCarBank(port, *p as u8 as c_short, couleur1, couleur2, taille);
+                p = p.add(1);
+            }
+        } else {
+            self.AffCarBrt(car, couleur1, couleur2, taille);
+            *addr_of_mut!(self.sapglob.colaff) += 1;
+        }
+    }
+
+    /*************************************************************************
+                        affcar
+    Affiche le caractere demandé à la position courante
+    Les caracteres >128 sont des macros substitions
+    **************************************************************************/
+    #[unsafe(no_mangle)]
+    pub(crate) unsafe extern "C" fn affcar(&mut self, car: c_short) {
+        self.AffCarBank(
+            self.sapwind.debecr,
+            car,
+            self.sapwcar.index_black,
+            self.sapwcar.index_brown,
+            14,
+        );
+    }
+
+    /*************************************************************************
+                        affcar10
+    Affiche le caractere demandé à la position courante
+    Les caracteres >128 sont des macros substitions
+    **************************************************************************/
+    #[unsafe(no_mangle)]
+    pub(crate) unsafe extern "C" fn affcar10(&mut self, car: c_short) {
+        self.AffCarBank(
+            self.sapwind.debecr,
+            car,
+            self.sapwcar.index_black,
+            self.sapwcar.index_gray,
+            10,
+        );
+    }
+
+    /*************************************************************************
+                        Car2
+    Affiche un caractere blanc sur une ombre noire
+    Le caractere est affiché sur debecr et n'est pas transféré
+    **************************************************************************/
+    #[unsafe(no_mangle)]
+    pub(crate) unsafe extern "C" fn car2(&mut self, car: c_short) {
+        self.AffCarBank(
+            self.sapwind.debecr,
+            car,
+            self.sapwcar.index_white,
+            self.sapwcar.index_black,
+            14,
+        );
+    }
+
+    /*************************************************************************
+                        affcarmess
+    Affiche le caractere demandé à la position courante
+    Les caracteres >128 sont des macros substitions
+    Le caractere est affiche sur debecr
+    **************************************************************************/
+    #[unsafe(no_mangle)]
+    pub(crate) unsafe extern "C" fn affcarmess(&mut self, car: c_short) {
+        let mut r = Rect::default();
+        let _g = port::on(self.sapwind.debecr);
+        let rgn: RgnHandle = NewRgn();
+        GetClip(rgn);
+        ClipRect(addr_of!(self.sapwmess.rMess));
+        /* Effacement et affichage curseur */
+        if car < 32 {
+            SetRect(
+                &mut r,
+                self.sapwcar.pt_ecr_car.h,
+                self.sapwcar.pt_ecr_car.v,
+                self.sapwcar.pt_ecr_car.h + 8,
+                self.sapwcar.pt_ecr_car.v + 11,
+            );
+            if car == 2 {
+                CarboniseSetPatBlack();
+                DoPaintRect(&mut r);
+            }
+            if car == 1 {
+                DoEraseRect(&mut r);
+            }
+        } else {
+            self.AffCarBank(
+                self.sapwind.debecr,
+                car,
+                self.sapwcar.index_black,
+                self.sapwcar.index_gray,
+                14,
+            );
+        }
+        SetClip(rgn);
+        DisposeRgn(rgn);
+    }
+
+    /***********************************************************************
+                            MOTLST2:Affiche Pour jauges
+    ***********************************************************************/
+    #[unsafe(no_mangle)]
+    pub(crate) unsafe extern "C" fn motlst2(&mut self, debut: *mut c_char) {
+        let mut p = debut as *mut u8;
         while *p != 0 {
-            AffCarBank(port, *p as u8 as c_short, couleur1, couleur2, taille);
+            self.car2(*p as c_short);
             p = p.add(1);
         }
-    } else {
-        AffCarBrt(car, couleur1, couleur2, taille);
-        *addr_of_mut!(colaff) += 1;
-    }
-    AcamSetPortOffscreen(gbak);
-}
-
-/*************************************************************************
-                    affcar
-Affiche le caractere demandé à la position courante
-Les caracteres >128 sont des macros substitions
-**************************************************************************/
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn affcar(car: c_short) {
-    AffCarBank(debecr, car, indexBlack, indexBrown, 14);
-}
-
-/*************************************************************************
-                    affcar10
-Affiche le caractere demandé à la position courante
-Les caracteres >128 sont des macros substitions
-**************************************************************************/
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn affcar10(car: c_short) {
-    AffCarBank(debecr, car, indexBlack, indexGray, 10);
-}
-
-/*************************************************************************
-                    Car2
-Affiche un caractere blanc sur une ombre noire
-Le caractere est affiché sur debecr et n'est pas transféré
-**************************************************************************/
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn car2(car: c_short) {
-    AffCarBank(debecr, car, indexWhite, indexBlack, 14);
-}
-
-/*************************************************************************
-                    affcarmess
-Affiche le caractere demandé à la position courante
-Les caracteres >128 sont des macros substitions
-Le caractere est affiche sur debecr
-**************************************************************************/
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn affcarmess(car: c_short) {
-    let mut r = Rect::default();
-    let mut gbak: CGrafPtr = null_mut();
-    AcamGetPortOffscreen(&mut gbak);
-    AcamSetPortOffscreen(debecr);
-    let rgn: RgnHandle = NewRgn();
-    GetClip(rgn);
-    ClipRect(addr_of!(rMess));
-    /* Effacement et affichage curseur */
-    if car < 32 {
-        SetRect(
-            &mut r,
-            ptEcrCar.h,
-            ptEcrCar.v,
-            ptEcrCar.h + 8,
-            ptEcrCar.v + 11,
-        );
-        if car == 2 {
-            CarboniseSetPatBlack();
-            DoPaintRect(&mut r);
-        }
-        if car == 1 {
-            DoEraseRect(&mut r);
-        }
-    } else {
-        AffCarBank(debecr, car, indexBlack, indexGray, 14);
-    }
-    SetClip(rgn);
-    DisposeRgn(rgn);
-    AcamSetPortOffscreen(gbak);
-}
-
-/***********************************************************************
-                        MOTLST2:Affiche Pour jauges
-***********************************************************************/
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn motlst2(debut: *mut c_char) {
-    let mut p = debut as *mut u8;
-    while *p != 0 {
-        car2(*p as c_short);
-        p = p.add(1);
     }
 }

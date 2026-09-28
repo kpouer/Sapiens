@@ -9,7 +9,7 @@
 use sys_locale::get_locale;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum LangMode {
+pub(crate) enum LangMode {
     Auto,
     Fr,
     En,
@@ -37,7 +37,7 @@ impl LangMode {
 }
 
 #[derive(Copy, Clone, PartialEq)]
-pub enum Langue {
+pub(crate) enum Langue {
     FR = 0,
     GB = 1,
     ES = 2,
@@ -69,7 +69,7 @@ fn system_lang() -> Langue {
 }
 
 /// Langue C effective (« langue » du jeu) pour le mode choisi.
-pub fn effective_lang(mode: LangMode) -> Langue {
+pub(crate) fn effective_lang(mode: LangMode) -> Langue {
     match mode {
         LangMode::Fr => Langue::FR,
         LangMode::En => Langue::GB,
@@ -90,7 +90,7 @@ fn lang_path() -> std::path::PathBuf {
     base.join("lang")
 }
 
-pub fn load_lang_mode() -> LangMode {
+pub(crate) fn load_lang_mode() -> LangMode {
     match std::fs::read_to_string(lang_path()) {
         Ok(s) => match s.trim() {
             "fr" => LangMode::Fr,
@@ -102,7 +102,7 @@ pub fn load_lang_mode() -> LangMode {
     }
 }
 
-pub fn save_lang_mode(mode: LangMode) {
+pub(crate) fn save_lang_mode(mode: LangMode) {
     let p = lang_path();
     let s = match mode {
         LangMode::Auto => "auto",
