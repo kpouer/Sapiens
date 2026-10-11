@@ -4,7 +4,7 @@
                         SauvePref
 ***********************************************************************/
 use crate::Sapiens;
-use crate::acam::{BackColor, CtoPstr, FrameRect, GetIndString, InsetRect, PtoCstr};
+use crate::acam::{BackColor, CtoPstr, FrameRect, GetIndString, PtoCstr};
 use crate::cbridge::{
     DialogPtr, MenuHandle, OSErr, fclose, fopen, fread, fwrite, gestaltFindFolderAttr, strcmp,
     strlen, times, whiteColor,
@@ -223,7 +223,7 @@ unsafe extern "C" fn VectAfficheMenuLangue(window: DialogPtr, itemid: c_short) {
             crate::cbridge::teJustLeft as c_short,
         );
         r.right += 14;
-        InsetRect(&raw mut r, -1, -1);
+        r.InsetRect(-1, -1);
         DrawArrowPopUp(&raw mut r);
         FrameRect(&r);
     }

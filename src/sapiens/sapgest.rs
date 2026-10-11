@@ -6,8 +6,8 @@
 ***********************************************************************/
 use crate::Sapiens;
 use crate::acam::{
-    CtoPstr, DisposPtr, FAUX, ForeColor, InsetRect, Line, MoveTo, PtInRect, PtoCstr, RGBForeColor,
-    SetPt, SetRect, TickCount, VRAI,
+    CtoPstr, DisposPtr, FAUX, ForeColor, Line, MoveTo, PtInRect, PtoCstr, RGBForeColor, SetPt,
+    SetRect, TickCount, VRAI,
 };
 use crate::cbridge::{
     CInfoPBRec, blackColor, fclose, fopen, getc, putc, remove, sprintf, strcpy, stricmp, strlen,
@@ -1451,21 +1451,21 @@ impl Sapiens {
 
             aire_zoom!(i);
             i += 1;
-            InsetRect(&mut r, 0, -2);
+            r.InsetRect(0, -2);
             r.left = 110;
             r.right = r.left + 26;
             self.Affmob3d(self.sapwind.mob3D + 34, &mut r, null_mut()); //Pierre
 
             aire_zoom!(i);
             i += 1;
-            InsetRect(&mut r, 0, -4);
+            r.InsetRect(0, -4);
             r.left = 110;
             r.right = r.left + 32;
             self.Affmob3d(self.sapwind.mob3D + 10, &mut r, null_mut()); //Arbre
 
             aire_zoom!(i);
             i += 1;
-            InsetRect(&mut r, 0, -4);
+            r.InsetRect(0, -4);
             r.left = 110;
             r.right = r.left + 32;
             self.Affmob3d(self.sapwind.mobAvplan + MOB_HERBE_BASE, &mut r, null_mut()); //Herbe

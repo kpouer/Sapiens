@@ -4,7 +4,7 @@
 **************************************************************************/
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
-use crate::acam::{FAUX, InsetRect, PtInRect, SetRect, TickCount, VRAI};
+use crate::acam::{FAUX, PtInRect, SetRect, TickCount, VRAI};
 use crate::cbridge::strcat;
 use crate::langue::Langue::{ES, FR};
 use crate::port;
@@ -628,7 +628,7 @@ impl Sapiens {
                 self.mot(c"...".as_ptr() as *mut c_char);
             }
             /* Transfert de la liste sur l'ecran */
-            InsetRect(&mut r, -48, -48);
+            r.InsetRect(-48, -48);
             self.TfrEcr(Some(&r));
         }
     }

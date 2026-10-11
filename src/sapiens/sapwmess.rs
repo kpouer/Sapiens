@@ -1,7 +1,7 @@
 /****************************************************************************
             Encadre et efface le message
 *****************************************************************************/
-use crate::acam::{InsetRect, SetRect};
+use crate::acam::SetRect;
 use crate::sapiens::sapwbrt::{CopyOffscreen, DoEraseRect, DoFrameRect, DoPenSize, DoScrollRect};
 use crate::shared::Rect;
 use crate::stubs::CarboniseInvalRect;
@@ -29,7 +29,7 @@ impl Sapiens {
     pub(crate) fn framebadass(&self) {
         let _g = port::on(self.sapwind.debecr);
         let mut r = self.sapwmess.rMess;
-        InsetRect(&mut r as *mut _ as *mut _, -1, -1);
+        r.InsetRect(-1, -1);
         DoEraseRect(&mut r);
         DoFrameRect(&mut r);
         DoPenSize(1, 1);

@@ -20,7 +20,7 @@ use crate::MOB_HERBE;
 use crate::MOB_IMPACT;
 use crate::MOB_MORT;
 use crate::MOB_SANG_A_TERRE;
-use crate::acam::{FAUX, InsetRect, OffsetRect, PtInRect, SetRect, VRAI};
+use crate::acam::{FAUX, OffsetRect, PtInRect, SetRect, VRAI};
 use crate::cbridge::{geneva, teJustLeft};
 use crate::port;
 use crate::sapiens::sapglob::{
@@ -287,7 +287,7 @@ impl Sapiens {
                 (c + 16 + 2) * ECHELLE as c_short,
                 (l + 16 + 2) * ECHELLE as c_short,
             );
-            InsetRect(&raw mut r, -1, -1);
+            r.InsetRect(-1, -1);
             DoFrameRect(&raw mut r);
             OffsetRect(&raw mut r, 0, 22 * ECHELLE as c_short);
             DoFrameRect(&raw mut r);
@@ -365,7 +365,7 @@ impl Sapiens {
                     OffsetRect(&raw mut raff, 640 - raff.right, 0);
                 }
                 DoEraseRect(&raw mut raff);
-                InsetRect(&raw mut raff, 4, 4);
+                raff.InsetRect(4, 4);
                 TextFont(geneva as c_short);
                 DoTextSize(9);
                 DoTextBox(
@@ -374,7 +374,7 @@ impl Sapiens {
                     &raw mut raff,
                     teJustLeft as c_short,
                 );
-                InsetRect(&raw mut raff, -4, -4);
+                raff.InsetRect(-4, -4);
                 DoFrameRect(&raw mut raff);
                 self.delai(60);
                 self.AttendsFinBouton();

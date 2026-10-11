@@ -2,7 +2,7 @@
 #![allow(non_upper_case_globals)]
 
 use crate::Sapiens;
-use crate::acam::{ForeColor, InsetRect, NewPtr, SectRect, SetRect};
+use crate::acam::{ForeColor, NewPtr, SectRect, SetRect};
 use crate::cbridge::{blackColor, whiteColor};
 use crate::port;
 use crate::sapiens::sapwbrt::{CopyOffscreen, DoFrameRect, SapiensCreeOffscreen};
@@ -273,7 +273,7 @@ impl Sapiens {
             ((160 + TAILLE_X_CARTE) * ECHELLE) as c_short,
             ((117 + TAILLE_Y_CARTE) * ECHELLE) as c_short,
         );
-        InsetRect(&mut r, -1, -1);
+        r.InsetRect(-1, -1);
         ForeColor(whiteColor as i16);
         DoFrameRect(&mut r);
         ForeColor(blackColor as i16);
