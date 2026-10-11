@@ -927,22 +927,6 @@ pub(crate) extern "C" fn SetRect(r: *mut Rect, left: i16, top: i16, right: i16, 
     }
 }
 
-impl Rect {
-    pub(crate) const fn OffsetRect(&mut self, dh: i16, dv: i16) {
-        self.left = self.left.wrapping_add(dh);
-        self.right = self.right.wrapping_add(dh);
-        self.top = self.top.wrapping_add(dv);
-        self.bottom = self.bottom.wrapping_add(dv);
-    }
-
-    pub(crate) const fn InsetRect(&mut self, dh: i16, dv: i16) {
-        self.left = self.left.wrapping_add(dh);
-        self.right = self.right.wrapping_sub(dh);
-        self.top = self.top.wrapping_add(dv);
-        self.bottom = self.bottom.wrapping_sub(dv);
-    }
-}
-
 #[unsafe(no_mangle)]
 pub(crate) extern "C" fn UnionRect(src1: *const Rect, src2: *const Rect, dst: *mut Rect) {
     if src1.is_null() || src2.is_null() || dst.is_null() {

@@ -69,6 +69,29 @@ pub(crate) struct Rect {
 }
 
 impl Rect {
+    pub(crate) const fn new(left: i16, top: i16, right: i16, bottom: i16) -> Self {
+        Rect {
+            top,
+            left,
+            bottom,
+            right,
+        }
+    }
+
+    pub(crate) const fn OffsetRect(&mut self, dh: i16, dv: i16) {
+        self.left = self.left.wrapping_add(dh);
+        self.right = self.right.wrapping_add(dh);
+        self.top = self.top.wrapping_add(dv);
+        self.bottom = self.bottom.wrapping_add(dv);
+    }
+
+    pub(crate) const fn InsetRect(&mut self, dh: i16, dv: i16) {
+        self.left = self.left.wrapping_add(dh);
+        self.right = self.right.wrapping_sub(dh);
+        self.top = self.top.wrapping_add(dv);
+        self.bottom = self.bottom.wrapping_sub(dv);
+    }
+
     pub(crate) fn is_empty(&self) -> bool {
         self.right <= self.left || self.bottom <= self.top
     }

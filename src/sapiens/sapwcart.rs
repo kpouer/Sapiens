@@ -159,10 +159,8 @@ impl Sapiens {
                              EffCarte
     Efface le fond de la carte
     ***********************************************************************/
-    unsafe fn EffCarte(&self) {
-        let mut r = Rect::default();
-        SetRect(
-            &mut r,
+    fn EffCarte(&self) {
+        let mut r = Rect::new(
             0,
             0,
             (TAILLE_X_CARTE * ECHELLE) as c_short,
