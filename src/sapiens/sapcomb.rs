@@ -288,9 +288,9 @@ impl Sapiens {
                 (l + 16 + 2) * ECHELLE as c_short,
             );
             r.InsetRect(-1, -1);
-            DoFrameRect(&raw mut r);
+            DoFrameRect(&r);
             r.OffsetRect(0, 22 * ECHELLE as c_short);
-            DoFrameRect(&raw mut r);
+            DoFrameRect(&r);
         }
     }
 
@@ -364,18 +364,18 @@ impl Sapiens {
                 if raff.right > 640 {
                     raff.OffsetRect(640 - raff.right, 0);
                 }
-                DoEraseRect(&raw mut raff);
+                DoEraseRect(&raff);
                 raff.InsetRect(4, 4);
                 TextFont(geneva as c_short);
                 DoTextSize(9);
                 DoTextBox(
                     chaine,
                     CStr::from_ptr(chaine).to_bytes().len() as c_short,
-                    &raw mut raff,
+                    &raff,
                     teJustLeft as c_short,
                 );
                 raff.InsetRect(-4, -4);
-                DoFrameRect(&raw mut raff);
+                DoFrameRect(&raff);
                 self.delai(60);
                 self.AttendsFinBouton();
                 self.TfrEcr(Some(&raff));

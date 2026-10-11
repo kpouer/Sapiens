@@ -54,9 +54,9 @@ impl Sapiens {
     /****************************************************************************
                 Effacement du message
     *****************************************************************************/
-    pub(crate) extern "C" fn efbadass(&mut self) {
+    pub(crate) fn efbadass(&self) {
         let _g = port::on(self.sapwind.debecr);
-        DoEraseRect(&raw mut self.sapwmess.rMess);
+        DoEraseRect(&self.sapwmess.rMess);
     }
 
     /****************************************************************************
@@ -82,8 +82,8 @@ impl Sapiens {
         );
         i = 0;
         while i < self.sapwmess.rMess.right - self.sapwmess.rMess.left {
-            DoScrollRect(&raw mut self.sapwmess.rMess, 8, 0, core::ptr::null_mut());
-            DoEraseRect(&raw mut reff);
+            DoScrollRect(&self.sapwmess.rMess, 8, 0, core::ptr::null_mut());
+            DoEraseRect(&reff);
             i += 8;
         }
         self.efbadass();

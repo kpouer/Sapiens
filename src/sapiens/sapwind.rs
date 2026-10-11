@@ -588,7 +588,7 @@ pub(crate) extern "C" fn DrawArrowPopUp(r: *mut Rect) {
             (*r).right - 1,
             (*r).bottom - 1,
         );
-        DoEraseRect(&raw mut box_);
+        DoEraseRect(&box_);
         while i < 6 {
             DoMoveTo((*r).right - 10 - i, y - i);
             DoLine(i * 2, 0);
@@ -1207,7 +1207,7 @@ impl Sapiens {
                 ForeColor(whiteColor as c_short);
             }
             DoPenSize(2, 2);
-            DoFrameRect(&raw mut r);
+            DoFrameRect(&r);
             ForeColor(blackColor as c_short);
             PenNormal();
             port::set(self.sapwind.mainWindow);
@@ -1217,7 +1217,7 @@ impl Sapiens {
                 ForeColor(whiteColor as c_short);
             }
             DoPenSize(2, 2);
-            DoFrameRect(&raw mut r);
+            DoFrameRect(&r);
             PenNormal();
             ForeColor(blackColor as c_short);
         }
@@ -1418,7 +1418,7 @@ impl Sapiens {
                         as c_short,
                     60,
                 );
-                let rdest = DoZoomRect(&raw mut r);
+                let rdest = DoZoomRect(&r);
                 DrawPicture(pict, &raw const rdest);
                 ReleaseResource(pict as Handle);
             }

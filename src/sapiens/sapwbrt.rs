@@ -144,14 +144,14 @@ impl Sapiens {
 /****************************************************************************
             DoZoomRect
 *****************************************************************************/
-pub(crate) fn DoZoomRect(rs: *mut Rect) -> Rect {
-    unsafe { port::zoomed(port::current(), &*rs) }
+pub(crate) fn DoZoomRect(rs: &Rect) -> Rect {
+    port::zoomed(port::current(), rs)
 }
 
 /****************************************************************************
             DoEraseRect
 *****************************************************************************/
-pub(crate) fn DoEraseRect(aire: *mut Rect) {
+pub(crate) fn DoEraseRect(aire: &Rect) {
     let r = DoZoomRect(aire);
     EraseRect(&r);
 }
@@ -159,14 +159,14 @@ pub(crate) fn DoEraseRect(aire: *mut Rect) {
 /****************************************************************************
             DoFrameRect
 *****************************************************************************/
-pub(crate) fn DoFrameRect(aire: *mut Rect) {
+pub(crate) fn DoFrameRect(aire: &Rect) {
     let r = DoZoomRect(aire);
     FrameRect(&r);
 }
 /****************************************************************************
             DoPaintRect
 *****************************************************************************/
-pub(crate) fn DoPaintRect(aire: *mut Rect) {
+pub(crate) fn DoPaintRect(aire: &Rect) {
     let mut r = DoZoomRect(aire);
     PaintRect(&mut r);
 }
@@ -223,20 +223,14 @@ pub(crate) extern "C" fn DoTextSize(x: c_short) {
 /****************************************************************************
             DoTextBox
 *****************************************************************************/
-pub(crate) fn DoTextBox(text: *mut c_char, length: c_short, box_: *mut Rect, just: c_short) {
+pub(crate) fn DoTextBox(text: *mut c_char, length: c_short, box_: &Rect, just: c_short) {
     let dest = DoZoomRect(box_);
     TextBox(text as *const c_void, length as i64, &dest, just);
 }
 /****************************************************************************
             DoScrollRect
 *****************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn DoScrollRect(
-    r: *mut Rect,
-    dh: c_short,
-    dv: c_short,
-    updateRgn: RgnHandle,
-) {
+pub(crate) fn DoScrollRect(r: &Rect, dh: c_short, dv: c_short, updateRgn: RgnHandle) {
     let z = port::zoom();
     let dest = DoZoomRect(r);
     let bdh = (dh as f32 * z) as i16;
@@ -1702,7 +1696,7 @@ impl Sapiens {
 => id de la picture,aire
 ***********************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn AffichePictDansAire(sapgest: &Sapgest, num: c_short, r: *mut Rect) {
+pub(crate) extern "C" fn AffichePictDansAire(sapgest: &Sapgest, num: c_short, r: &Rect) {
     let mut rpng = Rect::default();
     let mut pict: PicHandle = std::ptr::null_mut();
     let mut offscreen: CGrafPtr = std::ptr::null_mut();

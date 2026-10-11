@@ -219,7 +219,7 @@ unsafe extern "C" fn VectAfficheMenuLangue(window: DialogPtr, itemid: c_short) {
         DoTextBox(
             chaine.as_mut_ptr(),
             strlen(chaine.as_ptr()) as c_short,
-            &raw mut r,
+            &r,
             crate::cbridge::teJustLeft as c_short,
         );
         r.right += 14;
@@ -252,7 +252,7 @@ unsafe extern "C" fn VectFrameBouton(window: DialogPtr, item: c_short) {
 
     unsafe {
         GetRectItem(window, item, &raw mut r);
-        DoFrameRect(&raw mut r);
+        DoFrameRect(&r);
     }
 }
 
