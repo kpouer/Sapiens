@@ -10,8 +10,7 @@ use std::sync::atomic::Ordering;
 use crate::Sapiens;
 use crate::acam::{
     BackColor, BlockMove, CloseRgn, DisposeRgn, EmptyRect, EraseRgn, FAUX, FrameRgn,
-    FrameRoundRect, GetClip, LineTo, NewRgn, OffsetRect, OpenRgn, SetClip, SetRect, TickCount,
-    UnionRect, VRAI,
+    FrameRoundRect, GetClip, LineTo, NewRgn, OpenRgn, SetClip, SetRect, TickCount, UnionRect, VRAI,
 };
 use crate::cbridge::{strcat, strcpy, whiteColor};
 use crate::port;
@@ -411,8 +410,7 @@ impl Sapiens {
                 /* C'est un adversaire ... */
                 /* deja un message dit ??? */
                 if !EmptyRect(&raw const self.saprel.rBulleAdversaire) {
-                    OffsetRect(
-                        &mut r,
+                    r.OffsetRect(
                         0,
                         self.saprel.rBulleAdversaire.bottom
                             - self.saprel.rBulleAdversaire.top

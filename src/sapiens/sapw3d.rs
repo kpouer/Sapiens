@@ -12,9 +12,7 @@
 use std::os::raw::{c_char, c_long, c_short, c_uchar, c_ushort};
 use std::ptr::{addr_of, addr_of_mut, null_mut};
 
-use crate::acam::{
-    DisposPtr, EmptyRect, NewPtr, NewPtrClear, OffsetRect, Random, SetRect, TickCount,
-};
+use crate::acam::{DisposPtr, EmptyRect, NewPtr, NewPtrClear, Random, SetRect, TickCount};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapwbrt::RemplitZoneLignes;
 use crate::sapiens::sapwcvt::Sapwcvt;
@@ -946,13 +944,13 @@ impl Sapiens {
                     &mut r,
                     *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
                 );
-                OffsetRect(&mut r, largeur as c_short, 0);
+                r.OffsetRect(largeur as c_short, 0);
                 k += largeur;
             }
             r = rdep;
             k = 256 - offset as i32;
             while k > 0 {
-                OffsetRect(&mut r, -largeur as c_short, 0);
+                r.OffsetRect(-largeur as c_short, 0);
                 self.Affmob3d(
                     self.sapwind.mob3D + 25,
                     &mut r,
@@ -1004,13 +1002,13 @@ impl Sapiens {
                         &mut r,
                         *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
                     );
-                    OffsetRect(&mut r, largeur2 as c_short, 0);
+                    r.OffsetRect(largeur2 as c_short, 0);
                     kk += largeur2;
                 }
                 r = rdep;
                 kk = 256 - offset;
                 while kk > 0 {
-                    OffsetRect(&mut r, -largeur2 as c_short, 0);
+                    r.OffsetRect(-largeur2 as c_short, 0);
                     self.Affmob3d(
                         nmob,
                         &mut r,

@@ -12,7 +12,7 @@ use crate::Sapiens;
 use crate::acam::{
     BackColor, BlockMove, CheckItem, CtoPstr, DisableItem, DisposHandle, DrawMenuBar, EnableItem,
     FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, MaxMem, NewCWindow,
-    OffsetRect, PenNormal, PtoCstr, Random, SetMenuBar, SetRect, TickCount, VRAI,
+    PenNormal, PtoCstr, Random, SetMenuBar, SetRect, TickCount, VRAI,
 };
 use crate::cbridge::{
     DITL, DLOG, DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey,
@@ -1348,8 +1348,7 @@ impl SapWind {
                 (200.0 * ECHELLE as f32 * self.SapZoom) as c_short,
             );
             /* On la centre sur l'aire generale de l'ecran */
-            OffsetRect(
-                &raw mut rect,
+            rect.OffsetRect(
                 aireDevice.left + (aireDevice.right - aireDevice.left - largeur as c_short) / 2,
                 aireDevice.top
                     + (CarboniseGetMenuBarHeight() + 8)
@@ -1415,8 +1414,7 @@ impl Sapiens {
             pict = GetPicture(134) as PicHandle;
             if !pict.is_null() {
                 r = (**pict).picFrame;
-                OffsetRect(
-                    &raw mut r,
+                r.OffsetRect(
                     ((320 * ECHELLE as c_short as c_long - (r.right - r.left) as c_long) / 2)
                         as c_short,
                     60,

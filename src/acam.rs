@@ -927,20 +927,14 @@ pub(crate) extern "C" fn SetRect(r: *mut Rect, left: i16, top: i16, right: i16, 
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn OffsetRect(r: *mut Rect, dh: i16, dv: i16) {
-    if r.is_null() {
-        return;
-    }
-    unsafe {
-        (*r).left = (*r).left.wrapping_add(dh);
-        (*r).right = (*r).right.wrapping_add(dh);
-        (*r).top = (*r).top.wrapping_add(dv);
-        (*r).bottom = (*r).bottom.wrapping_add(dv);
-    }
-}
-
 impl Rect {
+    pub(crate) const fn OffsetRect(&mut self, dh: i16, dv: i16) {
+        self.left = self.left.wrapping_add(dh);
+        self.right = self.right.wrapping_add(dh);
+        self.top = self.top.wrapping_add(dv);
+        self.bottom = self.bottom.wrapping_add(dv);
+    }
+
     pub(crate) const fn InsetRect(&mut self, dh: i16, dv: i16) {
         self.left = self.left.wrapping_add(dh);
         self.right = self.right.wrapping_sub(dh);

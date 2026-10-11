@@ -20,7 +20,7 @@ use crate::MOB_HERBE;
 use crate::MOB_IMPACT;
 use crate::MOB_MORT;
 use crate::MOB_SANG_A_TERRE;
-use crate::acam::{FAUX, OffsetRect, PtInRect, SetRect, VRAI};
+use crate::acam::{FAUX, PtInRect, SetRect, VRAI};
 use crate::cbridge::{geneva, teJustLeft};
 use crate::port;
 use crate::sapiens::sapglob::{
@@ -289,7 +289,7 @@ impl Sapiens {
             );
             r.InsetRect(-1, -1);
             DoFrameRect(&raw mut r);
-            OffsetRect(&raw mut r, 0, 22 * ECHELLE as c_short);
+            r.OffsetRect(0, 22 * ECHELLE as c_short);
             DoFrameRect(&raw mut r);
         }
     }
@@ -359,10 +359,10 @@ impl Sapiens {
                 let mut raff: Rect = Rect::default();
                 SetRect(&raw mut raff, pt.h - 8, pt.v - 8, pt.h + 100, pt.v + 40);
                 if raff.left < 0 {
-                    OffsetRect(&raw mut raff, -raff.left, 0);
+                    raff.OffsetRect(-raff.left, 0);
                 }
                 if raff.right > 640 {
-                    OffsetRect(&raw mut raff, 640 - raff.right, 0);
+                    raff.OffsetRect(640 - raff.right, 0);
                 }
                 DoEraseRect(&raw mut raff);
                 raff.InsetRect(4, 4);
@@ -415,7 +415,7 @@ impl Sapiens {
                     self.AffStrVolatile(pt, &raw mut chaine as *mut c_char);
                 }
                 /* Dans le cadre de la tete */
-                OffsetRect(&raw mut r, 0, 44);
+                r.OffsetRect(0, 44);
                 if PtInRect(pt, &raw mut r) {
                     let mut chaine: [c_char; 255] = [0; 255];
                     if self.sapglob.peuple(i).vie <= 0 {

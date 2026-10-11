@@ -2,8 +2,8 @@
 #![allow(non_snake_case)]
 use crate::acam::{
     BackColor, BlockMove, CopyBits, DisposPtr, EmptyRect, EraseRect, ForeColor, FrameRect, Line,
-    LineTo, MoveTo, NewPtr, OffsetRect, PaintRect, PenMode, PenNormal, PenSize, RGBForeColor,
-    ScrollRect, SectRect, SetRect,
+    LineTo, MoveTo, NewPtr, PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect,
+    SectRect, SetRect,
 };
 use crate::cbridge::{
     DialogPtr, FILE, FixeChemin, GetMainDevice, RetraceRect, blackColor, fclose, fopen, fscanf,
@@ -1402,8 +1402,7 @@ pub(crate) extern "C" fn CopyOffscreen(
             /* Par defaut, le rectangle a transferer est la source */
             let mut rtfrs = realSource;
             /* On passe le bound destination dans le repere de la source */
-            OffsetRect(
-                &mut boundDest,
+            boundDest.OffsetRect(
                 realSource.left - realDest.left,
                 realSource.top - realDest.top,
             );
@@ -1413,8 +1412,7 @@ pub(crate) extern "C" fn CopyOffscreen(
             SectRect(rtfrs_p, &boundDest, rtfrs_p);
             /* On recalcule le rectangle destination */
             let mut rtfrd = rtfrs;
-            OffsetRect(
-                &mut rtfrd,
+            rtfrd.OffsetRect(
                 realDest.left - realSource.left,
                 realDest.top - realSource.top,
             );
