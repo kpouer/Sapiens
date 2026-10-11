@@ -1386,7 +1386,6 @@ impl Sapiens {
             let num: c_short;
             let mut pict: PicHandle = core::ptr::null_mut();
             let mut r: Rect = Rect::default();
-            let mut rdest: Rect = Rect::default();
             let mut chaine: [c_char; 255] = [0; 255];
             let timeBase: c_long;
             let firstInit: Boolean;
@@ -1419,8 +1418,8 @@ impl Sapiens {
                         as c_short,
                     60,
                 );
-                DoZoomRect(&raw mut r, &raw mut rdest);
-                DrawPicture(pict, &raw const rdest as *const Rect);
+                let rdest = DoZoomRect(&raw mut r);
+                DrawPicture(pict, &raw const rdest);
                 ReleaseResource(pict as Handle);
             }
             /* Affichage de la version de sapiens */
