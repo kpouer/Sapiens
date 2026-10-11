@@ -1627,18 +1627,6 @@ impl Sapglob {
             index: 0,
         }
     }
-
-    pub(crate) fn peuple_iter_mut(&mut self) -> PeupleIterMut<'_> {
-        PeupleIterMut {
-            iter: [
-                &mut self.sap1,
-                &mut self.sap2,
-                &mut self.sap3,
-                &mut self.sap4,
-            ]
-            .into_iter(),
-        }
-    }
 }
 
 pub(crate) struct PeupleIter<'a> {
@@ -1653,18 +1641,6 @@ impl<'a> Iterator for PeupleIter<'a> {
         let ret = self.sap.get(self.index).copied();
         self.index += usize::from(ret.is_some());
         ret
-    }
-}
-
-struct PeupleIterMut<'a> {
-    iter: std::array::IntoIter<&'a mut sap, 4>,
-}
-
-impl<'a> Iterator for PeupleIterMut<'a> {
-    type Item = &'a mut sap;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next()
     }
 }
 

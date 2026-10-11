@@ -50,14 +50,12 @@ impl Default for Random {
 
 impl Random {
     fn next_rand(&mut self) -> u64 {
-        unsafe {
-            let mut x = self.RAND_SEED;
-            x ^= x << 13;
-            x ^= x >> 7;
-            x ^= x << 17;
-            self.RAND_SEED = x;
-            x
-        }
+        let mut x = self.RAND_SEED;
+        x ^= x << 13;
+        x ^= x >> 7;
+        x ^= x << 17;
+        self.RAND_SEED = x;
+        x
     }
 
     pub(crate) fn Random(&mut self) -> i64 {

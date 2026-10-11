@@ -492,38 +492,36 @@ impl Sapiens {
         receptliste_id: ListeId,
         rang: c_ushort,
     ) -> c_ushort {
-        unsafe {
-            let taille = self.sapglob.liste_mut(orgliste_id).taille;
-            if rang < taille as c_ushort {
-                /*rang contenu dans liste de depart*/
-                let element = {
-                    let orgliste = self.sapglob.liste_mut(orgliste_id);
-                    (*orgliste).taille = (*orgliste).taille.wrapping_sub(1);
-                    (*orgliste).elements[rang as usize] as c_ushort
-                };
-                let erreur = self.ajoutl(receptliste_id, element);
-                if erreur != 0 {
-                    /*pas de place en reception*/
-                    let orgliste = self.sapglob.liste_mut(orgliste_id);
-                    (*orgliste).taille = (*orgliste).taille.wrapping_add(1);
-                    1 /*erreur*/
-                } else {
-                    /*on recompacte la liste d'origine*/
-                    let mut i: c_uchar = rang as c_uchar;
-                    let orgliste = self.sapglob.liste_mut(orgliste_id);
-                    while i != (*orgliste).taille {
-                        (*orgliste).elements[i as usize] = (*orgliste).elements[i as usize + 1];
-                        i = i.wrapping_add(1);
-                    }
-                    if i as c_ushort == rang {
-                        1 /*fin de liste*/
-                    } else {
-                        0
-                    }
-                }
+        let taille = self.sapglob.liste_mut(orgliste_id).taille;
+        if rang < taille as c_ushort {
+            /*rang contenu dans liste de depart*/
+            let element = {
+                let orgliste = self.sapglob.liste_mut(orgliste_id);
+                (*orgliste).taille = (*orgliste).taille.wrapping_sub(1);
+                (*orgliste).elements[rang as usize] as c_ushort
+            };
+            let erreur = self.ajoutl(receptliste_id, element);
+            if erreur != 0 {
+                /*pas de place en reception*/
+                let orgliste = self.sapglob.liste_mut(orgliste_id);
+                (*orgliste).taille = (*orgliste).taille.wrapping_add(1);
+                1 /*erreur*/
             } else {
-                255 /*erreur de logique rang pas ds la liste de depart*/
+                /*on recompacte la liste d'origine*/
+                let mut i: c_uchar = rang as c_uchar;
+                let orgliste = self.sapglob.liste_mut(orgliste_id);
+                while i != (*orgliste).taille {
+                    (*orgliste).elements[i as usize] = (*orgliste).elements[i as usize + 1];
+                    i = i.wrapping_add(1);
+                }
+                if i as c_ushort == rang {
+                    1 /*fin de liste*/
+                } else {
+                    0
+                }
             }
+        } else {
+            255 /*erreur de logique rang pas ds la liste de depart*/
         }
     }
 

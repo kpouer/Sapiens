@@ -187,18 +187,16 @@ Lit un point coloré dans le silex
 <= couleur 0-NB_COUL_SILEX
 ***********************************************************************/
 fn lit_sil(sapiens: &Sapiens, y: c_short, x: c_short) -> c_short {
-    unsafe {
-        let index = GetIndexPixBrt(sapiens.sapwind.Ecran1, x + 106, y);
-        let mut i: c_short = 0;
-        while i < NB_COUL_SILEX {
-            if sapiens.sapgest.palSilex[i as usize] as c_short == index {
-                return i;
-            }
-            i += 1;
+    let index = GetIndexPixBrt(sapiens.sapwind.Ecran1, x + 106, y);
+    let mut i: c_short = 0;
+    while i < NB_COUL_SILEX {
+        if sapiens.sapgest.palSilex[i as usize] as c_short == index {
+            return i;
         }
-        sapiens.Collapse("[Sapgest.lit_sil.1] Color not found");
-        0
+        i += 1;
     }
+    sapiens.Collapse("[Sapgest.lit_sil.1] Color not found");
+    0
 }
 
 /**********************************************************************
@@ -207,14 +205,12 @@ Ecrit un point coloré dans le silex
 => ligne (0-400) ,colonne (0-640),couleur 0-NB_COUL_SILEX
 ***********************************************************************/
 fn ecrit_sil(sapiens: &Sapiens, y: c_short, x: c_short, couleur: c_short) {
-    unsafe {
-        PlotIndexPixBrt(
-            sapiens.sapwind.Ecran1,
-            x + 106,
-            y,
-            sapiens.sapgest.palSilex[couleur as usize] as c_short,
-        );
-    }
+    PlotIndexPixBrt(
+        sapiens.sapwind.Ecran1,
+        x + 106,
+        y,
+        sapiens.sapgest.palSilex[couleur as usize] as c_short,
+    );
 }
 
 /***********************************************************************
@@ -231,25 +227,23 @@ impl Sapiens {
         if quoi > 0 {
             self.comment(114 + quoi as c_ushort);
         }
-        unsafe {
-            match quoi {
-                0 => self.DEF3D(),
-                /* Le bloc #ifdef OBSOLETE qui suivait n'est pas compile */
-                1 => {
-                    self.sapglob.xj = 22528;
-                    self.sapglob.yj = 21504;
-                }
-                2 => self.sceveu(11),
-                3 => self.sceveu(13),
-                4 => {
-                    self.ajoutl(ListeId::Liste1, 22);
-                    self.ajoutl(ListeId::Liste1, 25);
-                    self.ajoutl(ListeId::Liste1, 46);
-                }
-                5 => self.sceveu(12),
-                6 => cat(),
-                _ => {}
+        match quoi {
+            0 => self.DEF3D(),
+            /* Le bloc #ifdef OBSOLETE qui suivait n'est pas compile */
+            1 => {
+                self.sapglob.xj = 22528;
+                self.sapglob.yj = 21504;
             }
+            2 => self.sceveu(11),
+            3 => self.sceveu(13),
+            4 => {
+                self.ajoutl(ListeId::Liste1, 22);
+                self.ajoutl(ListeId::Liste1, 25);
+                self.ajoutl(ListeId::Liste1, 46);
+            }
+            5 => self.sceveu(12),
+            6 => cat(),
+            _ => {}
         }
     }
 
@@ -308,16 +302,14 @@ impl Sapiens {
     Affiche le mob suite
     ***********************************************************************/
     fn AfficheSuite(&self) {
-        unsafe {
-            self.affomb(
-                self.sapwind.mobFleches + 19,
-                AIRE_SUITE.top,
-                AIRE_SUITE.left,
-                2,
-                2,
-                true,
-            );
-        }
+        self.affomb(
+            self.sapwind.mobFleches + 19,
+            AIRE_SUITE.top,
+            AIRE_SUITE.left,
+            2,
+            2,
+            true,
+        );
     }
 }
 
@@ -339,9 +331,7 @@ impl Sapiens {
     Affiche le nucleus et la forme ideale du silex par dessus
     ***********************************************************************/
     fn TraceSilex(&mut self) {
-        unsafe {
-            let _g = port::on(self.sapwind.debecr);
-        }
+        let _g = port::on(self.sapwind.debecr);
         /* on efface la souris */
         self.eff_sour();
         /*dessin du noyau*/

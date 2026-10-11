@@ -95,7 +95,7 @@ impl Sapiens {
 /***********************************************************************
                 INCSOU:Recupere du souffle
 ***********************************************************************/
-pub(crate) extern "C" fn incsou(s: *mut sap, combien: c_ushort) {
+pub(crate) fn incsou(s: *mut sap, combien: c_ushort) {
     unsafe {
         let tfr = (*s).souffle.wrapping_add(combien as u8);
         if tfr > (*s).souffle {
@@ -110,7 +110,7 @@ impl Sapiens {
     /***********************************************************************
                     POSAN:
     ***********************************************************************/
-    pub(crate) extern "C" fn posan(&mut self, sap_id: SapId, mut anim: c_short) {
+    pub(crate) fn posan(&mut self, sap_id: SapId, mut anim: c_short) {
         anim -= 1;
         for i in 0..14 {
             if self.sapglob.debban[anim as usize][i] as u8 > 0 {
@@ -122,7 +122,7 @@ impl Sapiens {
     /***********************************************************************
                     ARRET:
     ***********************************************************************/
-    pub(crate) extern "C" fn arret(&mut self, sap_id: SapId) {
+    pub(crate) fn arret(&mut self, sap_id: SapId) {
         let sapiens = self.sapglob.sap_mut(sap_id);
         if ((*sapiens).vitesse & 2) == 0
         /*pas arret*/
@@ -134,7 +134,7 @@ impl Sapiens {
     /***********************************************************************
                             POSVIT:Positionne vitesse
     ***********************************************************************/
-    pub(crate) extern "C" fn posvit(&mut self, sap_id: SapId) {
+    pub(crate) fn posvit(&mut self, sap_id: SapId) {
         let hauteur = self.sapglob.sap(sap_id).hauteur;
         if hauteur == 0 {
             /*debout*/
@@ -182,7 +182,7 @@ impl Sapiens {
     /***********************************************************************
                     POGNE:Saisi objet à la main
     ***********************************************************************/
-    pub(crate) extern "C" fn pogne(&mut self, sap_id: SapId) {
+    pub(crate) fn pogne(&mut self, sap_id: SapId) {
         let sapiens = self.sapglob.sap_mut(sap_id);
         let mut objet = (*sapiens).objet + 1;
         if objet > 2 {
@@ -207,94 +207,90 @@ impl Sapiens {
     1:Tout le clan 1 est elimine
     2:Il en reste des deux clans
     */
-    pub(crate) extern "C" fn juge(&mut self) -> c_short {
-        unsafe {
-            let mut nbre: c_char = 0;
-            /* ----->Mise en place des plans */
-            for id in SapId::iter() {
-                if self.sapglob.peuple(id).vie != 0 {
-                    nbre += 1;
-                }
+    pub(crate) fn juge(&mut self) -> c_short {
+        let mut nbre: c_char = 0;
+        /* ----->Mise en place des plans */
+        for id in SapId::iter() {
+            if self.sapglob.peuple(id).vie != 0 {
+                nbre += 1;
             }
-            /*----->nbre est le nombre d'acteurs*/
-            /*------>si 4 alors deux couples sur deux plans*/
-            if nbre == 4 {
-                self.sapglob.profond[2] = 7;
-                self.sapglob.profond[3] = 7;
-            }
-            /*sinon tout sur le premier plan*/
-            else {
-                self.sapglob.profond[2] = 10;
-                self.sapglob.profond[3] = 10;
-            }
-            /*dans tout les cas*/
-            self.sapglob.profond[1] = 10;
-            self.sapglob.profond[0] = 10;
-            /*si reste seulement clan1 alors sur deux plans*/
-            let sap1 = &self.sapglob.sap1;
-            if nbre == 2 && sap1.vie != 0 && self.sapglob.sap3.vie != 0 {
-                self.sapglob.profond[2] = 7;
-            }
-            /*On positionne l'adversaire de l'ami*/
-            if self.sapglob.sap4.vie != 0 {
-                self.sapglob.sap3.adversaire = Some(SapId::Sap4);
-            } else {
-                self.sapglob.sap3.adversaire = Some(SapId::Sap2);
-            }
-            /*On teste si un des deux clans est vide*/
-            if sap1.vie + self.sapglob.sap3.vie == 0 {
-                return 1; /*clan 1 kaput*/
-            }
-            if self.sapglob.sap2.vie + self.sapglob.sap4.vie == 0 {
-                return 0; /*clan 2 kaput*/
-            }
-            /* Joueur toujours present ???*/
-            if sap1.vie != 0 {
-                if self.sapglob.sap3.vie != 0
-                /*il a de l'aide ????*/
-                {
-                    /*oui il a de l'aide*/
-                    self.sapglob.sap2.adversaire = Some(SapId::Sap1);
-                    self.sapglob.sap4.adversaire = Some(SapId::Sap3);
-                } else {
-                    /*non il est seul */
-                    self.sapglob.sap2.adversaire = Some(SapId::Sap1);
-                    self.sapglob.sap4.adversaire = Some(SapId::Sap1);
-                }
-            } else {
-                /*l'aide est seule */
-                self.sapglob.sap2.adversaire = Some(SapId::Sap3);
-                self.sapglob.sap4.adversaire = Some(SapId::Sap3);
-            }
-            2
         }
+        /*----->nbre est le nombre d'acteurs*/
+        /*------>si 4 alors deux couples sur deux plans*/
+        if nbre == 4 {
+            self.sapglob.profond[2] = 7;
+            self.sapglob.profond[3] = 7;
+        }
+        /*sinon tout sur le premier plan*/
+        else {
+            self.sapglob.profond[2] = 10;
+            self.sapglob.profond[3] = 10;
+        }
+        /*dans tout les cas*/
+        self.sapglob.profond[1] = 10;
+        self.sapglob.profond[0] = 10;
+        /*si reste seulement clan1 alors sur deux plans*/
+        let sap1 = &self.sapglob.sap1;
+        if nbre == 2 && sap1.vie != 0 && self.sapglob.sap3.vie != 0 {
+            self.sapglob.profond[2] = 7;
+        }
+        /*On positionne l'adversaire de l'ami*/
+        if self.sapglob.sap4.vie != 0 {
+            self.sapglob.sap3.adversaire = Some(SapId::Sap4);
+        } else {
+            self.sapglob.sap3.adversaire = Some(SapId::Sap2);
+        }
+        /*On teste si un des deux clans est vide*/
+        if sap1.vie + self.sapglob.sap3.vie == 0 {
+            return 1; /*clan 1 kaput*/
+        }
+        if self.sapglob.sap2.vie + self.sapglob.sap4.vie == 0 {
+            return 0; /*clan 2 kaput*/
+        }
+        /* Joueur toujours present ???*/
+        if sap1.vie != 0 {
+            if self.sapglob.sap3.vie != 0
+            /*il a de l'aide ????*/
+            {
+                /*oui il a de l'aide*/
+                self.sapglob.sap2.adversaire = Some(SapId::Sap1);
+                self.sapglob.sap4.adversaire = Some(SapId::Sap3);
+            } else {
+                /*non il est seul */
+                self.sapglob.sap2.adversaire = Some(SapId::Sap1);
+                self.sapglob.sap4.adversaire = Some(SapId::Sap1);
+            }
+        } else {
+            /*l'aide est seule */
+            self.sapglob.sap2.adversaire = Some(SapId::Sap3);
+            self.sapglob.sap4.adversaire = Some(SapId::Sap3);
+        }
+        2
     }
 
     /**********************************************************************
                             InitGenerique
     ***********************************************************************/
-    pub(crate) extern "C" fn InitGenerique(&self) {
-        unsafe {
-            let _g = port::on(self.sapwind.debecr);
-            /* on balaye les quatre sapiens*/
-            for id in SapId::iter() {
-                let l = self.sapglob.peuple(id).poslcoeur as c_short;
-                let c = self.sapglob.peuple(id).posccoeur as c_short;
-                self.affomb(self.sapwind.mobFace + 31, l - 2, c - 2, 4, 4, FAUX);
-                self.affomb(self.sapwind.mobFace + 30, l - 2 + 22, c - 2, 4, 4, FAUX);
-                let mut r: Rect = Rect::default();
-                SetRect(
-                    &raw mut r,
-                    (c - 2) * ECHELLE as c_short,
-                    (l - 2) * ECHELLE as c_short,
-                    (c + 16 + 2) * ECHELLE as c_short,
-                    (l + 16 + 2) * ECHELLE as c_short,
-                );
-                InsetRect(&raw mut r, -1, -1);
-                DoFrameRect(&raw mut r);
-                OffsetRect(&raw mut r, 0, 22 * ECHELLE as c_short);
-                DoFrameRect(&raw mut r);
-            }
+    pub(crate) fn InitGenerique(&self) {
+        let _g = port::on(self.sapwind.debecr);
+        /* on balaye les quatre sapiens*/
+        for id in SapId::iter() {
+            let l = self.sapglob.peuple(id).poslcoeur as c_short;
+            let c = self.sapglob.peuple(id).posccoeur as c_short;
+            self.affomb(self.sapwind.mobFace + 31, l - 2, c - 2, 4, 4, FAUX);
+            self.affomb(self.sapwind.mobFace + 30, l - 2 + 22, c - 2, 4, 4, FAUX);
+            let mut r: Rect = Rect::default();
+            SetRect(
+                &raw mut r,
+                (c - 2) * ECHELLE as c_short,
+                (l - 2) * ECHELLE as c_short,
+                (c + 16 + 2) * ECHELLE as c_short,
+                (l + 16 + 2) * ECHELLE as c_short,
+            );
+            InsetRect(&raw mut r, -1, -1);
+            DoFrameRect(&raw mut r);
+            OffsetRect(&raw mut r, 0, 22 * ECHELLE as c_short);
+            DoFrameRect(&raw mut r);
         }
     }
 
@@ -314,42 +310,39 @@ impl Sapiens {
     /**********************************************************************
                             GENERIQUE:
     ***********************************************************************/
-    pub(crate) extern "C" fn generique(&self, trace: Boolean) {
-        unsafe {
-            /* on balaye les quatre sapiens*/
-            for i in SapId::iter() {
-                let mut l = self.sapglob.peuple(i).poslcoeur as c_short;
-                let c = self.sapglob.peuple(i).posccoeur as c_short;
-                let f = self.sapglob.peuple(i).cross[FormeVue::TETE as usize] as c_short / 2;
-                /* fond vide */
-                /* Mort => une croix */
-                if (*self.sapglob.peuple(i)).vie == 0 {
-                    self.AffDebecr(self.sapwind.mobFace + 31, l - 2, c - 2, trace as c_short); /* rien*/
-                    self.affomb(DEBCRANE!(self.sapwind) + 10, l, c, 2, 2, trace); /* croix */
-                    self.affomb(DEBCRANE!(self.sapwind) + 10, l + 22, c, 2, 2, trace); /* croix */
+    pub(crate) fn generique(&self, trace: Boolean) {
+        /* on balaye les quatre sapiens*/
+        for i in SapId::iter() {
+            let mut l = self.sapglob.peuple(i).poslcoeur as c_short;
+            let c = self.sapglob.peuple(i).posccoeur as c_short;
+            let f = self.sapglob.peuple(i).cross[FormeVue::TETE as usize] as c_short / 2;
+            /* fond vide */
+            /* Mort => une croix */
+            if (*self.sapglob.peuple(i)).vie == 0 {
+                self.AffDebecr(self.sapwind.mobFace + 31, l - 2, c - 2, trace as c_short); /* rien*/
+                self.affomb(DEBCRANE!(self.sapwind) + 10, l, c, 2, 2, trace); /* croix */
+                self.affomb(DEBCRANE!(self.sapwind) + 10, l + 22, c, 2, 2, trace); /* croix */
+            } else {
+                /* Affichage de l'etat de la sante */
+                self.AffDebecr(self.sapwind.mobFace + 31, l - 2, c - 2, trace as c_short); /* rien*/
+                /* Ce n'est pas un animal */
+                if self.sapglob.present[i as usize] == 0 {
+                    self.AffDebecr(DEBCRANE!(self.sapwind) + 8, l, c, trace as c_short);
+                }
+                /* Affichage de la tete */
+                l += 22;
+                self.AffDebecr(self.sapwind.mobFace + 30, l - 2, c - 2, trace as c_short); /* rien*/
+                if self.sapglob.present[i as usize] != 0
+                    && (self.sapglob.present[i as usize] as c_short) < 5
+                {
+                    self.AffDebecr(DEBTETE!(self.sapwind) + f, l, c, trace as c_short);
                 } else {
-                    /* Affichage de l'etat de la sante */
-                    self.AffDebecr(self.sapwind.mobFace + 31, l - 2, c - 2, trace as c_short); /* rien*/
-                    /* Ce n'est pas un animal */
-                    if self.sapglob.present[i as usize] == 0 {
-                        self.AffDebecr(DEBCRANE!(self.sapwind) + 8, l, c, trace as c_short);
-                    }
-                    /* Affichage de la tete */
-                    l += 22;
-                    self.AffDebecr(self.sapwind.mobFace + 30, l - 2, c - 2, trace as c_short); /* rien*/
-                    if self.sapglob.present[i as usize] != 0
-                        && (self.sapglob.present[i as usize] as c_short) < 5
-                    {
-                        self.AffDebecr(DEBTETE!(self.sapwind) + f, l, c, trace as c_short);
-                    } else {
-                        self.AffDebecr(
-                            DEBBEST!(self.sapwind) + self.sapglob.present[i as usize] as c_short
-                                - 5,
-                            l,
-                            c,
-                            trace as c_short,
-                        );
-                    }
+                    self.AffDebecr(
+                        DEBBEST!(self.sapwind) + self.sapglob.present[i as usize] as c_short - 5,
+                        l,
+                        c,
+                        trace as c_short,
+                    );
                 }
             }
         }
@@ -395,7 +388,7 @@ impl Sapiens {
     L'utilisateur a clique dans la zone haute : on regarde si le click a eu lieu
     dans une case du generique
     ***********************************************************************/
-    pub(crate) extern "C" fn ClickInGenerique(&mut self, pt: Point) {
+    pub(crate) fn ClickInGenerique(&mut self, pt: Point) {
         unsafe {
             /* on balaye les quatre sapiens*/
             for i in SapId::iter() {
@@ -453,7 +446,7 @@ impl Sapiens {
     /***********************************************************************
                             ABANDO:Laisse objet qd mort
     ***********************************************************************/
-    pub(crate) extern "C" fn abando(&mut self, sap_id: SapId) {
+    pub(crate) fn abando(&mut self, sap_id: SapId) {
         unsafe {
             let animal = self.sapglob.sap_mut(sap_id).animal;
             if animal != 0 {
@@ -509,48 +502,46 @@ impl Sapiens {
                             DECVIE
     ***********************************************************************/
     pub(crate) fn decvie(&mut self, sap_id: SapId, valeur: ::std::os::raw::c_ushort) {
-        unsafe {
-            let vie = self.sapglob.sap(sap_id).vie;
-            if vie == 0 {
-                return;
-            }
-            let tfr = ((vie as i32) - (valeur as i32)) as std::os::raw::c_short;
-            if tfr > 0
-            /*si = 0 alors mort*/
+        let vie = self.sapglob.sap(sap_id).vie;
+        if vie == 0 {
+            return;
+        }
+        let tfr = ((vie as i32) - (valeur as i32)) as std::os::raw::c_short;
+        if tfr > 0
+        /*si = 0 alors mort*/
+        {
+            /*ok pas mort*/
             {
-                /*ok pas mort*/
-                {
-                    let s = self.sapglob.sap_mut(sap_id);
-                    (*s).vie = tfr as c_uchar;
-                    (*s).coeur = DEBCRANE!(self.sapwind) + (*s).vie as c_short / 32;
-                    (*s).cptrsouffle = 1;
-                }
-                /* On va tester si on frappe notre copain */
-                if sap_id == SapId::Sap3 && (self.sapglob.presence <= 0) && valeur > 0 {
-                    /*initialise le sap3 contre nous*/
-                    self.sapglob.presence = -1;
-                    self.sapglob.sap3clav = 0;
-                    let s = self.sapglob.sap_mut(sap_id);
-                    s.adversaire = Some(SapId::Sap1);
-                    self.sapglob.viecopain = 0;
+                let s = self.sapglob.sap_mut(sap_id);
+                (*s).vie = tfr as c_uchar;
+                (*s).coeur = DEBCRANE!(self.sapwind) + (*s).vie as c_short / 32;
+                (*s).cptrsouffle = 1;
+            }
+            /* On va tester si on frappe notre copain */
+            if sap_id == SapId::Sap3 && (self.sapglob.presence <= 0) && valeur > 0 {
+                /*initialise le sap3 contre nous*/
+                self.sapglob.presence = -1;
+                self.sapglob.sap3clav = 0;
+                let s = self.sapglob.sap_mut(sap_id);
+                s.adversaire = Some(SapId::Sap1);
+                self.sapglob.viecopain = 0;
+            }
+        } else {
+            /*ok,mort*/
+            let (animal, cross) = {
+                let s = self.sapglob.sap_mut(sap_id);
+                s.vie = 0;
+                (s.animal, s.cross[FormeVue::BUSTE as usize])
+            };
+            if animal <= 0 {
+                self.sapglob.sap_mut(sap_id).flg_mort = 16;
+                if cross < 8 {
+                    self.bruit(11);
+                } else {
+                    self.bruit(12); /*argh*/
                 }
             } else {
-                /*ok,mort*/
-                let (animal, cross) = {
-                    let s = self.sapglob.sap_mut(sap_id);
-                    s.vie = 0;
-                    (s.animal, s.cross[FormeVue::BUSTE as usize])
-                };
-                if animal <= 0 {
-                    self.sapglob.sap_mut(sap_id).flg_mort = 16;
-                    if cross < 8 {
-                        self.bruit(11);
-                    } else {
-                        self.bruit(12); /*argh*/
-                    }
-                } else {
-                    self.sapglob.sap_mut(sap_id).flg_mort = 1;
-                }
+                self.sapglob.sap_mut(sap_id).flg_mort = 1;
             }
         }
     }
@@ -559,90 +550,88 @@ impl Sapiens {
                         GER_MORT:Traite la mort
     *******************************************************************/
     fn ger_mort(&mut self, sap_id: SapId) {
-        unsafe {
-            /* Si il peut le plancher l'appelle */
-            let flg_mort = {
-                let (flg_mort, animal, hauteur) = {
-                    let s = self.sapglob.sap_mut(sap_id);
-                    if (*s).flg_mort == 0 {
-                        return;
-                    }
-                    (*s).flg_mort -= 1;
-                    (s.flg_mort, s.animal, s.hauteur)
-                };
-                if (flg_mort & 2) == 0 && animal == 0 {
-                    self.baisse(sap_id);
-                    if hauteur >= 3 {
-                        self.sapglob.sap_mut(sap_id).flg_mort = 0;
-                    }
-                }
-                flg_mort
-            };
-            /* on a atteint le sol */
-            if flg_mort == 0 {
-                if self.sapglob.presence == -1
-                /* on va baiser Juge*/
-                {
-                    self.sapglob.sap2.vie = self.sapglob.sap3.vie;
-                    self.sapglob.sap3.vie = 0;
-                }
-                if sap_id == SapId::Sap3 {
-                    if self.sapglob.presence == -1
-                    /*c'est moi qui le frappe */
-                    {
-                        self.sapglob.viecopain = 0;
-                        self.sapglob.chef = 0; /*On met le chef a zéro pour le scenar 4*/
-                        if self.sapglob.charisme > 10 {
-                            self.sapglob.charisme -= 10;
-                            self.sapglob.param[2] = self.sapglob.param[2].wrapping_sub(10);
-                        }
-                    } else {
-                        self.sapglob.viecopain -= 1;
-                    }
-                    self.sapglob.flefba = 0;
-                    if self.sapglob.viecopain == 0 {
-                        self.sapglob.present[2] = 0; /*degenere*/
-                        self.comment(112); /*Ton ami est mort*/
-                    } else {
-                        self.comment(111); /*Il est Evanoui*/
-                    }
-                }
-                if self.sapglob.presence as c_short != self.juge() {
-                    self.sapglob.fin = (self.juge() + 1) as c_uchar;
-                }
-                if sap_id != SapId::Sap1 {
-                    self.abando(sap_id); /*abandonne objets*/
-                }
-                /* Il est evanoui on l'affiche a terre*/
-                if self.sapglob.sap(sap_id).animal == 0 {
-                    /*c'est un homme*/
-                    let profond = self.sapglob.profond[self.sapglob.who as usize];
-                    let s = self.sapglob.sap_mut(sap_id);
-                    if (*s).colonne > LIMITE_DROITE {
-                        (*s).colonne = 1;
-                    }
-                    if (*s).sens != 0 {
-                        (*s).colonne += 8; /* pour centrer le mort */
-                    }
-                    let mob = MOB_MORT!(self.sapwind)
-                        + (*s).cross[FormeVue::TETE as usize] as c_short / 2;
-                    let display_x = 4 * ((*s).colonne + 8 * ((*s).colonne < 8) as c_short);
-                    let inverse = (*s).sens as c_short;
-                    self.AffmobConst(mob, 100 - 34 + profond as c_short, display_x, inverse);
-                } else {
-                    let profond = self.sapglob.profond[4];
-                    let s = self.sapglob.sap_mut(sap_id);
-                    let mob = MOB_ANIMAL_MORT!(self.sapwind) + (*s).animal as c_short - 1;
-                    let y = 100 - 20 + profond as c_short - 8 * ((*s).animal > 2) as c_short;
-                    let x = 4 * (*s).colonne;
-                    let inverse = (*s).sens as c_short;
-                    self.AffmobConst(mob, y, x, inverse);
-                }
-                /*on me met hors ecran*/
+        /* Si il peut le plancher l'appelle */
+        let flg_mort = {
+            let (flg_mort, animal, hauteur) = {
                 let s = self.sapglob.sap_mut(sap_id);
-                (*s).colonne = 200;
-                self.generique(VRAI);
+                if (*s).flg_mort == 0 {
+                    return;
+                }
+                (*s).flg_mort -= 1;
+                (s.flg_mort, s.animal, s.hauteur)
+            };
+            if (flg_mort & 2) == 0 && animal == 0 {
+                self.baisse(sap_id);
+                if hauteur >= 3 {
+                    self.sapglob.sap_mut(sap_id).flg_mort = 0;
+                }
             }
+            flg_mort
+        };
+        /* on a atteint le sol */
+        if flg_mort == 0 {
+            if self.sapglob.presence == -1
+            /* on va baiser Juge*/
+            {
+                self.sapglob.sap2.vie = self.sapglob.sap3.vie;
+                self.sapglob.sap3.vie = 0;
+            }
+            if sap_id == SapId::Sap3 {
+                if self.sapglob.presence == -1
+                /*c'est moi qui le frappe */
+                {
+                    self.sapglob.viecopain = 0;
+                    self.sapglob.chef = 0; /*On met le chef a zéro pour le scenar 4*/
+                    if self.sapglob.charisme > 10 {
+                        self.sapglob.charisme -= 10;
+                        self.sapglob.param[2] = self.sapglob.param[2].wrapping_sub(10);
+                    }
+                } else {
+                    self.sapglob.viecopain -= 1;
+                }
+                self.sapglob.flefba = 0;
+                if self.sapglob.viecopain == 0 {
+                    self.sapglob.present[2] = 0; /*degenere*/
+                    self.comment(112); /*Ton ami est mort*/
+                } else {
+                    self.comment(111); /*Il est Evanoui*/
+                }
+            }
+            if self.sapglob.presence as c_short != self.juge() {
+                self.sapglob.fin = (self.juge() + 1) as c_uchar;
+            }
+            if sap_id != SapId::Sap1 {
+                self.abando(sap_id); /*abandonne objets*/
+            }
+            /* Il est evanoui on l'affiche a terre*/
+            if self.sapglob.sap(sap_id).animal == 0 {
+                /*c'est un homme*/
+                let profond = self.sapglob.profond[self.sapglob.who as usize];
+                let s = self.sapglob.sap_mut(sap_id);
+                if (*s).colonne > LIMITE_DROITE {
+                    (*s).colonne = 1;
+                }
+                if (*s).sens != 0 {
+                    (*s).colonne += 8; /* pour centrer le mort */
+                }
+                let mob =
+                    MOB_MORT!(self.sapwind) + (*s).cross[FormeVue::TETE as usize] as c_short / 2;
+                let display_x = 4 * ((*s).colonne + 8 * ((*s).colonne < 8) as c_short);
+                let inverse = (*s).sens as c_short;
+                self.AffmobConst(mob, 100 - 34 + profond as c_short, display_x, inverse);
+            } else {
+                let profond = self.sapglob.profond[4];
+                let s = self.sapglob.sap_mut(sap_id);
+                let mob = MOB_ANIMAL_MORT!(self.sapwind) + (*s).animal as c_short - 1;
+                let y = 100 - 20 + profond as c_short - 8 * ((*s).animal > 2) as c_short;
+                let x = 4 * (*s).colonne;
+                let inverse = (*s).sens as c_short;
+                self.AffmobConst(mob, y, x, inverse);
+            }
+            /*on me met hors ecran*/
+            let s = self.sapglob.sap_mut(sap_id);
+            (*s).colonne = 200;
+            self.generique(VRAI);
         }
     }
 
@@ -653,41 +642,86 @@ impl Sapiens {
       en sortie la sagaie est positionnee
     */
     pub(crate) fn touchesag(&mut self, sap_id1: SapId, sap_id2: SapId) {
-        unsafe {
-            let mut test: c_short;
-            /*si l'adversaire est absent sa colonne >64*/
-            let (colsag, linsag, snssag, colonne2, hauteur2) = {
-                let s1 = self.sapglob.sap(sap_id1);
-                let s2 = self.sapglob.sap(sap_id2);
-                (s1.colsag, s1.linsag, s1.snssag, s2.colonne, s2.hauteur)
-            };
-            if colonne2 < 200 && snssag < 128 {
-                /*calcul de la colonne du test*/
-                test = colsag - colonne2;
-                if test < 0 {
-                    test = -test;
+        let mut test: c_short;
+        /*si l'adversaire est absent sa colonne >64*/
+        let (colsag, linsag, snssag, colonne2, hauteur2) = {
+            let s1 = self.sapglob.sap(sap_id1);
+            let s2 = self.sapglob.sap(sap_id2);
+            (s1.colsag, s1.linsag, s1.snssag, s2.colonne, s2.hauteur)
+        };
+        if colonne2 < 200 && snssag < 128 {
+            /*calcul de la colonne du test*/
+            test = colsag - colonne2;
+            if test < 0 {
+                test = -test;
+            }
+            if test < 3 && linsag > hautou[hauteur2 as usize] as c_short {
+                /*ok on touche*/
+                {
+                    let s2 = self.sapglob.sap_mut(sap_id2);
+                    s2.blockimpact = 4;
                 }
-                if test < 3 && linsag > hautou[hauteur2 as usize] as c_short {
-                    /*ok on touche*/
-                    {
-                        let s2 = self.sapglob.sap_mut(sap_id2);
-                        s2.blockimpact = 4;
+                self.bruit(1); /* La sagaie touche */
+                {
+                    let (linsag, colsag, snssag) = {
+                        let s1 = self.sapglob.sap(sap_id1);
+                        (s1.linsag, s1.colsag, s1.snssag)
+                    };
+                    let mut tfr = linsag;
+                    if tfr > 30 {
+                        tfr = 30; /*pas trop bas*/
                     }
-                    self.bruit(1); /* La sagaie touche */
-                    {
-                        let (linsag, colsag, snssag) = {
-                            let s1 = self.sapglob.sap(sap_id1);
-                            (s1.linsag, s1.colsag, s1.snssag)
-                        };
-                        let mut tfr = linsag;
-                        if tfr > 30 {
-                            tfr = 30; /*pas trop bas*/
-                        }
-                        let s2 = self.sapglob.sap_mut(sap_id2);
-                        s2.ligneimpact = tfr as c_uchar;
-                        s2.colimpact = (colsag + 6 * (snssag == 0) as c_short) as c_uchar;
-                    }
-                    self.decvie(sap_id2, 30);
+                    let s2 = self.sapglob.sap_mut(sap_id2);
+                    s2.ligneimpact = tfr as c_uchar;
+                    s2.colimpact = (colsag + 6 * (snssag == 0) as c_short) as c_uchar;
+                }
+                self.decvie(sap_id2, 30);
+                let (colsag, snssag) = {
+                    let s1 = self.sapglob.sap(sap_id1);
+                    (s1.colsag, s1.snssag)
+                };
+                self.AffmobConst(
+                    MOB_FLECHE!(self.sapwind),
+                    100 - 23 + self.sapglob.profond[self.sapglob.who as usize] as c_short,
+                    4 * colsag,
+                    snssag as c_short,
+                ); /*a terre*/
+                self.ajoutl(ListeId::Liste4, 45);
+                let s1 = self.sapglob.sap_mut(sap_id1);
+                s1.snssag = 255; /*degenere sagaie*/
+            } /*si touche*/
+        } /*si presence adversaire*/
+    }
+
+    /***********************************************************************
+                            GERSAG
+    ********************************************************************/
+    pub(crate) fn gersag(&mut self, sap_id1: SapId) {
+        let (colsag, snssag) = {
+            let s1 = self.sapglob.sap(sap_id1);
+            (s1.colsag, s1.snssag)
+        };
+        if snssag < 128
+        /*sagaie lancee !!!!!*/
+        {
+            /*si la sagaie est la on l'affiche*/
+            let tfr: c_short;
+            if snssag != 0 {
+                tfr = colsag + 3;
+            } else {
+                tfr = colsag - 3;
+            }
+            if tfr < 0 || tfr > 63 {
+                let s1 = self.sapglob.sap_mut(sap_id1);
+                (*s1).snssag = 255; /*degenere*/
+            } else {
+                let linsag = {
+                    let s1 = self.sapglob.sap_mut(sap_id1);
+                    (*s1).colsag = tfr;
+                    (*s1).linsag += 1;
+                    s1.linsag
+                };
+                if linsag > 45 {
                     let (colsag, snssag) = {
                         let s1 = self.sapglob.sap(sap_id1);
                         (s1.colsag, s1.snssag)
@@ -698,89 +732,40 @@ impl Sapiens {
                         4 * colsag,
                         snssag as c_short,
                     ); /*a terre*/
-                    self.ajoutl(ListeId::Liste4, 45);
-                    let s1 = self.sapglob.sap_mut(sap_id1);
-                    s1.snssag = 255; /*degenere sagaie*/
-                } /*si touche*/
-            } /*si presence adversaire*/
-        }
-    }
-
-    /***********************************************************************
-                            GERSAG
-    ********************************************************************/
-    pub(crate) fn gersag(&mut self, sap_id1: SapId) {
-        unsafe {
-            let (colsag, snssag) = {
-                let s1 = self.sapglob.sap(sap_id1);
-                (s1.colsag, s1.snssag)
-            };
-            if snssag < 128
-            /*sagaie lancee !!!!!*/
-            {
-                /*si la sagaie est la on l'affiche*/
-                let tfr: c_short;
-                if snssag != 0 {
-                    tfr = colsag + 3;
-                } else {
-                    tfr = colsag - 3;
-                }
-                if tfr < 0 || tfr > 63 {
+                    if self.random.Rnd() > 200 {
+                        self.ajoutl(ListeId::Liste4, SAGAIE as c_ushort);
+                    } else {
+                        self.ajoutl(ListeId::Liste4, 45);
+                    }
                     let s1 = self.sapglob.sap_mut(sap_id1);
                     (*s1).snssag = 255; /*degenere*/
                 } else {
-                    let linsag = {
-                        let s1 = self.sapglob.sap_mut(sap_id1);
-                        (*s1).colsag = tfr;
-                        (*s1).linsag += 1;
-                        s1.linsag
-                    };
-                    if linsag > 45 {
-                        let (colsag, snssag) = {
-                            let s1 = self.sapglob.sap(sap_id1);
-                            (s1.colsag, s1.snssag)
-                        };
-                        self.AffmobConst(
-                            MOB_FLECHE!(self.sapwind),
-                            100 - 23 + self.sapglob.profond[self.sapglob.who as usize] as c_short,
-                            4 * colsag,
-                            snssag as c_short,
-                        ); /*a terre*/
-                        if self.random.Rnd() > 200 {
-                            self.ajoutl(ListeId::Liste4, SAGAIE as c_ushort);
-                        } else {
-                            self.ajoutl(ListeId::Liste4, 45);
-                        }
-                        let s1 = self.sapglob.sap_mut(sap_id1);
-                        (*s1).snssag = 255; /*degenere*/
-                    } else {
-                        let profond = self.sapglob.profond[self.sapglob.who as usize];
-                        let s1 = self.sapglob.sap_mut(sap_id1);
-                        let y = (*s1).linsag + profond as c_short + 32;
-                        let x = 4 * (*s1).colsag;
-                        let mob_arrow = MOB_FLECHE!(self.sapwind);
-                        let inverse = (*s1).snssag as c_short;
-                        self.Affmob(mob_arrow, y, x, inverse);
-                    }
+                    let profond = self.sapglob.profond[self.sapglob.who as usize];
+                    let s1 = self.sapglob.sap_mut(sap_id1);
+                    let y = (*s1).linsag + profond as c_short + 32;
+                    let x = 4 * (*s1).colsag;
+                    let mob_arrow = MOB_FLECHE!(self.sapwind);
+                    let inverse = (*s1).snssag as c_short;
+                    self.Affmob(mob_arrow, y, x, inverse);
                 }
-                /* Si c'est le Joueur il peut toucher les 3 autres */
-                let adversaire = self.sapglob.sap(sap_id1).adversaire;
-                if self.sapglob.who == 0 {
-                    self.touchesag(sap_id1, SapId::Sap2);
-                    self.touchesag(sap_id1, SapId::Sap3);
-                    self.touchesag(sap_id1, SapId::Sap4);
-                } else if let Some(adversaire) = adversaire {
-                    /*Si ce n'est pas le joueur il ne vise qu'une personne en particulier*/
-                    self.touchesag(sap_id1, adversaire);
-                }
-            } /*sagaie existe ?*/
-        }
+            }
+            /* Si c'est le Joueur il peut toucher les 3 autres */
+            let adversaire = self.sapglob.sap(sap_id1).adversaire;
+            if self.sapglob.who == 0 {
+                self.touchesag(sap_id1, SapId::Sap2);
+                self.touchesag(sap_id1, SapId::Sap3);
+                self.touchesag(sap_id1, SapId::Sap4);
+            } else if let Some(adversaire) = adversaire {
+                /*Si ce n'est pas le joueur il ne vise qu'une personne en particulier*/
+                self.touchesag(sap_id1, adversaire);
+            }
+        } /*sagaie existe ?*/
     }
 
     /***********************************************************************
                               SAUT:
     ***********************************************************************/
-    pub(crate) extern "C" fn saut(&mut self, sap_id: SapId) {
+    pub(crate) fn saut(&mut self, sap_id: SapId) {
         let (hauteur, objet) = {
             let sapiens = self.sapglob.sap_mut(sap_id);
             if (*sapiens).hauteur == 0 || ((*sapiens).action & 128) != 0 {
@@ -803,7 +788,7 @@ impl Sapiens {
                     TOUCHE:
     ***********************************************************************/
     /* en entree le sap qui frappe et celui qui encaisse*/
-    pub(crate) extern "C" fn touche(&mut self, sap_id: SapId, sap_id2: SapId)
+    pub(crate) fn touche(&mut self, sap_id: SapId, sap_id2: SapId)
     /*s frappe s2 encaisse*/
     {
         unsafe {
@@ -944,25 +929,23 @@ impl Sapiens {
                             IMPAK:Gere les impacts
     ***********************************************************************/
     fn impak(&mut self, s_id: SapId) {
-        unsafe {
-            let profond = self.sapglob.profond[self.sapglob.who as usize];
+        let profond = self.sapglob.profond[self.sapglob.who as usize];
+        let s = self.sapglob.peuple_mut(s_id);
+        if (*s).blockimpact != 0 {
+            let mob = (*s).blockimpact as c_short + MOB_IMPACT!(self.sapwind);
+            let y = (*s).ligneimpact as c_short + profond as c_short + 32;
+            let x = 4 * (*s).colimpact as c_short;
+            let inverse = (*s).sens as c_short;
+            self.Affmob(mob, y, x, inverse);
             let s = self.sapglob.peuple_mut(s_id);
-            if (*s).blockimpact != 0 {
-                let mob = (*s).blockimpact as c_short + MOB_IMPACT!(self.sapwind);
-                let y = (*s).ligneimpact as c_short + profond as c_short + 32;
+            (*s).blockimpact -= 1;
+            /* sang par terre et dec impact */
+            if (*s).blockimpact == 0 {
+                let mob = MOB_SANG_A_TERRE!(self.sapwind);
+                let y = 100 + profond as c_short - 19 - self.random.myRandom(0, 4) as c_short;
                 let x = 4 * (*s).colimpact as c_short;
                 let inverse = (*s).sens as c_short;
-                self.Affmob(mob, y, x, inverse);
-                let s = self.sapglob.peuple_mut(s_id);
-                (*s).blockimpact -= 1;
-                /* sang par terre et dec impact */
-                if (*s).blockimpact == 0 {
-                    let mob = MOB_SANG_A_TERRE!(self.sapwind);
-                    let y = 100 + profond as c_short - 19 - self.random.myRandom(0, 4) as c_short;
-                    let x = 4 * (*s).colimpact as c_short;
-                    let inverse = (*s).sens as c_short;
-                    self.AffmobConst(mob, y, x, inverse);
-                }
+                self.AffmobConst(mob, y, x, inverse);
             }
         }
     }
@@ -998,37 +981,35 @@ impl Sapiens {
     /***********************************************************************
                             FIXCOLON
     ***********************************************************************/
-    pub(crate) extern "C" fn fixcolon(&mut self, sap_id: SapId) {
+    pub(crate) fn fixcolon(&mut self, sap_id: SapId) {
         /* si ami alors meme place*/
-        unsafe {
-            if sap_id == SapId::Sap3 {
-                let colonne = self.sapglob.sap1.colonne;
-                let sens = self.sapglob.sap1.sens;
-                let s = self.sapglob.sap_mut(sap_id);
-                (*s).colonne = colonne;
-                (*s).sens = sens;
-            } else {
-                let who = self.sapglob.who;
-                let s = self.sapglob.sap_mut(sap_id);
-                if (sap_id == SapId::Sap1) && ((*s).colonne > 64) {
-                    (*s).colonne = 2;
-                    (*s).sens = 1;
-                    return;
-                }
-                if (*s).colonne > 32 {
-                    if sap_id != SapId::Sap1 {
-                        (*s).sens = 0;
-                        (*s).colonne = 53 + who as c_short;
-                    } else {
-                        (*s).colonne = 55;
-                    }
+        if sap_id == SapId::Sap3 {
+            let colonne = self.sapglob.sap1.colonne;
+            let sens = self.sapglob.sap1.sens;
+            let s = self.sapglob.sap_mut(sap_id);
+            (*s).colonne = colonne;
+            (*s).sens = sens;
+        } else {
+            let who = self.sapglob.who;
+            let s = self.sapglob.sap_mut(sap_id);
+            if (sap_id == SapId::Sap1) && ((*s).colonne > 64) {
+                (*s).colonne = 2;
+                (*s).sens = 1;
+                return;
+            }
+            if (*s).colonne > 32 {
+                if sap_id != SapId::Sap1 {
+                    (*s).sens = 0;
+                    (*s).colonne = 53 + who as c_short;
                 } else {
-                    if sap_id != SapId::Sap1 {
-                        (*s).sens = 1;
-                        (*s).colonne = 5 - who as c_short;
-                    } else {
-                        (*s).colonne = 1;
-                    }
+                    (*s).colonne = 55;
+                }
+            } else {
+                if sap_id != SapId::Sap1 {
+                    (*s).sens = 1;
+                    (*s).colonne = 5 - who as c_short;
+                } else {
+                    (*s).colonne = 1;
                 }
             }
         }
@@ -1078,180 +1059,178 @@ impl Sapiens {
     pub(crate) fn prm(&mut self, sap_id: SapId, type_: ::std::os::raw::c_short) {
         let mut i;
 
-        unsafe {
+        {
             {
-                {
-                    let s = self.sapglob.sap_mut(sap_id);
-                    (*s).snssag = 255;
-                    (*s).fuite = 0;
-                    (*s).blockimpact = 0;
-                    (*s).flg_mort = 0;
-                }
-                /*On va redeterminer who pour iniune*/
-                if sap_id == SapId::Sap1 {
-                    self.sapglob.who = 0;
-                }
-                if sap_id == SapId::Sap2 {
-                    self.sapglob.who = 1;
-                }
-                if sap_id == SapId::Sap3 {
-                    self.sapglob.who = 2;
-                }
-                if sap_id == SapId::Sap4 {
-                    self.sapglob.who = 3;
-                }
-                self.sapglob.present[self.sapglob.who as usize] = type_ as c_char;
-                if type_ == 0 {
-                    /*non present*/
-                    let s = self.sapglob.sap_mut(sap_id);
-                    (*s).colonne = 200;
-                    (*s).vie = 0;
-                    return;
-                }
+                let s = self.sapglob.sap_mut(sap_id);
+                (*s).snssag = 255;
+                (*s).fuite = 0;
+                (*s).blockimpact = 0;
+                (*s).flg_mort = 0;
             }
-            if type_ < 0 || (self.sapglob.who == 2 && type_ < 5)
-            /*joueur ou aide humaine*/
-            {
-                if type_ == -1 {
-                    self.sapglob.sap1.vie = ((self.sapglob.vie as u32 * 50) / 256
-                        + (self.sapglob.bless as u32 * 93) / 256
-                        + (self.sapglob.faim as u32 * 46) / 256
-                        + (self.sapglob.soif as u32 * 46) / 256)
-                        as c_uchar;
-                } else {
-                    let viecopain = self.sapglob.viecopain;
-                    let s = self.sapglob.sap_mut(sap_id);
-                    (*s).vie = (viecopain as u16 * 60 + 20) as c_uchar;
-                }
-                {
-                    let s = self.sapglob.sap_mut(sap_id);
-                    if type_ < 0 || type_ >= 4 {
-                        // Note : bug dans le code original
-                        (*s).forcehache = 0;
-                    } else {
-                        (*s).forcehache = tribforce[type_ as usize - 1] as c_uchar;
-                    }
-                }
-                self.iniune(sap_id);
-                self.decvie(sap_id, 0); /* met en place coeur*/
+            /*On va redeterminer who pour iniune*/
+            if sap_id == SapId::Sap1 {
+                self.sapglob.who = 0;
+            }
+            if sap_id == SapId::Sap2 {
+                self.sapglob.who = 1;
+            }
+            if sap_id == SapId::Sap3 {
+                self.sapglob.who = 2;
+            }
+            if sap_id == SapId::Sap4 {
+                self.sapglob.who = 3;
+            }
+            self.sapglob.present[self.sapglob.who as usize] = type_ as c_char;
+            if type_ == 0 {
+                /*non present*/
+                let s = self.sapglob.sap_mut(sap_id);
+                (*s).colonne = 200;
+                (*s).vie = 0;
                 return;
             }
-            /*raz du cross du sap*/
-            {
+        }
+        if type_ < 0 || (self.sapglob.who == 2 && type_ < 5)
+        /*joueur ou aide humaine*/
+        {
+            if type_ == -1 {
+                self.sapglob.sap1.vie = ((self.sapglob.vie as u32 * 50) / 256
+                    + (self.sapglob.bless as u32 * 93) / 256
+                    + (self.sapglob.faim as u32 * 46) / 256
+                    + (self.sapglob.soif as u32 * 46) / 256)
+                    as c_uchar;
+            } else {
+                let viecopain = self.sapglob.viecopain;
                 let s = self.sapglob.sap_mut(sap_id);
-                for i in 0..7 {
-                    s.cross[i] = 0;
-                }
+                (*s).vie = (viecopain as u16 * 60 + 20) as c_uchar;
             }
-
-            if type_ < 5
-            /*homme*/
             {
-                loop {
-                    self.sapglob.sap_mut(sap_id).cross[FormeVue::BUSTE as usize] =
-                        (2 * self.random.myRandom(0, 4)) as c_uchar;
-                    if self.sapglob.chef > 0 && sap_id == SapId::Sap2 {
-                        i = 8; /*gueule de chef*/
-                        self.sapglob.sap_mut(sap_id).cross[FormeVue::BUSTE as usize] = 0;
-                    } else {
-                        if self.random.Rnd() < 100 {
-                            /*femelles*/
-                            i = 12 + (self.random.Rnd() / 43) * 2; /*selectionne tete*/
-                            self.sapglob.sap_mut(sap_id).cross[FormeVue::BUSTE as usize] += 8; /*buste*/
-                        } else {
-                            /*male*/
-                            i = 2 * (self.random.Rnd() & 3); /*gueule*/
-                        }
-                    }
-                    if type_ == 4
-                    /*hyene folle*/
-                    {
-                        i = 10; /*masque hyene folle*/
-                    }
-                    if i != self.sapglob.sap1.cross[FormeVue::TETE as usize] as i16 {
-                        break;
-                    }
-                }
                 let s = self.sapglob.sap_mut(sap_id);
-                s.cross[FormeVue::TETE as usize] = i as c_uchar; /*tete*/
-                /*masse ou hache*/
-                s.cross[FormeVue::ARME as usize] = (self.random.Rnd() & 1) as c_uchar;
-            }
-
-            /*si homme ou bestiole*/
-
-            /*colonne sap2*/
-            {
-                let colonne = self.sapglob.sap1.colonne;
-                let s = self.sapglob.sap_mut(sap_id);
-                if colonne > 32 {
-                    (*s).colonne = 2;
+                if type_ < 0 || type_ >= 4 {
+                    // Note : bug dans le code original
+                    (*s).forcehache = 0;
                 } else {
-                    (*s).colonne = 54;
+                    (*s).forcehache = tribforce[type_ as usize - 1] as c_uchar;
                 }
             }
             self.iniune(sap_id);
-            /*si Homme*/
-            if type_ <= 4 {
-                let agress = self.sapglob.agress;
-                let chef = self.sapglob.chef;
-                let tribu = self.sapglob.tribu;
-                let s = self.sapglob.sap_mut(sap_id);
-                s.nbresag = 4; /*4 sagaies*/
-                s.agressivite = (agress as u16 / 256) as c_uchar;
-                s.forcehache = tribforce[type_ as usize - 1] as c_uchar;
-                s.vie = tribvie[type_ as usize - 1] as c_uchar;
-                if chef > 0 && tribu == 1
-                /*si notre chef alors dur dur*/
-                {
-                    (*s).agressivite = 255;
-                    (*s).forcehache = 40;
-                    (*s).vie = 200;
-                }
-                if type_ == 0
-                /*personne*/
-                {
-                    (*s).sapanim[0] = std::ptr::null_mut(); /*pas généré*/
-                    (*s).sapanim[1] = std::ptr::null_mut();
-                    (*s).colonne = 200;
-                    (*s).vie = 0;
-                }
-                self.posvit(sap_id);
-            } else
-            /*bestiole*/
-            {
-                if type_ >= 7 {
-                    let x = addr_of_mut!(self.sapglob.anlap1) as *mut c_char;
-                    let s = self.sapglob.sap_mut(sap_id);
-                    (*s).sapanim[1] = x;
-                } else {
-                    let x = addr_of_mut!(self.sapglob.anlou1) as *mut c_char;
-                    let s = self.sapglob.sap_mut(sap_id);
-                    (*s).sapanim[1] = x;
-                }
-                let s = self.sapglob.sap_mut(sap_id);
-                (*s).sapanim[0] = (*s).sapanim[1];
-                (*s).sapanim[2] = std::ptr::null_mut(); /*plus d'animation apres 1*/
-                (*s).sapanim[3] = std::ptr::null_mut();
-                (*s).cross[0] = (((type_ & 1) ^ 1) * 4) as c_uchar;
-                (*s).animal = ((type_ - 5) ^ 2) + 1;
-                (*s).vie = bestvie[type_ as usize - 5] as c_uchar;
-                (*s).ligne = bestlin[type_ as usize - 5] as c_uchar;
-                (*s).hauteur = besthaut[type_ as usize - 5] as c_uchar;
-                (*s).agressivite = bestagress[type_ as usize - 5] as c_uchar;
-                (*s).vitesse = 0; /*fuite à 0*/
-                (*s).objet = 1; /*pour frappe*/
-                (*s).forcehache = 10; /*dents*/
-            }
             self.decvie(sap_id, 0); /* met en place coeur*/
-            self.generique(FAUX);
+            return;
         }
+        /*raz du cross du sap*/
+        {
+            let s = self.sapglob.sap_mut(sap_id);
+            for i in 0..7 {
+                s.cross[i] = 0;
+            }
+        }
+
+        if type_ < 5
+        /*homme*/
+        {
+            loop {
+                self.sapglob.sap_mut(sap_id).cross[FormeVue::BUSTE as usize] =
+                    (2 * self.random.myRandom(0, 4)) as c_uchar;
+                if self.sapglob.chef > 0 && sap_id == SapId::Sap2 {
+                    i = 8; /*gueule de chef*/
+                    self.sapglob.sap_mut(sap_id).cross[FormeVue::BUSTE as usize] = 0;
+                } else {
+                    if self.random.Rnd() < 100 {
+                        /*femelles*/
+                        i = 12 + (self.random.Rnd() / 43) * 2; /*selectionne tete*/
+                        self.sapglob.sap_mut(sap_id).cross[FormeVue::BUSTE as usize] += 8; /*buste*/
+                    } else {
+                        /*male*/
+                        i = 2 * (self.random.Rnd() & 3); /*gueule*/
+                    }
+                }
+                if type_ == 4
+                /*hyene folle*/
+                {
+                    i = 10; /*masque hyene folle*/
+                }
+                if i != self.sapglob.sap1.cross[FormeVue::TETE as usize] as i16 {
+                    break;
+                }
+            }
+            let s = self.sapglob.sap_mut(sap_id);
+            s.cross[FormeVue::TETE as usize] = i as c_uchar; /*tete*/
+            /*masse ou hache*/
+            s.cross[FormeVue::ARME as usize] = (self.random.Rnd() & 1) as c_uchar;
+        }
+
+        /*si homme ou bestiole*/
+
+        /*colonne sap2*/
+        {
+            let colonne = self.sapglob.sap1.colonne;
+            let s = self.sapglob.sap_mut(sap_id);
+            if colonne > 32 {
+                (*s).colonne = 2;
+            } else {
+                (*s).colonne = 54;
+            }
+        }
+        self.iniune(sap_id);
+        /*si Homme*/
+        if type_ <= 4 {
+            let agress = self.sapglob.agress;
+            let chef = self.sapglob.chef;
+            let tribu = self.sapglob.tribu;
+            let s = self.sapglob.sap_mut(sap_id);
+            s.nbresag = 4; /*4 sagaies*/
+            s.agressivite = (agress as u16 / 256) as c_uchar;
+            s.forcehache = tribforce[type_ as usize - 1] as c_uchar;
+            s.vie = tribvie[type_ as usize - 1] as c_uchar;
+            if chef > 0 && tribu == 1
+            /*si notre chef alors dur dur*/
+            {
+                (*s).agressivite = 255;
+                (*s).forcehache = 40;
+                (*s).vie = 200;
+            }
+            if type_ == 0
+            /*personne*/
+            {
+                (*s).sapanim[0] = std::ptr::null_mut(); /*pas généré*/
+                (*s).sapanim[1] = std::ptr::null_mut();
+                (*s).colonne = 200;
+                (*s).vie = 0;
+            }
+            self.posvit(sap_id);
+        } else
+        /*bestiole*/
+        {
+            if type_ >= 7 {
+                let x = addr_of_mut!(self.sapglob.anlap1) as *mut c_char;
+                let s = self.sapglob.sap_mut(sap_id);
+                (*s).sapanim[1] = x;
+            } else {
+                let x = addr_of_mut!(self.sapglob.anlou1) as *mut c_char;
+                let s = self.sapglob.sap_mut(sap_id);
+                (*s).sapanim[1] = x;
+            }
+            let s = self.sapglob.sap_mut(sap_id);
+            (*s).sapanim[0] = (*s).sapanim[1];
+            (*s).sapanim[2] = std::ptr::null_mut(); /*plus d'animation apres 1*/
+            (*s).sapanim[3] = std::ptr::null_mut();
+            (*s).cross[0] = (((type_ & 1) ^ 1) * 4) as c_uchar;
+            (*s).animal = ((type_ - 5) ^ 2) + 1;
+            (*s).vie = bestvie[type_ as usize - 5] as c_uchar;
+            (*s).ligne = bestlin[type_ as usize - 5] as c_uchar;
+            (*s).hauteur = besthaut[type_ as usize - 5] as c_uchar;
+            (*s).agressivite = bestagress[type_ as usize - 5] as c_uchar;
+            (*s).vitesse = 0; /*fuite à 0*/
+            (*s).objet = 1; /*pour frappe*/
+            (*s).forcehache = 10; /*dents*/
+        }
+        self.decvie(sap_id, 0); /* met en place coeur*/
+        self.generique(FAUX);
     }
 
     /***********************************************************************
                     BAISSE:
     ***********************************************************************/
-    pub(crate) extern "C" fn baisse(&mut self, sap_id: SapId) {
+    pub(crate) fn baisse(&mut self, sap_id: SapId) {
         let (mut hauteur, objet) = {
             let s = self.sapglob.sap(sap_id);
             (s.hauteur, s.objet)
@@ -1273,48 +1252,46 @@ impl Sapiens {
     /***********************************************************************
                     ACTBRA:
     **********************************************************************/
-    pub(crate) extern "C" fn actbra(&mut self, sap_id: SapId) {
-        unsafe {
-            let (action, souffle) = {
-                let s = self.sapglob.sap(sap_id);
-                (s.action, s.souffle)
-            };
-            if (action & 3) == 0 && (souffle > 32 || self.sapglob.who != 0)
-            /*deja action (ou essouffle)*/
-            {
-                if sap_id == SapId::Sap1 {
-                    self.decsou(sap_id, 20);
-                }
-                let objet = {
-                    let s = self.sapglob.sap_mut(sap_id);
-                    (*s).action = (*s).action | ((*s).objet + 1);
-                    if (*s).objet == 2
-                    /*objet est la sagaie*/
+    pub(crate) fn actbra(&mut self, sap_id: SapId) {
+        let (action, souffle) = {
+            let s = self.sapglob.sap(sap_id);
+            (s.action, s.souffle)
+        };
+        if (action & 3) == 0 && (souffle > 32 || self.sapglob.who != 0)
+        /*deja action (ou essouffle)*/
+        {
+            if sap_id == SapId::Sap1 {
+                self.decsou(sap_id, 20);
+            }
+            let objet = {
+                let s = self.sapglob.sap_mut(sap_id);
+                (*s).action = (*s).action | ((*s).objet + 1);
+                if (*s).objet == 2
+                /*objet est la sagaie*/
+                {
+                    if (*s).snssag > 128 && (*s).nbresag != 0
+                    /*deja sagaie ? */
                     {
-                        if (*s).snssag > 128 && (*s).nbresag != 0
-                        /*deja sagaie ? */
-                        {
-                            (*s).colsag = (*s).colonne + 2;
-                            (*s).nbresag -= 1;
-                            (*s).linsag = hautlin[(*s).hauteur as usize] as c_short;
-                            (*s).snssag = (*s).sens as c_short;
-                        }
-                        /*si sagaie n'existe pas deja*/
-                        else {
-                            return;
-                        }
-                    } /*si objet =sagaie*/
-                    s.objet
-                };
-                self.posan(sap_id, objet as c_short + 3);
-            } /*si souffle correct*/
-        }
+                        (*s).colsag = (*s).colonne + 2;
+                        (*s).nbresag -= 1;
+                        (*s).linsag = hautlin[(*s).hauteur as usize] as c_short;
+                        (*s).snssag = (*s).sens as c_short;
+                    }
+                    /*si sagaie n'existe pas deja*/
+                    else {
+                        return;
+                    }
+                } /*si objet =sagaie*/
+                s.objet
+            };
+            self.posan(sap_id, objet as c_short + 3);
+        } /*si souffle correct*/
     }
 
     /***********************************************************************
                     DEPLAT:Deplacement de vue laterale
     ***********************************************************************/
-    pub(crate) extern "C" fn deplat(&mut self) {
+    pub(crate) fn deplat(&mut self) {
         unsafe {
             /*position en colonne*/
             let sap1 = &mut self.sapglob.sap1;
@@ -1336,7 +1313,7 @@ impl Sapiens {
     **********************************************************************
     => Pointeur sur le sap a etudier
     <= 1 si il faut le rappeler immediatement 0 sinon*/
-    pub(crate) extern "C" fn mvtsap(&mut self, sap_id: SapId) -> c_short {
+    pub(crate) fn mvtsap(&mut self, sap_id: SapId) -> c_short {
         unsafe {
             let mut nummob: c_short = 0;
             let mut tfr: c_char;
@@ -1603,7 +1580,7 @@ impl Sapiens {
     /***********************************************************************
                             DECVIT:Diminue vitesse
     ***********************************************************************/
-    pub(crate) extern "C" fn decvit(&mut self, sap_id: SapId) {
+    pub(crate) fn decvit(&mut self, sap_id: SapId) {
         let sapiens = self.sapglob.sap_mut(sap_id);
         let tfrvit = (*sapiens).vitesse.wrapping_sub(1);
         if tfrvit != 0 {
@@ -1615,7 +1592,7 @@ impl Sapiens {
     /***********************************************************************
                             INCVIT:Augmente vitesse
     ***********************************************************************/
-    pub(crate) extern "C" fn incvit(&mut self, sap_id: SapId) {
+    pub(crate) fn incvit(&mut self, sap_id: SapId) {
         let sapiens = self.sapglob.sap_mut(sap_id);
         let tfrvit = (*sapiens).vitesse.wrapping_add(1);
         if tfrvit < 5
@@ -1629,7 +1606,7 @@ impl Sapiens {
     /***********************************************************************
                     CLAV:Clavier durant combat
     ***********************************************************************/
-    pub(crate) extern "C" fn clav(&mut self, sap_id: SapId, caract: c_short) {
+    pub(crate) fn clav(&mut self, sap_id: SapId, caract: c_short) {
         if caract == 0 {
             return;
         }
@@ -1660,93 +1637,91 @@ impl Sapiens {
     ***********************************************************************/
     /* sap 1 c'est le joueur sap3 le copain*/
     pub(crate) fn gercop(&mut self, scop_id: SapId, type_: c_short) {
-        unsafe {
-            let colonne = self.sapglob.sap_mut(scop_id).colonne;
-            let mut sens: c_uchar = 0;
-            {
-                let sap1 = &self.sapglob.sap1;
-                self.sapglob.distsp = sap1.colonne - colonne; /*distance entre saps*/
-            }
-            if self.sapglob.distsp < 0
-            /*valeur absolue*/
-            {
-                self.sapglob.distsp = -self.sapglob.distsp;
-                sens = 0;
-            } else {
-                sens = 1;
-            }
+        let colonne = self.sapglob.sap_mut(scop_id).colonne;
+        let mut sens: c_uchar = 0;
+        {
+            let sap1 = &self.sapglob.sap1;
+            self.sapglob.distsp = sap1.colonne - colonne; /*distance entre saps*/
+        }
+        if self.sapglob.distsp < 0
+        /*valeur absolue*/
+        {
+            self.sapglob.distsp = -self.sapglob.distsp;
+            sens = 0;
+        } else {
+            sens = 1;
+        }
 
-            /*dans le cas ou on gere le sap3 seul avec nous*/
-            /*si le sap1 est mort alors il va tendre a sortir*/
-            if self.sapglob.distsp > 3
-            /*encore loin*/
+        /*dans le cas ou on gere le sap3 seul avec nous*/
+        /*si le sap1 est mort alors il va tendre a sortir*/
+        if self.sapglob.distsp > 3
+        /*encore loin*/
+        {
+            self.sapglob.sap_mut(scop_id).sens = sens; /*vers le joueur*/
+            if type_ != 0
+            /* c'est un humain*/
             {
-                self.sapglob.sap_mut(scop_id).sens = sens; /*vers le joueur*/
-                if type_ != 0
-                /* c'est un humain*/
-                {
-                    if self.sapglob.sap(scop_id).hauteur != 0 {
-                        self.saut(scop_id); /*si baisse alors monte*/
-                    } else {
-                        self.avasap(scop_id); /*il marche*/
-                    }
-                } else
-                /*c'est une bestiole*/
-                {
-                    if (self.sapglob.present[self.sapglob.who as usize] as c_short) > 6 {
-                        let x = addr_of_mut!(self.sapglob.anlap2) as *mut c_char;
-                        let scop = self.sapglob.sap_mut(scop_id);
-                        (*scop).sapanim[1] = x;
-                    } else {
-                        let x = addr_of_mut!(self.sapglob.anlou2) as *mut c_char;
-                        let scop = self.sapglob.sap_mut(scop_id);
-                        (*scop).sapanim[1] = x;
-                    }
+                if self.sapglob.sap(scop_id).hauteur != 0 {
+                    self.saut(scop_id); /*si baisse alors monte*/
+                } else {
+                    self.avasap(scop_id); /*il marche*/
+                }
+            } else
+            /*c'est une bestiole*/
+            {
+                if (self.sapglob.present[self.sapglob.who as usize] as c_short) > 6 {
+                    let x = addr_of_mut!(self.sapglob.anlap2) as *mut c_char;
+                    let scop = self.sapglob.sap_mut(scop_id);
+                    (*scop).sapanim[1] = x;
+                } else {
+                    let x = addr_of_mut!(self.sapglob.anlou2) as *mut c_char;
+                    let scop = self.sapglob.sap_mut(scop_id);
+                    (*scop).sapanim[1] = x;
                 }
             }
-            /* deja present*/
-            else {
-                if type_ == 0
-                /*si bestiole*/
-                {
-                    let sens = self.sapglob.sap1.sens;
-                    {
-                        let scop = self.sapglob.sap_mut(scop_id);
-                        (*scop).sens = sens;
-                    }
-                    /*arrete*/
-                    if (self.sapglob.present[self.sapglob.who as usize] as c_short) > 6 {
-                        let x = addr_of_mut!(self.sapglob.anlap1) as *mut c_char;
-                        let scop = self.sapglob.sap_mut(scop_id);
-                        (*scop).sapanim[1] = x;
-                        (*scop).sapanim[0] = x;
-                    } else {
-                        let x = addr_of_mut!(self.sapglob.anlou1) as *mut c_char;
-                        let scop = self.sapglob.sap_mut(scop_id);
-                        (*scop).sapanim[1] = x;
-                        (*scop).sapanim[0] = x;
-                    }
-                    let scop = self.sapglob.sap_mut(scop_id);
-                    (*scop).coeur = DEBCRANE!(self.sapwind) + 8;
-                    (*scop).cptrsouffle = 1;
-                    return;
-                }
+        }
+        /* deja present*/
+        else {
+            if type_ == 0
+            /*si bestiole*/
+            {
+                let sens = self.sapglob.sap1.sens;
                 {
                     let scop = self.sapglob.sap_mut(scop_id);
-                    /*si humain*/
-                    if (*scop).objet != 0 {
-                        self.pogne(scop_id); /* plus d'objet a la main*/
-                    }
+                    (*scop).sens = sens;
                 }
-                if self.sapglob.sap(scop_id).hauteur != 0 {
-                    self.saut(scop_id); /*tjs debout*/
+                /*arrete*/
+                if (self.sapglob.present[self.sapglob.who as usize] as c_short) > 6 {
+                    let x = addr_of_mut!(self.sapglob.anlap1) as *mut c_char;
+                    let scop = self.sapglob.sap_mut(scop_id);
+                    (*scop).sapanim[1] = x;
+                    (*scop).sapanim[0] = x;
                 } else {
-                    let vitesse = self.sapglob.sap1.vitesse;
+                    let x = addr_of_mut!(self.sapglob.anlou1) as *mut c_char;
                     let scop = self.sapglob.sap_mut(scop_id);
-                    (*scop).vitesse = vitesse; /*meme sens*/
-                    self.arret(scop_id); /*arrete :vitesse*/
-                    self.posvit(scop_id); /*il va s'arreter,positionner le sens et l'anim*/
+                    (*scop).sapanim[1] = x;
+                    (*scop).sapanim[0] = x;
                 }
+                let scop = self.sapglob.sap_mut(scop_id);
+                (*scop).coeur = DEBCRANE!(self.sapwind) + 8;
+                (*scop).cptrsouffle = 1;
+                return;
+            }
+            {
+                let scop = self.sapglob.sap_mut(scop_id);
+                /*si humain*/
+                if (*scop).objet != 0 {
+                    self.pogne(scop_id); /* plus d'objet a la main*/
+                }
+            }
+            if self.sapglob.sap(scop_id).hauteur != 0 {
+                self.saut(scop_id); /*tjs debout*/
+            } else {
+                let vitesse = self.sapglob.sap1.vitesse;
+                let scop = self.sapglob.sap_mut(scop_id);
+                (*scop).vitesse = vitesse; /*meme sens*/
+                self.arret(scop_id); /*arrete :vitesse*/
+                self.posvit(scop_id); /*il va s'arreter,positionner le sens et l'anim*/
             }
         }
     }
@@ -1755,183 +1730,181 @@ impl Sapiens {
                     AUTONHOM:
     ***********************************************************************/
     pub(crate) fn autonhom(&mut self, sap_id2: SapId, sap_id1: SapId) {
-        unsafe {
-            let mut sens: c_uchar = 0;
-            /*
-            test specifique au copain alors que je suis seul a me battre contre un
-            adversaire, Sapiens etant un jeu eminement MORAL, mon ami peut refuser
-            de frapper le meme adversaire que moi...(2 Sept 87)
-            */
-            if sap_id2 == SapId::Sap3
-            /* si c'est mon copain */
-            {
-                /* si je suis en vie et qu'il n'y a pas d'adversaire pour
-                   mon ami et que le Rnd est favorable... Il bouge tout de meme
-                   un peu pour donner le change...
-                Mais qu'est ce qu'il me prends de commenter aussi ABONDAMENT ?
-                alors que cette trapsure est au moins aussi geniale et
-                infaillible que le reste du programme.
-                   */
-                let sap1 = &self.sapglob.sap1;
-                let sap4 = &self.sapglob.sap4;
-                if sap1.vie != 0 && sap4.vie == 0 && self.random.Rnd() > 60 {
-                    return; /* puissant non ???*/
+        let mut sens: c_uchar = 0;
+        /*
+        test specifique au copain alors que je suis seul a me battre contre un
+        adversaire, Sapiens etant un jeu eminement MORAL, mon ami peut refuser
+        de frapper le meme adversaire que moi...(2 Sept 87)
+        */
+        if sap_id2 == SapId::Sap3
+        /* si c'est mon copain */
+        {
+            /* si je suis en vie et qu'il n'y a pas d'adversaire pour
+               mon ami et que le Rnd est favorable... Il bouge tout de meme
+               un peu pour donner le change...
+            Mais qu'est ce qu'il me prends de commenter aussi ABONDAMENT ?
+            alors que cette trapsure est au moins aussi geniale et
+            infaillible que le reste du programme.
+               */
+            let sap1 = &self.sapglob.sap1;
+            let sap4 = &self.sapglob.sap4;
+            if sap1.vie != 0 && sap4.vie == 0 && self.random.Rnd() > 60 {
+                return; /* puissant non ???*/
+            }
+        }
+
+        self.sapglob.distsp =
+            self.sapglob.sap(sap_id1).colonne - self.sapglob.sap_mut(sap_id2).colonne; /*distance entre saps*/
+        if self.sapglob.distsp < 0
+        /*valeur absolue*/
+        {
+            self.sapglob.distsp = -self.sapglob.distsp;
+            sens = 1;
+        } else {
+            sens = 0;
+        }
+
+        let hauteur = self.sapglob.sap(sap_id1).hauteur;
+        let (hauteur2, sens2) = {
+            let s2 = self.sapglob.sap_mut(sap_id2);
+            if (*s2).vie < 20 || self.random.Rnd() > 160 {
+                if hauteur > 1 && self.random.Rnd() > 128 {
+                    (*s2).fuite = 4;
+                } else if (*s2).fuite != 0 && self.random.Rnd() > 200 {
+                    (*s2).fuite = self.random.Rnd() / 13;
                 }
             }
-
-            self.sapglob.distsp =
-                self.sapglob.sap(sap_id1).colonne - self.sapglob.sap_mut(sap_id2).colonne; /*distance entre saps*/
-            if self.sapglob.distsp < 0
-            /*valeur absolue*/
+            (s2.sens, s2.hauteur)
+        };
+        if sens == sens2 {
+            if hauteur2 != 0 {
+                self.saut(sap_id2); /*il se releve*/
+            }
+            self.sapglob.sap_mut(sap_id2).sens ^= 1; /*il se retourne*/
+            return;
+        }
+        /* La distance entre les 2 saps est inferieure a 8*/
+        if self.sapglob.distsp > 8
+        /*peut tirer*/
+        {
+            let s2 = self.sapglob.sap_mut(sap_id2);
+            if (*s2).objet == 2
+            /*sagaie*/
             {
-                self.sapglob.distsp = -self.sapglob.distsp;
-                sens = 1;
+                if self.random.Rnd() < (*s2).agressivite as c_short {
+                    self.actbra(sap_id2); /*il frappe*/
+                }
+            } else
+            /*si pas sagaie en main il va la prendre*/
+            {
+                if self.random.Rnd() < 20 && (*s2).nbresag != 0 {
+                    self.pogne(sap_id2); /*il essai*/
+                    return;
+                }
+            }
+            if self.random.Rnd() < 60 {
+                /* test si copain et lapin en face */
+                if sap_id2 != SapId::Sap3 || (self.sapglob.present[1] as c_short) < 7 {
+                    self.avasap(sap_id2);
+                }
             } else {
-                sens = 0;
+                self.saut(sap_id2);
             }
-
-            let hauteur = self.sapglob.sap(sap_id1).hauteur;
-            let (hauteur2, sens2) = {
+            return;
+        } else
+        /*assez pres*/
+        {
+            let (fuite2, hauteur2) = {
                 let s2 = self.sapglob.sap_mut(sap_id2);
-                if (*s2).vie < 20 || self.random.Rnd() > 160 {
-                    if hauteur > 1 && self.random.Rnd() > 128 {
-                        (*s2).fuite = 4;
-                    } else if (*s2).fuite != 0 && self.random.Rnd() > 200 {
-                        (*s2).fuite = self.random.Rnd() / 13;
-                    }
-                }
-                (s2.sens, s2.hauteur)
+                (s2.fuite, s2.hauteur)
             };
-            if sens == sens2 {
-                if hauteur2 != 0 {
-                    self.saut(sap_id2); /*il se releve*/
+            if self.sapglob.distsp < 2 || fuite2 != 0
+            /*beaucoup trop pres*/
+            {
+                /*il tend a se mettre accroupis puis a reculer*/
+                if hauteur2 > 1 {
+                    self.saut(sap_id2);
+                    return;
                 }
-                self.sapglob.sap_mut(sap_id2).sens ^= 1; /*il se retourne*/
+                let s2 = self.sapglob.sap_mut(sap_id2);
+                if (*s2).hauteur == 0 {
+                    self.baisse(sap_id2);
+                    return;
+                }
+                if (*s2).fuite != 0 {
+                    (*s2).fuite -= 1;
+                }
+                self.recusap(sap_id2);
                 return;
             }
-            /* La distance entre les 2 saps est inferieure a 8*/
-            if self.sapglob.distsp > 8
-            /*peut tirer*/
             {
                 let s2 = self.sapglob.sap_mut(sap_id2);
-                if (*s2).objet == 2
-                /*sagaie*/
-                {
-                    if self.random.Rnd() < (*s2).agressivite as c_short {
-                        self.actbra(sap_id2); /*il frappe*/
-                    }
+                if (*s2).hauteur < 2 && self.random.Rnd() > 180 && ((*s2).action & 128) == 0 {
+                    self.baisse(sap_id2);
+                }
+            }
+            if self.sapglob.distsp < 6
+            /*il peut frapper*/
+            {
+                let chance = {
+                    let s2 = self.sapglob.sap_mut(sap_id2);
+                    ((*s2).souffle as i32 * (*s2).agressivite as i32) / 512 + 128
+                };
+                if (self.random.Rnd() as i32) < chance {
+                    self.actbra(sap_id2); /*il frappe*/
+                    return;
                 } else
-                /*si pas sagaie en main il va la prendre*/
+                /*ne frappe pas:alors bouge*/
                 {
-                    if self.random.Rnd() < 20 && (*s2).nbresag != 0 {
-                        self.pogne(sap_id2); /*il essai*/
-                        return;
+                    let distsp = self.sapglob.distsp;
+                    let action = self.sapglob.sap(sap_id1).action;
+                    let s2 = self.sapglob.sap_mut(sap_id2);
+                    if (action != 0 || distsp < 4) && ((*s2).action & 128) == 0 {
+                        if (*s2).hauteur < 2 {
+                            self.recusap(sap_id2);
+                        } else if self.random.Rnd() > 160 {
+                            self.baisse(sap_id2);
+                        } else {
+                            self.saut(sap_id2);
+                        }
+                    } else {
+                        self.baisse(sap_id2);
                     }
                 }
-                if self.random.Rnd() < 60 {
-                    /* test si copain et lapin en face */
-                    if sap_id2 != SapId::Sap3 || (self.sapglob.present[1] as c_short) < 7 {
-                        self.avasap(sap_id2);
-                    }
+            } else
+            /*proche mais pas assez pour frapper*/
+            {
+                let s2 = self.sapglob.sap(sap_id2);
+                if (*s2).hauteur >= 2 {
+                    self.saut(sap_id2); /*il se releve*/
+                    return;
+                }
+                if (*s2).objet != 1 && self.random.Rnd() > 70 {
+                    self.pogne(sap_id2); /*prends sa hache*/
+                }
+                if self.random.Rnd() > 80 {
+                    self.avasap(sap_id2);
+                }
+                return;
+            }
+            let (action, hauteur) = {
+                let s1 = self.sapglob.sap(sap_id1);
+                (s1.action, s1.hauteur)
+            };
+            if (action & 3) != 0 {
+                if hauteur >= 2 && self.random.Rnd() < 10 {
+                    self.baisse(sap_id2);
                 } else {
                     self.saut(sap_id2);
                 }
                 return;
-            } else
-            /*assez pres*/
-            {
-                let (fuite2, hauteur2) = {
-                    let s2 = self.sapglob.sap_mut(sap_id2);
-                    (s2.fuite, s2.hauteur)
-                };
-                if self.sapglob.distsp < 2 || fuite2 != 0
-                /*beaucoup trop pres*/
-                {
-                    /*il tend a se mettre accroupis puis a reculer*/
-                    if hauteur2 > 1 {
-                        self.saut(sap_id2);
-                        return;
-                    }
-                    let s2 = self.sapglob.sap_mut(sap_id2);
-                    if (*s2).hauteur == 0 {
-                        self.baisse(sap_id2);
-                        return;
-                    }
-                    if (*s2).fuite != 0 {
-                        (*s2).fuite -= 1;
-                    }
+            }
+            let s2 = self.sapglob.sap_mut(sap_id2);
+            if self.random.Rnd() > (*s2).agressivite as c_short {
+                if (*s2).hauteur >= 2 {
                     self.recusap(sap_id2);
-                    return;
                 }
-                {
-                    let s2 = self.sapglob.sap_mut(sap_id2);
-                    if (*s2).hauteur < 2 && self.random.Rnd() > 180 && ((*s2).action & 128) == 0 {
-                        self.baisse(sap_id2);
-                    }
-                }
-                if self.sapglob.distsp < 6
-                /*il peut frapper*/
-                {
-                    let chance = {
-                        let s2 = self.sapglob.sap_mut(sap_id2);
-                        ((*s2).souffle as i32 * (*s2).agressivite as i32) / 512 + 128
-                    };
-                    if (self.random.Rnd() as i32) < chance {
-                        self.actbra(sap_id2); /*il frappe*/
-                        return;
-                    } else
-                    /*ne frappe pas:alors bouge*/
-                    {
-                        let distsp = self.sapglob.distsp;
-                        let action = self.sapglob.sap(sap_id1).action;
-                        let s2 = self.sapglob.sap_mut(sap_id2);
-                        if (action != 0 || distsp < 4) && ((*s2).action & 128) == 0 {
-                            if (*s2).hauteur < 2 {
-                                self.recusap(sap_id2);
-                            } else if self.random.Rnd() > 160 {
-                                self.baisse(sap_id2);
-                            } else {
-                                self.saut(sap_id2);
-                            }
-                        } else {
-                            self.baisse(sap_id2);
-                        }
-                    }
-                } else
-                /*proche mais pas assez pour frapper*/
-                {
-                    let s2 = self.sapglob.sap(sap_id2);
-                    if (*s2).hauteur >= 2 {
-                        self.saut(sap_id2); /*il se releve*/
-                        return;
-                    }
-                    if (*s2).objet != 1 && self.random.Rnd() > 70 {
-                        self.pogne(sap_id2); /*prends sa hache*/
-                    }
-                    if self.random.Rnd() > 80 {
-                        self.avasap(sap_id2);
-                    }
-                    return;
-                }
-                let (action, hauteur) = {
-                    let s1 = self.sapglob.sap(sap_id1);
-                    (s1.action, s1.hauteur)
-                };
-                if (action & 3) != 0 {
-                    if hauteur >= 2 && self.random.Rnd() < 10 {
-                        self.baisse(sap_id2);
-                    } else {
-                        self.saut(sap_id2);
-                    }
-                    return;
-                }
-                let s2 = self.sapglob.sap_mut(sap_id2);
-                if self.random.Rnd() > (*s2).agressivite as c_short {
-                    if (*s2).hauteur >= 2 {
-                        self.recusap(sap_id2);
-                    }
-                    return;
-                }
+                return;
             }
         }
     }
@@ -1939,145 +1912,143 @@ impl Sapiens {
     /***********************************************************************
                             BESTIO:Gere les Bestioles
     ***********************************************************************/
-    pub(crate) extern "C" fn bestio(&mut self, sap_id2: SapId, sap_id1: SapId) {
-        unsafe {
-            let mut sens: c_uchar = 0;
-            self.sapglob.distsp = {
-                let s1 = self.sapglob.sap(sap_id1);
-                let s2 = self.sapglob.sap(sap_id2);
-                s1.colonne - s2.colonne
-            };
-            if self.sapglob.distsp < 0 {
-                self.sapglob.distsp = -self.sapglob.distsp;
-                sens = 1;
-            } else {
-                sens = 0;
-            }
+    pub(crate) fn bestio(&mut self, sap_id2: SapId, sap_id1: SapId) {
+        let mut sens: c_uchar = 0;
+        self.sapglob.distsp = {
+            let s1 = self.sapglob.sap(sap_id1);
+            let s2 = self.sapglob.sap(sap_id2);
+            s1.colonne - s2.colonne
+        };
+        if self.sapglob.distsp < 0 {
+            self.sapglob.distsp = -self.sapglob.distsp;
+            sens = 1;
+        } else {
+            sens = 0;
+        }
 
-            let animal2 = self.sapglob.sap(sap_id2).animal;
-            /*1=Lapin,2=Lagopede,3=Loup,4=Ours*/
-            if animal2 >= 3 {
-                /*loup-Ours*/
-                /* si cote a gauche ou a droite*/
-                let colonne = self.sapglob.sap(sap_id2).colonne;
-                if colonne < LIMITE_GAUCHE - 3 {
-                    let s2 = self.sapglob.sap_mut(sap_id2);
-                    (*s2).sens = 1;
-                    (*s2).colsag = 10 + self.random.Rnd() / 20;
-                    (*s2).fuite = 2;
-                }
-                if colonne > LIMITE_DROITE + 3 {
-                    let s2 = self.sapglob.sap_mut(sap_id2);
-                    (*s2).sens = 0;
-                    (*s2).colsag = 10 + self.random.Rnd() / 20;
-                    (*s2).fuite = 2;
-                }
-                /*si blesse ou avec une faible prob retrait*/
-                let vie = self.sapglob.sap_mut(sap_id2).vie;
-                if (vie < 40 && self.random.Rnd() > 180) || self.random.Rnd() < 10 {
-                    let fuite = self.sapglob.sap(sap_id2).fuite;
-                    if fuite == 0 {
-                        let x = addr_of_mut!(self.sapglob.anlou2) as *mut c_char;
-                        let s2 = self.sapglob.sap_mut(sap_id2);
-                        (*s2).sapanim[1] = x;
-                        (*s2).fuite = 1;
-                        (*s2).colsag = self.random.Rnd() / 12;
-                    }
-                }
-                if self.sapglob.sap(sap_id2).colsag != 0 {
-                    /*fuite:1 fuite reelle 2 éloigne du bord*/
-                    let s2 = self.sapglob.sap_mut(sap_id2);
-                    if (*s2).fuite == 1 {
-                        (*s2).sens = sens;
-                    }
-                    (*s2).colsag -= 1;
-                } else if self.sapglob.distsp > 4 && sens == self.sapglob.sap(sap_id2).sens {
-                    let s2 = self.sapglob.sap_mut(sap_id2);
-                    /*pas trop pres et tourne le dos*/
-                    (*s2).sens ^= 1; /*le sens s'inverse*/
-                }
-                if self.random.Rnd() < self.sapglob.sap(sap_id2).agressivite as c_short {
-                    if self.random.Rnd() > 100 {
-                        let x = addr_of_mut!(self.sapglob.anlou1) as *mut c_char;
-                        let s2 = self.sapglob.sap_mut(sap_id2);
-                        (*s2).sapanim[1] = x;
-                    } else {
-                        let xw = addr_of_mut!(self.sapglob.anlou2) as *mut c_char;
-                        let s2 = self.sapglob.sap_mut(sap_id2);
-                        (*s2).sapanim[1] = xw;
-                    }
-                }
+        let animal2 = self.sapglob.sap(sap_id2).animal;
+        /*1=Lapin,2=Lagopede,3=Loup,4=Ours*/
+        if animal2 >= 3 {
+            /*loup-Ours*/
+            /* si cote a gauche ou a droite*/
+            let colonne = self.sapglob.sap(sap_id2).colonne;
+            if colonne < LIMITE_GAUCHE - 3 {
                 let s2 = self.sapglob.sap_mut(sap_id2);
-                (*s2).souffle = 128;
+                (*s2).sens = 1;
+                (*s2).colsag = 10 + self.random.Rnd() / 20;
+                (*s2).fuite = 2;
+            }
+            if colonne > LIMITE_DROITE + 3 {
+                let s2 = self.sapglob.sap_mut(sap_id2);
+                (*s2).sens = 0;
+                (*s2).colsag = 10 + self.random.Rnd() / 20;
+                (*s2).fuite = 2;
+            }
+            /*si blesse ou avec une faible prob retrait*/
+            let vie = self.sapglob.sap_mut(sap_id2).vie;
+            if (vie < 40 && self.random.Rnd() > 180) || self.random.Rnd() < 10 {
+                let fuite = self.sapglob.sap(sap_id2).fuite;
+                if fuite == 0 {
+                    let x = addr_of_mut!(self.sapglob.anlou2) as *mut c_char;
+                    let s2 = self.sapglob.sap_mut(sap_id2);
+                    (*s2).sapanim[1] = x;
+                    (*s2).fuite = 1;
+                    (*s2).colsag = self.random.Rnd() / 12;
+                }
+            }
+            if self.sapglob.sap(sap_id2).colsag != 0 {
+                /*fuite:1 fuite reelle 2 éloigne du bord*/
+                let s2 = self.sapglob.sap_mut(sap_id2);
+                if (*s2).fuite == 1 {
+                    (*s2).sens = sens;
+                }
+                (*s2).colsag -= 1;
+            } else if self.sapglob.distsp > 4 && sens == self.sapglob.sap(sap_id2).sens {
+                let s2 = self.sapglob.sap_mut(sap_id2);
+                /*pas trop pres et tourne le dos*/
+                (*s2).sens ^= 1; /*le sens s'inverse*/
+            }
+            if self.random.Rnd() < self.sapglob.sap(sap_id2).agressivite as c_short {
+                if self.random.Rnd() > 100 {
+                    let x = addr_of_mut!(self.sapglob.anlou1) as *mut c_char;
+                    let s2 = self.sapglob.sap_mut(sap_id2);
+                    (*s2).sapanim[1] = x;
+                } else {
+                    let xw = addr_of_mut!(self.sapglob.anlou2) as *mut c_char;
+                    let s2 = self.sapglob.sap_mut(sap_id2);
+                    (*s2).sapanim[1] = xw;
+                }
+            }
+            let s2 = self.sapglob.sap_mut(sap_id2);
+            (*s2).souffle = 128;
+            (*s2).coeur = if (*s2).coeur < 0 {
+                -(DEBCRANE!(self.sapwind) + 8)
+            } else {
+                DEBCRANE!(self.sapwind) + 8
+            };
+        } else {
+            /*P'TIT Lapin*/
+            let fuite2 = {
+                let s2 = self.sapglob.sap_mut(sap_id2);
+                (*s2).souffle = 1; /*ca bat vite un p'tit coeur*/
                 (*s2).coeur = if (*s2).coeur < 0 {
                     -(DEBCRANE!(self.sapwind) + 8)
                 } else {
                     DEBCRANE!(self.sapwind) + 8
                 };
-            } else {
-                /*P'TIT Lapin*/
-                let fuite2 = {
-                    let s2 = self.sapglob.sap_mut(sap_id2);
-                    (*s2).souffle = 1; /*ca bat vite un p'tit coeur*/
-                    (*s2).coeur = if (*s2).coeur < 0 {
-                        -(DEBCRANE!(self.sapwind) + 8)
-                    } else {
-                        DEBCRANE!(self.sapwind) + 8
-                    };
-                    s2.fuite
-                };
+                s2.fuite
+            };
 
-                if fuite2 == 0 && self.random.Rnd() < 60
-                /* rien c'est con un lapin*/
-                {
-                    /* plus l'adversaire est proche plus il s'agite*/
-                    if self.random.Rnd() / 8 > self.sapglob.distsp {
-                        self.sapglob.sap_mut(sap_id2).sapanim[0] =
-                            addr_of_mut!(self.sapglob.anlap3) as *mut c_char; /*lapin observe*/
-                        let (vitesse, snssag, action, sens) = {
-                            let s1 = self.sapglob.sap_mut(sap_id1);
-                            (s1.vitesse, s1.snssag, s1.action, s1.sens)
-                        };
-                        if (self.sapglob.distsp < 10 && self.random.Rnd() > 60)
-                            || (vitesse & 2) == 0
-                            || snssag != 255
-                            || action != 0
-                        /*si proche et bouge ou si sagaie en l'air*/
-                        {
-                            let x = addr_of_mut!(self.sapglob.anlap2) as *mut c_char;
-                            let s2 = self.sapglob.sap_mut(sap_id2);
-                            s2.sapanim[1] = x; /*fuite*/
-                            s2.sens = sens;
-                            s2.fuite = 1;
-                        }
-                    } else {
-                        let agressivite = self.sapglob.sap(sap_id2).agressivite;
-                        if self.random.Rnd() < agressivite as c_short
-                        /*ici la peur*/
-                        {
-                            let x = addr_of_mut!(self.sapglob.anlap2) as *mut c_char;
-                            let distsp = self.sapglob.distsp;
-                            let s2 = self.sapglob.sap_mut(sap_id2);
-                            (*s2).sapanim[0] = x;
-                            if self.random.Rnd() < 25 && distsp < 45 {
-                                /*Reglage sortie Lapin*/
-                                (*s2).sens = (self.random.Rnd() & 1) as c_uchar; /*sens au hasard*/
-                            }
+            if fuite2 == 0 && self.random.Rnd() < 60
+            /* rien c'est con un lapin*/
+            {
+                /* plus l'adversaire est proche plus il s'agite*/
+                if self.random.Rnd() / 8 > self.sapglob.distsp {
+                    self.sapglob.sap_mut(sap_id2).sapanim[0] =
+                        addr_of_mut!(self.sapglob.anlap3) as *mut c_char; /*lapin observe*/
+                    let (vitesse, snssag, action, sens) = {
+                        let s1 = self.sapglob.sap_mut(sap_id1);
+                        (s1.vitesse, s1.snssag, s1.action, s1.sens)
+                    };
+                    if (self.sapglob.distsp < 10 && self.random.Rnd() > 60)
+                        || (vitesse & 2) == 0
+                        || snssag != 255
+                        || action != 0
+                    /*si proche et bouge ou si sagaie en l'air*/
+                    {
+                        let x = addr_of_mut!(self.sapglob.anlap2) as *mut c_char;
+                        let s2 = self.sapglob.sap_mut(sap_id2);
+                        s2.sapanim[1] = x; /*fuite*/
+                        s2.sens = sens;
+                        s2.fuite = 1;
+                    }
+                } else {
+                    let agressivite = self.sapglob.sap(sap_id2).agressivite;
+                    if self.random.Rnd() < agressivite as c_short
+                    /*ici la peur*/
+                    {
+                        let x = addr_of_mut!(self.sapglob.anlap2) as *mut c_char;
+                        let distsp = self.sapglob.distsp;
+                        let s2 = self.sapglob.sap_mut(sap_id2);
+                        (*s2).sapanim[0] = x;
+                        if self.random.Rnd() < 25 && distsp < 45 {
+                            /*Reglage sortie Lapin*/
+                            (*s2).sens = (self.random.Rnd() & 1) as c_uchar; /*sens au hasard*/
                         }
                     }
                 }
-                /*c'est con il fait rien*/
-                let s2 = self.sapglob.sap_mut(sap_id2);
-                if (*s2).colonne < LIMITE_GAUCHE + 3 || (*s2).colonne > LIMITE_DROITE - 3 {
-                    /*il sort de l'ecran : on le degenere*/
-                    (*s2).sapanim[0] = core::ptr::null_mut();
-                    (*s2).colonne = 200;
-                    (*s2).vie = 0; /* a pu lapin*/
-                    self.sapglob.present[self.sapglob.who as usize] = 0;
-                    self.generique(VRAI);
-                    if self.sapglob.presence as c_short != self.juge() {
-                        self.sapglob.fin = (self.juge() + 1) as c_uchar;
-                    }
+            }
+            /*c'est con il fait rien*/
+            let s2 = self.sapglob.sap_mut(sap_id2);
+            if (*s2).colonne < LIMITE_GAUCHE + 3 || (*s2).colonne > LIMITE_DROITE - 3 {
+                /*il sort de l'ecran : on le degenere*/
+                (*s2).sapanim[0] = core::ptr::null_mut();
+                (*s2).colonne = 200;
+                (*s2).vie = 0; /* a pu lapin*/
+                self.sapglob.present[self.sapglob.who as usize] = 0;
+                self.generique(VRAI);
+                if self.sapglob.presence as c_short != self.juge() {
+                    self.sapglob.fin = (self.juge() + 1) as c_uchar;
                 }
             }
         }
@@ -2087,94 +2058,92 @@ impl Sapiens {
                     MOBS:Deplace les Sapiens
     ***********************************************************************/
     fn mobs(&mut self, TesteClavier: Boolean) {
-        unsafe {
-            /* Pour les 4 sapiens */
-            for surqui in SapId::iter().rev() {
-                self.sapglob.who = surqui as c_char;
-                let (surqui_flg_mort, surqui_vie) = {
-                    let surqui_sap = self.sapglob.peuple(surqui);
-                    (surqui_sap.flg_mort, surqui_sap.vie)
-                };
-                /* teste si animation mort */
-                if surqui_flg_mort != 0 {
-                    self.ger_mort(surqui);
-                    while self.mvtsap(surqui) != 0 {}
-                } else if surqui_vie != 0
-                /*  si defini alors*/
+        /* Pour les 4 sapiens */
+        for surqui in SapId::iter().rev() {
+            self.sapglob.who = surqui as c_char;
+            let (surqui_flg_mort, surqui_vie) = {
+                let surqui_sap = self.sapglob.peuple(surqui);
+                (surqui_sap.flg_mort, surqui_sap.vie)
+            };
+            /* teste si animation mort */
+            if surqui_flg_mort != 0 {
+                self.ger_mort(surqui);
+                while self.mvtsap(surqui) != 0 {}
+            } else if surqui_vie != 0
+            /*  si defini alors*/
+            {
                 {
-                    {
-                        let surqui_sap = self.sapglob.peuple_mut(surqui);
-                        incsou(surqui_sap, 1); /*il se repose*/
+                    let surqui_sap = self.sapglob.peuple_mut(surqui);
+                    incsou(surqui_sap, 1); /*il se repose*/
+                }
+                while self.mvtsap(surqui) != 0 {} /*il s'anime*/
+                if surqui == SapId::Sap1 {
+                    /*Le sap1 agit*/
+                    let tfragil = self.sapglob.cptagil.wrapping_add(self.sapglob.agilite);
+                    if tfragil < self.sapglob.cptagil && TesteClavier {
+                        let touche = self.getkey(0);
+                        self.clav(surqui, touche);
                     }
-                    while self.mvtsap(surqui) != 0 {} /*il s'anime*/
-                    if surqui == SapId::Sap1 {
-                        /*Le sap1 agit*/
-                        let tfragil = self.sapglob.cptagil.wrapping_add(self.sapglob.agilite);
-                        if tfragil < self.sapglob.cptagil && TesteClavier {
-                            let touche = self.getkey(0);
-                            self.clav(surqui, touche);
-                        }
-                        self.sapglob.cptagil = tfragil;
-                    } else
-                    /* Gestion du copain:Il y a-t-il une gestion de sap alors
-                    qu'il n'y a plus d'adversaire?*/
-                    if (self.sapglob.present[surqui as usize] as c_short) < 5
-                    /*  homme*/
+                    self.sapglob.cptagil = tfragil;
+                } else
+                /* Gestion du copain:Il y a-t-il une gestion de sap alors
+                qu'il n'y a plus d'adversaire?*/
+                if (self.sapglob.present[surqui as usize] as c_short) < 5
+                /*  homme*/
+                {
+                    if self.sapglob.sap3clav != 0 && surqui as usize == 2
+                    /*au clavier*/
                     {
-                        if self.sapglob.sap3clav != 0 && surqui as usize == 2
-                        /*au clavier*/
+                        if TesteClavier {
+                            let keyboard_input = self.getkey(1);
+                            self.clav(surqui, keyboard_input);
+                        }
+                    } else if self.sapglob.presence == 0 {
+                        self.gercop(
+                            surqui,
+                            ((self.sapglob.present[surqui as usize] as c_short) < 5) as c_short,
+                        );
+                    } else if let Some(adversaire) = self.sapglob.peuple(surqui).adversaire {
+                        self.autonhom(surqui, adversaire);
+                    }
+                } else
+                /*bestiole*/
+                {
+                    if self.sapglob.presence == 0 {
+                        self.gercop(
+                            surqui,
+                            ((self.sapglob.present[surqui as usize] as c_short) < 5) as c_short,
+                        );
+                    } else if let Some(adversaire) = self.sapglob.peuple(surqui).adversaire {
+                        self.bestio(surqui, adversaire);
+                        /* si c'est un lapin alors il agit aussi sur
+                        mon ami*/
+                        if (self.sapglob.present[surqui as usize] as c_short) > 6
+                            && self.sapglob.present[2] != 0
                         {
-                            if TesteClavier {
-                                let keyboard_input = self.getkey(1);
-                                self.clav(surqui, keyboard_input);
-                            }
-                        } else if self.sapglob.presence == 0 {
-                            self.gercop(
-                                surqui,
-                                ((self.sapglob.present[surqui as usize] as c_short) < 5) as c_short,
-                            );
-                        } else if let Some(adversaire) = self.sapglob.peuple(surqui).adversaire {
-                            self.autonhom(surqui, adversaire);
-                        }
-                    } else
-                    /*bestiole*/
-                    {
-                        if self.sapglob.presence == 0 {
-                            self.gercop(
-                                surqui,
-                                ((self.sapglob.present[surqui as usize] as c_short) < 5) as c_short,
-                            );
-                        } else if let Some(adversaire) = self.sapglob.peuple(surqui).adversaire {
-                            self.bestio(surqui, adversaire);
-                            /* si c'est un lapin alors il agit aussi sur
-                            mon ami*/
-                            if (self.sapglob.present[surqui as usize] as c_short) > 6
-                                && self.sapglob.present[2] != 0
-                            {
-                                self.bestio(surqui, SapId::Sap3);
-                            }
+                            self.bestio(surqui, SapId::Sap3);
                         }
                     }
-                    self.gcoeur(surqui); /*affichage du coeur*/
                 }
-                self.gersag(surqui);
+                self.gcoeur(surqui); /*affichage du coeur*/
             }
+            self.gersag(surqui);
+        }
 
-            /*tout les impacts devant*/
-            for who_c in SapId::iter() {
-                self.sapglob.who = who_c as c_char;
-                self.impak(who_c);
-            }
-            /*Affiche les Herbes au 1er plan*/
-            for i in 0..self.sapcomb.NbHerbeAvPlan {
-                if self.sapcomb.herbe[i as usize].type_ != 0 {
-                    self.Affmob(
-                        self.sapcomb.herbe[i as usize].type_ as c_short,
-                        self.sapcomb.herbe[i as usize].lin as c_short,
-                        self.sapcomb.herbe[i as usize].col as c_short,
-                        self.sapcomb.herbe[i as usize].sens as c_short,
-                    );
-                }
+        /*tout les impacts devant*/
+        for who_c in SapId::iter() {
+            self.sapglob.who = who_c as c_char;
+            self.impak(who_c);
+        }
+        /*Affiche les Herbes au 1er plan*/
+        for i in 0..self.sapcomb.NbHerbeAvPlan {
+            if self.sapcomb.herbe[i as usize].type_ != 0 {
+                self.Affmob(
+                    self.sapcomb.herbe[i as usize].type_ as c_short,
+                    self.sapcomb.herbe[i as usize].lin as c_short,
+                    self.sapcomb.herbe[i as usize].col as c_short,
+                    self.sapcomb.herbe[i as usize].sens as c_short,
+                );
             }
         }
     }
@@ -2184,19 +2153,13 @@ impl Sapiens {
     Calcule un numero de mob pour l'herbe
     ***********************************************************************/
     fn CalculeMobHerbe(&mut self) -> c_short {
-        unsafe {
-            let num: c_short;
-            if self.random.myRandom(0, 1000) > 950 {
-                num = (self.sapwind.mobAvplanSpec as i64
-                    + 1
-                    + self.random.myRandom(0, self.sapcomb.nbAvplanSpec as i64))
-                    as c_short;
-            } else {
-                num = (MOB_HERBE!(self.sapwind) as i64
-                    + self.random.myRandom(0, self.sapcomb.nbMobHerbes as i64))
-                    as c_short;
-            }
-            num
+        if self.random.myRandom(0, 1000) > 950 {
+            (self.sapwind.mobAvplanSpec as i64
+                + 1
+                + self.random.myRandom(0, self.sapcomb.nbAvplanSpec as i64)) as c_short
+        } else {
+            (MOB_HERBE!(self.sapwind) as i64
+                + self.random.myRandom(0, self.sapcomb.nbMobHerbes as i64)) as c_short
         }
     }
 }
@@ -2209,136 +2172,128 @@ const GRANULOSITE: c_short = 10;
 
 impl Sapiens {
     fn avplan(&mut self) {
-        unsafe {
-            let mut num: c_short = 0;
-            let mut r: Rect = Rect::default();
-            let mut nb: c_long = 0;
-
-            /* Premier passage */
-            if self.sapcomb.TabIndexHerbeFond.is_null() {
-                let _g = port::on(self.sapwind.Ecran1);
-                self.sapcomb.TabIndexHerbeFond =
-                    self.CalculePaletteAttenuee(MOB_HERBE!(self.sapwind), 0.75, 999);
-            }
-            /*on fixe le Rnd*/
-            self.random.initrnd(
-                (self.sapglob.xj / 256) as c_short,
-                (self.sapglob.yj / 256) as c_short,
-                ((self.sapglob.xj & 224) | ((self.sapglob.yj & 224) / 8)) as c_short,
-            );
-            if self.sapcomb.nbHerbes <= 20 {
-                self.sapcomb.NbHerbeAvPlan =
-                    self.random.myRandom(0, self.sapcomb.nbHerbes as i64) as c_short;
-            } else {
-                self.sapcomb.NbHerbeAvPlan = (self
-                    .random
-                    .myRandom(0, (self.sapcomb.nbHerbes as i64) / GRANULOSITE as i64)
-                    * GRANULOSITE as i64) as c_short;
-            }
-
-            /*on affiche le chemin*/
-            for i in 0..8 {
-                let mob = MOB_CHEMIN!(self.sapwind) + (self.random.rnd0() & 3);
-                self.Affmob(mob, LIGNE_CHEMIN, i * 8 * 4, 0);
-            }
-
-            /*on affiche les arbres*/
-            nb = self
-                .random
-                .myRandom(NB_ARBRES_LATERAL as i64, NB_ARBRES_LATERAL_MAX as i64);
-            for i in 0..nb {
-                //arbre(78,1+i*63+rnd0()/4);
-                let y = 68.0 + 10.0 * (i as f32) / (nb as f32); // de 68 a 78
-                let colonne = self.random.myRandom(0, 250) as c_short;
-                self.arbre(y as c_short, colonne);
-            }
-            // herbes arrieres plan
-            nb = self.random.myRandom(
-                (NB_HERBE_ARR_PLAN as c_short) as i64 / GRANULOSITE as i64,
-                (NB_MAX_HERBE_AR_PLAN as c_short) as i64 / GRANULOSITE as i64,
-            ) * GRANULOSITE as i64;
-            /*affichage des herbes a l'arriere plan */
-            for _ in 0..nb {
-                num = self.CalculeMobHerbe();
-                self.CalculeAireMob(num, 0, 0, &raw mut r);
-                //AffmobPalette(num,LIGNE_CHEMIN+12-(r.bottom/2)+(i/3),myRandom(0,256),rnd0()&1,TabIndexHerbeFond);
-                let y = (LIGNE_CHEMIN as i64 + 12 - (r.bottom / 2) as i64
-                    + self.random.myRandom(0, 3)) as c_short;
-                let x = self.random.myRandom(0, 256) as c_short;
-                let inverse = self.random.rnd0() & 1;
-                self.AffmobPalette(num, y, x, inverse, self.sapcomb.TabIndexHerbeFond);
-            }
-            /*on remplit le tableau des herbes avplan*/
-            for i in 0..self.sapcomb.NbHerbeAvPlan {
-                num = self.CalculeMobHerbe();
-                self.sapcomb.herbe[i as usize].type_ = num as c_ushort;
-                self.CalculeAireMob(num, 0, 0, &raw mut r);
-                self.sapcomb.herbe[i as usize].lin = (LIGNE_MAX_HERBE_AV_PLAN as i32
-                    - (self.sapcomb.NbHerbeAvPlan as i32 - i as i32)
-                        * (LIGNE_MAX_HERBE_AV_PLAN as i32 - LIGNE_BASE_HERBE_AV_PLAN as i32)
-                        / self.sapcomb.NbHerbeAvPlan as i32
-                    - (r.bottom / 2) as i32
-                    + 32) as c_ushort;
-                /*166*/
-                // herbe[i].col=myRandom(0,220);
-                self.sapcomb.herbe[i as usize].col = self.random.myRandom(0, 240) as c_ushort;
-                self.sapcomb.herbe[i as usize].sens = (self.random.rnd0() & 1) as c_ushort;
-                if self.sapcomb.herbe[i as usize].type_ != 0 {
-                    self.Affmob(
-                        self.sapcomb.herbe[i as usize].type_ as c_short,
-                        self.sapcomb.herbe[i as usize].lin as c_short, /*98*/
-                        self.sapcomb.herbe[i as usize].col as c_short,
-                        self.sapcomb.herbe[i as usize].sens as c_short,
-                    );
-                }
-            }
-            /* L'avplan est recopie sur l'ecran 2*/
-            self.CopyEcran1Sur2();
+        let mut num: c_short = 0;
+        let mut r: Rect = Rect::default();
+        let mut nb: c_long = 0;
+        /* Premier passage */
+        if self.sapcomb.TabIndexHerbeFond.is_null() {
+            let _g = port::on(self.sapwind.Ecran1);
+            self.sapcomb.TabIndexHerbeFond =
+                self.CalculePaletteAttenuee(MOB_HERBE!(self.sapwind), 0.75, 999);
         }
+        /*on fixe le Rnd*/
+        self.random.initrnd(
+            (self.sapglob.xj / 256) as c_short,
+            (self.sapglob.yj / 256) as c_short,
+            ((self.sapglob.xj & 224) | ((self.sapglob.yj & 224) / 8)) as c_short,
+        );
+        if self.sapcomb.nbHerbes <= 20 {
+            self.sapcomb.NbHerbeAvPlan =
+                self.random.myRandom(0, self.sapcomb.nbHerbes as i64) as c_short;
+        } else {
+            self.sapcomb.NbHerbeAvPlan = (self
+                .random
+                .myRandom(0, (self.sapcomb.nbHerbes as i64) / GRANULOSITE as i64)
+                * GRANULOSITE as i64) as c_short;
+        }
+        /*on affiche le chemin*/
+        for i in 0..8 {
+            let mob = MOB_CHEMIN!(self.sapwind) + (self.random.rnd0() & 3);
+            self.Affmob(mob, LIGNE_CHEMIN, i * 8 * 4, 0);
+        }
+
+        /*on affiche les arbres*/
+        nb = self
+            .random
+            .myRandom(NB_ARBRES_LATERAL as i64, NB_ARBRES_LATERAL_MAX as i64);
+        for i in 0..nb {
+            //arbre(78,1+i*63+rnd0()/4);
+            let y = 68.0 + 10.0 * (i as f32) / (nb as f32); // de 68 a 78
+            let colonne = self.random.myRandom(0, 250) as c_short;
+            self.arbre(y as c_short, colonne);
+        }
+        // herbes arrieres plan
+        nb = self.random.myRandom(
+            (NB_HERBE_ARR_PLAN as c_short) as i64 / GRANULOSITE as i64,
+            (NB_MAX_HERBE_AR_PLAN as c_short) as i64 / GRANULOSITE as i64,
+        ) * GRANULOSITE as i64;
+        /*affichage des herbes a l'arriere plan */
+        for _ in 0..nb {
+            num = self.CalculeMobHerbe();
+            self.CalculeAireMob(num, 0, 0, &raw mut r);
+            //AffmobPalette(num,LIGNE_CHEMIN+12-(r.bottom/2)+(i/3),myRandom(0,256),rnd0()&1,TabIndexHerbeFond);
+            let y = (LIGNE_CHEMIN as i64 + 12 - (r.bottom / 2) as i64 + self.random.myRandom(0, 3))
+                as c_short;
+            let x = self.random.myRandom(0, 256) as c_short;
+            let inverse = self.random.rnd0() & 1;
+            self.AffmobPalette(num, y, x, inverse, self.sapcomb.TabIndexHerbeFond);
+        }
+        /*on remplit le tableau des herbes avplan*/
+        for i in 0..self.sapcomb.NbHerbeAvPlan {
+            num = self.CalculeMobHerbe();
+            self.sapcomb.herbe[i as usize].type_ = num as c_ushort;
+            self.CalculeAireMob(num, 0, 0, &raw mut r);
+            self.sapcomb.herbe[i as usize].lin = (LIGNE_MAX_HERBE_AV_PLAN as i32
+                - (self.sapcomb.NbHerbeAvPlan as i32 - i as i32)
+                    * (LIGNE_MAX_HERBE_AV_PLAN as i32 - LIGNE_BASE_HERBE_AV_PLAN as i32)
+                    / self.sapcomb.NbHerbeAvPlan as i32
+                - (r.bottom / 2) as i32
+                + 32) as c_ushort;
+            /*166*/
+            // herbe[i].col=myRandom(0,220);
+            self.sapcomb.herbe[i as usize].col = self.random.myRandom(0, 240) as c_ushort;
+            self.sapcomb.herbe[i as usize].sens = (self.random.rnd0() & 1) as c_ushort;
+            if self.sapcomb.herbe[i as usize].type_ != 0 {
+                self.Affmob(
+                    self.sapcomb.herbe[i as usize].type_ as c_short,
+                    self.sapcomb.herbe[i as usize].lin as c_short, /*98*/
+                    self.sapcomb.herbe[i as usize].col as c_short,
+                    self.sapcomb.herbe[i as usize].sens as c_short,
+                );
+            }
+        }
+        /* L'avplan est recopie sur l'ecran 2*/
+        self.CopyEcran1Sur2();
     }
 
     /***********************************************************************
                             LATERB
     ***********************************************************************/
-    pub(crate) extern "C" fn laterb(&mut self, TesteClavier: Boolean) {
-        unsafe {
-            let t = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
+    pub(crate) fn laterb(&mut self, TesteClavier: Boolean) {
+        let t = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
 
-            self.effdemi();
-            self.mobs(TesteClavier);
-            self.tfrdemi();
-            self.GereInterface();
-            while t > self
-                .sapwclav
-                .sapiens_timer
-                .load(Ordering::Relaxed)
-                .wrapping_sub(6)
-            {}
-        }
+        self.effdemi();
+        self.mobs(TesteClavier);
+        self.tfrdemi();
+        self.GereInterface();
+        while t > self
+            .sapwclav
+            .sapiens_timer
+            .load(Ordering::Relaxed)
+            .wrapping_sub(6)
+        {}
     }
 
     /***********************************************************************
                             LATERA
     ***********************************************************************/
-    pub(crate) extern "C" fn latera(&mut self) {
+    pub(crate) fn latera(&mut self) {
         /*affiche noms*/
         self.EffaceGenerique();
         self.generique(VRAI);
 
         self.sapglob.dismin = 50;
-        unsafe {
-            self.affich(((self.sapglob.dzeta as i32 + 256) & 0x3ff) as c_ushort);
-            /*  Mise en place 3d fn angle
-            .... avplan */
-            self.avplan();
-            self.tfrima();
-            /* (c) God 7 Aout 87 Inits Souris */
-            (
-                self.sapglob.bouton,
-                self.sapglob.dsposx,
-                self.sapglob.dsposy,
-            ) = self.vq_mouse();
-        }
+        self.affich(((self.sapglob.dzeta as i32 + 256) & 0x3ff) as c_ushort);
+        /*  Mise en place 3d fn angle
+        .... avplan */
+        self.avplan();
+        self.tfrima();
+        /* (c) God 7 Aout 87 Inits Souris */
+        (
+            self.sapglob.bouton,
+            self.sapglob.dsposx,
+            self.sapglob.dsposy,
+        ) = self.vq_mouse();
         self.sapwind.reset_clav();
         self.laterb(FAUX);
         self.tfrvirt();
@@ -2347,36 +2302,34 @@ impl Sapiens {
     /***********************************************************************
                             INARME:Init des armes
     ***********************************************************************/
-    pub(crate) extern "C" fn inarme(&mut self) {
-        unsafe {
-            let sap1 = &mut self.sapglob.sap1;
-            self.sapglob.entvie = sap1.vie;
-            sap1.forcehache = 0;
-            sap1.cross[FormeVue::ARME as usize] = 0; /*hache par defaut*/
-            sap1.nbresag = 0;
+    pub(crate) fn inarme(&mut self) {
+        let sap1 = &mut self.sapglob.sap1;
+        self.sapglob.entvie = sap1.vie;
+        sap1.forcehache = 0;
+        sap1.cross[FormeVue::ARME as usize] = 0; /*hache par defaut*/
+        sap1.nbresag = 0;
 
-            /* Initialise l'agilite active*/
+        /* Initialise l'agilite active*/
 
-            self.sapglob.cptagil = 1;
-            let mut i = self.sapglob.liste1.taille;
-            while i != 0 {
-                i -= 1;
-                if sap1.forcehache == 0 {
-                    if self.sapglob.liste1.elements[i as usize] == 22
-                    /*massue*/
-                    {
-                        sap1.forcehache = (10 + (self.sapglob.force as u16 * 10) / 256) as c_uchar;
-                        sap1.cross[FormeVue::ARME as usize] = 1;
-                    }
-                    if self.sapglob.liste1.elements[i as usize] == 21
-                    /*hache*/
-                    {
-                        sap1.forcehache = (6 + (self.sapglob.force as u16 * 6) / 256) as c_uchar;
-                    }
+        self.sapglob.cptagil = 1;
+        let mut i = self.sapglob.liste1.taille;
+        while i != 0 {
+            i -= 1;
+            if sap1.forcehache == 0 {
+                if self.sapglob.liste1.elements[i as usize] == 22
+                /*massue*/
+                {
+                    sap1.forcehache = (10 + (self.sapglob.force as u16 * 10) / 256) as c_uchar;
+                    sap1.cross[FormeVue::ARME as usize] = 1;
                 }
-                if self.sapglob.liste1.elements[i as usize] == 23 {
-                    sap1.nbresag += 1; /*sagaie*/
+                if self.sapglob.liste1.elements[i as usize] == 21
+                /*hache*/
+                {
+                    sap1.forcehache = (6 + (self.sapglob.force as u16 * 6) / 256) as c_uchar;
                 }
+            }
+            if self.sapglob.liste1.elements[i as usize] == 23 {
+                sap1.nbresag += 1; /*sagaie*/
             }
         }
     }
@@ -2385,166 +2338,162 @@ impl Sapiens {
                             COMBAT:Gere les combats
                     On traite la sortie de FIN sur LATERB.
     ***********************************************************************/
-    pub(crate) extern "C" fn combat(&mut self) {
-        unsafe {
-            let mut tfr: c_uchar = 0;
-            let mut quelqun: Boolean = false;
+    pub(crate) fn combat(&mut self) {
+        let mut tfr: c_uchar;
+        let mut quelqun: Boolean = false;
 
-            /* Inits Souris */
-            self.reset_mouse();
-            if self.sapglob.dervue != Vue::LATERALE
-            /* egalement si presence humaine ??? ou aberration:Collapse!!*/
-            {
-                /* Maquillage et habillage des 'Bons'*/
-                self.prm(SapId::Sap1, -1);
-                self.prm(SapId::Sap3, self.sapglob.present[2] as c_short);
-                /* les machinistes montent le decor*/
-                self.latera();
-            }
-            (
-                self.sapglob.bouton,
-                self.sapglob.dsposx,
-                self.sapglob.dsposy,
-            ) = self.vq_mouse();
-            self.sapglob.dervue = Vue::LATERALE;
-            /* Sapiens une premiere ,Clap !*/
-            self.clrbadi();
+        /* Inits Souris */
+        self.reset_mouse();
+        if self.sapglob.dervue != Vue::LATERALE
+        /* egalement si presence humaine ??? ou aberration:Collapse!!*/
+        {
+            /* Maquillage et habillage des 'Bons'*/
+            self.prm(SapId::Sap1, -1);
+            self.prm(SapId::Sap3, self.sapglob.present[2] as c_short);
+            /* les machinistes montent le decor*/
+            self.latera();
+        }
+        (
+            self.sapglob.bouton,
+            self.sapglob.dsposx,
+            self.sapglob.dsposy,
+        ) = self.vq_mouse();
+        self.sapglob.dervue = Vue::LATERALE;
+        /* Sapiens une premiere ,Clap !*/
+        self.clrbadi();
 
-            loop {
-                self.sapglob.sap3clav =
-                    if self.sapcomb.ModeJoueur2 != 0 && (self.sapglob.present[2] as c_short) < 5 {
-                        1
-                    } else {
-                        0
-                    };
-                self.inarme(); /* initialise les armes sap1,silence sur le plateau*/
-                self.sapglob.presence = self.juge(); /* on initialise les adversaires reciproques*/
-                /* Si le joueur est seul alors affichage du commentaire */
-                let sap2 = &self.sapglob.sap2;
-                let sap4 = &self.sapglob.sap4;
-                if sap2.vie == 0 && sap4.vie == 0 {
-                    if quelqun {
-                        self.sapglob.presence = 0;
-                        self.inimen(0);
-                        self.laterb(VRAI);
-                        /* On ouvre par defaut le menu'prends'*/
-                        self.InverseOption(0, 2);
-                        self.sapglob.s_action = 3;
-                        self.inimen(4);
-                        return;
-                    }
-                    //comment(132);
+        loop {
+            self.sapglob.sap3clav =
+                if self.sapcomb.ModeJoueur2 != 0 && (self.sapglob.present[2] as c_short) < 5 {
+                    1
                 } else {
-                    quelqun = true;
+                    0
+                };
+            self.inarme(); /* initialise les armes sap1,silence sur le plateau*/
+            self.sapglob.presence = self.juge(); /* on initialise les adversaires reciproques*/
+            /* Si le joueur est seul alors affichage du commentaire */
+            let sap2 = &self.sapglob.sap2;
+            let sap4 = &self.sapglob.sap4;
+            if sap2.vie == 0 && sap4.vie == 0 {
+                if quelqun {
+                    self.sapglob.presence = 0;
+                    self.inimen(0);
+                    self.laterb(VRAI);
+                    /* On ouvre par defaut le menu'prends'*/
+                    self.InverseOption(0, 2);
+                    self.sapglob.s_action = 3;
+                    self.inimen(4);
+                    return;
                 }
-                self.sapglob.fin = 0; /* Moteurs !!!!*/
-                // ScrollComb(sens);
-                while self.sapglob.fin == 0 {
-                    self.laterb(VRAI); /*  ACTION !!!*/
-                }
-                /* c'est parfait coupez */
+                //comment(132);
+            } else {
+                quelqun = true;
+            }
+            self.sapglob.fin = 0; /* Moteurs !!!!*/
+            // ScrollComb(sens);
+            while self.sapglob.fin == 0 {
+                self.laterb(VRAI); /*  ACTION !!!*/
+            }
+            /* c'est parfait coupez */
 
-                self.tfrene(); /*on transfere l'enervement*/
-                self.outarm(); /*armes en sortie*/
-                self.sapglob.flcomb = 0;
-                self.sapglob.flefba = 0;
-                self.sapglob.fdialo = 0;
-                if self.sapglob.presence == -1 {
-                    self.sapglob.present[2] = 0;
+            self.tfrene(); /*on transfere l'enervement*/
+            self.outarm(); /*armes en sortie*/
+            self.sapglob.flcomb = 0;
+            self.sapglob.flefba = 0;
+            self.sapglob.fdialo = 0;
+            if self.sapglob.presence == -1 {
+                self.sapglob.present[2] = 0;
+            }
+            if self.sapglob.fin == 2
+            /*clan 1 perdu*/
+            {
+                self.CopyEcran1Sur2();
+                self.sapglob.dervue = Vue::AUCUNE;
+                /* combat ultime */
+                if self.sapglob.scenar == 5 {
+                    self.sapglob.mort = 0;
+                } else {
+                    tfr = self.sapglob.bless.wrapping_sub(100);
+                    if tfr > self.sapglob.bless {
+                        self.sapglob.mort -= 1;
+                        tfr = 20;
+                    }
+                    self.sapglob.bless = tfr;
                 }
-                if self.sapglob.fin == 2
-                /*clan 1 perdu*/
-                {
-                    self.CopyEcran1Sur2();
+                self.afstat();
+                /* on a perdu */
+                if self.sapglob.mort == 0 {
+                    self.sapglob.scenar = 7; // Perdu Mort
+                    self.sceveu(7);
+                    self.sapglob.presence = 0;
+                    self.inimen(0);
+                    return;
+                }
+                self.comment(81);
+                /*c'est un homme qui a gagne*/
+                if (self.sapglob.present[1] as c_short) < 5 && self.sapglob.present[1] != 0 {
+                    self.vole();
+                }
+                self.prm(SapId::Sap2, 0);
+                self.prm(SapId::Sap4, 0);
+                self.sapglob.presence = 0;
+                attends_bruit();
+                self.inimen(0);
+                return;
+            }
+            if self.sapglob.fin == 1
+            /*clan 2 perdu*/
+            {
+                self.sapglob.presence = 0;
+                self.prm(SapId::Sap2, 0);
+                self.prm(SapId::Sap4, 0);
+                /* On a eu le chef des Hyene folle*/
+                if self.sapglob.scenar == 4 && self.sapglob.chef != 0 && self.sapglob.tribu == 4 {
+                    self.sapglob.scenpr = 0;
+                    self.sceveu(9);
+                }
+                /* Scenario ultime */
+                if self.sapglob.scenar == 5 {
+                    self.sapglob.mort = 0; /*thats all folks*/
+                    self.sapglob.scenar = 6;
+                    self.sapglob.jour_dsk += 1;
+                    self.sceveu(6); /*bravo tu as gagne*/
+                    self.sapglob.presence = 0;
+                    self.inimen(0);
+                    return;
+                }
+            }
+            /*si esc */
+            if (self.sapglob.fin == 129 && self.sapglob.presence == 0) || self.sapglob.mort == 0 {
+                let sap1 = &self.sapglob.sap1;
+                if sap1.vie == 0 {
+                    // le C ecrivait 255 ici, valeur hors enum egalee a AUCUNE
+                    // par tous les tests (==/!= VUE_LATERALE, VUE_PAYSAGE)
                     self.sapglob.dervue = Vue::AUCUNE;
-                    /* combat ultime */
-                    if self.sapglob.scenar == 5 {
-                        self.sapglob.mort = 0;
-                    } else {
-                        tfr = self.sapglob.bless.wrapping_sub(100);
-                        if tfr > self.sapglob.bless {
-                            self.sapglob.mort -= 1;
-                            tfr = 20;
-                        }
-                        self.sapglob.bless = tfr;
-                    }
-                    self.afstat();
-                    /* on a perdu */
-                    if self.sapglob.mort == 0 {
-                        self.sapglob.scenar = 7; // Perdu Mort
-                        self.sceveu(7);
-                        self.sapglob.presence = 0;
-                        self.inimen(0);
-                        return;
-                    }
-                    self.comment(81);
-                    /*c'est un homme qui a gagne*/
-                    if (self.sapglob.present[1] as c_short) < 5 && self.sapglob.present[1] != 0 {
-                        self.vole();
-                    }
-                    self.prm(SapId::Sap2, 0);
-                    self.prm(SapId::Sap4, 0);
-                    self.sapglob.presence = 0;
-                    attends_bruit();
-                    self.inimen(0);
-                    return;
                 }
-                if self.sapglob.fin == 1
-                /*clan 2 perdu*/
-                {
-                    self.sapglob.presence = 0;
-                    self.prm(SapId::Sap2, 0);
-                    self.prm(SapId::Sap4, 0);
-                    /* On a eu le chef des Hyene folle*/
-                    if self.sapglob.scenar == 4 && self.sapglob.chef != 0 && self.sapglob.tribu == 4
-                    {
-                        self.sapglob.scenpr = 0;
-                        self.sceveu(9);
-                    }
-                    /* Scenario ultime */
-                    if self.sapglob.scenar == 5 {
-                        self.sapglob.mort = 0; /*thats all folks*/
-                        self.sapglob.scenar = 6;
-                        self.sapglob.jour_dsk += 1;
-                        self.sceveu(6); /*bravo tu as gagne*/
-                        self.sapglob.presence = 0;
-                        self.inimen(0);
-                        return;
-                    }
-                }
-                /*si esc */
-                if (self.sapglob.fin == 129 && self.sapglob.presence == 0) || self.sapglob.mort == 0
-                {
-                    let sap1 = &self.sapglob.sap1;
-                    if sap1.vie == 0 {
-                        // le C ecrivait 255 ici, valeur hors enum egalee a AUCUNE
-                        // par tous les tests (==/!= VUE_LATERALE, VUE_PAYSAGE)
-                        self.sapglob.dervue = Vue::AUCUNE;
-                    }
-                    self.sapglob.presence = 0;
-                    self.inimen(0);
-                    return;
-                }
-                /*Si sortie de l'ecran (nous sommes donc seuls)*/
-                if self.sapglob.fin == 128 {
-                    self.clrbadi();
-                    self.deplat();
-                    self.zoninf();
-                    if self.sapglob.presence != 0 && self.sapglob.presence < 5 {
-                        self.prm(SapId::Sap1, self.sapglob.present[0] as c_short);
-                        self.prm(SapId::Sap3, self.sapglob.present[2] as c_short);
-                        self.latera();
-                        self.sapglob.dervue = Vue::LATERALE;
-                        self.inimen(0);
-                        return;
-                    }
-                    self.fixcolon(SapId::Sap1);
-                    self.fixcolon(SapId::Sap3);
+                self.sapglob.presence = 0;
+                self.inimen(0);
+                return;
+            }
+            /*Si sortie de l'ecran (nous sommes donc seuls)*/
+            if self.sapglob.fin == 128 {
+                self.clrbadi();
+                self.deplat();
+                self.zoninf();
+                if self.sapglob.presence != 0 && self.sapglob.presence < 5 {
+                    self.prm(SapId::Sap1, self.sapglob.present[0] as c_short);
                     self.prm(SapId::Sap3, self.sapglob.present[2] as c_short);
                     self.latera();
+                    self.sapglob.dervue = Vue::LATERALE;
+                    self.inimen(0);
+                    return;
                 }
-            } /*infini .... et un peu plus*/
-        }
+                self.fixcolon(SapId::Sap1);
+                self.fixcolon(SapId::Sap3);
+                self.prm(SapId::Sap3, self.sapglob.present[2] as c_short);
+                self.latera();
+            }
+        } /*infini .... et un peu plus*/
     }
 }
 

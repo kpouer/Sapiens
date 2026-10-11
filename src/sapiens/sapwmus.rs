@@ -35,42 +35,40 @@ impl Default for Sapwmus {
 
 impl Sapiens {
     pub(crate) fn bruit(&mut self, num: c_short) {
-        unsafe {
-            if self.sapwmus.IsBruitages {
-                if self.sapwmus.canalSnd.is_null() {
-                    SndNewChannel(
-                        &raw mut self.sapwmus.canalSnd,
-                        sampledSynth as i16,
-                        (0x20 + initMono) as i16,
+        if self.sapwmus.IsBruitages {
+            if self.sapwmus.canalSnd.is_null() {
+                SndNewChannel(
+                    &raw mut self.sapwmus.canalSnd,
+                    sampledSynth as i16,
+                    (0x20 + initMono) as i16,
+                    std::ptr::null_mut(),
+                );
+            }
+            if !self.sapwmus.TabSons[num as usize].is_null() {
+                let type_snd: i64 = u32::from_be_bytes(*b"snd ") as i64; // = 0x736E6420
+                self.sapwmus.TabSons[num as usize] = GetResource(type_snd, num + 1000);
+            }
+            if !self.sapwmus.TabSons[num as usize].is_null() {
+                if !self.sapwmus.canalSnd.is_null() {
+                    SndPlay(
+                        self.sapwmus.canalSnd,
+                        self.sapwmus.TabSons[num as usize] as SndListHandle,
+                        true,
+                    );
+                } else {
+                    SndPlay(
                         std::ptr::null_mut(),
+                        self.sapwmus.TabSons[num as usize] as SndListHandle,
+                        true,
                     );
                 }
-                if !self.sapwmus.TabSons[num as usize].is_null() {
-                    let type_snd: i64 = u32::from_be_bytes(*b"snd ") as i64; // = 0x736E6420
-                    self.sapwmus.TabSons[num as usize] = GetResource(type_snd, num + 1000);
-                }
-                if !self.sapwmus.TabSons[num as usize].is_null() {
-                    if !self.sapwmus.canalSnd.is_null() {
-                        SndPlay(
-                            self.sapwmus.canalSnd,
-                            self.sapwmus.TabSons[num as usize] as SndListHandle,
-                            true,
-                        );
-                    } else {
-                        SndPlay(
-                            std::ptr::null_mut(),
-                            self.sapwmus.TabSons[num as usize] as SndListHandle,
-                            true,
-                        );
-                    }
-                }
-                #[cfg(target_os = "windows")]
-                if (num == 11 || num == 12 || num == 6) {
-                    delai(30);
-                }
-            } else {
-                self.delai(10);
             }
+            #[cfg(target_os = "windows")]
+            if (num == 11 || num == 12 || num == 6) {
+                delai(30);
+            }
+        } else {
+            self.delai(10);
         }
     }
 }

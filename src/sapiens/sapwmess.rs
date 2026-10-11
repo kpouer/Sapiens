@@ -54,44 +54,39 @@ impl Sapiens {
     /****************************************************************************
                 Effacement du message
     *****************************************************************************/
-    #[unsafe(no_mangle)]
     pub(crate) extern "C" fn efbadass(&mut self) {
-        unsafe {
-            let _g = port::on(self.sapwind.debecr);
-            DoEraseRect(&raw mut self.sapwmess.rMess);
-        }
+        let _g = port::on(self.sapwind.debecr);
+        DoEraseRect(&raw mut self.sapwmess.rMess);
     }
 
     /****************************************************************************
                 Scrolling du message
     *****************************************************************************/
     pub(crate) fn scrollbadass(&mut self) {
-        unsafe {
-            let mut i: c_short;
-            let mut reff: Rect = Rect {
-                top: 0,
-                left: 0,
-                bottom: 0,
-                right: 0,
-            };
+        let mut i: c_short;
+        let mut reff: Rect = Rect {
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+        };
 
-            self.eff_sour();
-            let _g = port::on(self.sapwind.mainWindow);
-            SetRect(
-                &raw mut reff,
-                self.sapwmess.rMess.left,
-                self.sapwmess.rMess.top,
-                self.sapwmess.rMess.left + 8,
-                self.sapwmess.rMess.bottom,
-            );
-            i = 0;
-            while i < self.sapwmess.rMess.right - self.sapwmess.rMess.left {
-                DoScrollRect(&raw mut self.sapwmess.rMess, 8, 0, core::ptr::null_mut());
-                DoEraseRect(&raw mut reff);
-                i += 8;
-            }
-            self.efbadass();
+        self.eff_sour();
+        let _g = port::on(self.sapwind.mainWindow);
+        SetRect(
+            &raw mut reff,
+            self.sapwmess.rMess.left,
+            self.sapwmess.rMess.top,
+            self.sapwmess.rMess.left + 8,
+            self.sapwmess.rMess.bottom,
+        );
+        i = 0;
+        while i < self.sapwmess.rMess.right - self.sapwmess.rMess.left {
+            DoScrollRect(&raw mut self.sapwmess.rMess, 8, 0, core::ptr::null_mut());
+            DoEraseRect(&raw mut reff);
+            i += 8;
         }
+        self.efbadass();
     }
 }
 

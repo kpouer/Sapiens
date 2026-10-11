@@ -3151,28 +3151,26 @@ impl Sapiens {
     Tire au hasard les fréquences à chaque nouvelle aventure
     ***********************************************************************/
     pub(crate) fn InitDecor3d(&mut self) {
-        unsafe {
-            self.sap3d.FreqOrage = self.random.myRandom(9900, 10000);
-            self.sap3d.DistMinFoudroie = self.random.myRandom(20, 500);
-            self.sap3d.nbNuages = self
-                .random
-                .myRandom(NB_NUAGES as c_long, NB_NUAGES_MAX as c_long);
-            self.sap3d.nbOiseaux = self
-                .random
-                .myRandom(NB_OISEAUX as c_long, NB_OISEAUX_MAX as c_long);
-            self.sap3d.nbRochers = self
-                .random
-                .myRandom(NB_ROCHERS as c_long, NB_ROCHERS_MAX as c_long);
-            self.sap3d.nbArbres = self
-                .random
-                .myRandom(NB_ARBRES as c_long, NB_ARBRES_MAX as c_long); //800
-            self.sapcomb.nbHerbes = self
-                .random
-                .myRandom(NB_HERBE_AV_PLAN as c_long, NB_MAX_HERBE_AV_PLAN as c_long);
-            self.sap3d.nbHommes = 0; //0
-            self.sap3d.FreqEclair = 1000;
-            self.sap3d.VitesseDeplacementNuages = self.random.myRandom(1, 120);
-        }
+        self.sap3d.FreqOrage = self.random.myRandom(9900, 10000);
+        self.sap3d.DistMinFoudroie = self.random.myRandom(20, 500);
+        self.sap3d.nbNuages = self
+            .random
+            .myRandom(NB_NUAGES as c_long, NB_NUAGES_MAX as c_long);
+        self.sap3d.nbOiseaux = self
+            .random
+            .myRandom(NB_OISEAUX as c_long, NB_OISEAUX_MAX as c_long);
+        self.sap3d.nbRochers = self
+            .random
+            .myRandom(NB_ROCHERS as c_long, NB_ROCHERS_MAX as c_long);
+        self.sap3d.nbArbres = self
+            .random
+            .myRandom(NB_ARBRES as c_long, NB_ARBRES_MAX as c_long); //800
+        self.sapcomb.nbHerbes = self
+            .random
+            .myRandom(NB_HERBE_AV_PLAN as c_long, NB_MAX_HERBE_AV_PLAN as c_long);
+        self.sap3d.nbHommes = 0; //0
+        self.sap3d.FreqEclair = 1000;
+        self.sap3d.VitesseDeplacementNuages = self.random.myRandom(1, 120);
     }
 
     /***********************************************************************

@@ -13,7 +13,6 @@ use crate::langue::Langue::GB;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapgest::Sapgest;
 use crate::sapiens::saptxt::{CvtDefaultLangRess, CvtLangRess};
-use crate::sapiens::sapwcvt::Sapwcvt;
 use crate::sapiens::sapwind::{SapiensExit, ValideUpdate};
 use crate::sapiens::{ECHELLE, IndexColorPtr, Mob, NB_MAX_MOB, PalCoul};
 use crate::shared::RGBColor as BRGBColor;
@@ -61,20 +60,17 @@ pub(crate) extern "C" fn RetraceItem(dialog: DialogPtr, item: ::std::os::raw::c_
                SetPathInData
 => id de la picture,aire
 ***********************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SetPathInData(sapgest: &Sapgest, name: *mut ::std::os::raw::c_char) {
+pub(crate) fn SetPathInData(sapgest: &Sapgest, name: *mut ::std::os::raw::c_char) {
     let mut vol: c_short = 0;
     let mut path: c_long = 0;
 
-    unsafe {
-        FixeCheminRelatif(
-            sapgest.volumeApplication,
-            sapgest.PathApplication,
-            c"data".as_ptr() as *mut c_char,
-        );
-        SaisitChemin(&mut vol, std::ptr::null_mut(), &mut path);
-        FixeCheminRelatif(vol, path, name);
-    }
+    FixeCheminRelatif(
+        sapgest.volumeApplication,
+        sapgest.PathApplication,
+        c"data".as_ptr() as *mut c_char,
+    );
+    SaisitChemin(&mut vol, std::ptr::null_mut(), &mut path);
+    FixeCheminRelatif(vol, path, name);
 }
 
 impl Sapiens {

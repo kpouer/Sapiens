@@ -278,16 +278,14 @@ impl Sapiens {
                             PASTMP:Le temps Passe
     ***********************************************************************/
     pub(crate) fn pastmp(&mut self) {
-        unsafe {
-            let mut i = self.sapglob.liste1.taille;
-            while i != 0 {
-                i -= 1;
-                /*la viande se corromps*/
-                if self.sapglob.liste1.elements[i as usize] >= 37
-                    && self.sapglob.liste1.elements[i as usize] < 41
-                {
-                    self.sapglob.liste1.elements[i as usize] += 1;
-                }
+        let mut i = self.sapglob.liste1.taille;
+        while i != 0 {
+            i -= 1;
+            /*la viande se corromps*/
+            if self.sapglob.liste1.elements[i as usize] >= 37
+                && self.sapglob.liste1.elements[i as usize] < 41
+            {
+                self.sapglob.liste1.elements[i as usize] += 1;
             }
         }
     }
@@ -335,26 +333,24 @@ impl Sapiens {
     *************************************************************************/
     pub(crate) fn effaceBulles(&mut self) {
         self.tfrvirt();
-        unsafe {
-            if !EmptyRect(&raw const self.saprel.rBulleJoueur) {
-                CopyOffscreen(
-                    self.sapwind.debecr,
-                    self.sapwind.mainWindow,
-                    &raw mut self.saprel.rBulleJoueur,
-                    &raw mut self.saprel.rBulleJoueur,
-                );
-            }
-            SetRect(&raw mut self.saprel.rBulleJoueur, 0, 0, 0, 0);
-            if !EmptyRect(&raw const self.saprel.rBulleAdversaire) {
-                CopyOffscreen(
-                    self.sapwind.debecr,
-                    self.sapwind.mainWindow,
-                    &raw mut self.saprel.rBulleAdversaire,
-                    &raw mut self.saprel.rBulleAdversaire,
-                );
-            }
-            SetRect(&raw mut self.saprel.rBulleAdversaire, 0, 0, 0, 0);
+        if !EmptyRect(&raw const self.saprel.rBulleJoueur) {
+            CopyOffscreen(
+                self.sapwind.debecr,
+                self.sapwind.mainWindow,
+                &raw mut self.saprel.rBulleJoueur,
+                &raw mut self.saprel.rBulleJoueur,
+            );
         }
+        SetRect(&raw mut self.saprel.rBulleJoueur, 0, 0, 0, 0);
+        if !EmptyRect(&raw const self.saprel.rBulleAdversaire) {
+            CopyOffscreen(
+                self.sapwind.debecr,
+                self.sapwind.mainWindow,
+                &raw mut self.saprel.rBulleAdversaire,
+                &raw mut self.saprel.rBulleAdversaire,
+            );
+        }
+        SetRect(&raw mut self.saprel.rBulleAdversaire, 0, 0, 0, 0);
     }
 
     /**************************************************************************
