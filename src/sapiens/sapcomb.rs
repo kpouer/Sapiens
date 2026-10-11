@@ -1641,7 +1641,6 @@ impl Sapiens {
         if (caract & 1) != 0 {
             self.saut(sap_id);
         } else if (caract & 2) != 0 {
-            let s = self.sapglob.sap_mut(sap_id);
             self.baisse(sap_id);
         }
         if ((caract & 18) == 18 || (caract & 64) != 0) && self.sapglob.presence != -1 {
@@ -1920,7 +1919,6 @@ impl Sapiens {
                 };
                 if (action & 3) != 0 {
                     if hauteur >= 2 && self.random.Rnd() < 10 {
-                        let s2 = self.sapglob.sap_mut(sap_id2);
                         self.baisse(sap_id2);
                     } else {
                         self.saut(sap_id2);

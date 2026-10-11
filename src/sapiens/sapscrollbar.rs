@@ -3,7 +3,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 use crate::Sapiens;
 use crate::acam::{SetRect, TickCount};
-use crate::cbridge::{Collapse, DialogPtr, OSErr, WindowPtr};
+use crate::cbridge::{DialogPtr, OSErr, WindowPtr};
 use crate::sapiens::sapwbrt::RetraceItem;
 use crate::sapiens::sapwind::GetRectItem;
 use crate::shared::{ControlHandle, Point, Rect, StringPtr};
@@ -12,7 +12,6 @@ use crate::stubs::{
     CarboniseGetDialogWindow, CarboniseNewControlActionProc, CarboniseSetNewControl,
     CarboniseTrackControl, GetCtlMax, GetCtlValue, NewControl, SetControlValue, ShowControl,
 };
-use std::os::raw::c_char;
 use std::ptr;
 
 /* Etat mutable de SAPSCROLLBAR.C, ex-`static mut`, regroupe dans cette
@@ -166,10 +165,7 @@ impl Sapiens {
             );
             let err: OSErr = CarboniseSetNewControl(dialog, item, control);
             if err != 0 {
-                Collapse(
-                    c"CarboniseSetNewControl %d".as_ptr() as *mut c_char,
-                    err as i32,
-                );
+                self.Collapse(&format!("CarboniseSetNewControl {err}"));
             }
             /* On le montre */
             ShowControl(control);

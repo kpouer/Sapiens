@@ -196,34 +196,29 @@ fn copie_chaine(buf: &mut [c_char], s: &str) {
 impl Sapiens {
     /***********************************************************************************
                      Collapse
-    Affichage d'un message d'erreur formaté
-        RMQ: Cette fonction supporte un affichage formaté identique au printf du C.
-    => Message à afficher sous la forme "format", arguments
+    Affichage d'un message d'erreur
+    => Message à afficher
     <= rien
     ***********************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn Collapse(&self, format: *mut c_char) {
+    pub(crate) fn Collapse(&self, message: &str) {
+        let _g = port::preserve();
         unsafe {
-            let _g = port::preserve();
             if !self.sapwind.mainWindow.is_null() {
                 port::set(self.sapwind.mainWindow);
             }
 
             /* On fixe la zone à la zone de secours de l'interface */
-            if !format.is_null() {
-                let mut chaine: [c_char; TAILLE_STR_MESS_FORMATE as usize] = [0; 512];
-                let src = std::ffi::CStr::from_ptr(format);
-                copie_chaine(&mut chaine, &src.to_string_lossy());
-                CarboniseSetCursorArrow();
-                CtoPstr(chaine.as_mut_ptr());
-                ParamText(
-                    &raw mut chaine as *mut u8,
-                    TRANS_VIDE.as_ptr() as *mut u8,
-                    TRANS_VIDE.as_ptr() as *mut u8,
-                    TRANS_VIDE.as_ptr() as *mut u8,
-                );
-                self.DoAlertSapiens(CvtDefaultLangRess(134)); /* ALRT_COLLAPSE */
-            }
+            let mut chaine: [c_char; TAILLE_STR_MESS_FORMATE as usize] = [0; 512];
+            copie_chaine(&mut chaine, message);
+            CarboniseSetCursorArrow();
+            CtoPstr(chaine.as_mut_ptr());
+            ParamText(
+                &raw mut chaine as *mut u8,
+                TRANS_VIDE.as_ptr() as *mut u8,
+                TRANS_VIDE.as_ptr() as *mut u8,
+                TRANS_VIDE.as_ptr() as *mut u8,
+            );
+            self.DoAlertSapiens(CvtDefaultLangRess(134)); /* ALRT_COLLAPSE */
         }
     }
 
@@ -547,7 +542,7 @@ impl Sapiens {
                     return id_ditl + 1;
                 }
             }
-            self.Collapse(c"GetNbItemInDialog:Ressource non trouvee.".as_ptr() as *mut c_char);
+            self.Collapse("GetNbItemInDialog:Ressource non trouvee.");
             -1
         }
     }
@@ -895,7 +890,6 @@ impl Sapiens {
     pub(crate) fn DoEvtClavier(&mut self, event: *const EventRecord) {
         unsafe {
             let ev = &*event;
-            let mut chaine: [c_char; 255] = [0; 255];
             let mut t: c_long;
 
             if ev.modifiers & cmdKey as c_short != 0 {
@@ -915,14 +909,10 @@ impl Sapiens {
                         self.TfrEcr(None);
                         i += 1;
                     }
-                    copie_chaine(
-                        &mut chaine,
-                        &format!(
-                            "{i} transferts totaux de l'ecran : {} ticks",
-                            TickCount() - t
-                        ),
-                    );
-                    self.Collapse(&raw mut chaine as *mut c_char);
+                    self.Collapse(&format!(
+                        "{i} transferts totaux de l'ecran : {} ticks",
+                        TickCount() - t
+                    ));
                 }
                 if car == 0x02
                 /*'D'*/
@@ -934,11 +924,7 @@ impl Sapiens {
                         self.affich(self.sapglob.dzeta as c_ushort);
                         i += 1;
                     }
-                    copie_chaine(
-                        &mut chaine,
-                        &format!("{i} images 3d : {} ticks", TickCount() - t),
-                    );
-                    self.Collapse(&raw mut chaine as *mut c_char);
+                    self.Collapse(&format!("{i} images 3d : {} ticks", TickCount() - t));
                 }
                 if car == 0x23
                 /*'P'*/
@@ -1499,7 +1485,7 @@ impl Sapiens {
             if !FixeMenu(CvtDefaultLangRess(0)) {
                 /* MENU_BAR */
                 let x = self.sapwind.GetStr(11);
-                self.Collapse(x /*"Reinstallez le logiciel SVP"*/);
+                self.Collapse(&std::ffi::CStr::from_ptr(x).to_string_lossy());
                 SapiensExit(-1);
             }
             self.FixeMenusReduit();
@@ -1510,9 +1496,7 @@ impl Sapiens {
             self.sapwind.Ecran1 =
                 SapiensCreeOffscreen(256 * ECHELLE as c_short, 100 * ECHELLE as c_short);
             if self.sapwind.Ecran1.is_null() {
-                self.Collapse(
-                    c"[SapWind.init_graph.1] Unable to create offscreen".as_ptr() as *mut c_char,
-                );
+                self.Collapse("[SapWind.init_graph.1] Unable to create offscreen");
                 SapiensExit(-2);
             }
             self.sapwind.Ecran2 =
@@ -1532,7 +1516,7 @@ impl Sapiens {
             /* On charge les mobs */
             if !self.InitMobs() {
                 let x = self.sapwind.GetStr(11);
-                self.Collapse(x /*"Reinstallez le logiciel SVP"*/);
+                self.Collapse(&std::ffi::CStr::from_ptr(x).to_string_lossy());
                 SapiensExit(-1);
             }
             self.InitCouleurFontes();

@@ -1115,7 +1115,7 @@ impl Sapiens {
                 strcat(chaine.as_mut_ptr(), c"sapiens_gb.html".as_ptr());
             }
             if OpenDocument(chaine.as_mut_ptr()) != 0 {
-                self.Collapse(c"Can't open manual.".as_ptr() as *mut c_char);
+                self.Collapse("Can't open manual.");
             }
             PopPath();
         }

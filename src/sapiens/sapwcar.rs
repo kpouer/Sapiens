@@ -4,7 +4,6 @@
 use crate::acam::{
     ClipRect, DisposeRgn, GetClip, MoveTo, NewRgn, RGBForeColor, SetClip, SetPt, SetRect,
 };
-use crate::cbridge::Collapse;
 use crate::langue::Langue::ES;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtCar, CvtCarLissage, langue};
@@ -14,7 +13,7 @@ use crate::shared::{Boolean, CGrafPtr, FontInfo, Point, RGBColor, Rect, RgnHandl
 use crate::stubs::CarboniseSetPatBlack;
 use crate::text::{CharWidth, DrawChar, GetFontInfo, TextFace, TextFont, TextSize};
 use crate::{Sapiens, port};
-use std::os::raw::{c_char, c_int, c_short};
+use std::os::raw::{c_char, c_short};
 use std::ptr::{addr_of, addr_of_mut};
 
 const ECHELLE: i16 = 2;
@@ -142,20 +141,17 @@ impl Sapiens {
 /*************************************************************************
                     SetColorFont
 **************************************************************************/
-unsafe fn SetColorFont(sapwcar: &Sapwcar, id: c_short) {
-    if id == sapwcar.index_white {
+unsafe fn SetColorFont(sapiens: &Sapiens, id: c_short) {
+    if id == sapiens.sapwcar.index_white {
         RGBForeColor(&rgbWhite);
-    } else if id == sapwcar.index_black {
+    } else if id == sapiens.sapwcar.index_black {
         RGBForeColor(&rgbBlack);
-    } else if id == sapwcar.index_brown {
+    } else if id == sapiens.sapwcar.index_brown {
         RGBForeColor(&rgbBrown);
-    } else if id == sapwcar.index_gray {
+    } else if id == sapiens.sapwcar.index_gray {
         RGBForeColor(&rgbGray);
     } else {
-        Collapse(
-            c"SetColorFont: %d unknown".as_ptr() as *mut c_char,
-            id as c_int,
-        );
+        sapiens.Collapse(&format!("SetColorFont: {id} unknown"));
     }
 }
 
@@ -190,13 +186,13 @@ impl Sapiens {
             TextSize(taille);
             TextFace(STYLE_LISSAGE as i16);
             GetFontInfo(&mut info);
-            SetColorFont(&self.sapwcar, couleurOmbre);
+            SetColorFont(self, couleurOmbre);
             MoveTo(
                 self.sapwcar.pt_ecr_car.h + dx,
                 self.sapwcar.pt_ecr_car.v + 1 + info.ascent + dy + 1,
             );
             DrawChar(car as i8);
-            SetColorFont(&self.sapwcar, couleur);
+            SetColorFont(self, couleur);
             MoveTo(
                 self.sapwcar.pt_ecr_car.h + dx,
                 self.sapwcar.pt_ecr_car.v + info.ascent + dy,

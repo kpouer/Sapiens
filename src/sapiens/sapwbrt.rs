@@ -450,12 +450,10 @@ impl Sapiens {
             /* On ouvre le fichier en lecture */
             f = fopen(chaine.as_mut_ptr(), c"rb".as_ptr());
             if f.is_null() {
-                sprintf(
-                    chaine.as_mut_ptr(),
-                    c"Charge fichier Brt : Fichier '%s' non trouv\xe9".as_ptr(),
-                    nom,
-                );
-                self.Collapse(chaine.as_mut_ptr());
+                self.Collapse(&format!(
+                    "Charge fichier Brt : Fichier '{}' non trouve",
+                    std::ffi::CStr::from_ptr(nom).to_string_lossy()
+                ));
                 return -1;
             }
             if getc(f) != b'B' as c_int
@@ -463,12 +461,12 @@ impl Sapiens {
                 || getc(f) != b'U' as c_int
                 || getc(f) != b'T' as c_int
             {
-                self.Collapse(c"Charge fichier Brt : Mauvaise en tete".as_ptr() as *mut c_char);
+                self.Collapse("Charge fichier Brt : Mauvaise en tete");
                 fclose(f);
                 return -1;
             }
             if self.sapwbrt.nbPalettes as i32 >= 16 {
-                self.Collapse(c"Plus de PalCoul libre".as_ptr() as *mut c_char);
+                self.Collapse("Plus de PalCoul libre");
                 fclose(f);
                 return -1;
             }
@@ -538,7 +536,7 @@ impl Sapiens {
                 self.sapwbrt.TabMob[curid as usize].datas = NewPtr(taille);
                 self.sapwbrt.TabMob[curid as usize].vide = vide;
                 if self.sapwbrt.TabMob[curid as usize].datas.is_null() {
-                    self.Collapse(c"Plus de place memoire".as_ptr() as *mut c_char);
+                    self.Collapse("Plus de place memoire");
                     return -1;
                 }
                 if !Read(f, self.sapwbrt.TabMob[curid as usize].datas, taille) {
@@ -546,7 +544,7 @@ impl Sapiens {
                 }
                 curid = (curid as i32 + 1) as i16;
                 if curid as i32 >= NB_MAX_MOB as i32 {
-                    self.Collapse(c"NB_MAX_MOB depasse".as_ptr() as *mut c_char);
+                    self.Collapse("NB_MAX_MOB depasse");
                     return -1;
                 }
             }

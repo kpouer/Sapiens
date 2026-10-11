@@ -59,7 +59,7 @@ impl Sapiens {
                 f,
             ) != strlen(VERSION_PREF.as_ptr() as _) + 1
             {
-                self.Collapse("Error writing preferences.".as_ptr() as _);
+                self.Collapse("Error writing preferences.");
                 fclose(f);
                 return;
             }

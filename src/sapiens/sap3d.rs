@@ -3677,7 +3677,7 @@ impl Sapiens {
                             .forme
                             .is_some_and(|id| id.forme().numMob3d == 7)
                         {
-                            self.Collapse(c"err".as_ptr() as *mut c_char);
+                            self.Collapse("err");
                         }
                     }
                 } else if self.random.myRandom(0, 1000) > self.sap3d.FreqEclair

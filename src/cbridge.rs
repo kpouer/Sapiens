@@ -299,7 +299,6 @@ unsafe extern "C" {
         pathBase: ::std::os::raw::c_long,
         path: *mut ::std::os::raw::c_char,
     ) -> OSErr;
-    pub(crate) fn Collapse(format: *mut ::std::os::raw::c_char, ...);
 
     pub(crate) static mut Ecran: CGrafPtr;
 

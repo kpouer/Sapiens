@@ -196,7 +196,7 @@ fn lit_sil(sapiens: &Sapiens, y: c_short, x: c_short) -> c_short {
             }
             i += 1;
         }
-        sapiens.Collapse(c"[Sapgest.lit_sil.1] Color not found".as_ptr() as *mut c_char);
+        sapiens.Collapse("[Sapgest.lit_sil.1] Color not found");
         0
     }
 }

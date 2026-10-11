@@ -3,7 +3,7 @@ use crate::Sapiens;
 use crate::acam::Index2Color;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::shared::RGBColor;
-use std::os::raw::{c_char, c_short, c_uchar};
+use std::os::raw::{c_short, c_uchar};
 use std::ptr::addr_of_mut;
 
 pub(crate) struct Sapwcvt {
@@ -116,7 +116,7 @@ impl Sapiens {
                 return i;
             }
         }
-        self.Collapse(c"CvtIndexEnCouleur: Index non trouve".as_ptr() as *mut c_char);
+        self.Collapse("CvtIndexEnCouleur: Index non trouve");
         -1
     }
 }
