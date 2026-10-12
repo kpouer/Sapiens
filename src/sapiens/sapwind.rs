@@ -840,7 +840,7 @@ impl Sapiens {
                 self.AdjustMenus();
                 self.DoMenuCommand(MenuKey((ev.message & charCodeMask as i64) as c_short) as i32);
             } else if ev.modifiers & optionKey as c_short != 0 {
-                let mut i: c_short = 0;
+                let mut i: c_short;
                 let car: c_short = ((ev.message & 0xFF00) >> 8) as c_short;
                 if car == 0x11
                 /*T*/

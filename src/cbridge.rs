@@ -89,19 +89,12 @@ pub(crate) struct TPrint__bindgen_ty_2 {
 
 pub(crate) type FILE = __sFILE;
 pub(crate) const charCodeMask: u32 = 255;
-pub(crate) const courier: u32 = 1;
-pub(crate) const noErr: u32 = 0;
 pub(crate) const cmdKey: u32 = 256;
 pub(crate) const ctrlItem: u32 = 16;
-pub(crate) const activateEvt: u32 = 8;
-pub(crate) const app4Evt: u32 = 55;
 pub(crate) const bold: u32 = 1;
 pub(crate) const editText: u32 = 4;
 
 pub(crate) const watchCursor: u32 = 0;
-pub(crate) const keyDown: u32 = 3;
-pub(crate) const autoKey: u32 = 5;
-pub(crate) const keyUp: u32 = 4;
 pub(crate) const blackColor: u32 = 33;
 pub(crate) const whiteColor: u32 = 30;
 

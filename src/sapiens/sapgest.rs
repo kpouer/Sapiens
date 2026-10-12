@@ -1472,121 +1472,109 @@ impl Sapiens {
     /***********************************************************************
                             DEF3D: Defini la 3d
     ***********************************************************************/
-    pub(crate) extern "C" fn DEF3D(&mut self) {
-        unsafe {
-            let mut r = Rect::default();
-            let mut pt = Point::default();
+    pub(crate) fn DEF3D(&mut self) {
+        let mut r = Rect::default();
+        let mut pt = Point::default();
 
-            self.sapglob.pal_chron = self.sapglob.palhaute;
-            self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut c_short;
-            /* Affichage sur Ecran */
-            let mut cont: c_char = 1;
-            let mut pos: c_char = 0;
-            self.sapglob.sposx = 160;
-            self.sapglob.dsposx = 160;
-            self.sapglob.sposy = 50;
-            self.sapglob.dsposy = 50;
-            SetRect(
-                &mut r,
-                16 * ECHELLE as c_short,
-                0 * ECHELLE as c_short,
-                (320 - 16) * ECHELLE as c_short,
-                200 * ECHELLE as c_short,
-            );
-            self.FixeAireNoMouse(r);
-            while cont != 0 {
-                self.JAUGES3D();
-                loop {
-                    (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
-                    self.aff_sour(
-                        self.sapwind.mobBambou + 21,
-                        self.sapglob.sposy,
-                        self.sapglob.sposx,
-                    );
-                    if self.sapglob.bouton == 0 {
-                        break;
-                    }
+        self.sapglob.pal_chron = self.sapglob.palhaute;
+        self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut c_short;
+        /* Affichage sur Ecran */
+        let mut cont: c_char = 1;
+        let mut pos: c_char;
+        self.sapglob.sposx = 160;
+        self.sapglob.dsposx = 160;
+        self.sapglob.sposy = 50;
+        self.sapglob.dsposy = 50;
+        SetRect(
+            &mut r,
+            16 * ECHELLE as c_short,
+            0,
+            (320 - 16) * ECHELLE as c_short,
+            200 * ECHELLE as c_short,
+        );
+        self.FixeAireNoMouse(r);
+        while cont != 0 {
+            self.JAUGES3D();
+            loop {
+                (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
+                self.aff_sour(
+                    self.sapwind.mobBambou + 21,
+                    self.sapglob.sposy,
+                    self.sapglob.sposx,
+                );
+                if self.sapglob.bouton == 0 {
+                    break;
                 }
-                if MouseDansSuite(self.sapglob.sposx, self.sapglob.sposy) {
-                    cont = 0;
-                } else {
-                    SetPt(&mut pt, self.sapglob.sposx, self.sapglob.sposy);
-                    let mut i: c_short = 0;
-                    while i < NB_JAUGES_3D as c_short {
-                        AIREJAUGE3d(i, &mut r);
-                        if pt.v >= r.top && pt.v <= r.bottom {
-                            pos = i as c_char;
-                            loop {
-                                let val = (self.sapglob.sposx - r.left) as f32
-                                    / (r.right - r.left) as f32;
+            }
+            if MouseDansSuite(self.sapglob.sposx, self.sapglob.sposy) {
+                cont = 0;
+            } else {
+                SetPt(&mut pt, self.sapglob.sposx, self.sapglob.sposy);
+                let mut i: c_short = 0;
+                while i < NB_JAUGES_3D as c_short {
+                    AIREJAUGE3d(i, &mut r);
+                    if pt.v >= r.top && pt.v <= r.bottom {
+                        pos = i as c_char;
+                        loop {
+                            let val =
+                                (self.sapglob.sposx - r.left) as f32 / (r.right - r.left) as f32;
 
-                                match pos {
-                                    0 => {
-                                        self.sap3d.nbNuages = (val * NB_NUAGES_MAX as f32) as c_long
-                                    }
-                                    1 => {
-                                        self.sap3d.nbOiseaux =
-                                            (val * NB_OISEAUX_MAX as f32) as c_long
-                                    }
-                                    2 => {
-                                        self.sap3d.nbRochers =
-                                            (val * NB_ROCHERS_MAX as f32) as c_long
-                                    }
-                                    3 => {
-                                        self.sap3d.nbArbres = (val * NB_ARBRES_MAX as f32) as c_long
-                                    }
-                                    4 => {
-                                        self.sapcomb.nbHerbes =
-                                            (val * NB_MAX_HERBE_AV_PLAN as f32) as c_long
-                                    }
-                                    _ => {}
+                            match pos {
+                                0 => self.sap3d.nbNuages = (val * NB_NUAGES_MAX as f32) as c_long,
+                                1 => self.sap3d.nbOiseaux = (val * NB_OISEAUX_MAX as f32) as c_long,
+                                2 => self.sap3d.nbRochers = (val * NB_ROCHERS_MAX as f32) as c_long,
+                                3 => self.sap3d.nbArbres = (val * NB_ARBRES_MAX as f32) as c_long,
+                                4 => {
+                                    self.sapcomb.nbHerbes =
+                                        (val * NB_MAX_HERBE_AV_PLAN as f32) as c_long
                                 }
-                                if self.sap3d.nbNuages > NB_NUAGES_MAX as c_long {
-                                    self.sap3d.nbNuages = NB_NUAGES_MAX as c_long;
-                                }
-                                if self.sap3d.nbOiseaux > NB_OISEAUX_MAX as c_long {
-                                    self.sap3d.nbOiseaux = NB_OISEAUX_MAX as c_long;
-                                }
-                                if self.sap3d.nbRochers > NB_ROCHERS_MAX as c_long {
-                                    self.sap3d.nbRochers = NB_ROCHERS_MAX as c_long;
-                                }
-                                if self.sap3d.nbArbres > NB_ARBRES_MAX as c_long {
-                                    self.sap3d.nbArbres = NB_ARBRES_MAX as c_long;
-                                }
-                                if self.sapcomb.nbHerbes > NB_MAX_HERBE_AV_PLAN as c_long {
-                                    self.sapcomb.nbHerbes = NB_MAX_HERBE_AV_PLAN as c_long;
-                                }
-                                if self.sap3d.nbNuages < 0 {
-                                    self.sap3d.nbNuages = 0;
-                                }
-                                if self.sap3d.nbOiseaux < 0 {
-                                    self.sap3d.nbOiseaux = 0;
-                                }
-                                if self.sap3d.nbRochers < 0 {
-                                    self.sap3d.nbRochers = 0;
-                                }
-                                if self.sap3d.nbArbres < 0 {
-                                    self.sap3d.nbArbres = 0;
-                                }
-                                if self.sapcomb.nbHerbes < 0 {
-                                    self.sapcomb.nbHerbes = 0;
-                                }
-                                (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) =
-                                    self.vq_mouse();
-                                self.JAUGES3D();
-                                self.aff_sour(
-                                    self.sapwind.mobBambou + 21,
-                                    self.sapglob.sposy,
-                                    self.sapglob.sposx,
-                                );
-                                if self.sapglob.bouton == 0 {
-                                    break;
-                                }
+                                _ => {}
                             }
-                            i = 255;
+                            if self.sap3d.nbNuages > NB_NUAGES_MAX as c_long {
+                                self.sap3d.nbNuages = NB_NUAGES_MAX as c_long;
+                            }
+                            if self.sap3d.nbOiseaux > NB_OISEAUX_MAX as c_long {
+                                self.sap3d.nbOiseaux = NB_OISEAUX_MAX as c_long;
+                            }
+                            if self.sap3d.nbRochers > NB_ROCHERS_MAX as c_long {
+                                self.sap3d.nbRochers = NB_ROCHERS_MAX as c_long;
+                            }
+                            if self.sap3d.nbArbres > NB_ARBRES_MAX as c_long {
+                                self.sap3d.nbArbres = NB_ARBRES_MAX as c_long;
+                            }
+                            if self.sapcomb.nbHerbes > NB_MAX_HERBE_AV_PLAN as c_long {
+                                self.sapcomb.nbHerbes = NB_MAX_HERBE_AV_PLAN as c_long;
+                            }
+                            if self.sap3d.nbNuages < 0 {
+                                self.sap3d.nbNuages = 0;
+                            }
+                            if self.sap3d.nbOiseaux < 0 {
+                                self.sap3d.nbOiseaux = 0;
+                            }
+                            if self.sap3d.nbRochers < 0 {
+                                self.sap3d.nbRochers = 0;
+                            }
+                            if self.sap3d.nbArbres < 0 {
+                                self.sap3d.nbArbres = 0;
+                            }
+                            if self.sapcomb.nbHerbes < 0 {
+                                self.sapcomb.nbHerbes = 0;
+                            }
+                            (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) =
+                                self.vq_mouse();
+                            self.JAUGES3D();
+                            self.aff_sour(
+                                self.sapwind.mobBambou + 21,
+                                self.sapglob.sposy,
+                                self.sapglob.sposx,
+                            );
+                            if self.sapglob.bouton == 0 {
+                                break;
+                            }
                         }
-                        i += 1;
+                        i = 255;
                     }
+                    i += 1;
                 }
             }
         }
@@ -1682,7 +1670,6 @@ Saisi un nom de fichier pour une lecture
 ***********************************************************************/
 impl Sapiens {
     fn SaisieNomFichierLecture(&mut self, nom: *mut c_char, extension: *const c_char) -> Boolean {
-        let mut point = Point::default();
         let mut reply = SFReply {
             good: false,
             vRefNum: 0,
@@ -1691,8 +1678,7 @@ impl Sapiens {
         };
         let mut chaine = [0 as c_char; 255];
 
-        SetPt(
-            &mut point,
+        let point = Point::new(
             ((qd.screenBits.bounds.right - 348) / 2) as c_short,
             ((qd.screenBits.bounds.bottom - 200) / 2) as c_short,
         );

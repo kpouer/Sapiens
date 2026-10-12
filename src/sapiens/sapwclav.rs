@@ -257,32 +257,30 @@ impl Sapiens {
     pub(crate) fn getkey3d(&mut self) -> c_short {
         let mut bitmap: c_short = 0;
 
-        unsafe {
-            if GetKeyMap(&raw mut bitmap) == 0 {
-                (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
-                let mut delt = self.sapglob.sposx - self.sapglob.dsposx;
-                if delt > 0 && delt > 16 {
-                    bitmap |= 8;
-                }
-                if delt < 0 && -delt > 16 {
-                    bitmap |= 4;
-                }
-                delt = self.sapglob.sposy - self.sapglob.dsposy;
-                if delt > 0 && delt > 8 {
-                    bitmap |= 2;
-                }
-                if delt < 0 && -delt > 8 {
-                    bitmap |= 1;
-                }
-                if (self.sapglob.bouton & 1) != 0 {
-                    bitmap |= 64;
-                }
-                if (self.sapglob.bouton & 2) != 0 {
-                    bitmap |= 64;
-                }
-            } else {
-                self.reset_mouse();
+        if GetKeyMap(&raw mut bitmap) == 0 {
+            (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
+            let mut delt = self.sapglob.sposx - self.sapglob.dsposx;
+            if delt > 0 && delt > 16 {
+                bitmap |= 8;
             }
+            if delt < 0 && -delt > 16 {
+                bitmap |= 4;
+            }
+            delt = self.sapglob.sposy - self.sapglob.dsposy;
+            if delt > 0 && delt > 8 {
+                bitmap |= 2;
+            }
+            if delt < 0 && -delt > 8 {
+                bitmap |= 1;
+            }
+            if (self.sapglob.bouton & 1) != 0 {
+                bitmap |= 64;
+            }
+            if (self.sapglob.bouton & 2) != 0 {
+                bitmap |= 64;
+            }
+        } else {
+            self.reset_mouse();
         }
         bitmap
     }
@@ -295,50 +293,46 @@ impl Sapiens {
     pub(crate) fn getkey(&mut self, quoi: c_ushort) -> c_short {
         let mut bitmap: c_short = 0;
 
-        unsafe {
-            if quoi != 0 {
-                GetKeyMapJoueur2(&raw mut bitmap);
-            } else {
-                /* joueur primaire */
-                if GetKeyMap(&raw mut bitmap) == 0 {
-                    let mut delt: c_short;
-                    (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
-                    delt = self.sapglob.sposx - self.sapglob.dsposx;
-                    if delt > 0 && delt > 10 {
-                        bitmap |= 8;
-                    }
-                    if delt < 0 && -delt > 10 {
-                        bitmap |= 4;
-                    }
-                    delt = self.sapglob.sposy - self.sapglob.dsposy;
-                    if delt > 0 && delt > 5 {
-                        bitmap |= 2;
-                    }
-                    if delt < 0 && -delt > 5 {
-                        bitmap |= 1;
-                    }
-                    if (self.sapglob.bouton & 1) != 0 {
-                        bitmap |= 32;
-                    }
-                    if (self.sapglob.bouton & 2) != 0 {
-                        bitmap |= 16;
-                    }
-                } else {
-                    self.reset_mouse();
+        if quoi != 0 {
+            GetKeyMapJoueur2(&raw mut bitmap);
+        } else {
+            /* joueur primaire */
+            if GetKeyMap(&raw mut bitmap) == 0 {
+                let mut delt: c_short;
+                (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
+                delt = self.sapglob.sposx - self.sapglob.dsposx;
+                if delt > 0 && delt > 10 {
+                    bitmap |= 8;
                 }
-                self.sapglob.dsposx = self.sapglob.sposx;
-                self.sapglob.dsposy = self.sapglob.sposy;
+                if delt < 0 && -delt > 10 {
+                    bitmap |= 4;
+                }
+                delt = self.sapglob.sposy - self.sapglob.dsposy;
+                if delt > 0 && delt > 5 {
+                    bitmap |= 2;
+                }
+                if delt < 0 && -delt > 5 {
+                    bitmap |= 1;
+                }
+                if (self.sapglob.bouton & 1) != 0 {
+                    bitmap |= 32;
+                }
+                if (self.sapglob.bouton & 2) != 0 {
+                    bitmap |= 16;
+                }
+            } else {
+                self.reset_mouse();
             }
+            self.sapglob.dsposx = self.sapglob.sposx;
+            self.sapglob.dsposy = self.sapglob.sposy;
         }
         bitmap
     }
-}
 
-/*************************************************************
-                    BOUGE_SOURIS
-=> globales :sposx,sposy,bouton,icone
-**************************************************************/
-impl Sapiens {
+    /*************************************************************
+                        BOUGE_SOURIS
+    => globales :sposx,sposy,bouton,icone
+    **************************************************************/
     pub(crate) fn bouge_souris(&mut self) {
         self.GereInterface();
         (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();

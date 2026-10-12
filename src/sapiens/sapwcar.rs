@@ -1,9 +1,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 #![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
-use crate::acam::{
-    ClipRect, DisposeRgn, GetClip, MoveTo, NewRgn, RGBForeColor, SetClip, SetPt, SetRect,
-};
+use crate::acam::{ClipRect, DisposeRgn, GetClip, MoveTo, NewRgn, RGBForeColor, SetClip, SetRect};
 use crate::langue::Langue::ES;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtCar, CvtCarLissage, langue};
