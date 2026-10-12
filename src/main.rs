@@ -20,7 +20,6 @@ use crate::acam::Random;
 use crate::exchange::{Cursor, get_cursor, set_menu_command};
 use crate::langue::{LangMode, Langue, effective_lang, load_lang_mode, save_lang_mode};
 use crate::sapiens::sap3d::Sap3d;
-use crate::sapiens::sapbonc::Sapbonc;
 use crate::sapiens::sapcomb::Sapcomb;
 use crate::sapiens::sapenreg::Sapenreg;
 use crate::sapiens::sapgest::Sapgest;
@@ -151,7 +150,6 @@ struct Sapiens {
     sapw3d: Sapw3d,
     sapwbrt: Sapwbrt,
     random: Random,
-    sapbonc: Sapbonc,
     saplist: Saplist,
     sapwmus: Sapwmus,
     sapwarb: Sapwarb,

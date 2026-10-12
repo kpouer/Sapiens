@@ -45,11 +45,6 @@ pub(crate) fn is_window(p: CGrafPtr) -> bool {
     !p.is_null() && p == window()
 }
 
-/// Le port courant est-il la fenêtre affichée ?
-pub(crate) fn on_screen() -> bool {
-    is_window(current())
-}
-
 /// Garde de restoration du port courant.
 pub(crate) struct Guard(CGrafPtr);
 

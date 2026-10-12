@@ -1638,37 +1638,32 @@ impl Sapiens {
     /* sap 1 c'est le joueur sap3 le copain*/
     pub(crate) fn gercop(&mut self, scop_id: SapId, type_: c_short) {
         let colonne = self.sapglob.sap_mut(scop_id).colonne;
-        let mut sens: c_uchar = 0;
         {
             let sap1 = &self.sapglob.sap1;
             self.sapglob.distsp = sap1.colonne - colonne; /*distance entre saps*/
         }
-        if self.sapglob.distsp < 0
-        /*valeur absolue*/
-        {
+        let sens = if self.sapglob.distsp < 0 {
+            /*valeur absolue*/
             self.sapglob.distsp = -self.sapglob.distsp;
-            sens = 0;
+            0
         } else {
-            sens = 1;
-        }
+            1
+        };
 
         /*dans le cas ou on gere le sap3 seul avec nous*/
         /*si le sap1 est mort alors il va tendre a sortir*/
-        if self.sapglob.distsp > 3
-        /*encore loin*/
-        {
+        if self.sapglob.distsp > 3 {
+            /*encore loin*/
             self.sapglob.sap_mut(scop_id).sens = sens; /*vers le joueur*/
-            if type_ != 0
-            /* c'est un humain*/
-            {
+            if type_ != 0 {
+                /* c'est un humain*/
                 if self.sapglob.sap(scop_id).hauteur != 0 {
                     self.saut(scop_id); /*si baisse alors monte*/
                 } else {
                     self.avasap(scop_id); /*il marche*/
                 }
-            } else
-            /*c'est une bestiole*/
-            {
+            } else {
+                /*c'est une bestiole*/
                 if (self.sapglob.present[self.sapglob.who as usize] as c_short) > 6 {
                     let x = addr_of_mut!(self.sapglob.anlap2) as *mut c_char;
                     let scop = self.sapglob.sap_mut(scop_id);
@@ -1679,12 +1674,10 @@ impl Sapiens {
                     (*scop).sapanim[1] = x;
                 }
             }
-        }
-        /* deja present*/
-        else {
-            if type_ == 0
-            /*si bestiole*/
-            {
+        } else {
+            /* deja present*/
+            if type_ == 0 {
+                /*si bestiole*/
                 let sens = self.sapglob.sap1.sens;
                 {
                     let scop = self.sapglob.sap_mut(scop_id);
@@ -1730,7 +1723,6 @@ impl Sapiens {
                     AUTONHOM:
     ***********************************************************************/
     pub(crate) fn autonhom(&mut self, sap_id2: SapId, sap_id1: SapId) {
-        let mut sens: c_uchar = 0;
         /*
         test specifique au copain alors que je suis seul a me battre contre un
         adversaire, Sapiens etant un jeu eminement MORAL, mon ami peut refuser
@@ -1755,14 +1747,13 @@ impl Sapiens {
 
         self.sapglob.distsp =
             self.sapglob.sap(sap_id1).colonne - self.sapglob.sap_mut(sap_id2).colonne; /*distance entre saps*/
-        if self.sapglob.distsp < 0
-        /*valeur absolue*/
-        {
+        let sens = if self.sapglob.distsp < 0 {
+            /*valeur absolue*/
             self.sapglob.distsp = -self.sapglob.distsp;
-            sens = 1;
+            1
         } else {
-            sens = 0;
-        }
+            0
+        };
 
         let hauteur = self.sapglob.sap(sap_id1).hauteur;
         let (hauteur2, sens2) = {
@@ -1913,18 +1904,17 @@ impl Sapiens {
                             BESTIO:Gere les Bestioles
     ***********************************************************************/
     pub(crate) fn bestio(&mut self, sap_id2: SapId, sap_id1: SapId) {
-        let mut sens: c_uchar = 0;
         self.sapglob.distsp = {
             let s1 = self.sapglob.sap(sap_id1);
             let s2 = self.sapglob.sap(sap_id2);
             s1.colonne - s2.colonne
         };
-        if self.sapglob.distsp < 0 {
+        let sens = if self.sapglob.distsp < 0 {
             self.sapglob.distsp = -self.sapglob.distsp;
-            sens = 1;
+            1
         } else {
-            sens = 0;
-        }
+            0
+        };
 
         let animal2 = self.sapglob.sap(sap_id2).animal;
         /*1=Lapin,2=Lagopede,3=Loup,4=Ours*/
@@ -2085,12 +2075,9 @@ impl Sapiens {
                         self.clav(surqui, touche);
                     }
                     self.sapglob.cptagil = tfragil;
-                } else
-                /* Gestion du copain:Il y a-t-il une gestion de sap alors
-                qu'il n'y a plus d'adversaire?*/
-                if (self.sapglob.present[surqui as usize] as c_short) < 5
-                /*  homme*/
-                {
+                } else if (self.sapglob.present[surqui as usize] as c_short) < 5 {
+                    /* Gestion du copain:Il y a-t-il une gestion de sap alors qu'il n'y a plus d'adversaire?*/
+                    /*  homme*/
                     if self.sapglob.sap3clav != 0 && surqui as usize == 2
                     /*au clavier*/
                     {
@@ -2106,9 +2093,8 @@ impl Sapiens {
                     } else if let Some(adversaire) = self.sapglob.peuple(surqui).adversaire {
                         self.autonhom(surqui, adversaire);
                     }
-                } else
-                /*bestiole*/
-                {
+                } else {
+                    /*bestiole*/
                     if self.sapglob.presence == 0 {
                         self.gercop(
                             surqui,
@@ -2172,9 +2158,9 @@ const GRANULOSITE: c_short = 10;
 
 impl Sapiens {
     fn avplan(&mut self) {
-        let mut num: c_short = 0;
+        let mut num: c_short;
         let mut r: Rect = Rect::default();
-        let mut nb: c_long = 0;
+        let mut nb: c_long;
         /* Premier passage */
         if self.sapcomb.TabIndexHerbeFond.is_null() {
             let _g = port::on(self.sapwind.Ecran1);

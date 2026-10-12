@@ -96,42 +96,37 @@ impl Sapiens {
                     MusicInit
     Lance la musique désirée : 1 musique 1, 2 musique 2
     ***************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn MusicInit(&mut self, quelle: c_short) {
-        let nom;
-
-        unsafe {
-            if self.sapglob.okmuse == TypeMuse::NO_MUSIQUE {
-                ArreteMusique(true);
-                self.sapwmus.MusiqueEnCours = FAUX;
-                return;
-            }
-            SetCursor(GetCursor(watchCursor as i16));
-            // S300 l'arret de la musique se fait dans SapiensExit
-            //if(!IsExitMuse) atexit(ExitMuse);
-            //IsExitMuse=VRAI;
-            self.sapwmus.quelle_musique = quelle as c_short;
-            PushPath();
-            SetPathInData(&self.sapgest, c"musics".as_ptr() as *mut c_char);
-            if quelle == 1 {
-                nom = c"Sapiens1.mux".as_ptr() as *mut c_char;
-            } else {
-                nom = c"Sapiens2.mux".as_ptr() as *mut c_char;
-            }
-            JoueMusiqueHarmony(
-                nom,
-                std::ptr::null_mut(),
-                c"".as_ptr() as *mut c_char,
-                0,
-                c"DIGIT_QUALITE".as_ptr() as *mut c_char,
-                -1,
-                0,
-                0,
-                false,
-            );
-            CarboniseSetCursorArrow();
-            PopPath();
+    pub(crate) fn MusicInit(&mut self, quelle: c_short) {
+        if self.sapglob.okmuse == TypeMuse::NO_MUSIQUE {
+            ArreteMusique(true);
+            self.sapwmus.MusiqueEnCours = FAUX;
+            return;
         }
+        SetCursor(GetCursor(watchCursor as i16));
+        // S300 l'arret de la musique se fait dans SapiensExit
+        //if(!IsExitMuse) atexit(ExitMuse);
+        //IsExitMuse=VRAI;
+        self.sapwmus.quelle_musique = quelle as c_short;
+        PushPath();
+        SetPathInData(&self.sapgest, c"musics".as_ptr() as *mut c_char);
+        let nom = if quelle == 1 {
+            c"Sapiens1.mux".as_ptr() as *mut c_char
+        } else {
+            c"Sapiens2.mux".as_ptr() as *mut c_char
+        };
+        JoueMusiqueHarmony(
+            nom,
+            std::ptr::null_mut(),
+            c"".as_ptr() as *mut c_char,
+            0,
+            c"DIGIT_QUALITE".as_ptr() as *mut c_char,
+            -1,
+            0,
+            0,
+            false,
+        );
+        CarboniseSetCursorArrow();
+        PopPath();
 
         // #ifdef OLD_VERSION
         // else
@@ -157,7 +152,6 @@ impl Sapiens {
         //         }
         //     }
         // #endif
-        return;
     }
 
     /*************************************************************************
@@ -166,12 +160,10 @@ impl Sapiens {
     ***************************************************************************/
     pub(crate) fn CheckChangeMusique(&mut self) {
         if IsFinDeMusique() {
-            unsafe {
-                if self.sapwmus.quelle_musique == 1 {
-                    self.MusicInit(2);
-                } else if self.sapwmus.quelle_musique == 2 {
-                    self.MusicInit(1);
-                }
+            if self.sapwmus.quelle_musique == 1 {
+                self.MusicInit(2);
+            } else if self.sapwmus.quelle_musique == 2 {
+                self.MusicInit(1);
             }
         }
     }

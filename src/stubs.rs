@@ -343,8 +343,7 @@ pub(crate) extern "C" fn DisposeRoutineDescriptor(_p: *mut c_void) {}
 pub(crate) extern "C" fn GetPicture(_resID: i16) -> PicHandle {
     std::ptr::null_mut()
 }
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn DrawPicture(_pic: PicHandle, _dstRect: *const Rect) {}
+pub(crate) fn DrawPicture(_pic: PicHandle, _dstRect: *const Rect) {}
 #[unsafe(no_mangle)]
 pub(crate) extern "C" fn GetRectFilePng(_name: *mut i8, _r: *mut Rect) -> Boolean {
     false

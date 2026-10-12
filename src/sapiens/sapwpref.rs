@@ -250,10 +250,8 @@ Le bouton est enncadre
 unsafe extern "C" fn VectFrameBouton(window: DialogPtr, item: c_short) {
     let mut r: Rect = Rect::default();
 
-    unsafe {
-        GetRectItem(window, item, &raw mut r);
-        DoFrameRect(&r);
-    }
+    GetRectItem(window, item, &raw mut r);
+    DoFrameRect(&r);
 }
 
 impl Sapiens {

@@ -15,9 +15,9 @@ use crate::acam::{
     PenNormal, PtoCstr, Random, SetMenuBar, SetRect, TickCount, VRAI,
 };
 use crate::cbridge::{
-    DITL, DLOG, DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey,
-    ctrlItem, editText, everyEvent, geneva, helvetica, itemDisable, optionKey, radCtrl, statText,
-    strcat, strcpy, strlen, userItem, watchCursor, whiteColor,
+    DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, ctrlItem,
+    editText, everyEvent, geneva, helvetica, itemDisable, optionKey, radCtrl, statText, strcat,
+    strcpy, strlen, userItem, watchCursor, whiteColor,
 };
 use crate::exchange::take_menu_command;
 use crate::port;
@@ -202,24 +202,22 @@ impl Sapiens {
     ***********************************************************************************/
     pub(crate) fn Collapse(&self, message: &str) {
         let _g = port::preserve();
-        unsafe {
-            if !self.sapwind.mainWindow.is_null() {
-                port::set(self.sapwind.mainWindow);
-            }
-
-            /* On fixe la zone à la zone de secours de l'interface */
-            let mut chaine: [c_char; TAILLE_STR_MESS_FORMATE as usize] = [0; 512];
-            copie_chaine(&mut chaine, message);
-            CarboniseSetCursorArrow();
-            CtoPstr(chaine.as_mut_ptr());
-            ParamText(
-                &raw mut chaine as *mut u8,
-                TRANS_VIDE.as_ptr() as *mut u8,
-                TRANS_VIDE.as_ptr() as *mut u8,
-                TRANS_VIDE.as_ptr() as *mut u8,
-            );
-            self.DoAlertSapiens(CvtDefaultLangRess(134)); /* ALRT_COLLAPSE */
+        if !self.sapwind.mainWindow.is_null() {
+            port::set(self.sapwind.mainWindow);
         }
+
+        /* On fixe la zone à la zone de secours de l'interface */
+        let mut chaine: [c_char; TAILLE_STR_MESS_FORMATE as usize] = [0; 512];
+        copie_chaine(&mut chaine, message);
+        CarboniseSetCursorArrow();
+        CtoPstr(chaine.as_mut_ptr());
+        ParamText(
+            &raw mut chaine as *mut u8,
+            TRANS_VIDE.as_ptr() as *mut u8,
+            TRANS_VIDE.as_ptr() as *mut u8,
+            TRANS_VIDE.as_ptr() as *mut u8,
+        );
+        self.DoAlertSapiens(CvtDefaultLangRess(134)); /* ALRT_COLLAPSE */
     }
 
     /***********************************************************************************
@@ -516,42 +514,10 @@ pub(crate) fn DefAfficheItem(
 }
 
 impl Sapiens {
-    /***********************************************************************************
-                            GetNbItemInDialog
-    Suppplée à une lacune du MACOS: Va chercher en fonction de l'id d'un dialogue,
-    le nombre d'item dans le DITL de ceui-ci
-    => ID du dialog
-    <= Nombre d'item ou -1 si erreur
-    **********************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn GetNbItemInDialog(&self, id_dialogue: c_short) -> c_short {
-        unsafe {
-            let mut handle: Handle;
-            let mut id_ditl: c_short = 0;
-
-            handle = GetResource(DLOG as c_long, id_dialogue);
-            if !handle.is_null() {
-                id_ditl = *((*handle as *mut u8).offset(18) as *const c_short);
-                /* ON libére la ressource du DLOG */
-                ReleaseResource(handle);
-                handle = GetResource(DITL as c_long, id_ditl);
-                if !handle.is_null() {
-                    id_ditl = *(*handle as *const c_short);
-                    /* ON libére la ressource du DITL */
-                    ReleaseResource(handle);
-                    return id_ditl + 1;
-                }
-            }
-            self.Collapse("GetNbItemInDialog:Ressource non trouvee.");
-            -1
-        }
-    }
-
     /******************************************************************************************
                                         DoAlertSapiens
     ******************************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn DoAlertSapiens(&self, num: c_short) -> c_short {
+    pub(crate) fn DoAlertSapiens(&self, num: c_short) -> c_short {
         let n = Alert(num, core::ptr::null_mut());
         self.tfrvirt();
         self.TfrEcr(None);
@@ -563,8 +529,7 @@ impl Sapiens {
                                     GetRectItem
 => Recupere le cadre d'un item donné
 ******************************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn GetRectItem(dialog: DialogPtr, item: c_short, box_: *mut Rect) {
+pub(crate) fn GetRectItem(dialog: DialogPtr, item: c_short, box_: *mut Rect) {
     let mut itemType: c_short = 0;
     let mut handle: Handle = core::ptr::null_mut();
 
@@ -575,8 +540,7 @@ pub(crate) unsafe extern "C" fn GetRectItem(dialog: DialogPtr, item: c_short, bo
 /*****************************************************************************
                        DrawArrowPopUp
 ****************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn DrawArrowPopUp(r: *mut Rect) {
+pub(crate) fn DrawArrowPopUp(r: *mut Rect) {
     let mut i: c_short = 0;
     unsafe {
         let y = ((*r).bottom + (*r).top) / 2 + 3;
@@ -644,17 +608,11 @@ impl Random {
     Sort une valeur entre deux bornes
     ***********************************************************************/
     pub(crate) fn myRandom(&mut self, min: c_long, max: c_long) -> c_long {
-        unsafe {
-            let mut rdm: u16;
-            let range: c_long;
-            let t: c_long;
-
-            rdm = (self.Rnd() as c_long) as u16;
-            rdm = rdm.wrapping_add(((self.Rnd() as c_long) * 256) as u16);
-            range = max - min;
-            t = ((rdm as c_long) * range) / 65536;
-            min + t
-        }
+        let mut rdm = (self.Rnd() as c_long) as u16;
+        rdm = rdm.wrapping_add(((self.Rnd() as c_long) * 256) as u16);
+        let range = max - min;
+        let t = ((rdm as c_long) * range) / 65536;
+        min + t
     }
 }
 /**********************************************************************
@@ -662,8 +620,7 @@ impl Random {
 Affiche une bande sur les cotés
 ***********************************************************************/
 /*;********* BANDE_: 0= bande jeu, 1= bande silex *******************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn bande(_quelle: c_short) {}
+pub(crate) fn bande(_quelle: c_short) {}
 
 impl Sapiens {
     /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -683,16 +640,13 @@ impl Sapiens {
         colfin: c_short,
         index: c_short,
     ) {
+        let mut aire = Rect::new(
+            coldep * ECHELLE as c_short,
+            lignedep * ECHELLE as c_short,
+            colfin * ECHELLE as c_short,
+            lignefin * ECHELLE as c_short,
+        );
         unsafe {
-            let mut aire: Rect = Rect::default();
-
-            SetRect(
-                &raw mut aire,
-                coldep * ECHELLE as c_short,
-                lignedep * ECHELLE as c_short,
-                colfin * ECHELLE as c_short,
-                lignefin * ECHELLE as c_short,
-            );
             self.BoxFill(
                 port::current(),
                 &raw mut aire,
@@ -701,9 +655,6 @@ impl Sapiens {
         }
     }
 }
-
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn irqon() {}
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                ECRAN64.S
@@ -714,14 +665,7 @@ pub(crate) unsafe extern "C" fn irqon() {}
 ;=> numero ligne pixel deut *2,col octet,n ligne/2,n col
 ;<= sur ecran cadre xor
 */
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn cadreg(
-    _ligne: c_short,
-    _col: c_short,
-    _nligne: c_short,
-    _ncol: c_short,
-) {
-}
+pub(crate) fn cadreg(_ligne: c_short, _col: c_short, _nligne: c_short, _ncol: c_short) {}
 
 impl Sapiens {
     /******************************************************************************************
@@ -780,7 +724,7 @@ impl Sapiens {
     #[unsafe(no_mangle)]
     pub(crate) extern "C" fn ConfirmePerteAventure(&mut self) -> Boolean {
         self.souris.MontreSouris();
-        unsafe { self.DoAlertSapiens(CvtDefaultLangRess(1)) == 1 } /* ALRT_PERTE_PARTIE */
+        self.DoAlertSapiens(CvtDefaultLangRess(1)) == 1 /* ALRT_PERTE_PARTIE */
     }
 
     /******************************************************************************************
@@ -788,19 +732,18 @@ impl Sapiens {
     ******************************************************************************************/
     #[unsafe(no_mangle)]
     pub(crate) unsafe extern "C" fn DoInfo(&self) {
+        let mut str_: [c_char; 255] = [0; 255];
         unsafe {
-            let mut str_: [c_char; 255] = [0; 255];
-
             GetVersionSapiens(&raw mut str_ as *mut c_char);
-            CtoPstr(str_.as_mut_ptr());
-            ParamText(
-                &raw mut str_ as *mut u8,
-                TRANS_VIDE.as_ptr() as *mut u8,
-                TRANS_VIDE.as_ptr() as *mut u8,
-                TRANS_VIDE.as_ptr() as *mut u8,
-            );
-            self.DoAlertSapiens(CvtDefaultLangRess(2)); /* ALRT_INFO */
         }
+        CtoPstr(str_.as_mut_ptr());
+        ParamText(
+            &raw mut str_ as *mut u8,
+            TRANS_VIDE.as_ptr() as *mut u8,
+            TRANS_VIDE.as_ptr() as *mut u8,
+            TRANS_VIDE.as_ptr() as *mut u8,
+        );
+        self.DoAlertSapiens(CvtDefaultLangRess(2)); /* ALRT_INFO */
     }
 
     /******************************************************************************************
@@ -808,15 +751,15 @@ impl Sapiens {
     *******************************************************************************************/
 
     pub(crate) fn DoMenuCommand(&mut self, menuResult: i32) {
-        unsafe {
-            let menuID: c_short;
-            let menuItem: c_short;
-            let mut daName: [u8; 256] = [0; 256];
+        let menuID: c_short;
+        let menuItem: c_short;
+        let mut daName: [u8; 256] = [0; 256];
 
-            self.AdjustMenus();
-            self.souris.MontreSouris();
-            menuID = ((menuResult >> 16) & 0xFFFF) as c_short; /* HiWord */
-            menuItem = (menuResult & 0xFFFF) as c_short; /* LoWord */
+        self.AdjustMenus();
+        self.souris.MontreSouris();
+        menuID = ((menuResult >> 16) & 0xFFFF) as c_short; /* HiWord */
+        menuItem = (menuResult & 0xFFFF) as c_short; /* LoWord */
+        unsafe {
             if menuID == CvtDefaultLangRess(128) {
                 /* menuPomme */
                 match menuItem {
@@ -876,10 +819,10 @@ impl Sapiens {
                 }
                 self.sapwind.FixeTailleMainWindow();
             }
-            HiliteMenu(0);
-            self.AdjustMenus();
-            DrawMenuBar();
         }
+        HiliteMenu(0);
+        self.AdjustMenus();
+        DrawMenuBar();
     }
 
     /*******************************************************************
@@ -993,8 +936,7 @@ unsafe fn CalcIndexPalette(palette: *mut c_short) {
                         FixeMenu
 => Numero de la menu Bar à installer, Numero du menu Pomme de cette menuBar
 ********************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn FixeMenu(n: c_short) -> Boolean {
+pub(crate) fn FixeMenu(n: c_short) -> Boolean {
     let menuBar: Handle = GetNewMBar(n); /* read menus into menu bar */
     if menuBar.is_null() {
         return FAUX;
@@ -1014,131 +956,128 @@ impl Sapiens {
                         InitMobs
     Charge ou recharge les mobs
     ******************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn InitMobs(&mut self) -> Boolean {
-        unsafe {
-            let mut nb: c_short;
+    pub(crate) fn InitMobs(&mut self) -> Boolean {
+        let mut nb: c_short;
 
-            let _g = port::on(self.sapwind.Ecran1);
+        let _g = port::on(self.sapwind.Ecran1);
 
-            self.LibereDataMobs();
-            PushPath();
-            SetPathInData(&self.sapgest, c"Mobs".as_ptr() as *mut c_char);
-            self.sapwind.mobBambou = 0;
-            nb = self.ChargeFichierBrt(
-                c"WBAMBOU.BRT".as_ptr() as *mut c_char,
-                self.sapwind.mobBambou + 1,
-                26,
-                0,
-            ); /*0, 21 Mobs */
-            if nb < 0 {
-                return FAUX;
-            }
-            self.sapwind.mobFace = self.sapwind.mobBambou + nb;
-            nb = self.ChargeFichierBrt(
-                c"WFACE.BRT".as_ptr() as *mut c_char,
-                self.sapwind.mobFace + 1,
-                31,
-                0,
-            ); /* Base 21,29 mobs */
-            if nb < 0 {
-                return FAUX;
-            }
-            self.sapwind.mobFeuille = self.sapwind.mobFace + nb;
-            nb = self.ChargeFichierBrt(
-                c"WFEUILLE.BRT".as_ptr() as *mut c_char,
-                self.sapwind.mobFeuille + 1,
-                36,
-                11,
-            ); /* Base 50 36 mobs */
-            if nb < 0 {
-                return FAUX;
-            }
-            self.sapwind.mobFleches = self.sapwind.mobFeuille + nb;
-            nb = self.ChargeFichierBrt(
-                c"WFLECHES.BRT".as_ptr() as *mut c_char,
-                self.sapwind.mobFleches + 1,
-                20,
-                0,
-            ); /* Base 8618 mobs */
-            if nb < 0 {
-                return FAUX;
-            }
-            self.sapwind.mobSapmob = self.sapwind.mobFleches + nb;
-            nb = self.ChargeFichierBrt(
-                c"WSAPMOB.BRT".as_ptr() as *mut c_char,
-                self.sapwind.mobSapmob + 1,
-                141,
-                0,
-            ); /*Base 120+1,151 mobs */
-            if nb < 0 {
-                return FAUX;
-            }
-            self.sapwind.mobAvplan = self.sapwind.mobSapmob + nb;
-            nb = self.ChargeFichierBrt(
-                c"WAVPLAN.BRT".as_ptr() as *mut c_char,
-                self.sapwind.mobAvplan + 1,
-                9,
-                13,
-            );
-            self.sapcomb.nbMobHerbes = nb;
-            if nb < 0 {
-                return FAUX;
-            }
-            self.sapwind.mobAvplanSpec = self.sapwind.mobAvplan + nb;
-            nb = self.ChargeFichierBrt(
-                c"WAVSPEC.BRT".as_ptr() as *mut c_char,
-                self.sapwind.mobAvplanSpec + 1,
-                4,
-                0,
-            );
-            self.sapcomb.nbAvplanSpec = nb;
-            if nb < 0 {
-                return FAUX;
-            }
-            self.sapwind.mobSilex = self.sapwind.mobAvplanSpec + nb;
-            nb = self.ChargeFichierBrt(
-                c"WSILEX.BRT".as_ptr() as *mut c_char,
-                self.sapwind.mobSilex + 1,
-                15,
-                0,
-            );
-            if nb < 0 {
-                return FAUX;
-            }
-            self.sapwind.mob3D = self.sapwind.mobSilex + nb;
-            nb = self.ChargeFichierBrt(
-                c"W3D.BRT".as_ptr() as *mut c_char,
-                self.sapwind.mob3D + 1,
-                38,
-                0,
-            );
-            if nb < 0 {
-                return FAUX;
-            }
-            self.sapwind.Fonte14 = self.sapwind.mob3D + nb;
-            nb = self.ChargeFichierBrt(
-                c"Geneva14.BRT".as_ptr() as *mut c_char,
-                self.sapwind.Fonte14 + 1,
-                120,
-                0,
-            );
-            if nb < 0 {
-                return FAUX;
-            }
-            self.sapwind.Fonte10 = self.sapwind.Fonte14 + nb;
-            nb = self.ChargeFichierBrt(
-                c"Geneva10.BRT".as_ptr() as *mut c_char,
-                self.sapwind.Fonte10 + 1,
-                120,
-                0,
-            );
-            if nb < 0 {
-                return FAUX;
-            }
-            PopPath();
-            VRAI
+        self.LibereDataMobs();
+        PushPath();
+        SetPathInData(&self.sapgest, c"Mobs".as_ptr() as *mut c_char);
+        self.sapwind.mobBambou = 0;
+        nb = self.ChargeFichierBrt(
+            c"WBAMBOU.BRT".as_ptr() as *mut c_char,
+            self.sapwind.mobBambou + 1,
+            26,
+            0,
+        ); /*0, 21 Mobs */
+        if nb < 0 {
+            return FAUX;
         }
+        self.sapwind.mobFace = self.sapwind.mobBambou + nb;
+        nb = self.ChargeFichierBrt(
+            c"WFACE.BRT".as_ptr() as *mut c_char,
+            self.sapwind.mobFace + 1,
+            31,
+            0,
+        ); /* Base 21,29 mobs */
+        if nb < 0 {
+            return FAUX;
+        }
+        self.sapwind.mobFeuille = self.sapwind.mobFace + nb;
+        nb = self.ChargeFichierBrt(
+            c"WFEUILLE.BRT".as_ptr() as *mut c_char,
+            self.sapwind.mobFeuille + 1,
+            36,
+            11,
+        ); /* Base 50 36 mobs */
+        if nb < 0 {
+            return FAUX;
+        }
+        self.sapwind.mobFleches = self.sapwind.mobFeuille + nb;
+        nb = self.ChargeFichierBrt(
+            c"WFLECHES.BRT".as_ptr() as *mut c_char,
+            self.sapwind.mobFleches + 1,
+            20,
+            0,
+        ); /* Base 8618 mobs */
+        if nb < 0 {
+            return FAUX;
+        }
+        self.sapwind.mobSapmob = self.sapwind.mobFleches + nb;
+        nb = self.ChargeFichierBrt(
+            c"WSAPMOB.BRT".as_ptr() as *mut c_char,
+            self.sapwind.mobSapmob + 1,
+            141,
+            0,
+        ); /*Base 120+1,151 mobs */
+        if nb < 0 {
+            return FAUX;
+        }
+        self.sapwind.mobAvplan = self.sapwind.mobSapmob + nb;
+        nb = self.ChargeFichierBrt(
+            c"WAVPLAN.BRT".as_ptr() as *mut c_char,
+            self.sapwind.mobAvplan + 1,
+            9,
+            13,
+        );
+        self.sapcomb.nbMobHerbes = nb;
+        if nb < 0 {
+            return FAUX;
+        }
+        self.sapwind.mobAvplanSpec = self.sapwind.mobAvplan + nb;
+        nb = self.ChargeFichierBrt(
+            c"WAVSPEC.BRT".as_ptr() as *mut c_char,
+            self.sapwind.mobAvplanSpec + 1,
+            4,
+            0,
+        );
+        self.sapcomb.nbAvplanSpec = nb;
+        if nb < 0 {
+            return FAUX;
+        }
+        self.sapwind.mobSilex = self.sapwind.mobAvplanSpec + nb;
+        nb = self.ChargeFichierBrt(
+            c"WSILEX.BRT".as_ptr() as *mut c_char,
+            self.sapwind.mobSilex + 1,
+            15,
+            0,
+        );
+        if nb < 0 {
+            return FAUX;
+        }
+        self.sapwind.mob3D = self.sapwind.mobSilex + nb;
+        nb = self.ChargeFichierBrt(
+            c"W3D.BRT".as_ptr() as *mut c_char,
+            self.sapwind.mob3D + 1,
+            38,
+            0,
+        );
+        if nb < 0 {
+            return FAUX;
+        }
+        self.sapwind.Fonte14 = self.sapwind.mob3D + nb;
+        nb = self.ChargeFichierBrt(
+            c"Geneva14.BRT".as_ptr() as *mut c_char,
+            self.sapwind.Fonte14 + 1,
+            120,
+            0,
+        );
+        if nb < 0 {
+            return FAUX;
+        }
+        self.sapwind.Fonte10 = self.sapwind.Fonte14 + nb;
+        nb = self.ChargeFichierBrt(
+            c"Geneva10.BRT".as_ptr() as *mut c_char,
+            self.sapwind.Fonte10 + 1,
+            120,
+            0,
+        );
+        if nb < 0 {
+            return FAUX;
+        }
+        PopPath();
+        VRAI
     }
 }
 
@@ -1196,31 +1135,27 @@ impl Sapiens {
     => etat 1 actif
     *****************************************************************************/
     pub(crate) fn Frame3d(&self, etat: c_short) {
-        unsafe {
-            let mut r: Rect = Rect::default();
-
-            let _g = port::on(self.sapwind.debecr);
-            SetRect(&raw mut r, 62, 0, 640 - 64, 204);
-            if etat != 0 {
-                ForeColor(blackColor as c_short);
-            } else {
-                ForeColor(whiteColor as c_short);
-            }
-            DoPenSize(2, 2);
-            DoFrameRect(&r);
+        let _g = port::on(self.sapwind.debecr);
+        let r = Rect::new(62, 0, 640 - 64, 204);
+        if etat != 0 {
             ForeColor(blackColor as c_short);
-            PenNormal();
-            port::set(self.sapwind.mainWindow);
-            if etat != 0 {
-                ForeColor(blackColor as c_short);
-            } else {
-                ForeColor(whiteColor as c_short);
-            }
-            DoPenSize(2, 2);
-            DoFrameRect(&r);
-            PenNormal();
-            ForeColor(blackColor as c_short);
+        } else {
+            ForeColor(whiteColor as c_short);
         }
+        DoPenSize(2, 2);
+        DoFrameRect(&r);
+        ForeColor(blackColor as c_short);
+        PenNormal();
+        port::set(self.sapwind.mainWindow);
+        if etat != 0 {
+            ForeColor(blackColor as c_short);
+        } else {
+            ForeColor(whiteColor as c_short);
+        }
+        DoPenSize(2, 2);
+        DoFrameRect(&r);
+        PenNormal();
+        ForeColor(blackColor as c_short);
     }
 
     /**********************************************************************************
@@ -1229,16 +1164,14 @@ impl Sapiens {
     => etat =1 si actif
     ***********************************************************************************/
     pub(crate) fn MenuFenetres(&mut self, etat: c_short) {
-        unsafe {
-            self.Frame3d(etat);
-            self.tfrmenufenetre(etat);
-            if etat != 0 {
-                self.FixeMenusComplet();
-            } else {
-                self.FixeMenusReduit();
-            }
-            self.sapglob.dicone = -1;
+        self.Frame3d(etat);
+        self.tfrmenufenetre(etat);
+        if etat != 0 {
+            self.FixeMenusComplet();
+        } else {
+            self.FixeMenusReduit();
         }
+        self.sapglob.dicone = -1;
     }
 }
 
@@ -1262,30 +1195,28 @@ impl SapWind {
         x_in: c_short,
         y: c_short,
     ) {
-        unsafe {
-            let mut r: Rect = Rect::default();
-            let mut x: c_short = x_in;
+        let mut r: Rect = Rect::default();
+        let mut x: c_short = x_in;
 
-            CtoPstr(chaine);
-            TextFont(fonte);
-            TextSize(size);
-            TextFace(face);
-            if x < 0 {
-                x = (640 - StringWidth(chaine as *mut u8)) / 2;
-            }
-            ForeColor(blackColor as c_short);
-            DoTextSize(size);
-            DoMoveTo(x + 1, y + 1);
-            DrawString(chaine as *mut u8);
-            ForeColor(whiteColor as c_short);
-            DoMoveTo(x, y);
-            DrawString(chaine as *mut u8);
-            DoMoveTo(x - 1, y);
-            DrawString(chaine as *mut u8);
-            ForeColor(blackColor as c_short);
-            PtoCstr(chaine as *mut u8);
-            self.aire_rect(&raw mut r);
+        CtoPstr(chaine);
+        TextFont(fonte);
+        TextSize(size);
+        TextFace(face);
+        if x < 0 {
+            x = (640 - StringWidth(chaine as *mut u8)) / 2;
         }
+        ForeColor(blackColor as c_short);
+        DoTextSize(size);
+        DoMoveTo(x + 1, y + 1);
+        DrawString(chaine as *mut u8);
+        ForeColor(whiteColor as c_short);
+        DoMoveTo(x, y);
+        DrawString(chaine as *mut u8);
+        DoMoveTo(x - 1, y);
+        DrawString(chaine as *mut u8);
+        ForeColor(blackColor as c_short);
+        PtoCstr(chaine as *mut u8);
+        self.aire_rect(&raw mut r);
     }
 }
 
@@ -1332,46 +1263,42 @@ impl SapWind {
                             InitMainWindow
     ********************************************************************/
     pub(crate) fn InitMainWindow(&mut self) {
-        unsafe {
-            let mut rect: Rect = Rect::default();
-            let largeur = (320.0 * ECHELLE as f32 * self.SapZoom) as c_long;
-            let hauteur = (200.0 * ECHELLE as f32 * self.SapZoom) as c_long;
+        let largeur = (320.0 * ECHELLE as f32 * self.SapZoom) as c_long;
+        let hauteur = (200.0 * ECHELLE as f32 * self.SapZoom) as c_long;
 
-            let aireDevice = port::SCREEN;
-            /* Creation de la fenetre principale */
-            /* Aire de la fenetre */
-            SetRect(
-                &raw mut rect,
-                0,
-                0,
-                (320.0 * ECHELLE as f32 * self.SapZoom) as c_short,
-                (200.0 * ECHELLE as f32 * self.SapZoom) as c_short,
-            );
-            /* On la centre sur l'aire generale de l'ecran */
-            rect.OffsetRect(
-                aireDevice.left + (aireDevice.right - aireDevice.left - largeur as c_short) / 2,
-                aireDevice.top
-                    + (CarboniseGetMenuBarHeight() + 8)
-                    + (aireDevice.bottom
-                        - aireDevice.top
-                        - CarboniseGetMenuBarHeight()
-                        - hauteur as c_short)
-                        / 2,
-            );
-            /* On crée la fenetre principale */
-            self.mainWindow = NewCWindow(
-                core::ptr::null_mut(),
-                &raw const rect,
-                core::ptr::null_mut(),
-                VRAI,
-                noGrowDocProc,
-                -1isize as WindowPtr,
-                FAUX,
-                0,
-            );
-            /* La fenêtre porte l'échelle courante (menu « Échelle »). */
-            port::set_window_zoom(self.SapZoom);
-        }
+        let aireDevice = port::SCREEN;
+        /* Creation de la fenetre principale */
+        /* Aire de la fenetre */
+        let mut rect = Rect::new(
+            0,
+            0,
+            (320.0 * ECHELLE as f32 * self.SapZoom) as c_short,
+            (200.0 * ECHELLE as f32 * self.SapZoom) as c_short,
+        );
+        /* On la centre sur l'aire generale de l'ecran */
+        rect.OffsetRect(
+            aireDevice.left + (aireDevice.right - aireDevice.left - largeur as c_short) / 2,
+            aireDevice.top
+                + (CarboniseGetMenuBarHeight() + 8)
+                + (aireDevice.bottom
+                    - aireDevice.top
+                    - CarboniseGetMenuBarHeight()
+                    - hauteur as c_short)
+                    / 2,
+        );
+        /* On crée la fenetre principale */
+        self.mainWindow = NewCWindow(
+            core::ptr::null_mut(),
+            &raw const rect,
+            core::ptr::null_mut(),
+            VRAI,
+            noGrowDocProc,
+            -1isize as WindowPtr,
+            FAUX,
+            0,
+        );
+        /* La fenêtre porte l'échelle courante (menu « Échelle »). */
+        port::set_window_zoom(self.SapZoom);
     }
 }
 
@@ -1380,37 +1307,33 @@ impl Sapiens {
                             init_graph
     ********************************************************************/
     pub(crate) fn init_graph(&mut self) -> Boolean {
-        unsafe {
-            let mut i: c_short;
-            let mut y: c_short;
-            let num: c_short;
-            let mut pict: PicHandle = core::ptr::null_mut();
-            let mut r: Rect = Rect::default();
-            let mut chaine: [c_char; 255] = [0; 255];
-            let timeBase: c_long;
-            let firstInit: Boolean;
+        let mut i: c_short;
+        let mut y: c_short;
+        let mut r: Rect = Rect::default();
+        let mut chaine: [c_char; 255] = [0; 255];
 
-            /* Init des chemins standards */
-            self.InitCheminsSapiens();
+        /* Init des chemins standards */
+        self.InitCheminsSapiens();
+        SetCursor(GetCursor(watchCursor as c_short));
+        self.FixeAireNoMouseAireBasse();
+        /* On charge les preferences */
+        let firstInit = self.ChargePref();
+        InitDefautConfigSortieNumerique();
+        self.MusicInit(1); /* Lance musique 1 */
+        /* Choix de la langue*/
+        if langue() == -1 {
+            CarboniseSetCursorArrow();
+            set_langue(Alert(ALRT_VERSION, core::ptr::null_mut()) - 1);
             SetCursor(GetCursor(watchCursor as c_short));
-            self.FixeAireNoMouseAireBasse();
-            /* On charge les preferences */
-            firstInit = self.ChargePref();
-            InitDefautConfigSortieNumerique();
-            self.MusicInit(1); /* Lance musique 1 */
-            /* Choix de la langue*/
-            if langue() == -1 {
-                CarboniseSetCursorArrow();
-                set_langue(Alert(ALRT_VERSION, core::ptr::null_mut()) - 1);
-                SetCursor(GetCursor(watchCursor as c_short));
-            }
+        }
+        unsafe {
             self.sapglob.init_and_check_texts();
             self.sapwind.InitMainWindow();
             self.FixeTitreMainWindow();
             port::set(self.sapwind.mainWindow);
             AfficheFond(self.sapwind.mainWindow);
             /* On affiche le logo centre */
-            pict = GetPicture(134) as PicHandle;
+            let pict = GetPicture(134) as PicHandle;
             if !pict.is_null() {
                 r = (**pict).picFrame;
                 r.OffsetRect(
@@ -1448,7 +1371,7 @@ impl Sapiens {
             );
             i = 1;
             y = 60 + 120 + 18 + 32;
-            num = CvtDefaultLangRess(1);
+            let num = CvtDefaultLangRess(1);
             loop {
                 GetIndString(
                     &raw mut chaine as *mut u8 as *mut c_void as StringPtr,
@@ -1472,7 +1395,7 @@ impl Sapiens {
                     break;
                 }
             }
-            timeBase = TickCount() + 5 * 60;
+            let timeBase = TickCount() + 5 * 60;
 
             self.sapwind.aire_rect(&raw mut r);
             CarboniseInvalRect(&raw const r);
@@ -1552,10 +1475,10 @@ impl Sapiens {
             self.DoMenuCommand(cmd);
         }
 
+        let _g = port::on(self.sapwind.mainWindow);
+        let window = FrontWindow();
+        self.CheckChangeMusique();
         unsafe {
-            let _g = port::on(self.sapwind.mainWindow);
-            let window = FrontWindow();
-            self.CheckChangeMusique();
             while GetNextEvent(everyEvent as i16, &mut event) {
                 match event.what as u32 {
                     keyDown => {

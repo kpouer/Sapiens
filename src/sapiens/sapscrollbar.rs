@@ -47,20 +47,17 @@ Change la valeur de l'ascenseur du control demande.
 => Control, delta a appliquer
 <= Valeur reellement appliquee
 ******************************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn CommonAction(control: ControlHandle, amount: i16) -> i16 {
-    unsafe {
-        let value = GetCtlValue(control); /* get current value */
-        let max = GetCtlMax(control); /* and maximum value */
-        let mut amount = value + amount;
-        if amount < 0 {
-            amount = 0;
-        } else if amount > max {
-            amount = max;
-        }
-        SetControlValue(control, amount);
-        amount - value
+pub(crate) fn CommonAction(control: ControlHandle, amount: i16) -> i16 {
+    let value = GetCtlValue(control); /* get current value */
+    let max = GetCtlMax(control); /* and maximum value */
+    let mut amount = value + amount;
+    if amount < 0 {
+        amount = 0;
+    } else if amount > max {
+        amount = max;
     }
+    SetControlValue(control, amount);
+    amount - value
 }
 
 impl Sapiens {

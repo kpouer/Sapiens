@@ -156,9 +156,7 @@ impl Sapiens {
             _TypeReference_REFER2 => self.GetRefer2(),
             _TypeReference_REFER3 => self.GetRefer3(),
             _ => {
-                unsafe {
-                    self.Collapse("GetRefer bad type");
-                }
+                self.Collapse("GetRefer bad type");
                 null_mut()
             }
         }

@@ -12,7 +12,7 @@
 use std::os::raw::{c_char, c_long, c_short, c_uchar, c_ushort};
 use std::ptr::{addr_of, addr_of_mut, null_mut};
 
-use crate::acam::{DisposPtr, EmptyRect, NewPtr, NewPtrClear, Random, SetRect, TickCount};
+use crate::acam::{DisposPtr, NewPtr, NewPtrClear, Random, SetRect, TickCount};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapwbrt::RemplitZoneLignes;
 use crate::sapiens::sapwcvt::Sapwcvt;
@@ -262,23 +262,21 @@ impl Sapiens {
         *pdist = dist;
         erreur
     }
-}
 
-impl Sapiens {
     /*************************************************************************
     ;-_-_-_-_-_-_-_-_-_- Calcoul: calcule tableau coul -_-_-_-_-_-_-_-_-_-_
     ; => d0: n. trame
     **************************************************************************/
-    unsafe fn calcoul(&self, trame: c_short) {
+    fn calcoul(&self, trame: c_short) {
         let tc = addr_of!(self.sapwarb.tabcoul) as *mut c_short;
-        for i in 0..9 {
-            let n = self.sapw3d.DENS_DZET[i] as i32;
-            *tc.add(i + 1) = TAB_TRAM[(trame as i32 * 4 + n) as usize] as c_short;
+        unsafe {
+            for i in 0..9 {
+                let n = self.sapw3d.DENS_DZET[i] as i32;
+                *tc.add(i + 1) = TAB_TRAM[(trame as i32 * 4 + n) as usize] as c_short;
+            }
         }
     }
-}
 
-impl Sapiens {
     /*****************************************************************************
     ;-_-_-_-_-_-_-_-_-_ Visu: visualise montagnes 3D -_-_-_-_-_-_-_-_-_-_-_
     ;=> (c) pointeur vers debut structure montagne

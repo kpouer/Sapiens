@@ -52,7 +52,11 @@ pub(crate) struct Point {
 }
 
 impl Point {
-    pub(crate) const fn zoom(mut self, zoom: f32) -> Point {
+    pub(crate) const fn new(v: i16, h: i16) -> Self {
+        Self { v, h }
+    }
+
+    pub(crate) const fn zoom(mut self, zoom: f32) -> Self {
         self.v = (self.v as f32 / zoom) as i16;
         self.h = (self.h as f32 / zoom) as i16;
         self

@@ -952,8 +952,7 @@ pub(crate) extern "C" fn SectRect(src1: *const Rect, src2: *const Rect, dst: *mu
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn PtInRect(pt: Point, r: *const Rect) -> Boolean {
+pub(crate) fn PtInRect(pt: Point, r: *const Rect) -> Boolean {
     if r.is_null() {
         return false;
     }

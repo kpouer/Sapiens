@@ -83,82 +83,77 @@ Efface la souris graphique menus
 Pour effacer le souris on recopie debecr sur l'aire de la souris
 **************************************************************************/
 impl Sapiens {
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn eff_sour(&mut self) {
-        unsafe {
-            CopyOffscreen(
-                self.sapwind.debecr,
-                self.sapwind.mainWindow,
-                &raw mut self.sapwclav.rsouris,
-                &raw mut self.sapwclav.rsouris,
-            );
-            SetRect(&raw mut self.sapwclav.rsouris, 0, 0, 0, 0);
-        }
+    pub(crate) fn eff_sour(&mut self) {
+        CopyOffscreen(
+            self.sapwind.debecr,
+            self.sapwind.mainWindow,
+            &raw mut self.sapwclav.rsouris,
+            &raw mut self.sapwclav.rsouris,
+        );
+        SetRect(&raw mut self.sapwclav.rsouris, 0, 0, 0, 0);
     }
 
     /**************************************************************************
     ;--     Aff_sour_: Affiche la souris graphique menus
     ; => N. mob,Ligne,Colonne
     **************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn aff_sour(&mut self, mob: c_short, ligne: c_short, colonne: c_short) {
+    pub(crate) fn aff_sour(&mut self, mob: c_short, ligne: c_short, colonne: c_short) {
+        let mut rsource: Rect = Rect::default();
+        let mut r: Rect = Rect::default();
+        let mut oldRect: Rect = self.sapwclav.rsouris;
+        /* Effacement a l'ancienne position */
+        /* Aire de la souris sur l'ecran */
+        let p_rsouris = &raw mut self.sapwclav.rsouris;
+        self.CalculeAireMob(mob, colonne, ligne, p_rsouris);
+        self.CalculeAireMob(mob, 0, 0, &raw mut rsource);
+        /* On gere l'ombre */
+        self.sapwclav.rsouris.right += 8;
+        self.sapwclav.rsouris.bottom += 8;
+        rsource.right += 8;
+        rsource.bottom += 8;
+        /* Le mob s'affiche sur l'ecran virtuel : on saisie ce qu'il y a
+        sur l'ecran */
+        CopyOffscreen(
+            self.sapwind.debecr,
+            self.sapwind.BuffMouse,
+            &raw mut self.sapwclav.rsouris,
+            &raw mut rsource,
+        );
+        /* On copie egalement l'ecran physique sur le buffer de la souris */
+        /* On affiche la souris */
+        let _g = port::on(self.sapwind.BuffMouse);
+        self.Affmobbrtomb(mob, 0, 0, 4, 4, &raw mut r);
+        /* On le recopie sur le reel */
+        CopyOffscreen(
+            self.sapwind.BuffMouse,
+            self.sapwind.mainWindow,
+            &raw mut rsource,
+            &raw mut self.sapwclav.rsouris,
+        );
+        /* On efface la difference (les deux rectangles sont sur l'ecran : ils
+        sont a l'echelle de la fenetre, meme si on dessine sur BuffMouse) */
+        let rgn1 = NewRgn();
+        let rgn2 = NewRgn();
+        let rgnClip = NewRgn();
+        let r1 = port::zoomed(port::window(), &oldRect);
         unsafe {
-            let mut rsource: Rect = Rect::default();
-            let mut r: Rect = Rect::default();
-            let mut oldRect: Rect = self.sapwclav.rsouris;
-
-            /* Effacement a l'ancienne position */
-            /* Aire de la souris sur l'ecran */
-            let p_rsouris = &raw mut self.sapwclav.rsouris;
-            self.CalculeAireMob(mob, colonne, ligne, p_rsouris);
-            self.CalculeAireMob(mob, 0, 0, &raw mut rsource);
-            /* On gere l'ombre */
-            self.sapwclav.rsouris.right += 8;
-            self.sapwclav.rsouris.bottom += 8;
-            rsource.right += 8;
-            rsource.bottom += 8;
-            /* Le mob s'affiche sur l'ecran virtuel : on saisie ce qu'il y a
-            sur l'ecran */
-            CopyOffscreen(
-                self.sapwind.debecr,
-                self.sapwind.BuffMouse,
-                &raw mut self.sapwclav.rsouris,
-                &raw mut rsource,
-            );
-            /* On copie egalement l'ecran physique sur le buffer de la souris */
-            /* On affiche la souris */
-            let _g = port::on(self.sapwind.BuffMouse);
-            self.Affmobbrtomb(mob, 0, 0, 4, 4, &raw mut r);
-            /* On le recopie sur le reel */
-            CopyOffscreen(
-                self.sapwind.BuffMouse,
-                self.sapwind.mainWindow,
-                &raw mut rsource,
-                &raw mut self.sapwclav.rsouris,
-            );
-            /* On efface la difference (les deux rectangles sont sur l'ecran : ils
-            sont a l'echelle de la fenetre, meme si on dessine sur BuffMouse) */
-            let rgn1 = NewRgn();
-            let rgn2 = NewRgn();
-            let rgnClip = NewRgn();
-            let r1 = port::zoomed(port::window(), &oldRect);
             let r2 = port::zoomed(port::window(), &*(&raw const self.sapwclav.rsouris));
             RectRgn(rgn1, &r1);
             RectRgn(rgn2, &r2);
-            DiffRgn(rgn1, rgn2, rgn1);
-            GetClip(rgnClip);
-            SetClip(rgn1);
-            CopyOffscreen(
-                self.sapwind.debecr,
-                self.sapwind.mainWindow,
-                &raw mut oldRect,
-                &raw mut oldRect,
-            );
-            SetClip(rgnClip);
-            DisposeRgn(rgnClip);
-            DisposeRgn(rgn1);
-            DisposeRgn(rgn2);
         }
+        DiffRgn(rgn1, rgn2, rgn1);
+        GetClip(rgnClip);
+        SetClip(rgn1);
+        CopyOffscreen(
+            self.sapwind.debecr,
+            self.sapwind.mainWindow,
+            &raw mut oldRect,
+            &raw mut oldRect,
+        );
+        SetClip(rgnClip);
+        DisposeRgn(rgnClip);
+        DisposeRgn(rgn1);
+        DisposeRgn(rgn2);
     }
 }
 
@@ -166,19 +161,15 @@ impl Sapiens {
                         KeyPressed
 Dit si une touche d'ascii donnee est appuyee sur le keymap en entree
 ********************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn KeyPressed(km: *mut KeyMap, ascii: c_short) -> Boolean {
-    unsafe {
-        let p = km as *mut c_ulong;
-        ((*p.add((ascii >> 5) as usize) >> (((ascii ^ 24) & 31) as u32)) & 1) != 0
-    }
+pub(crate) fn KeyPressed(km: *mut KeyMap, ascii: c_short) -> Boolean {
+    let p = km as *mut c_ulong;
+    unsafe { ((*p.add((ascii >> 5) as usize) >> (((ascii ^ 24) & 31) as u32)) & 1) != 0 }
 }
 
 /*************************************************************
                     GetKeyMap
 ***************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetKeyMap(bitmap: *mut c_short) -> c_short {
+pub(crate) fn GetKeyMap(bitmap: *mut c_short) -> c_short {
     let mut theKeys = KeyMap::default();
 
     unsafe {
@@ -265,8 +256,7 @@ impl Sapiens {
                         GETKEY3D
     Donne un deplacement / a la position 160,100 de la souris
     ***************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn getkey3d(&mut self) -> c_short {
+    pub(crate) fn getkey3d(&mut self) -> c_short {
         let mut bitmap: c_short = 0;
 
         unsafe {
@@ -304,8 +294,7 @@ impl Sapiens {
     **************************************************************
     => 0 joeur principal, 1 secondaire
     */
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn getkey(&mut self, quoi: c_ushort) -> c_short {
+    pub(crate) fn getkey(&mut self, quoi: c_ushort) -> c_short {
         let mut bitmap: c_short = 0;
 
         unsafe {
@@ -354,31 +343,29 @@ impl Sapiens {
 impl Sapiens {
     pub(crate) fn bouge_souris(&mut self) {
         self.GereInterface();
-        unsafe {
-            (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
-            /* Attends et prends coord souris */
+        (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
+        /* Attends et prends coord souris */
 
-            /* sortie basse ??? */
-            if self.sapglob.sposy > 184 {
-                self.sapglob.sposy = 184;
-            }
-            /* sortie droite */
-            if self.sapglob.sposx > 303 {
-                self.sapglob.sposx = 303;
-            }
-            /* si bouge alors retrace */
-            if ((self.sapglob.sposx != self.sapwclav.last_posx)
-                || (self.sapglob.sposy != self.sapwclav.last_posy)
-                || (self.sapglob.icone != self.sapglob.dicone))
-                && self.sapglob.icone != 0
-            {
-                self.sapglob.dicone = self.sapglob.icone;
-                self.sapwclav.last_posx = self.sapglob.sposx;
-                self.sapwclav.last_posy = self.sapglob.sposy;
-                let (icone, sposy, sposx) =
-                    (self.sapglob.icone, self.sapglob.sposy, self.sapglob.sposx);
-                self.aff_sour(icone, sposy, sposx);
-            }
+        /* sortie basse ??? */
+        if self.sapglob.sposy > 184 {
+            self.sapglob.sposy = 184;
+        }
+        /* sortie droite */
+        if self.sapglob.sposx > 303 {
+            self.sapglob.sposx = 303;
+        }
+        /* si bouge alors retrace */
+        if ((self.sapglob.sposx != self.sapwclav.last_posx)
+            || (self.sapglob.sposy != self.sapwclav.last_posy)
+            || (self.sapglob.icone != self.sapglob.dicone))
+            && self.sapglob.icone != 0
+        {
+            self.sapglob.dicone = self.sapglob.icone;
+            self.sapwclav.last_posx = self.sapglob.sposx;
+            self.sapwclav.last_posy = self.sapglob.sposy;
+            let (icone, sposy, sposx) =
+                (self.sapglob.icone, self.sapglob.sposy, self.sapglob.sposx);
+            self.aff_sour(icone, sposy, sposx);
         }
     }
 
@@ -401,6 +388,7 @@ static rBasse: Rect = Rect {
     bottom: (200 * ECHELLE) as i16,
     right: (320 * ECHELLE) as i16,
 };
+
 impl Sapiens {
     /**************************************************************************
                       resetmouse
@@ -462,38 +450,34 @@ impl Sapiens {
     pub(crate) fn vq_mouse(&mut self) -> (c_short, c_short, c_short) {
         let mut theKeys = KeyMap::default();
 
-        unsafe {
-            port::set(self.sapwind.mainWindow);
-            self.GereInterface();
-            let pt = GetMouse().zoom(port::window_zoom());
-            if PtInRect(pt, &raw mut self.sapwclav.r_no_mouse) {
-                self.souris.CacheSouris();
-            } else {
-                self.souris.MontreSouris();
-            }
-            let x = (pt.h as f32 / ECHELLE as f32) as c_short;
-            let y = (pt.v as f32 / ECHELLE as f32) as c_short;
-            let mut bouton_ptr = Button() as c_short;
-            if bouton_ptr > 0 {
-                GetKeys(theKeys);
-                if KeyPressed(&raw mut theKeys, 0x38) {
-                    bouton_ptr |= 2;
-                }
-            }
-            (bouton_ptr, x, y)
+        port::set(self.sapwind.mainWindow);
+        self.GereInterface();
+        let pt = GetMouse().zoom(port::window_zoom());
+        if PtInRect(pt, &raw mut self.sapwclav.r_no_mouse) {
+            self.souris.CacheSouris();
+        } else {
+            self.souris.MontreSouris();
         }
+        let x = (pt.h as f32 / ECHELLE as f32) as c_short;
+        let y = (pt.v as f32 / ECHELLE as f32) as c_short;
+        let mut bouton_ptr = Button() as c_short;
+        if bouton_ptr > 0 {
+            GetKeys(theKeys);
+            if KeyPressed(&raw mut theKeys, 0x38) {
+                bouton_ptr |= 2;
+            }
+        }
+        (bouton_ptr, x, y)
     }
-}
 
-impl Sapiens {
-    pub(crate) fn FixeAireNoMouse(&mut self, r: Rect) {
+    pub(crate) const fn FixeAireNoMouse(&mut self, r: Rect) {
         self.sapwclav.r_no_mouse = r;
     }
 
     /*************************************************************************
                         FixeAireNoMouseAireBasse
     **************************************************************************/
-    pub(crate) fn FixeAireNoMouseAireBasse(&mut self) {
+    pub(crate) const fn FixeAireNoMouseAireBasse(&mut self) {
         self.FixeAireNoMouse(rBasse);
     }
 }

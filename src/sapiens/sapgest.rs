@@ -317,8 +317,7 @@ impl Sapiens {
                         MouseDansSuite
 ***********************************************************************/
 fn MouseDansSuite(posx: c_short, posy: c_short) -> Boolean {
-    let mut pt = Point::default();
-    SetPt(&mut pt, posx, posy);
+    let pt = Point::new(posx, posy);
     if PtInRect(pt, &raw const AIRE_SUITE) {
         return true;
     }
@@ -367,7 +366,7 @@ impl Sapiens {
         let mut posTheo: c_short;
 
         /* Palette du silex */
-        unsafe { self.effima(COULEUR_FOND_NUCLEUS) };
+        self.effima(COULEUR_FOND_NUCLEUS);
         delta1 = 60;
         /* TIRAGE DU COEFF KK DE LA PIERRE DE 3 A 15 */
         kk = self.random.myRandom(3, 16) as c_short;
@@ -427,7 +426,7 @@ impl Sapiens {
                 } else {
                     NB_LIGNE_SILEX - y
                 };
-                couleur = 1 + ((pos2 - x) * yc + unsafe { self.random.Rnd() } * kk) / 1000;
+                couleur = 1 + ((pos2 - x) * yc + self.random.Rnd() * kk) / 1000;
                 if couleur >= NB_COUL_SILEX {
                     couleur = NB_COUL_SILEX - 1;
                 }
@@ -468,7 +467,7 @@ impl Sapiens {
         let mut calc: c_ushort;
         let distcb: c_ushort;
         let mut tfr: c_ushort;
-        let mut cass: c_ushort = 0;
+        let mut cass: c_ushort;
         let senson: c_ushort;
         let mut okbruit: c_ushort = 0;
         let mut trav1: c_ushort;
@@ -548,9 +547,8 @@ impl Sapiens {
                         a = a.wrapping_sub(10);
                     }
                 }
-            }
-            /* Le silex n'est pas cassé , on taille un eclat*/
-            else {
+            } else {
+                /* Le silex n'est pas cassé , on taille un eclat*/
                 paslec = (forcef ^ 255) * 8 + 128;
                 yact = posyf_l as c_ushort;
                 calc = posyf_l as c_ushort + 1;
@@ -666,17 +664,14 @@ impl Sapiens {
     ***********************************************************************/
     fn cursil(&mut self, regb: c_short) -> c_short {
         let mut i: c_short;
-        let mut r = Rect::default();
 
         /* On calcule les index de couleurs */
-        unsafe {
-            let _g = port::on(self.sapwind.debecr);
-            i = 0;
-            while i < NB_COUL_SILEX {
-                self.sapgest.palSilex[i as usize] =
-                    SapColor2Index(&TAB_COUL_SILEX_RGB[i as usize]) as c_ushort;
-                i += 1;
-            }
+        let _g = port::on(self.sapwind.debecr);
+        i = 0;
+        while i < NB_COUL_SILEX {
+            self.sapgest.palSilex[i as usize] =
+                SapColor2Index(&TAB_COUL_SILEX_RGB[i as usize]) as c_ushort;
+            i += 1;
         }
         /* On fixe l'ecart stochastique gauche et droite */
         self.sapgest.forsyl = if regb == 0 {
@@ -691,131 +686,119 @@ impl Sapiens {
 
         /* on l'affiche tel quel */
         /* Mise en place des bords */
-        unsafe {
-            bande(1);
-            self.sapglob.flefba = 0;
-        }
+        bande(1);
+        self.sapglob.flefba = 0;
         self.TraceSilex();
-        unsafe {
-            SetRect(
-                &mut r,
-                16 * ECHELLE as c_short,
-                0 * ECHELLE as c_short,
-                (320 - 16) * ECHELLE as c_short,
-                200 * ECHELLE as c_short,
-            );
-            self.FixeAireNoMouse(r);
-        }
+        let r = Rect::new(
+            16 * ECHELLE as c_short,
+            0,
+            (320 - 16) * ECHELLE as c_short,
+            200 * ECHELLE as c_short,
+        );
+        self.FixeAireNoMouse(r);
 
         loop {
-            unsafe {
-                loop {
-                    (self.sapglob.bouton, self.sapglob.posxf, self.sapglob.posyf) = self.vq_mouse();
-                    if self.sapglob.bouton == 0 {
-                        break;
-                    }
+            loop {
+                (self.sapglob.bouton, self.sapglob.posxf, self.sapglob.posyf) = self.vq_mouse();
+                if self.sapglob.bouton == 0 {
+                    break;
                 }
             }
-            let mut okbruit: c_uchar = 0;
-            unsafe {
-                loop {
-                    (self.sapglob.bouton, self.sapglob.posxf, self.sapglob.posyf) = self.vq_mouse();
-                    if (self.sapglob.posxf < 32)
-                        || (self.sapglob.posxf > 320)
-                        || (self.sapglob.posyf > 100)
-                        || (self.sapglob.posyf < 2)
-                    {
-                        if self.sapglob.posyf > 100 {
-                            self.sapglob.posyf = 100;
-                        }
-                        if self.sapglob.posxf > 320 - 16 {
-                            self.sapglob.posxf = 320 - 16;
-                        }
-                        self.aff_sour(
-                            self.sapwind.mobBambou + MOB_DEHORS_BASE,
-                            self.sapglob.posyf,
-                            self.sapglob.posxf,
-                        );
-                        self.sapglob.bouton &= 2;
-                    } else if MouseDansSuite(self.sapglob.posxf, self.sapglob.posyf) {
-                        self.aff_sour(
-                            self.sapwind.mobBambou + MOB_FRAPPE_BASE,
-                            self.sapglob.posyf,
-                            self.sapglob.posxf,
-                        );
-                    } else {
-                        self.aff_sour(
-                            self.sapwind.mobBambou + MOB_COURANT_BASE,
-                            self.sapglob.posyf - 25,
-                            self.sapglob.posxf,
-                        );
+            let okbruit: c_uchar;
+            loop {
+                (self.sapglob.bouton, self.sapglob.posxf, self.sapglob.posyf) = self.vq_mouse();
+                if (self.sapglob.posxf < 32)
+                    || (self.sapglob.posxf > 320)
+                    || (self.sapglob.posyf > 100)
+                    || (self.sapglob.posyf < 2)
+                {
+                    if self.sapglob.posyf > 100 {
+                        self.sapglob.posyf = 100;
                     }
-                    if self.sapglob.bouton == 0 {
-                        break;
+                    if self.sapglob.posxf > 320 - 16 {
+                        self.sapglob.posxf = 320 - 16;
                     }
-                }
-                /* On valide le silex */
-                if MouseDansSuite(self.sapglob.posxf, self.sapglob.posyf) {
-                    self.affomb(
-                        self.sapwind.mobFleches + 20,
-                        AIRE_SUITE.top,
-                        AIRE_SUITE.left,
-                        2,
-                        2,
-                        true,
+                    self.aff_sour(
+                        self.sapwind.mobBambou + MOB_DEHORS_BASE,
+                        self.sapglob.posyf,
+                        self.sapglob.posxf,
                     );
-                    self.FixeAireNoMouseAireBasse();
-                    return self.valsyl() as c_short;
-                }
-                /* Point d'application */
-                self.plot_ecr(self.sapglob.posyf, self.sapglob.posxf, 0x700);
-                if (self.sapglob.bouton & 1) != 0 {
-                    /*on frappe*/
-                    let t: u64 = TickCount() as u64;
-                    /* On determine la force du coup */
-                    let mut forcef: c_short = 0;
-                    loop {
-                        let mut bidon: c_short = 0;
-                        (self.sapglob.bouton, bidon, bidon) = self.vq_mouse();
-                        forcef = ((TickCount() as u64).wrapping_sub(t) * 4) as c_short;
-                        self.aff_sour(
-                            self.sapwind.mobBambou + MOB_COURANT_BASE,
-                            self.sapglob.posyf - 25 - forcef / 8 - 2,
-                            self.sapglob.posxf + forcef / 8 + 2,
-                        );
-                        if self.sapglob.bouton == 0 || forcef >= 254 {
-                            break;
-                        }
-                    }
-                    if forcef > 254 {
-                        forcef = 254;
-                    }
-                    i = forcef;
-                    while i >= 0 {
-                        self.aff_sour(
-                            self.sapwind.mobBambou + MOB_COURANT_BASE,
-                            self.sapglob.posyf - 25 - i / 8,
-                            self.sapglob.posxf + i / 8,
-                        );
-                        i -= 32;
-                    }
-                    /* On applique l'impact : conversion de coordonnees */
-                    okbruit = self.AppliqueImpact(
-                        self.sapglob.posxf - 85,
-                        self.sapglob.posyf - 1,
-                        forcef,
-                    ) as c_uchar;
+                    self.sapglob.bouton &= 2;
+                } else if MouseDansSuite(self.sapglob.posxf, self.sapglob.posyf) {
+                    self.aff_sour(
+                        self.sapwind.mobBambou + MOB_FRAPPE_BASE,
+                        self.sapglob.posyf,
+                        self.sapglob.posxf,
+                    );
+                } else {
                     self.aff_sour(
                         self.sapwind.mobBambou + MOB_COURANT_BASE,
                         self.sapglob.posyf - 25,
                         self.sapglob.posxf,
                     );
-                    /* On joue le bruit */
-                    if okbruit != 0 {
-                        self.bruit(okbruit as c_short);
-                    }
-                } /*on frappe*/
+                }
+                if self.sapglob.bouton == 0 {
+                    break;
+                }
             }
+            /* On valide le silex */
+            if MouseDansSuite(self.sapglob.posxf, self.sapglob.posyf) {
+                self.affomb(
+                    self.sapwind.mobFleches + 20,
+                    AIRE_SUITE.top,
+                    AIRE_SUITE.left,
+                    2,
+                    2,
+                    true,
+                );
+                self.FixeAireNoMouseAireBasse();
+                return self.valsyl() as c_short;
+            }
+            /* Point d'application */
+            self.plot_ecr(self.sapglob.posyf, self.sapglob.posxf, 0x700);
+            if (self.sapglob.bouton & 1) != 0 {
+                /*on frappe*/
+                let t: u64 = TickCount() as u64;
+                /* On determine la force du coup */
+                let mut forcef: c_short;
+                loop {
+                    (self.sapglob.bouton, _, _) = self.vq_mouse();
+                    forcef = ((TickCount() as u64).wrapping_sub(t) * 4) as c_short;
+                    self.aff_sour(
+                        self.sapwind.mobBambou + MOB_COURANT_BASE,
+                        self.sapglob.posyf - 25 - forcef / 8 - 2,
+                        self.sapglob.posxf + forcef / 8 + 2,
+                    );
+                    if self.sapglob.bouton == 0 || forcef >= 254 {
+                        break;
+                    }
+                }
+                if forcef > 254 {
+                    forcef = 254;
+                }
+                i = forcef;
+                while i >= 0 {
+                    self.aff_sour(
+                        self.sapwind.mobBambou + MOB_COURANT_BASE,
+                        self.sapglob.posyf - 25 - i / 8,
+                        self.sapglob.posxf + i / 8,
+                    );
+                    i -= 32;
+                }
+                /* On applique l'impact : conversion de coordonnees */
+                okbruit =
+                    self.AppliqueImpact(self.sapglob.posxf - 85, self.sapglob.posyf - 1, forcef)
+                        as c_uchar;
+                self.aff_sour(
+                    self.sapwind.mobBambou + MOB_COURANT_BASE,
+                    self.sapglob.posyf - 25,
+                    self.sapglob.posxf,
+                );
+                /* On joue le bruit */
+                if okbruit != 0 {
+                    self.bruit(okbruit as c_short);
+                }
+            } /*on frappe*/
         }
     }
 
@@ -912,45 +895,43 @@ impl Sapiens {
         self.CreeDecor3d(false);
         self.effvirt(0x000);
         self.effima(0x000);
-        unsafe {
-            /*Presentation*/
-            self.sapglob.heure = 10;
+        /*Presentation*/
+        self.sapglob.heure = 10;
+        self.chrono(0);
+        self.affich(self.sapglob.dzeta as c_ushort); /* Affiche la vue trois d sur ecran 1*/
+        self.tfrvirt();
+        self.sapglob.flefba = 1;
+        self.InitGenerique();
+        self.generique(FAUX);
+        self.TfrEcr(None);
+        self.Frame3d((FAUX) as c_short);
+        self.efbadi();
+        self.comment(67); /*d et o guillion*/
+        for mut i in 0..60 {
+            let posTimer = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
+            self.chrono(1);
             self.chrono(0);
-            self.affich(self.sapglob.dzeta as c_ushort); /* Affiche la vue trois d sur ecran 1*/
-            self.tfrvirt();
-            self.sapglob.flefba = 1;
-            self.InitGenerique();
-            self.generique(FAUX);
-            self.TfrEcr(None);
-            self.Frame3d((FAUX) as c_short);
-            self.efbadi();
-            self.comment(67); /*d et o guillion*/
-            for mut i in 0..60 {
-                let posTimer = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
-                self.chrono(1);
-                self.chrono(0);
-                self.chrono(0);
-                self.affich(self.sapglob.dzeta as c_ushort);
-                self.tfrima();
-                if (self.getkey(0) & (32 + 16)) > 0 {
-                    i = 111;
-                }
-                self.sapglob.flefba = 0;
-                if i == 25 {
-                    self.comment(68);
-                }
-                if i == 50 {
-                    self.comment(69);
-                }
-                /* Synchronisation de la trame */
-                while posTimer + 30 >= self.sapwclav.sapiens_timer.load(Ordering::Relaxed) {}
+            self.chrono(0);
+            self.affich(self.sapglob.dzeta as c_ushort);
+            self.tfrima();
+            if (self.getkey(0) & (32 + 16)) > 0 {
+                i = 111;
             }
-            self.comment(70);
-            self.FixeMenusComplet();
-            self.MenuFenetres(if VRAI { 1 } else { 0 });
-            self.efbadi();
-            self.comment(132);
+            self.sapglob.flefba = 0;
+            if i == 25 {
+                self.comment(68);
+            }
+            if i == 50 {
+                self.comment(69);
+            }
+            /* Synchronisation de la trame */
+            while posTimer + 30 >= self.sapwclav.sapiens_timer.load(Ordering::Relaxed) {}
         }
+        self.comment(70);
+        self.FixeMenusComplet();
+        self.MenuFenetres(if VRAI { 1 } else { 0 });
+        self.efbadi();
+        self.comment(132);
     }
 
     /***********************************************************************
@@ -1053,33 +1034,29 @@ impl Sapiens {
         let mut rval = Rect::default();
         let mut r = Rect::default();
 
+        let _g = port::on(self.sapwind.debecr);
+        self.AireValJauge(i, &mut rval);
+        self.AfficheCadreJauge(i);
         unsafe {
-            let _g = port::on(self.sapwind.debecr);
-            unsafe {
-                self.AireValJauge(i, &mut rval);
-                self.AfficheCadreJauge(i);
-                self.boxf(rval.top, rval.left, rval.bottom, rval.right, 2);
-                /* Effacement de la partie droite */
-                self.AireJauge(i, &mut r);
-                if self.sapglob.param[i as usize] / 2
-                    < self.sapglob.maxparam[self.sapglob.sexe as u8 as usize][i as usize] / 2
-                {
-                    self.boxf(r.top + 1, rval.right, r.bottom - 1, r.right - 1, 14);
-                    if (self.sapglob.param[i as usize]) > 0 {
-                        self.boxf(r.bottom - 2, r.left + 1, r.bottom - 1, rval.right - 1, 9);
-                        self.boxf(r.top + 1, rval.right - 1, r.bottom - 1, rval.right, 9);
-                    }
+            self.boxf(rval.top, rval.left, rval.bottom, rval.right, 2);
+            /* Effacement de la partie droite */
+            self.AireJauge(i, &mut r);
+            if self.sapglob.param[i as usize] / 2
+                < self.sapglob.maxparam[self.sapglob.sexe as u8 as usize][i as usize] / 2
+            {
+                self.boxf(r.top + 1, rval.right, r.bottom - 1, r.right - 1, 14);
+                if (self.sapglob.param[i as usize]) > 0 {
+                    self.boxf(r.bottom - 2, r.left + 1, r.bottom - 1, rval.right - 1, 9);
+                    self.boxf(r.top + 1, rval.right - 1, r.bottom - 1, rval.right, 9);
                 }
             }
         }
-        unsafe {
-            if tfr {
-                r.left *= ECHELLE as i16;
-                r.right *= ECHELLE as i16;
-                r.top *= ECHELLE as i16;
-                r.bottom *= ECHELLE as i16;
-                self.TfrEcr(Some(&r));
-            }
+        if tfr {
+            r.left *= ECHELLE as i16;
+            r.right *= ECHELLE as i16;
+            r.top *= ECHELLE as i16;
+            r.bottom *= ECHELLE as i16;
+            self.TfrEcr(Some(&r));
         }
     }
 
@@ -1123,7 +1100,6 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) extern "C" fn defsap(&mut self) {
         unsafe {
-            let mut r = Rect::default();
             let mut rval = Rect::default();
             let mut pt = Point::default();
 
@@ -1168,15 +1144,14 @@ impl Sapiens {
             self.primjauge(1);
             self.AfficheSuite();
             let mut cont: c_char = 1;
-            let mut pos: c_char = 0;
+            let mut pos: c_char;
             self.sapglob.sposx = 160;
             self.sapglob.dsposx = 160;
             self.sapglob.sposy = 50;
             self.sapglob.dsposy = 50;
-            SetRect(
-                &mut r,
+            let mut r = Rect::new(
                 16 * ECHELLE as c_short,
-                0 * ECHELLE as c_short,
+                0,
                 (320 - 16) * ECHELLE as c_short,
                 200 * ECHELLE as c_short,
             );
@@ -1421,11 +1396,10 @@ impl Sapiens {
     => numero de la jauge, indeicateur de transfert sur le reel
     ***********************************************************************/
     fn JAUGES3D(&self) {
+        let mut i: c_short = 0;
+        let mut r = Rect::default();
+        let _g = port::on(self.sapwind.debecr);
         unsafe {
-            let mut i: c_short = 0;
-            let mut r = Rect::default();
-
-            let _g = port::on(self.sapwind.debecr);
             self.boxf(0, 32, 101, 287, 5);
 
             /* La jauge est tracee dans debecr (hors-ecran, echelle 1) : la mise a
@@ -1665,26 +1639,18 @@ extern "C" fn vect_filtre_selon_extension_sapiens(
     true
 }
 
-/*********************************************************************
-                           CarboniseCvtPath
-Supprime les ':' dans le nom du path
-********************************************************************/
-pub(crate) extern "C" fn CarboniseCvtPath(_chaine: *mut c_char) {}
-
 impl Sapiens {
     /******************************************************************
                                InitCheminsSapiens
     Initialise les chemins de l'application
     ********************************************************************/
-    pub(crate) extern "C" fn InitCheminsSapiens(&mut self) {
-        unsafe {
-            SaisitChemin(
-                &raw mut self.sapgest.volumeApplication,
-                null_mut(),
-                &raw mut self.sapgest.PathApplication,
-            );
-            SetPathApplication();
-        }
+    pub(crate) fn InitCheminsSapiens(&mut self) {
+        SaisitChemin(
+            &raw mut self.sapgest.volumeApplication,
+            null_mut(),
+            &raw mut self.sapgest.PathApplication,
+        );
+        SetPathApplication();
     }
 }
 
@@ -1729,12 +1695,12 @@ impl Sapiens {
         };
         let mut chaine = [0 as c_char; 255];
 
+        SetPt(
+            &mut point,
+            ((qd.screenBits.bounds.right - 348) / 2) as c_short,
+            ((qd.screenBits.bounds.bottom - 200) / 2) as c_short,
+        );
         unsafe {
-            SetPt(
-                &mut point,
-                ((qd.screenBits.bounds.right - 348) / 2) as c_short,
-                ((qd.screenBits.bounds.bottom - 200) / 2) as c_short,
-            );
             if strlen(extension) != 0 {
                 strcpy(self.sapgest.extension_cmp.as_mut_ptr(), extension);
                 sprintf(
@@ -2005,22 +1971,20 @@ impl Sapiens {
                           BRAVO:Affiche resultat de la taille
     ***********************************************************************/
     fn bravo(&mut self, quoi: c_ushort) {
-        unsafe {
-            let _g = port::on(self.sapwind.Ecran1);
-            self.eff_sour();
-            /* Le fond est blanc */
-            self.effima(COULEUR_FOND_NUCLEUS);
-            let mut coeff: f32 = 0.0;
-            while coeff < 1.0 {
-                self.GereInterface();
-                let tab_index_palette = self.CalculePaletteAttenuee(quoi as c_short, coeff, 999);
-                self.Affmobbrt(quoi as c_short, 96, 1, 0, tab_index_palette);
-                if !tab_index_palette.is_null() {
-                    DisposPtr(tab_index_palette as *mut u8);
-                }
-                self.tfrima();
-                coeff += 0.05;
+        let _g = port::on(self.sapwind.Ecran1);
+        self.eff_sour();
+        /* Le fond est blanc */
+        self.effima(COULEUR_FOND_NUCLEUS);
+        let mut coeff: f32 = 0.0;
+        while coeff < 1.0 {
+            self.GereInterface();
+            let tab_index_palette = self.CalculePaletteAttenuee(quoi as c_short, coeff, 999);
+            self.Affmobbrt(quoi as c_short, 96, 1, 0, tab_index_palette);
+            if !tab_index_palette.is_null() {
+                DisposPtr(tab_index_palette as *mut u8);
             }
+            self.tfrima();
+            coeff += 0.05;
         }
     }
 
@@ -2028,53 +1992,51 @@ impl Sapiens {
                                     TRFAB:Fabrique silex
     ***********************************************************************/
     pub(crate) fn trfab(&mut self, regb: c_ushort) {
-        unsafe {
-            self.FixeMenusReduit();
-            self.sapglob.flefba = 0;
-            self.clrbadi();
-            /*recherche si silex */
-            let mut i: c_char = self.sapglob.liste1.taille as c_char - 1;
-            while i >= 0 && self.sapglob.liste1.elements[i as usize] != 19 {
-                i -= 1;
-            }
-            if i < 0 {
-                /*pas trouve ds la liste*/
-                self.comment(87); /*tu n'as pas de silex*/
-                return;
-            }
-            self.sapglob.dervue = Vue::AUCUNE;
-            let tfr = self.sapglob.ciel_degr;
-            /* on taille le silex */
-            self.bruit(10);
-            let trace_syl = self.cursil(regb as c_short);
-            self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut c_short;
-            self.sapglob.flefba = 0;
-            if (trace_syl as c_ushort) > PRECISION_SILEX as c_ushort {
-                /* trace et incertitude du dit*/
-                self.bruit(7); /* HELAS */
-                /*affichage du silex casse*/
-                self.bravo((self.sapwind.mobSilex + MOB_SILEX_CASSE_BASE) as c_ushort);
-                self.sapglob.liste1.elements[i as usize] = 20; /*un caillou !!!*/
-                self.comment(86);
-            } else {
-                self.bruit(6); /* VICTOIRE*/
-                if (trace_syl as c_ushort) < 150 {
-                    self.comment(110);
-                }
-                if regb != 1 {
-                    self.sapglob.liste1.elements[i as usize] = 23; /*sagaie*/
-                    self.bravo((self.sapwind.mobSilex + MOB_SILEX_SAGAIE_BASE) as c_ushort);
-                } else {
-                    self.sapglob.liste1.elements[i as usize] = 21; /*hache*/
-                    self.bravo((self.sapwind.mobSilex + MOB_SILEX_HACHE_BASE) as c_ushort);
-                }
-                self.comment(85); /*tu pssede une nll arme*/
-            }
-            attends_bruit();
-            bande(0);
-            self.generique(VRAI);
-            self.sapglob.ciel_degr = tfr;
+        self.FixeMenusReduit();
+        self.sapglob.flefba = 0;
+        self.clrbadi();
+        /*recherche si silex */
+        let mut i: c_char = self.sapglob.liste1.taille as c_char - 1;
+        while i >= 0 && self.sapglob.liste1.elements[i as usize] != 19 {
+            i -= 1;
         }
+        if i < 0 {
+            /*pas trouve ds la liste*/
+            self.comment(87); /*tu n'as pas de silex*/
+            return;
+        }
+        self.sapglob.dervue = Vue::AUCUNE;
+        let tfr = self.sapglob.ciel_degr;
+        /* on taille le silex */
+        self.bruit(10);
+        let trace_syl = self.cursil(regb as c_short);
+        self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut c_short;
+        self.sapglob.flefba = 0;
+        if (trace_syl as c_ushort) > PRECISION_SILEX as c_ushort {
+            /* trace et incertitude du dit*/
+            self.bruit(7); /* HELAS */
+            /*affichage du silex casse*/
+            self.bravo((self.sapwind.mobSilex + MOB_SILEX_CASSE_BASE) as c_ushort);
+            self.sapglob.liste1.elements[i as usize] = 20; /*un caillou !!!*/
+            self.comment(86);
+        } else {
+            self.bruit(6); /* VICTOIRE*/
+            if (trace_syl as c_ushort) < 150 {
+                self.comment(110);
+            }
+            if regb != 1 {
+                self.sapglob.liste1.elements[i as usize] = 23; /*sagaie*/
+                self.bravo((self.sapwind.mobSilex + MOB_SILEX_SAGAIE_BASE) as c_ushort);
+            } else {
+                self.sapglob.liste1.elements[i as usize] = 21; /*hache*/
+                self.bravo((self.sapwind.mobSilex + MOB_SILEX_HACHE_BASE) as c_ushort);
+            }
+            self.comment(85); /*tu pssede une nll arme*/
+        }
+        attends_bruit();
+        bande(0);
+        self.generique(VRAI);
+        self.sapglob.ciel_degr = tfr;
         self.FixeMenusComplet();
     }
 
@@ -2082,36 +2044,34 @@ impl Sapiens {
                                     TRGEST:gestion
     ***********************************************************************/
     pub(crate) fn trgest(&mut self, regb: c_ushort) {
-        unsafe {
-            self.souris.MontreSouris();
-            match regb {
-                /* Informations */
-                0 =>
-                //DoInfo();
-                {
-                    self.DoAide()
-                }
-                //sceveu(8);
-                /* Charge aventure */
-                1 => {
-                    if self.ConfirmePerteAventure() {
-                        self.charge();
-                        self.inimen(8);
-                    }
-                }
-                /* Sauve aventure */
-                2 => self.sauve(),
-                /* Personnage : nouvlle aventure */
-                3 => {
-                    self.FixeMenusReduit();
-                    if self.ConfirmePerteAventure() {
-                        self.defsap();
-                    }
-                    self.FixeMenusComplet();
-                }
-                4 => self.DoPreferences(),
-                _ => {}
+        self.souris.MontreSouris();
+        match regb {
+            /* Informations */
+            0 =>
+            //DoInfo();
+            {
+                self.DoAide()
             }
+            //sceveu(8);
+            /* Charge aventure */
+            1 => {
+                if self.ConfirmePerteAventure() {
+                    self.charge();
+                    self.inimen(8);
+                }
+            }
+            /* Sauve aventure */
+            2 => self.sauve(),
+            /* Personnage : nouvlle aventure */
+            3 => {
+                self.FixeMenusReduit();
+                if self.ConfirmePerteAventure() {
+                    self.defsap();
+                }
+                self.FixeMenusComplet();
+            }
+            4 => self.DoPreferences(),
+            _ => {}
         }
     }
 }

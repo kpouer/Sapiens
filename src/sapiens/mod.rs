@@ -17,7 +17,6 @@ use std::os::raw::c_short;
 
 pub(crate) mod muse;
 pub(crate) mod sap3d;
-pub(crate) mod sapbonc;
 pub(crate) mod sapcolorcvt;
 pub(crate) mod sapcomb;
 pub(crate) mod sapenreg;
@@ -98,7 +97,7 @@ impl Default for Mob {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub(crate) enum TypeReference {
     REFER0,
     REFER1,
@@ -196,12 +195,6 @@ impl Default for sap {
     }
 }
 
-pub(crate) const DLOG_COORDONNEES: u32 = 1000;
-pub(crate) const DLOG_NUM_SERIE: u32 = 1001;
-pub(crate) const DIALOG_PREF: u32 = 1002;
-pub(crate) const ALRT_OK_ENREG: u32 = 200;
-pub(crate) const ALRT_NO_FONCTION: u32 = 201;
-pub(crate) const ALRT_ENREG: u32 = 202;
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct brin {
@@ -254,7 +247,6 @@ pub(crate) struct IndexColor {
     pub(crate) rgb: RGBColor,
 }
 pub(crate) type IndexColorPtr = *mut IndexColor;
-pub(crate) type IndexColorHandle = *mut *mut IndexColor;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum Vue {
@@ -559,13 +551,8 @@ pub(crate) const TAILLE_STR_MESS_FORMATE: u32 = 512;
 pub(crate) const NB_MAX_MOB: u32 = 640;
 pub(crate) const POLICE_LISSAGE: u32 = 2;
 pub(crate) const STYLE_LISSAGE: u32 = 1;
-pub(crate) const DELTA_LANGUE: u32 = 1000;
 pub(crate) const STR_VRAC: u32 = 0;
-pub(crate) const ALRT_VERSION: u32 = 133;
-pub(crate) const SIZELISTE: u32 = 8;
 pub(crate) const SAGAIE: u32 = 23;
-pub(crate) const TAILLE_MAX_NOM_USER: u32 = 80;
-pub(crate) const TAILLE_MAX_NOM: u32 = 32;
 pub(crate) const NB_MOTS_BKMOTS: u32 = 46;
 pub(crate) const NBREVTHEURE: u32 = 37;
 pub(crate) const NB_LIGNES_CIEL: u32 = 128;
@@ -575,4 +562,3 @@ pub(crate) const NBREVTDESTINE: u32 = 40;
 pub(crate) const gemnbrecad: u32 = 4;
 pub(crate) const geminterv: u32 = 4;
 pub(crate) const BASEMOB: c_short = 0;
-pub(crate) const iPrAbort: u32 = 128;
