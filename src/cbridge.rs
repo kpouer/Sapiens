@@ -25,11 +25,9 @@ pub(crate) const radCtrl: u32 = 20;
 pub(crate) const userItem: u32 = 32;
 
 pub(crate) type TPPrPort = *mut ::std::os::raw::c_void;
-pub(crate) const RSRC_TEXT_CARTE_ENREG: u32 = 2000;
 pub(crate) const kOnSystemDisk: u32 = 32768;
 pub(crate) const kPreferencesFolderType: u32 = 1886545254;
 pub(crate) const kCreateFolder: u32 = 1;
-pub(crate) type TMTaskPtr = *mut TMTask;
 pub(crate) type QElemPtr = *mut ::std::os::raw::c_void;
 pub(crate) type SndChannelPtr = *mut ::std::os::raw::c_void;
 pub(crate) const teJustLeft: u32 = 0;
@@ -136,8 +134,6 @@ pub(crate) struct DateTimeRec {
     pub(crate) dayOfWeek: ::std::os::raw::c_short,
 }
 pub(crate) type fpos_t = __darwin_off_t;
-pub(crate) const DLOG: u32 = 1145851719;
-pub(crate) const DITL: u32 = 1145656396;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
