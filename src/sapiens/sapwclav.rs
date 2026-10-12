@@ -5,9 +5,7 @@
 Fixe l'aire dans laquelle il ne faut plus afficher la souris systeme
 **************************************************************************/
 use crate::Sapiens;
-use crate::acam::{
-    DiffRgn, DisposeRgn, FAUX, GetClip, NewRgn, PtInRect, RectRgn, SetClip, SetRect, VRAI,
-};
+use crate::acam::{DiffRgn, DisposeRgn, FAUX, GetClip, NewRgn, RectRgn, SetClip, SetRect, VRAI};
 use crate::cbridge::{QElemPtr, TMTask};
 use crate::exchange::{Cursor, set_cursor};
 use crate::port;
@@ -453,7 +451,7 @@ impl Sapiens {
         port::set(self.sapwind.mainWindow);
         self.GereInterface();
         let pt = GetMouse().zoom(port::window_zoom());
-        if PtInRect(pt, &raw mut self.sapwclav.r_no_mouse) {
+        if self.sapwclav.r_no_mouse.pt_in_rect(pt) {
             self.souris.CacheSouris();
         } else {
             self.souris.MontreSouris();

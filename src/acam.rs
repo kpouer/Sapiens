@@ -952,18 +952,7 @@ pub(crate) extern "C" fn SectRect(src1: *const Rect, src2: *const Rect, dst: *mu
     }
 }
 
-pub(crate) fn PtInRect(pt: Point, r: *const Rect) -> Boolean {
-    if r.is_null() {
-        return false;
-    }
-    unsafe {
-        let rr = &*r;
-        (pt.h >= rr.left && pt.h < rr.right && pt.v >= rr.top && pt.v < rr.bottom) as Boolean
-    }
-}
-
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn EmptyRect(r: *const Rect) -> Boolean {
+pub(crate) fn EmptyRect(r: *const Rect) -> Boolean {
     if r.is_null() {
         return true;
     }

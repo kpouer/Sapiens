@@ -123,6 +123,10 @@ impl Rect {
             bottom: self.bottom.max(other.bottom),
         }
     }
+
+    pub(crate) const fn pt_in_rect(&self, pt: Point) -> bool {
+        pt.h >= self.left && pt.h < self.right && pt.v >= self.top && pt.v < self.bottom
+    }
 }
 
 #[repr(C)]

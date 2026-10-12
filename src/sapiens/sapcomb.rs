@@ -20,7 +20,7 @@ use crate::MOB_HERBE;
 use crate::MOB_IMPACT;
 use crate::MOB_MORT;
 use crate::MOB_SANG_A_TERRE;
-use crate::acam::{FAUX, PtInRect, SetRect, VRAI};
+use crate::acam::{FAUX, SetRect, VRAI};
 use crate::cbridge::{geneva, teJustLeft};
 use crate::port;
 use crate::sapiens::sapglob::{
@@ -401,7 +401,7 @@ impl Sapiens {
                     self.sapglob.peuple(i).posccoeur as c_short * ECHELLE as c_short + 36,
                     self.sapglob.peuple(i).poslcoeur as c_short * ECHELLE as c_short + 36,
                 );
-                if PtInRect(pt, &raw mut r) {
+                if r.pt_in_rect(pt) {
                     let mut chaine: [c_char; 255] = [0; 255];
                     if self.sapglob.peuple(i).vie <= 0 {
                         copie_chaine(&raw mut chaine as *mut c_char, self.sapwind.GetStr(19));
@@ -416,7 +416,7 @@ impl Sapiens {
                 }
                 /* Dans le cadre de la tete */
                 r.OffsetRect(0, 44);
-                if PtInRect(pt, &raw mut r) {
+                if r.pt_in_rect(pt) {
                     let mut chaine: [c_char; 255] = [0; 255];
                     if self.sapglob.peuple(i).vie <= 0 {
                         copie_chaine(&raw mut chaine as *mut c_char, self.sapwind.GetStr(19));

@@ -6,8 +6,8 @@
 ***********************************************************************/
 use crate::Sapiens;
 use crate::acam::{
-    CtoPstr, DisposPtr, FAUX, ForeColor, Line, MoveTo, PtInRect, PtoCstr, RGBForeColor, SetPt,
-    SetRect, TickCount, VRAI,
+    CtoPstr, DisposPtr, FAUX, ForeColor, Line, MoveTo, PtoCstr, RGBForeColor, SetPt, SetRect,
+    TickCount, VRAI,
 };
 use crate::cbridge::{
     CInfoPBRec, blackColor, fclose, fopen, getc, putc, remove, sprintf, strcpy, stricmp, strlen,
@@ -316,12 +316,8 @@ impl Sapiens {
 /***********************************************************************
                         MouseDansSuite
 ***********************************************************************/
-fn MouseDansSuite(posx: c_short, posy: c_short) -> Boolean {
-    let pt = Point::new(posx, posy);
-    if PtInRect(pt, &raw const AIRE_SUITE) {
-        return true;
-    }
-    false
+const fn MouseDansSuite(posx: c_short, posy: c_short) -> bool {
+    AIRE_SUITE.pt_in_rect(Point::new(posx, posy))
 }
 
 impl Sapiens {
@@ -1196,7 +1192,7 @@ impl Sapiens {
                     let mut i: c_short = 0;
                     while i < 5 {
                         self.AireJauge(i, &mut r);
-                        if PtInRect(pt, &raw const r) {
+                        if r.pt_in_rect(pt) {
                             pos = i as c_char;
                             /* Fleche */
                             self.affomb(
