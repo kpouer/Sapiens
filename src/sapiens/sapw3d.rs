@@ -1266,7 +1266,7 @@ impl Sapiens {
                     (x as i32 + rd as i32 / 2) as c_short,
                     y,
                 );
-                if !EmptyRect(&r)
+                if !r.is_empty()
                     && r.left < LARGEUR_ECRAN as c_short
                     && r.right > 0
                     && r.bottom > 0

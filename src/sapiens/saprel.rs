@@ -332,7 +332,7 @@ impl Sapiens {
     *************************************************************************/
     pub(crate) fn effaceBulles(&mut self) {
         self.tfrvirt();
-        if !EmptyRect(&raw const self.saprel.rBulleJoueur) {
+        if !self.saprel.rBulleJoueur.is_empty() {
             CopyOffscreen(
                 self.sapwind.debecr,
                 self.sapwind.mainWindow,
@@ -341,7 +341,7 @@ impl Sapiens {
             );
         }
         SetRect(&raw mut self.saprel.rBulleJoueur, 0, 0, 0, 0);
-        if !EmptyRect(&raw const self.saprel.rBulleAdversaire) {
+        if !self.saprel.rBulleAdversaire.is_empty() {
             CopyOffscreen(
                 self.sapwind.debecr,
                 self.sapwind.mainWindow,
@@ -356,15 +356,8 @@ impl Sapiens {
                     Bulle:affiche une bulle avec un texte
     => message a afficher, qui le dit (0)== joueur (1)== adversaire
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn bulle(&mut self, debut: Ptr, qui: c_short) {
+    pub(crate) fn bulle(&mut self, debut: Ptr, qui: c_short) {
         unsafe {
-            let mut r = Rect {
-                top: 0,
-                left: 0,
-                bottom: 0,
-                right: 0,
-            };
             let mut rbase: Rect;
             let rgnclip: RgnHandle;
             let rgn: RgnHandle;
@@ -381,35 +374,32 @@ impl Sapiens {
                 tx = 64;
             }
             let sap1 = &self.sapglob.sap1;
-            if (qui ^ sap1.sens as c_short) != 0 {
-                SetRect(
-                    &mut r,
+            let mut r = if (qui ^ sap1.sens as c_short) != 0 {
+                Rect::new(
                     X_BULLE_GAUCHE,
                     Y_BULLE - (ty + 2) * 12,
                     X_BULLE_GAUCHE + tx + 16,
                     Y_BULLE,
-                );
+                )
             } else {
-                SetRect(
-                    &mut r,
+                Rect::new(
                     X_BULLE_DROITE - tx - 16,
                     Y_BULLE - (ty + 2) * 12,
                     X_BULLE_DROITE,
                     Y_BULLE,
-                );
-            }
+                )
+            };
             r.bottom += TAILLE_QUEUE;
             rbase = r;
             /* On efface les bulles en cours */
-            if qui == 0
-            /* C'est le joueur */
-            {
+            if qui == 0 {
+                /* C'est le joueur */
                 self.effaceBulles();
                 self.saprel.rBulleJoueur = r;
             } else {
                 /* C'est un adversaire ... */
                 /* deja un message dit ??? */
-                if !EmptyRect(&raw const self.saprel.rBulleAdversaire) {
+                if !self.saprel.rBulleAdversaire.is_empty() {
                     r.OffsetRect(
                         0,
                         self.saprel.rBulleAdversaire.bottom

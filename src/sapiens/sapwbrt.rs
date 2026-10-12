@@ -675,7 +675,7 @@ impl Sapiens {
             if mon_aire.bottom > rPort.bottom {
                 mon_aire.bottom = rPort.bottom;
             }
-            if EmptyRect(&mon_aire) {
+            if mon_aire.is_empty() {
                 return;
             }
             data = data
@@ -1091,8 +1091,7 @@ impl Sapiens {
     Les  coordonnees sont donnees en ecran ST 320x200
     (C) Ligne dep,Col dep,Ligne fin,col.fin,couleur ST
     ***************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn BoxFill(&self, gfx: CGrafPtr, r: *mut Rect, couleur: c_short) {
+    pub(crate) fn BoxFill(&self, gfx: CGrafPtr, r: *mut Rect, couleur: c_short) {
         unsafe {
             if EmptyRect(r) {
                 return;
@@ -1443,10 +1442,8 @@ impl Sapiens {
     Efface l'ecran virtuel Ecran en entier
     => couleur ST d'effacement
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn effima(&self, couleur: c_short) {
-        let mut r = Rect::default();
-        SetRect(&mut r, 0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
+    pub(crate) fn effima(&self, couleur: c_short) {
+        let mut r = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
         self.BoxFill(self.sapwind.Ecran1, &mut r, couleur);
     }
 
