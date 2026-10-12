@@ -1481,32 +1481,32 @@ impl Sapiens {
         unsafe {
             while GetNextEvent(everyEvent as i16, &mut event) {
                 match event.what as u32 {
-                    keyDown => {
+                    _keyDown => {
                         self.sapwind.toucheClav =
                             (event.message as c_short & charCodeMask as c_short) as c_short;
                         self.DoEvtClavier(&raw const event as *const _);
                     }
-                    mouseDown => {
+                    _mouseDown => {
                         /* On cherche quelle fenetre a été cliquée */
                         part = FindWindow(event.where_, &mut windowResult);
                         /* Où a-t'on cliqué ??? */
                         match part as u32 {
                             /* Dans la barre de menu , alors on le traite */
-                            inMenuBar => {
+                            _inMenuBar => {
                                 self.DoMenuCommand(MenuSelect(event.where_));
                             }
                             /* Sur le bureau, alors le bureau se débrouille ... sauf si c'est un pseudo document */
-                            inSysWindow => {
+                            _inSysWindow => {
                                 SystemClick(&event, windowResult);
                             }
                             /* Dans le deplacement */
-                            inDrag => {
+                            _inDrag => {
                                 SelectWindow(windowResult);
                                 bounds = port::SCREEN;
                                 DragWindow(windowResult, event.where_, &bounds);
                             }
                             /* Dans une fenetre : alors on le traite */
-                            inContent => {
+                            _inContent => {
                                 if windowResult != window {
                                     SelectWindow(windowResult);
                                 }
@@ -1517,7 +1517,7 @@ impl Sapiens {
                             _ => {}
                         }
                     }
-                    updateEvt => {
+                    _updateEvt => {
                         if port::is_window(window) {
                             //                    AcamGetPortOffscreen(&gbak);
                             port::set(window);

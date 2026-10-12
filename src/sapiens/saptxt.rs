@@ -151,14 +151,10 @@ impl Sapiens {
     }
     pub(crate) fn GetRefer(&self, t: TypeReference) -> *mut reference {
         match t {
-            TypeReference_REFER0 => self.GetRefer0(),
-            _TypeReference_REFER1 => self.GetRefer1(),
-            _TypeReference_REFER2 => self.GetRefer2(),
-            _TypeReference_REFER3 => self.GetRefer3(),
-            _ => {
-                self.Collapse("GetRefer bad type");
-                null_mut()
-            }
+            TypeReference::REFER0 => self.GetRefer0(),
+            TypeReference::REFER1 => self.GetRefer1(),
+            TypeReference::REFER2 => self.GetRefer2(),
+            TypeReference::REFER3 => self.GetRefer3(),
         }
     }
 

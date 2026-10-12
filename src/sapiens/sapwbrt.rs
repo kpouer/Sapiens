@@ -371,7 +371,7 @@ impl Sapiens {
         vide: c_short,
     ) -> c_short {
         let mut f: *mut FILE = std::ptr::null_mut();
-        let mut n: c_short;
+        let n: c_short;
         let mut nbcol: c_short = 0;
         let mut nbligne: c_short = 0;
         let mut nb_objets: c_short = 0;
@@ -1324,7 +1324,7 @@ pub(crate) fn CopyOffscreen(
             let Some(infoDest) = port::info(dest) else {
                 return;
             };
-            let mut boundSource = infoSource.bounds;
+            let boundSource = infoSource.bounds;
             let mut boundDest = infoDest.bounds;
             let tailleLigneSource = infoSource.row_bytes;
             let tailleLigneDest = infoDest.row_bytes;
