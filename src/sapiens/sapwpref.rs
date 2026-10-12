@@ -204,29 +204,29 @@ fn GetLibLangue(n: c_short, str_: *mut c_char) {
                         VectAfficheMenuLangue
 ********************************************************************/
 unsafe extern "C" fn VectAfficheMenuLangue(window: DialogPtr, itemid: c_short) {
-    unsafe {
-        let mut r: Rect = Rect::default();
-        let mut chaine = [0 as c_char; 255];
+    let mut r: Rect = Rect::default();
+    let mut chaine = [0 as c_char; 255];
 
-        let _g = port::on(window);
-        GetRectItem(window, itemid, &raw mut r);
-        GetLibLangue(langue(), chaine.as_mut_ptr());
-        BackColor(whiteColor as c_short);
-        r.right -= 14;
-        TextFont(times as c_short);
-        TextSize(16);
-        TextFace(0);
+    let _g = port::on(window);
+    GetRectItem(window, itemid, &raw mut r);
+    GetLibLangue(langue(), chaine.as_mut_ptr());
+    BackColor(whiteColor as c_short);
+    r.right -= 14;
+    TextFont(times as c_short);
+    TextSize(16);
+    TextFace(0);
+    unsafe {
         DoTextBox(
             chaine.as_mut_ptr(),
             strlen(chaine.as_ptr()) as c_short,
             &r,
             crate::cbridge::teJustLeft as c_short,
         );
-        r.right += 14;
-        r.InsetRect(-1, -1);
-        DrawArrowPopUp(&raw mut r);
-        FrameRect(&r);
     }
+    r.right += 14;
+    r.InsetRect(-1, -1);
+    DrawArrowPopUp(&raw mut r);
+    FrameRect(&r);
 }
 
 /******************************************************************************************
@@ -259,13 +259,11 @@ impl Sapiens {
                             DoPreferences
     ***********************************************************************/
     pub(crate) fn DoPreferences(&mut self) {
+        let mut item: c_short = 0;
+        let mut result: c_long;
+        let mut menuLangue: MenuHandle;
         unsafe {
-            let dialog: DialogPtr;
-            let mut item: c_short = 0;
-            let mut result: c_long;
-            let mut menuLangue: MenuHandle;
-
-            dialog = OuvreDialogue(CvtDefaultLangRess(137));
+            let dialog = OuvreDialogue(CvtDefaultLangRess(137));
             if dialog.is_null() {
                 return;
             }
@@ -341,8 +339,8 @@ impl Sapiens {
                 self.sapwind.FixeTailleMainWindow();
                 self.inimen(0);
             }
-            self.MusicInit(1);
-            // CloseDialogue(dialog, CvtDefaultLangRess(137));
         }
+        self.MusicInit(1);
+        // CloseDialogue(dialog, CvtDefaultLangRess(137));
     }
 }

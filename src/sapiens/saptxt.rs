@@ -6,7 +6,7 @@ use crate::langue::Langue::{ES, FR};
 use crate::sapiens::sapglob::Sapglob;
 use crate::sapiens::{TypeReference, reference};
 use std::os::raw::{c_char, c_int, c_short};
-use std::ptr::{addr_of, null_mut};
+use std::ptr::addr_of;
 use std::sync::atomic::{AtomicI16, Ordering};
 
 const DELTA_LANGUE: c_short = 1000;
@@ -236,8 +236,7 @@ impl Sapglob {
                     CvtCar
 Conversion d'un caractere special en caractere encode Windows selon la langue
 **************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn CvtCar(car: c_short) -> c_short {
+pub(crate) fn CvtCar(car: c_short) -> c_short {
     match car {
         C_POURCENT => 0x8a, /* ê */
         C_ET => 0x82,       /* é */
@@ -252,8 +251,7 @@ pub(crate) unsafe extern "C" fn CvtCar(car: c_short) -> c_short {
 Conversion d'un caractere special en caractere encode mac selon la langue
 pour le lissage
 **************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn CvtCarLissage(car: c_short) -> c_short {
+pub(crate) fn CvtCarLissage(car: c_short) -> c_short {
     // Conversion
     if langue() == FR as c_short {
         match car {

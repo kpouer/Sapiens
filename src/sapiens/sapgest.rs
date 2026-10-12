@@ -981,13 +981,12 @@ impl Sapiens {
                             AireJauge
     Calcule l'aire ecran totale d'une jauge
     ***********************************************************************/
-    pub(crate) extern "C" fn AireJauge(&self, i: c_short, r: *mut Rect) {
+    pub(crate) fn AireJauge(&self, i: c_short, r: *mut Rect) {
         SetRect(
             r,
             114,
             6 + 14 * i,
-            (114 + self.sapglob.maxparam[self.sapglob.sexe as u8 as usize][i as usize] / 2 + 2)
-                as i16,
+            (114 + self.sapglob.maxparam[self.sapglob.sexe as usize][i as usize] / 2 + 2) as i16,
             16 + 14 * i,
         );
     }
@@ -1033,18 +1032,16 @@ impl Sapiens {
         let _g = port::on(self.sapwind.debecr);
         self.AireValJauge(i, &mut rval);
         self.AfficheCadreJauge(i);
-        unsafe {
-            self.boxf(rval.top, rval.left, rval.bottom, rval.right, 2);
-            /* Effacement de la partie droite */
-            self.AireJauge(i, &mut r);
-            if self.sapglob.param[i as usize] / 2
-                < self.sapglob.maxparam[self.sapglob.sexe as u8 as usize][i as usize] / 2
-            {
-                self.boxf(r.top + 1, rval.right, r.bottom - 1, r.right - 1, 14);
-                if (self.sapglob.param[i as usize]) > 0 {
-                    self.boxf(r.bottom - 2, r.left + 1, r.bottom - 1, rval.right - 1, 9);
-                    self.boxf(r.top + 1, rval.right - 1, r.bottom - 1, rval.right, 9);
-                }
+        self.boxf(rval.top, rval.left, rval.bottom, rval.right, 2);
+        /* Effacement de la partie droite */
+        self.AireJauge(i, &mut r);
+        if self.sapglob.param[i as usize] / 2
+            < self.sapglob.maxparam[self.sapglob.sexe as usize][i as usize] / 2
+        {
+            self.boxf(r.top + 1, rval.right, r.bottom - 1, r.right - 1, 14);
+            if (self.sapglob.param[i as usize]) > 0 {
+                self.boxf(r.bottom - 2, r.left + 1, r.bottom - 1, rval.right - 1, 9);
+                self.boxf(r.top + 1, rval.right - 1, r.bottom - 1, rval.right, 9);
             }
         }
         if tfr {

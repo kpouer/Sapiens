@@ -631,8 +631,7 @@ impl Sapiens {
     Les  coordonnées sont données en ecran ST 320x200
     (C) Ligne dep,Col dep,Ligne fin,col.fin,index couleur ST
     ***************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn boxf(
+    pub(crate) fn boxf(
         &self,
         lignedep: c_short,
         coldep: c_short,

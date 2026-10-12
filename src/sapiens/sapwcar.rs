@@ -130,7 +130,7 @@ impl Sapiens {
 /*************************************************************************
                     SetColorFont
 **************************************************************************/
-unsafe fn SetColorFont(sapiens: &Sapiens, id: c_short) {
+fn SetColorFont(sapiens: &Sapiens, id: c_short) {
     if id == sapiens.sapwcar.index_white {
         RGBForeColor(&rgbWhite);
     } else if id == sapiens.sapwcar.index_black {
@@ -150,7 +150,7 @@ impl Sapiens {
     Affiche un caractere brut à la position courante
     => Caractere à afficher
     **************************************************************************/
-    unsafe fn AffCarBrt(
+    fn AffCarBrt(
         &mut self,
         car: c_short,
         couleur: c_short,
@@ -205,8 +205,10 @@ impl Sapiens {
                     self.sapwcar.pt_ecr_car.v,
                     couleur,
                 );
-                self.sapwcar.pt_ecr_car.h +=
-                    (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 2;
+                unsafe {
+                    self.sapwcar.pt_ecr_car.h +=
+                        (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 2;
+                }
             } else {
                 num = self.sapwind.Fonte14 + car - 31;
                 self.AffmobCar(
@@ -227,8 +229,10 @@ impl Sapiens {
                     self.sapwcar.pt_ecr_car.v,
                     couleur,
                 );
-                self.sapwcar.pt_ecr_car.h +=
-                    (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 3;
+                unsafe {
+                    self.sapwcar.pt_ecr_car.h +=
+                        (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 3;
+                }
             }
         }
     }
@@ -238,30 +242,32 @@ impl Sapiens {
                     GetStrBkMot
 **************************************************************************/
 impl Sapiens {
-    pub(crate) unsafe fn GetStrBkMot(&self, car: c_short) -> *mut c_char {
+    pub(crate) fn GetStrBkMot(&self, car: c_short) -> *mut c_char {
         let vide: *mut c_char = c"".as_ptr() as *mut c_char;
         let bkmots = self.GetBkMot();
         let mut p: *mut c_char = vide;
         let car = car - 129;
-        if car < NB_MOTS_BKMOTS as c_short {
-            p = *bkmots.add(car as usize);
-            if *p == b'$' as c_char {
-                /* Substitution */
-                let c = *p.add(1);
-                if c == b'0' as c_char {
-                    p = addr_of!(self.saptxt.nomsecondaire) as *mut c_char;
-                } else if c == b'1' as c_char {
-                    p = addr_of!(self.saptxt.nomjoueur) as *mut c_char;
-                } else if c == b'2' as c_char {
-                    p = addr_of!(self.saptxt.nomadversaire) as *mut c_char;
-                } else if c == b'3' as c_char {
-                    p = addr_of!(self.saptxt.nomtribu) as *mut c_char;
-                } else if c == b'4' as c_char {
-                    p = addr_of!(self.saptxt.nomcopain) as *mut c_char;
+        unsafe {
+            if car < NB_MOTS_BKMOTS as c_short {
+                p = *bkmots.add(car as usize);
+                if *p == b'$' as c_char {
+                    /* Substitution */
+                    let c = *p.add(1);
+                    if c == b'0' as c_char {
+                        p = addr_of!(self.saptxt.nomsecondaire) as *mut c_char;
+                    } else if c == b'1' as c_char {
+                        p = addr_of!(self.saptxt.nomjoueur) as *mut c_char;
+                    } else if c == b'2' as c_char {
+                        p = addr_of!(self.saptxt.nomadversaire) as *mut c_char;
+                    } else if c == b'3' as c_char {
+                        p = addr_of!(self.saptxt.nomtribu) as *mut c_char;
+                    } else if c == b'4' as c_char {
+                        p = addr_of!(self.saptxt.nomcopain) as *mut c_char;
+                    }
                 }
+            } else {
+                eprintln!("GetStrBkMot error");
             }
-        } else {
-            eprintln!("GetStrBkMot error");
         }
         p
     }
@@ -272,7 +278,7 @@ impl Sapiens {
                         AffCarBank
     Affiche un caractere sur le port en entrée
     **************************************************************************/
-    unsafe fn AffCarBank(
+    fn AffCarBank(
         &mut self,
         port: CGrafPtr,
         car: c_short,
@@ -281,15 +287,17 @@ impl Sapiens {
         taille: c_short,
     ) {
         let _g = port::on(port);
-        if car > 128 {
-            let mut p = self.GetStrBkMot(car);
-            while *p != 0 {
-                self.AffCarBank(port, *p as u8 as c_short, couleur1, couleur2, taille);
-                p = p.add(1);
+        unsafe {
+            if car > 128 {
+                let mut p = self.GetStrBkMot(car);
+                while *p != 0 {
+                    self.AffCarBank(port, *p as u8 as c_short, couleur1, couleur2, taille);
+                    p = p.add(1);
+                }
+            } else {
+                self.AffCarBrt(car, couleur1, couleur2, taille);
+                *addr_of_mut!(self.sapglob.colaff) += 1;
             }
-        } else {
-            self.AffCarBrt(car, couleur1, couleur2, taille);
-            *addr_of_mut!(self.sapglob.colaff) += 1;
         }
     }
 
@@ -298,8 +306,7 @@ impl Sapiens {
     Affiche le caractere demandé à la position courante
     Les caracteres >128 sont des macros substitions
     **************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn affcar(&mut self, car: c_short) {
+    pub(crate) fn affcar(&mut self, car: c_short) {
         self.AffCarBank(
             self.sapwind.debecr,
             car,
@@ -314,8 +321,7 @@ impl Sapiens {
     Affiche le caractere demandé à la position courante
     Les caracteres >128 sont des macros substitions
     **************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn affcar10(&mut self, car: c_short) {
+    pub(crate) fn affcar10(&mut self, car: c_short) {
         self.AffCarBank(
             self.sapwind.debecr,
             car,
@@ -330,8 +336,7 @@ impl Sapiens {
     Affiche un caractere blanc sur une ombre noire
     Le caractere est affiché sur debecr et n'est pas transféré
     **************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn car2(&mut self, car: c_short) {
+    pub(crate) fn car2(&mut self, car: c_short) {
         self.AffCarBank(
             self.sapwind.debecr,
             car,
@@ -347,17 +352,14 @@ impl Sapiens {
     Les caracteres >128 sont des macros substitions
     Le caractere est affiche sur debecr
     **************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn affcarmess(&mut self, car: c_short) {
-        let mut r = Rect::default();
+    pub(crate) fn affcarmess(&mut self, car: c_short) {
         let _g = port::on(self.sapwind.debecr);
         let rgn: RgnHandle = NewRgn();
         GetClip(rgn);
         ClipRect(addr_of!(self.sapwmess.rMess));
         /* Effacement et affichage curseur */
         if car < 32 {
-            SetRect(
-                &mut r,
+            let r = Rect::new(
                 self.sapwcar.pt_ecr_car.h,
                 self.sapwcar.pt_ecr_car.v,
                 self.sapwcar.pt_ecr_car.h + 8,
@@ -365,10 +367,10 @@ impl Sapiens {
             );
             if car == 2 {
                 CarboniseSetPatBlack();
-                DoPaintRect(&mut r);
+                DoPaintRect(&r);
             }
             if car == 1 {
-                DoEraseRect(&mut r);
+                DoEraseRect(&r);
             }
         } else {
             self.AffCarBank(
@@ -386,12 +388,13 @@ impl Sapiens {
     /***********************************************************************
                             MOTLST2:Affiche Pour jauges
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn motlst2(&mut self, debut: *mut c_char) {
+    pub(crate) fn motlst2(&mut self, debut: *mut c_char) {
         let mut p = debut as *mut u8;
-        while *p != 0 {
-            self.car2(*p as c_short);
-            p = p.add(1);
+        unsafe {
+            while *p != 0 {
+                self.car2(*p as c_short);
+                p = p.add(1);
+            }
         }
     }
 }
