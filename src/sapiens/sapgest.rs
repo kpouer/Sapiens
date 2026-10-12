@@ -170,7 +170,7 @@ impl Sapiens {
     Ecrit un point coloré directement sur l'ecran
     => ligne,colonne ,couleur ST
     ***********************************************************************/
-    pub(crate) extern "C" fn plot_ecr(&self, y: c_short, x: c_short, couleur: c_short) {
+    pub(crate) fn plot_ecr(&self, y: c_short, x: c_short, couleur: c_short) {
         let mut rgb = RGBColor::default();
         Sapwcvt::CvtCouleurEnRgb(self.sapglob.palhaute, couleur, &mut rgb);
         RGBForeColor(&rgb);
@@ -216,13 +216,13 @@ fn ecrit_sil(sapiens: &Sapiens, y: c_short, x: c_short, couleur: c_short) {
 /***********************************************************************
                         CAT:Affiche le catalogue courant
 ***********************************************************************/
-pub(crate) extern "C" fn cat() {}
+pub(crate) fn cat() {}
 
 impl Sapiens {
     /***********************************************************************
                     TRAPSURE:Acces reserve aux initiés...
     ***********************************************************************/
-    pub(crate) extern "C" fn trapsure(&mut self, quoi: c_short) {
+    pub(crate) fn trapsure(&mut self, quoi: c_short) {
         self.sapglob.flefba = 0;
         if quoi > 0 {
             self.comment(114 + quoi as c_ushort);

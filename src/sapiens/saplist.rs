@@ -199,17 +199,16 @@ impl Sapiens {
     /************************************************************************/
     /*  ouvre un cadre de cad1 vers cad2 (64 colonnes * 25 Lignes)*/
     /* le nombre de cadre 'GEMNBRECAD' doit etre pair*/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn gemouvre(
+    pub(crate) fn gemouvre(
         &mut self,
-        ligncad1: ::std::os::raw::c_ushort,
-        colcad1: ::std::os::raw::c_ushort,
-        hautcad1: ::std::os::raw::c_ushort,
-        largcad1: ::std::os::raw::c_ushort,
-        ligncad2: ::std::os::raw::c_ushort,
-        colcad2: ::std::os::raw::c_ushort,
-        hautcad2: ::std::os::raw::c_ushort,
-        largcad2: ::std::os::raw::c_ushort,
+        ligncad1: c_ushort,
+        colcad1: c_ushort,
+        hautcad1: c_ushort,
+        largcad1: c_ushort,
+        ligncad2: c_ushort,
+        colcad2: c_ushort,
+        hautcad2: c_ushort,
+        largcad2: c_ushort,
     ) {
         /*calcul des parametres de depart*/
         let mut ligne: c_short = (ligncad1 * 7 / 2) as c_short;
@@ -218,74 +217,71 @@ impl Sapiens {
         let mut larg: c_short = (largcad1 * 3 / 2) as c_short;
         /* on l'injecte ds les N cadres*/
 
-        unsafe {
-            for i in 0..gemnbrecad as usize {
-                self.sapglob.gemzoom[i].ligne = ligne;
-                self.sapglob.gemzoom[i].colon = colon;
-                self.sapglob.gemzoom[i].haut = haut;
-                self.sapglob.gemzoom[i].larg = larg;
+        for i in 0..gemnbrecad as usize {
+            self.sapglob.gemzoom[i].ligne = ligne;
+            self.sapglob.gemzoom[i].colon = colon;
+            self.sapglob.gemzoom[i].haut = haut;
+            self.sapglob.gemzoom[i].larg = larg;
+        }
+        /* on calcule les coordonn�es d'arriv�e*/
+        ligne = (ligncad2 * 7 / 2) as c_short;
+        colon = (colcad2 * 3 / 2) as c_short;
+        haut = (hautcad2 * 7 / 2) as c_short;
+        larg = (largcad2 * 3 / 2) as c_short;
+        /* on y va*/
+        let mut balai = 0;
+        loop {
+            for i in 0..=balai / geminterv as usize {
+                /* on efface le cadre*/
+                cadreg(
+                    self.sapglob.gemzoom[i].ligne,
+                    self.sapglob.gemzoom[i].colon,
+                    self.sapglob.gemzoom[i].haut,
+                    self.sapglob.gemzoom[i].larg,
+                );
+                /*on calcule le nlles coordonnées*/
+                if self.sapglob.gemzoom[i].ligne < ligne {
+                    self.sapglob.gemzoom[i].ligne += 1;
+                } else if self.sapglob.gemzoom[i].ligne > ligne {
+                    self.sapglob.gemzoom[i].ligne -= 1;
+                }
+
+                if self.sapglob.gemzoom[i].colon < colon {
+                    self.sapglob.gemzoom[i].colon += 1;
+                } else if self.sapglob.gemzoom[i].colon > colon {
+                    self.sapglob.gemzoom[i].colon -= 1;
+                }
+
+                if self.sapglob.gemzoom[i].haut < haut {
+                    self.sapglob.gemzoom[i].haut += 1;
+                } else if self.sapglob.gemzoom[i].haut > haut {
+                    self.sapglob.gemzoom[i].haut -= 1;
+                }
+
+                if self.sapglob.gemzoom[i].larg < larg {
+                    self.sapglob.gemzoom[i].larg += 1;
+                } else if self.sapglob.gemzoom[i].larg > larg {
+                    self.sapglob.gemzoom[i].larg -= 1;
+                }
+                /*affiche le cadre*/
+                cadreg(
+                    self.sapglob.gemzoom[i].ligne,
+                    self.sapglob.gemzoom[i].colon,
+                    self.sapglob.gemzoom[i].haut,
+                    self.sapglob.gemzoom[i].larg,
+                );
             }
-
-            /* on calcule les coordonn�es d'arriv�e*/
-            ligne = (ligncad2 * 7 / 2) as c_short;
-            colon = (colcad2 * 3 / 2) as c_short;
-            haut = (hautcad2 * 7 / 2) as c_short;
-            larg = (largcad2 * 3 / 2) as c_short;
-            /* on y va*/
-            let mut balai = 0;
-            loop {
-                for i in 0..=balai / geminterv as usize {
-                    /* on efface le cadre*/
-                    cadreg(
-                        self.sapglob.gemzoom[i].ligne,
-                        self.sapglob.gemzoom[i].colon,
-                        self.sapglob.gemzoom[i].haut,
-                        self.sapglob.gemzoom[i].larg,
-                    );
-                    /*on calcule le nlles coordonnées*/
-                    if self.sapglob.gemzoom[i].ligne < ligne {
-                        self.sapglob.gemzoom[i].ligne += 1;
-                    } else if self.sapglob.gemzoom[i].ligne > ligne {
-                        self.sapglob.gemzoom[i].ligne -= 1;
-                    }
-
-                    if self.sapglob.gemzoom[i].colon < colon {
-                        self.sapglob.gemzoom[i].colon += 1;
-                    } else if self.sapglob.gemzoom[i].colon > colon {
-                        self.sapglob.gemzoom[i].colon -= 1;
-                    }
-
-                    if self.sapglob.gemzoom[i].haut < haut {
-                        self.sapglob.gemzoom[i].haut += 1;
-                    } else if self.sapglob.gemzoom[i].haut > haut {
-                        self.sapglob.gemzoom[i].haut -= 1;
-                    }
-
-                    if self.sapglob.gemzoom[i].larg < larg {
-                        self.sapglob.gemzoom[i].larg += 1;
-                    } else if self.sapglob.gemzoom[i].larg > larg {
-                        self.sapglob.gemzoom[i].larg -= 1;
-                    }
-                    /*affiche le cadre*/
-                    cadreg(
-                        self.sapglob.gemzoom[i].ligne,
-                        self.sapglob.gemzoom[i].colon,
-                        self.sapglob.gemzoom[i].haut,
-                        self.sapglob.gemzoom[i].larg,
-                    );
-                }
-                /*si tout les cadres en cours alors balai ne bouge plus*/
-                if balai / geminterv as usize + 1 < gemnbrecad as usize {
-                    balai += 1;
-                }
-                /*fini ????: dernier cadre arrivé*/
-                if self.sapglob.gemzoom[(gemnbrecad - 1) as usize].ligne == ligne
-                    && self.sapglob.gemzoom[(gemnbrecad - 1) as usize].colon == colon
-                    && self.sapglob.gemzoom[(gemnbrecad - 1) as usize].haut == haut
-                    && self.sapglob.gemzoom[(gemnbrecad - 1) as usize].larg == larg
-                {
-                    return;
-                }
+            /*si tout les cadres en cours alors balai ne bouge plus*/
+            if balai / geminterv as usize + 1 < gemnbrecad as usize {
+                balai += 1;
+            }
+            /*fini ????: dernier cadre arrivé*/
+            if self.sapglob.gemzoom[(gemnbrecad - 1) as usize].ligne == ligne
+                && self.sapglob.gemzoom[(gemnbrecad - 1) as usize].colon == colon
+                && self.sapglob.gemzoom[(gemnbrecad - 1) as usize].haut == haut
+                && self.sapglob.gemzoom[(gemnbrecad - 1) as usize].larg == larg
+            {
+                return;
             }
         }
     }
@@ -305,14 +301,13 @@ impl Sapiens {
     /***********************************************************************
                     CLAVM:Gestion des menus au clavier
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn clavm(&mut self) {
-        let mut y: c_short = 0;
+    pub(crate) fn clavm(&mut self) {
+        let mut y: c_short;
         let mut r = Rect::default();
 
         /* gestion souris pour clavm */
+        self.aff_sour(self.sapglob.icone, self.sapglob.sposy, self.sapglob.sposx);
         unsafe {
-            self.aff_sour(self.sapglob.icone, self.sapglob.sposy, self.sapglob.sposx);
             loop {
                 /* appel de grise mine */
                 self.gere_souris();
@@ -461,23 +456,18 @@ impl Sapiens {
     /***********************************************************************
                   AJOUTL:ajoute un element a une liste
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn ajoutl(
-        &mut self,
-        debliste_id: ListeId,
-        element: c_ushort,
-    ) -> c_ushort {
+    pub(crate) fn ajoutl(&mut self, debliste_id: ListeId, element: c_ushort) -> c_ushort {
         let debliste = self.sapglob.liste_mut(debliste_id);
         if debliste_id == ListeId::Listbidon {
             /*le premier element le recoit*/
-            (*debliste).elements[0] = element as c_uchar;
+            debliste.elements[0] = element as c_uchar;
         } else {
             /*liste est elle pleine*/
-            if (*debliste).taille == (*debliste).maxtaille {
+            if debliste.taille == debliste.maxtaille {
                 return 1; /*deja pleine*/
             }
-            (*debliste).elements[(*debliste).taille as usize] = element as c_uchar;
-            (*debliste).taille += 1;
+            debliste.elements[debliste.taille as usize] = element as c_uchar;
+            debliste.taille += 1;
         }
         0 /*ok*/
     }
@@ -485,8 +475,7 @@ impl Sapiens {
     /***********************************************************************
                     ENLEVL:transfere un element d'une liste sur une autre
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn enlevl(
+    pub(crate) fn enlevl(
         &mut self,
         orgliste_id: ListeId,
         receptliste_id: ListeId,
@@ -497,8 +486,8 @@ impl Sapiens {
             /*rang contenu dans liste de depart*/
             let element = {
                 let orgliste = self.sapglob.liste_mut(orgliste_id);
-                (*orgliste).taille = (*orgliste).taille.wrapping_sub(1);
-                (*orgliste).elements[rang as usize] as c_ushort
+                orgliste.taille = orgliste.taille.wrapping_sub(1);
+                orgliste.elements[rang as usize] as c_ushort
             };
             let erreur = self.ajoutl(receptliste_id, element);
             if erreur != 0 {
@@ -510,8 +499,8 @@ impl Sapiens {
                 /*on recompacte la liste d'origine*/
                 let mut i: c_uchar = rang as c_uchar;
                 let orgliste = self.sapglob.liste_mut(orgliste_id);
-                while i != (*orgliste).taille {
-                    (*orgliste).elements[i as usize] = (*orgliste).elements[i as usize + 1];
+                while i != orgliste.taille {
+                    orgliste.elements[i as usize] = orgliste.elements[i as usize + 1];
                     i = i.wrapping_add(1);
                 }
                 if i as c_ushort == rang {
@@ -528,8 +517,7 @@ impl Sapiens {
     /***********************************************************************
                   MOT:Affiche un mot selon la reference std
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn mot(&mut self, refer: *mut c_char) {
+    pub(crate) fn mot(&mut self, refer: *mut c_char) {
         unsafe {
             let mut p = refer as *mut c_uchar;
             while *p != 0 {
@@ -543,8 +531,8 @@ impl Sapiens {
                   AFFMOT:affiche le mot ou des blancs
     ***********************************************************************/
     fn affmot(&mut self, debliste_id: ListeId, rang: c_ushort) {
+        let debliste = self.sapglob.liste(debliste_id);
         unsafe {
-            let debliste = self.sapglob.liste(debliste_id);
             if (rang as c_uchar) < (*debliste).taille {
                 /*rang a afficher existe*/
                 let refer = self.GetRefer((*debliste).typeRef);
@@ -636,192 +624,183 @@ impl Sapiens {
     /***********************************************************************
                             ENCADRE:dessine le cadre
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn encadre(
-        &self,
-        ligne: c_ushort,
-        colon: c_ushort,
-        haut: c_ushort,
-        larg: c_ushort,
-    ) {
-        unsafe {
-            /* passage au pixel */
-            let mut ligne = (ligne * 7) as c_short;
-            let mut colon = (colon * 6) as c_short;
-            let mut haut = ligne + 7 * haut as c_short;
-            let mut larg = colon + 6 * larg as c_short;
-            /* petit delta pour polymorphisme*/
-            ligne -= colon & 3;
-            colon = colon - 2 - (haut & 3);
-            haut += larg & 3;
-            larg += ligne & 3;
+    pub(crate) fn encadre(&self, ligne: c_ushort, colon: c_ushort, haut: c_ushort, larg: c_ushort) {
+        /* passage au pixel */
+        let mut ligne = (ligne * 7) as c_short;
+        let mut colon = (colon * 6) as c_short;
+        let mut haut = ligne + 7 * haut as c_short;
+        let mut larg = colon + 6 * larg as c_short;
+        /* petit delta pour polymorphisme*/
+        ligne -= colon & 3;
+        colon = colon - 2 - (haut & 3);
+        haut += larg & 3;
+        larg += ligne & 3;
 
-            /* coin haut gauche vertical */
-            self.affomb(
-                MOB_CADRE!(self.sapwind) + 0,
-                ligne - 24,
-                colon - 8,
-                8,
-                8,
-                false,
-            );
-            /* coin haut droit vertical */
-            self.affomb(
-                MOB_CADRE!(self.sapwind) + 1,
-                ligne - 24,
-                larg - 8,
-                8,
-                8,
-                false,
-            );
-            /* coin haut gauche horizontal */
-            self.affomb(
-                MOB_CADRE!(self.sapwind) + 2,
-                ligne - 16,
-                colon - 16,
-                8,
-                8,
-                false,
-            );
-            /* angle  haut gauche */
-            self.affomb(
-                MOB_CADRE!(self.sapwind) + 3,
-                ligne - 8,
-                colon - 8,
-                8,
-                8,
-                false,
-            );
-            /* ligne horiz haute */
-            let tailleh = (larg - colon - 1) / 16;
-            if tailleh < 2000 {
-                for i in 0..tailleh {
-                    self.affomb(
-                        MOB_CADRE!(self.sapwind) + 4,
-                        ligne - 8,
-                        colon + 8 + i * 16,
-                        8,
-                        8,
-                        false,
-                    );
-                }
+        /* coin haut gauche vertical */
+        self.affomb(
+            MOB_CADRE!(self.sapwind) + 0,
+            ligne - 24,
+            colon - 8,
+            8,
+            8,
+            false,
+        );
+        /* coin haut droit vertical */
+        self.affomb(
+            MOB_CADRE!(self.sapwind) + 1,
+            ligne - 24,
+            larg - 8,
+            8,
+            8,
+            false,
+        );
+        /* coin haut gauche horizontal */
+        self.affomb(
+            MOB_CADRE!(self.sapwind) + 2,
+            ligne - 16,
+            colon - 16,
+            8,
+            8,
+            false,
+        );
+        /* angle  haut gauche */
+        self.affomb(
+            MOB_CADRE!(self.sapwind) + 3,
+            ligne - 8,
+            colon - 8,
+            8,
+            8,
+            false,
+        );
+        /* ligne horiz haute */
+        let tailleh = (larg - colon - 1) / 16;
+        if tailleh < 2000 {
+            for i in 0..tailleh {
+                self.affomb(
+                    MOB_CADRE!(self.sapwind) + 4,
+                    ligne - 8,
+                    colon + 8 + i * 16,
+                    8,
+                    8,
+                    false,
+                );
             }
-            /* angle haut droit */
-            self.affomb(
-                MOB_CADRE!(self.sapwind) + 5,
-                ligne - 8,
-                larg - 8,
-                8,
-                8,
-                false,
-            );
-            /* coin haut droit horizontal */
-            self.affomb(
-                MOB_CADRE!(self.sapwind) + 6,
-                ligne - 16,
-                larg + 8,
-                8,
-                8,
-                false,
-            );
-            /* Block vertical */
-            let taillev = (haut - ligne - 1) / 16;
-            if taillev < 2000 {
-                for i in 0..taillev {
-                    /* cote gauche */
-                    self.affomb(
-                        MOB_CADRE!(self.sapwind) + 7,
-                        ligne + 8 + 16 * i,
-                        colon - 8,
-                        8,
-                        8,
-                        false,
-                    );
-                    /* centre */
-                    if tailleh < 2000 {
-                        for j in 0..tailleh {
-                            self.affomb(
-                                MOB_CADRE!(self.sapwind) + 16,
-                                ligne + 8 + 16 * i,
-                                colon + 8 + 16 * j,
-                                8,
-                                8,
-                                false,
-                            );
-                        }
-                    }
-                    /* cote droit */
-                    self.affomb(
-                        MOB_CADRE!(self.sapwind) + 8,
-                        ligne + 8 + 16 * i,
-                        larg - 8,
-                        8,
-                        8,
-                        false,
-                    );
-                }
-            }
-            /* coin bas gauche horizontal */
-            self.affomb(
-                MOB_CADRE!(self.sapwind) + 9,
-                haut - 8,
-                colon - 16,
-                8,
-                8,
-                false,
-            );
-            /* angle  bas gauche */
-            self.affomb(
-                MOB_CADRE!(self.sapwind) + 10,
-                haut - 8,
-                colon - 8,
-                8,
-                8,
-                false,
-            );
-            /* ligne horiz basse */
-            if tailleh < 2000 {
-                for i in 0..tailleh {
-                    self.affomb(
-                        MOB_CADRE!(self.sapwind) + 11,
-                        haut - 8,
-                        colon + 8 + i * 16,
-                        8,
-                        8,
-                        false,
-                    );
-                }
-            }
-            /* angle bas droit */
-            self.affomb(
-                MOB_CADRE!(self.sapwind) + 12,
-                haut - 8,
-                larg - 8,
-                8,
-                8,
-                false,
-            );
-            /* coin bas droit horizontal */
-            self.affomb(
-                MOB_CADRE!(self.sapwind) + 13,
-                haut - 8,
-                larg + 8,
-                8,
-                8,
-                false,
-            );
-            /* coin bas gauche vertical */
-            self.affomb(
-                MOB_CADRE!(self.sapwind) + 14,
-                haut + 7,
-                colon - 16,
-                8,
-                8,
-                false,
-            );
-            /* coin bas droit vertical */
-            self.affomb(MOB_CADRE!(self.sapwind) + 15, haut + 7, larg, 8, 8, false);
         }
+        /* angle haut droit */
+        self.affomb(
+            MOB_CADRE!(self.sapwind) + 5,
+            ligne - 8,
+            larg - 8,
+            8,
+            8,
+            false,
+        );
+        /* coin haut droit horizontal */
+        self.affomb(
+            MOB_CADRE!(self.sapwind) + 6,
+            ligne - 16,
+            larg + 8,
+            8,
+            8,
+            false,
+        );
+        /* Block vertical */
+        let taillev = (haut - ligne - 1) / 16;
+        if taillev < 2000 {
+            for i in 0..taillev {
+                /* cote gauche */
+                self.affomb(
+                    MOB_CADRE!(self.sapwind) + 7,
+                    ligne + 8 + 16 * i,
+                    colon - 8,
+                    8,
+                    8,
+                    false,
+                );
+                /* centre */
+                if tailleh < 2000 {
+                    for j in 0..tailleh {
+                        self.affomb(
+                            MOB_CADRE!(self.sapwind) + 16,
+                            ligne + 8 + 16 * i,
+                            colon + 8 + 16 * j,
+                            8,
+                            8,
+                            false,
+                        );
+                    }
+                }
+                /* cote droit */
+                self.affomb(
+                    MOB_CADRE!(self.sapwind) + 8,
+                    ligne + 8 + 16 * i,
+                    larg - 8,
+                    8,
+                    8,
+                    false,
+                );
+            }
+        }
+        /* coin bas gauche horizontal */
+        self.affomb(
+            MOB_CADRE!(self.sapwind) + 9,
+            haut - 8,
+            colon - 16,
+            8,
+            8,
+            false,
+        );
+        /* angle  bas gauche */
+        self.affomb(
+            MOB_CADRE!(self.sapwind) + 10,
+            haut - 8,
+            colon - 8,
+            8,
+            8,
+            false,
+        );
+        /* ligne horiz basse */
+        if tailleh < 2000 {
+            for i in 0..tailleh {
+                self.affomb(
+                    MOB_CADRE!(self.sapwind) + 11,
+                    haut - 8,
+                    colon + 8 + i * 16,
+                    8,
+                    8,
+                    false,
+                );
+            }
+        }
+        /* angle bas droit */
+        self.affomb(
+            MOB_CADRE!(self.sapwind) + 12,
+            haut - 8,
+            larg - 8,
+            8,
+            8,
+            false,
+        );
+        /* coin bas droit horizontal */
+        self.affomb(
+            MOB_CADRE!(self.sapwind) + 13,
+            haut - 8,
+            larg + 8,
+            8,
+            8,
+            false,
+        );
+        /* coin bas gauche vertical */
+        self.affomb(
+            MOB_CADRE!(self.sapwind) + 14,
+            haut + 7,
+            colon - 16,
+            8,
+            8,
+            false,
+        );
+        /* coin bas droit vertical */
+        self.affomb(MOB_CADRE!(self.sapwind) + 15, haut + 7, larg, 8, 8, false);
     }
 
     /***********************************************************************
@@ -980,112 +959,77 @@ impl Sapiens {
     /***********************************************************************
                             TRPREN:Prends Objet
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn trpren(&mut self) {
-        unsafe {
-            if self.sapglob.liste4.elements[self.sapglob.rega as usize] == EAU {
-                let mut quoi: c_uchar = 0;
-                self.sapglob.flefba = 0;
-                if self.sapglob.soif == 255 {
-                    self.comment(98); /*tu n'as pas soif*/
-                } else {
-                    self.comment(96); /*Tu bois*/
-                }
-                self.sapglob.soif = 255;
-                /*on remplit les outres*/
-                for i in 0..self.sapglob.liste1.taille {
-                    if self.sapglob.liste1.elements[i as usize] == OUTREVIDE {
-                        self.sapglob.liste1.elements[i as usize] = OUTREPLEINE;
-                        quoi += 1;
-                    }
-                }
-                if quoi != 0 {
-                    self.comment(97); /*et remplis tes gourdes*/
-                }
-                self.sapglob.flefba = 0;
-                return;
+    pub(crate) fn trpren(&mut self) {
+        if self.sapglob.liste4.elements[self.sapglob.rega as usize] == EAU {
+            let mut quoi: c_uchar = 0;
+            self.sapglob.flefba = 0;
+            if self.sapglob.soif == 255 {
+                self.comment(98); /*tu n'as pas soif*/
+            } else {
+                self.comment(96); /*Tu bois*/
             }
-            let old_taille: c_short = self.sapglob.liste1.taille as c_short;
-            self.enlevl(
-                ListeId::Liste4,
-                ListeId::Liste1,
-                self.sapglob.rega as c_ushort,
-            );
-            if self.sapglob.liste1.taille as c_short == old_taille {
-                self.sapglob.flefba = 0;
-                self.comment(101);
-            } else if self.sapglob.liste4.elements[self.sapglob.rega as usize] == 44 {
-                self.sapglob.scenpr = 1; /*hache sacree*/
+            self.sapglob.soif = 255;
+            /*on remplit les outres*/
+            for i in 0..self.sapglob.liste1.taille {
+                if self.sapglob.liste1.elements[i as usize] == OUTREVIDE {
+                    self.sapglob.liste1.elements[i as usize] = OUTREPLEINE;
+                    quoi += 1;
+                }
             }
-            self.inimen(self.sapglob.s_menu as c_ushort);
+            if quoi != 0 {
+                self.comment(97); /*et remplis tes gourdes*/
+            }
+            self.sapglob.flefba = 0;
+            return;
         }
+        let old_taille: c_short = self.sapglob.liste1.taille as c_short;
+        self.enlevl(
+            ListeId::Liste4,
+            ListeId::Liste1,
+            self.sapglob.rega as c_ushort,
+        );
+        if self.sapglob.liste1.taille as c_short == old_taille {
+            self.sapglob.flefba = 0;
+            self.comment(101);
+        } else if self.sapglob.liste4.elements[self.sapglob.rega as usize] == 44 {
+            self.sapglob.scenpr = 1; /*hache sacree*/
+        }
+        self.inimen(self.sapglob.s_menu as c_ushort);
     }
 
     /***********************************************************************
                             TRABSO:Absorbe
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn trabso(&mut self) {
-        unsafe {
-            if (self.sapglob.faim > 192) && (self.sapglob.soif > 192) {
-                self.sapglob.flefba = 0;
-                self.comment(107);
-                return;
-            }
-
-            let mut calcul: c_uchar = self
-                .sapglob
-                .faim
-                .wrapping_add((self.sapglob.stock2 & 0xF0) / 4);
-            self.sapglob.faim = if calcul >= self.sapglob.faim {
-                calcul
-            } else {
-                255
-            };
-            calcul = self
-                .sapglob
-                .soif
-                .wrapping_add((self.sapglob.stock2 & 0x0F) * 4);
-            self.sapglob.soif = if calcul >= self.sapglob.soif {
-                calcul
-            } else {
-                255
-            };
-
-            let objet: c_uchar = self.sapglob.liste1.elements[self.sapglob.rega as usize];
-            if objet == OUTREPLEINE {
-                self.sapglob.liste1.elements[self.sapglob.rega as usize] = OUTREVIDE;
-            } else {
-                self.enlevl(
-                    ListeId::Liste1,
-                    ListeId::Listbidon,
-                    self.sapglob.rega as c_ushort,
-                );
-            }
-            self.inimen(1);
-        }
-    }
-
-    /***********************************************************************
-                            TRSOIN:Soigne
-    ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn trsoin(&mut self) {
-        if self.sapglob.bless > 192 {
+    pub(crate) fn trabso(&mut self) {
+        if (self.sapglob.faim > 192) && (self.sapglob.soif > 192) {
             self.sapglob.flefba = 0;
-            self.comment(109);
+            self.comment(107);
             return;
         }
-        unsafe {
-            let calcul: c_uchar = self
-                .sapglob
-                .bless
-                .wrapping_add((self.sapglob.stock2 & 0x0F) * 10);
-            if calcul > self.sapglob.bless {
-                self.sapglob.bless = calcul;
-            } else {
-                self.sapglob.bless = 255;
-            }
+
+        let mut calcul: c_uchar = self
+            .sapglob
+            .faim
+            .wrapping_add((self.sapglob.stock2 & 0xF0) / 4);
+        self.sapglob.faim = if calcul >= self.sapglob.faim {
+            calcul
+        } else {
+            255
+        };
+        calcul = self
+            .sapglob
+            .soif
+            .wrapping_add((self.sapglob.stock2 & 0x0F) * 4);
+        self.sapglob.soif = if calcul >= self.sapglob.soif {
+            calcul
+        } else {
+            255
+        };
+
+        let objet: c_uchar = self.sapglob.liste1.elements[self.sapglob.rega as usize];
+        if objet == OUTREPLEINE {
+            self.sapglob.liste1.elements[self.sapglob.rega as usize] = OUTREVIDE;
+        } else {
             self.enlevl(
                 ListeId::Liste1,
                 ListeId::Listbidon,
@@ -1096,15 +1040,40 @@ impl Sapiens {
     }
 
     /***********************************************************************
+                            TRSOIN:Soigne
+    ***********************************************************************/
+    pub(crate) fn trsoin(&mut self) {
+        if self.sapglob.bless > 192 {
+            self.sapglob.flefba = 0;
+            self.comment(109);
+            return;
+        }
+        let calcul: c_uchar = self
+            .sapglob
+            .bless
+            .wrapping_add((self.sapglob.stock2 & 0x0F) * 10);
+        if calcul > self.sapglob.bless {
+            self.sapglob.bless = calcul;
+        } else {
+            self.sapglob.bless = 255;
+        }
+        self.enlevl(
+            ListeId::Liste1,
+            ListeId::Listbidon,
+            self.sapglob.rega as c_ushort,
+        );
+        self.inimen(1);
+    }
+
+    /***********************************************************************
                             D032AYDE
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn DoAide(&self) {
+    pub(crate) fn DoAide(&self) {
+        let mut chaine: [c_char; 255] = [0; 255];
+        PushPath();
+        SetPathInData(&self.sapgest, c"docs".as_ptr() as *mut c_char);
+        GetNomCheminCourant(chaine.as_mut_ptr());
         unsafe {
-            let mut chaine: [c_char; 255] = [0; 255];
-            PushPath();
-            SetPathInData(&self.sapgest, c"docs".as_ptr() as *mut c_char);
-            GetNomCheminCourant(chaine.as_mut_ptr());
             if langue() == FR as c_short {
                 strcat(chaine.as_mut_ptr(), c"sapiens_fr.html".as_ptr());
             } else if langue() == ES as c_short {
@@ -1112,33 +1081,28 @@ impl Sapiens {
             } else {
                 strcat(chaine.as_mut_ptr(), c"sapiens_gb.html".as_ptr());
             }
-            if OpenDocument(chaine.as_mut_ptr()) != 0 {
-                self.Collapse("Can't open manual.");
-            }
-            PopPath();
         }
+        if OpenDocument(chaine.as_mut_ptr()) != 0 {
+            self.Collapse("Can't open manual.");
+        }
+        PopPath();
     }
 
     /***********************************************************************
                    AffichePictAide
     => 0 vue laterale, 1 paysage
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn AffichePictAide(&self, mode: c_short) {
-        unsafe {
-            let mut r = Rect::default();
-            let num: c_short;
-
-            let _g = port::on(self.sapwind.mainWindow);
-            if mode == 0 {
-                SetRect(&mut r, 320 - 125, 230, 320 + 125, 230 + 160);
-                num = 131;
-            } else {
-                SetRect(&mut r, 32, 230, 32 + 250, 230 + 160);
-                num = 132;
-            }
-            AffichePictDansAire(&self.sapgest, num, &mut r);
-        }
+    pub(crate) fn AffichePictAide(&self, mode: c_short) {
+        let mut r = Rect::default();
+        let _g = port::on(self.sapwind.mainWindow);
+        let num = if mode == 0 {
+            SetRect(&mut r, 320 - 125, 230, 320 + 125, 230 + 160);
+            131
+        } else {
+            SetRect(&mut r, 32, 230, 32 + 250, 230 + 160);
+            132
+        };
+        AffichePictDansAire(&self.sapgest, num, &r);
     }
 
     /***********************************************************************
@@ -1161,71 +1125,68 @@ impl Sapiens {
                     ACTION:Effectue une action
     ***********************************************************************/
     pub(crate) fn action(&mut self) {
-        unsafe {
-            let current_action = self.sapglob.s_action;
-            match current_action {
-                1 => {
-                    self.trgest(self.sapglob.rega as c_ushort);
-                    self.inimen(0);
-                }
-                8 => {
-                    self.trabso();
-                    self.ListAttendsFinBouton();
-                }
-                4 => {
-                    self.trpose();
-                    self.ListAttendsFinBouton();
-                }
-                3 => {
-                    self.trpren();
-                    self.ListAttendsFinBouton();
-                }
-                9 => {
-                    self.trsoin();
-                    self.ListAttendsFinBouton();
-                }
-                5 => {
-                    if self.sapglob.presence > 0 {
-                        let refer =
-                            self.GetRefer(self.sapglob.liste(self.saplist.sliste[1]).typeRef);
-                        if self.sapglob.dervue != Vue::LATERALE {
-                            self.tfrima();
-                        }
-                        let index = self.sapglob.liste(self.saplist.sliste[1]).elements
-                            [self.sapglob.rega as usize]
-                            - 1;
-                        let ptr = &(refer.wrapping_add(index as usize)) as *const _ as Ptr;
-                        self.bulle(ptr, 0);
-                        self.trdire(
-                            self.sapglob.liste2.elements[self.sapglob.rega as usize] as c_ushort,
-                        ); /*on envoie la phrase*/
-                        self.ListAttendsFinBouton();
-                    } else {
-                        /* Tu parles tou seul ... */
-                        self.clrbadi();
-                        self.comment(135);
+        let current_action = self.sapglob.s_action;
+        match current_action {
+            1 => {
+                self.trgest(self.sapglob.rega as c_ushort);
+                self.inimen(0);
+            }
+            8 => {
+                self.trabso();
+                self.ListAttendsFinBouton();
+            }
+            4 => {
+                self.trpose();
+                self.ListAttendsFinBouton();
+            }
+            3 => {
+                self.trpren();
+                self.ListAttendsFinBouton();
+            }
+            9 => {
+                self.trsoin();
+                self.ListAttendsFinBouton();
+            }
+            5 => {
+                if self.sapglob.presence > 0 {
+                    let refer = self.GetRefer(self.sapglob.liste(self.saplist.sliste[1]).typeRef);
+                    if self.sapglob.dervue != Vue::LATERALE {
+                        self.tfrima();
                     }
-                }
-                6 => {
-                    self.trdonn(self.sapglob.rega as c_ushort); /*on envoit le rang de l'objet*/
+                    let index = self.sapglob.liste(self.saplist.sliste[1]).elements
+                        [self.sapglob.rega as usize]
+                        - 1;
+                    let ptr = &(refer.wrapping_add(index as usize)) as *const _ as Ptr;
+                    self.bulle(ptr, 0);
+                    self.trdire(
+                        self.sapglob.liste2.elements[self.sapglob.rega as usize] as c_ushort,
+                    ); /*on envoie la phrase*/
                     self.ListAttendsFinBouton();
+                } else {
+                    /* Tu parles tou seul ... */
+                    self.clrbadi();
+                    self.comment(135);
                 }
-                7 => {
-                    self.trobsv(self.sapglob.rega as c_ushort);
-                }
-                10 => {
-                    self.MenuFenetres(FAUX as c_short);
-                    self.trdors();
-                    self.MenuFenetres(VRAI as c_short);
-                }
-                11 => {
-                    self.MenuFenetres(FAUX as c_short);
-                    self.trfab(self.sapglob.rega as c_ushort);
-                    self.MenuFenetres(VRAI as c_short);
-                }
-                _ => {
-                    warn!("Unexpected action {}", current_action);
-                }
+            }
+            6 => {
+                self.trdonn(self.sapglob.rega as c_ushort); /*on envoit le rang de l'objet*/
+                self.ListAttendsFinBouton();
+            }
+            7 => {
+                self.trobsv(self.sapglob.rega as c_ushort);
+            }
+            10 => {
+                self.MenuFenetres(FAUX as c_short);
+                self.trdors();
+                self.MenuFenetres(VRAI as c_short);
+            }
+            11 => {
+                self.MenuFenetres(FAUX as c_short);
+                self.trfab(self.sapglob.rega as c_ushort);
+                self.MenuFenetres(VRAI as c_short);
+            }
+            _ => {
+                warn!("Unexpected action {}", current_action);
             }
         }
     }

@@ -15,7 +15,7 @@ use crate::sapiens::saptxt::{CvtDefaultLangRess, CvtLangRess};
 use crate::sapiens::sapwind::{SapiensExit, ValideUpdate};
 use crate::sapiens::{ECHELLE, IndexColorPtr, Mob, NB_MAX_MOB, PalCoul};
 use crate::shared::RGBColor as BRGBColor;
-use crate::shared::{CGrafPtr, Handle, PicHandle, Ptr, RGBColor, Rect, RgnHandle};
+use crate::shared::{CGrafPtr, Handle, Ptr, RGBColor, Rect, RgnHandle};
 use crate::stubs::{
     CarboniseInvalRect, CarboniseSetPatGray, CarboniseValideUpdate, ConvertPNGFileToOffscreen,
     DisposePtr, DrawPicture, FixeCheminRelatif, GetDItem, GetPicture, GetRectFilePng, PopPath,
@@ -273,7 +273,7 @@ impl Sapiens {
         let mut nomPng = [0i8; 512];
         let mut offscreenSource: CGrafPtr;
         let mut aire;
-        let mut rowByte: c_short = 0;
+        let mut rowByte: c_short;
         let mut ps: Ptr;
         let mut pd: Ptr;
         let mut rgb = BRGBColor::default();
@@ -1570,8 +1570,7 @@ impl Sapiens {
     Affiche un mob sur l'ecran de travail (debecr) et le recopie sur le reel
     => Coordonnees en 320x200
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn affomb(
+    pub(crate) fn affomb(
         &self,
         mob: c_short,
         ligne: c_short,
@@ -1594,8 +1593,7 @@ impl Sapiens {
     Affiche un mob sur l'ecran virtuel, en entree on a en plus le tableau des
     index de couleurs a utiliser
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn AffmobPalette(
+    pub(crate) fn AffmobPalette(
         &self,
         mob: c_short,
         y: c_short,
@@ -1610,8 +1608,7 @@ impl Sapiens {
                     AffPalette
     Affiche la palette en cours
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn AffPalette(&self) {
+    pub(crate) fn AffPalette(&self) {
         unsafe {
             let _g = port::on(self.sapwind.debecr);
             let Some(info) = port::info(port::current()) else {
@@ -1640,15 +1637,12 @@ impl Sapiens {
         }
     }
 }
+
 /***********************************************************************
                AffichePictDansAire
 => id de la picture,aire
 ***********************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn AffichePictDansAire(sapgest: &Sapgest, num: c_short, r: &Rect) {
-    let mut rpng = Rect::default();
-    let mut pict: PicHandle = std::ptr::null_mut();
-    let mut offscreen: CGrafPtr = std::ptr::null_mut();
+pub(crate) fn AffichePictDansAire(sapgest: &Sapgest, num: c_short, r: &Rect) {
     let mut nom = [0i8; 255];
 
     let rDest = DoZoomRect(r);
@@ -1661,8 +1655,9 @@ pub(crate) extern "C" fn AffichePictDansAire(sapgest: &Sapgest, num: c_short, r:
             CvtDefaultLangRess(num) as c_int,
         );
         SetPathInData(sapgest, c"images".as_ptr() as *mut c_char);
+        let mut rpng = Rect::default();
         if GetRectFilePng(nom.as_mut_ptr(), &mut rpng) {
-            offscreen = ConvertPNGFileToOffscreen(nom.as_mut_ptr());
+            let offscreen = ConvertPNGFileToOffscreen(nom.as_mut_ptr());
             if !offscreen.is_null() {
                 BackColor(whiteColor as i16);
                 ForeColor(blackColor as i16);
@@ -1677,7 +1672,7 @@ pub(crate) extern "C" fn AffichePictDansAire(sapgest: &Sapgest, num: c_short, r:
                 port::close(offscreen);
             }
         } else {
-            pict = GetPicture(CvtDefaultLangRess(num));
+            let mut pict = GetPicture(CvtDefaultLangRess(num));
             if pict.is_null() {
                 pict = GetPicture(CvtLangRess(GB as c_short, num));
             }
