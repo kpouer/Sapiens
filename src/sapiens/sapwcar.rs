@@ -88,31 +88,22 @@ impl Sapiens {
     => position en colonne et ligne caracteres
     **************************************************************************/
     pub(crate) fn Gotoxy(&mut self, x: c_short, y: c_short) {
+        self.sapwcar.pt_ecr_car = Point::new((x * ECHELLE) * 6, (y * ECHELLE) * 7 - 1);
         unsafe {
-            SetPt(
-                &raw mut self.sapwcar.pt_ecr_car,
-                (x * ECHELLE) * 6,
-                (y * ECHELLE) * 7 - 1,
-            );
             *addr_of_mut!(self.sapglob.colaff) = x;
             *addr_of_mut!(self.sapglob.linaff) = y;
         }
     }
-}
 
-impl Sapiens {
     /*************************************************************************
                         GotoxyPixel
     Positionne l'ecriture des caracteres en y et x pixel
     => position en colonne et ligne caracteres
     **************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn GotoxyPixel(&mut self, x: c_short, y: c_short) {
-        SetPt(&raw mut self.sapwcar.pt_ecr_car, x, y);
+    pub(crate) fn GotoxyPixel(&mut self, x: c_short, y: c_short) {
+        self.sapwcar.pt_ecr_car = Point::new(x, y);
     }
-}
 
-impl Sapiens {
     /*************************************************************************
                         TailleCar
     **************************************************************************/

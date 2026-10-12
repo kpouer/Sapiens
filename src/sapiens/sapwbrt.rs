@@ -1,9 +1,8 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 use crate::acam::{
-    BackColor, BlockMove, CopyBits, DisposPtr, EmptyRect, EraseRect, ForeColor, FrameRect, Line,
-    MoveTo, NewPtr, PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect,
-    SetRect,
+    BackColor, BlockMove, CopyBits, DisposPtr, EraseRect, ForeColor, FrameRect, Line, MoveTo,
+    NewPtr, PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect, SetRect,
 };
 use crate::cbridge::{
     DialogPtr, FILE, FixeChemin, GetMainDevice, RetraceRect, blackColor, fclose, fopen, fscanf,
@@ -1049,8 +1048,10 @@ impl Sapiens {
     (C) Ligne dep,Col dep,Ligne fin,col.fin,couleur ST
     ***************************************************************************/
     pub(crate) fn BoxFill(&self, gfx: CGrafPtr, r: *mut Rect, couleur: c_short) {
-        if EmptyRect(r) {
-            return;
+        unsafe {
+            if (*r).is_empty() {
+                return;
+            }
         }
         let Some(info) = port::info(gfx) else {
             return;
@@ -1294,10 +1295,10 @@ pub(crate) fn CopyOffscreen(
     rsourceIn: *const Rect,
     rdestIn: *const Rect,
 ) {
-    if EmptyRect(rsourceIn) {
-        return;
-    }
     unsafe {
+        if (*rsourceIn).is_empty() {
+            return;
+        }
         /* Chaque port porte son échelle : un rectangle est mis à l'échelle
         uniquement s'il est adressé à la fenêtre. */
         let realSource = port::zoomed(source, &*rsourceIn);

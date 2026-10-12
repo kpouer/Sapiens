@@ -952,15 +952,7 @@ pub(crate) extern "C" fn SectRect(src1: *const Rect, src2: *const Rect, dst: *mu
     }
 }
 
-pub(crate) fn EmptyRect(r: *const Rect) -> Boolean {
-    if r.is_null() {
-        return true;
-    }
-    unsafe { (*r).is_empty() as Boolean }
-}
-
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SetPt(pt: *mut Point, h: i16, v: i16) {
+pub(crate) fn SetPt(pt: *mut Point, h: i16, v: i16) {
     if pt.is_null() {
         return;
     }
