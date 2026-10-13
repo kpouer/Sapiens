@@ -13,7 +13,7 @@ use crate::stubs::CarboniseSetPatBlack;
 use crate::text::{CharWidth, DrawChar, GetFontInfo, TextFace, TextFont, TextSize};
 use crate::{Sapiens, port};
 use std::os::raw::{c_char, c_short};
-use std::ptr::{addr_of, addr_of_mut};
+use std::ptr::addr_of;
 
 const ECHELLE: i16 = 2;
 
@@ -88,10 +88,8 @@ impl Sapiens {
     **************************************************************************/
     pub(crate) fn Gotoxy(&mut self, x: c_short, y: c_short) {
         self.sapwcar.pt_ecr_car = Point::new((x * ECHELLE) * 6, (y * ECHELLE) * 7 - 1);
-        unsafe {
-            *addr_of_mut!(self.sapglob.colaff) = x;
-            *addr_of_mut!(self.sapglob.linaff) = y;
-        }
+        self.sapglob.colaff = x;
+        self.sapglob.linaff = y;
     }
 
     /*************************************************************************
@@ -106,7 +104,7 @@ impl Sapiens {
     /*************************************************************************
                         TailleCar
     **************************************************************************/
-    pub(crate) unsafe fn TailleCar(&self, car: c_short, taille: c_short) -> c_short {
+    pub(crate) fn TailleCar(&self, car: c_short, taille: c_short) -> c_short {
         if self.sapwcar.lissage_police || langue_i16() == ES as c_short {
             /* ES Pour les caracteres speciaux */
             let car = CvtCarLissage(car);
@@ -118,10 +116,10 @@ impl Sapiens {
             let car = CvtCar(car);
             if taille == 10 {
                 let num = self.sapwind.Fonte10 + car - 31;
-                (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 2
+                self.sapwbrt.TabMob[num as usize].nbcol + 2
             } else {
                 let num = self.sapwind.Fonte14 + car - 31;
-                (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 3
+                self.sapwbrt.TabMob[num as usize].nbcol + 3
             }
         }
     }
@@ -205,10 +203,7 @@ impl Sapiens {
                     self.sapwcar.pt_ecr_car.v,
                     couleur,
                 );
-                unsafe {
-                    self.sapwcar.pt_ecr_car.h +=
-                        (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 2;
-                }
+                self.sapwcar.pt_ecr_car.h += self.sapwbrt.TabMob[num as usize].nbcol + 2;
             } else {
                 num = self.sapwind.Fonte14 + car - 31;
                 self.AffmobCar(
@@ -229,10 +224,7 @@ impl Sapiens {
                     self.sapwcar.pt_ecr_car.v,
                     couleur,
                 );
-                unsafe {
-                    self.sapwcar.pt_ecr_car.h +=
-                        (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 3;
-                }
+                self.sapwcar.pt_ecr_car.h += self.sapwbrt.TabMob[num as usize].nbcol + 3;
             }
         }
     }
@@ -271,9 +263,7 @@ impl Sapiens {
         }
         p
     }
-}
 
-impl Sapiens {
     /*************************************************************************
                         AffCarBank
     Affiche un caractere sur le port en entrée
@@ -296,7 +286,7 @@ impl Sapiens {
                 }
             } else {
                 self.AffCarBrt(car, couleur1, couleur2, taille);
-                *addr_of_mut!(self.sapglob.colaff) += 1;
+                self.sapglob.colaff += 1;
             }
         }
     }
