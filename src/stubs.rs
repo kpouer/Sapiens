@@ -33,8 +33,7 @@ pub(crate) static qd: QDGlobals = QDGlobals {
 // Gestion des fenetres / evenements
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetKeys(theKeys: KeyMap) {
+pub(crate) fn GetKeys(theKeys: KeyMap) {
     if theKeys.is_null() {
         return;
     }
