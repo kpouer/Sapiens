@@ -367,7 +367,7 @@ struct Menu {
 pub(crate) struct MenuModel {
     /// Langue avec laquelle le modèle a été construit (0/1/2).
     lang: Langue,
-    menus: Vec<Box<Menu>>,
+    menus: Vec<Menu>,
 }
 
 pub(crate) static MENU_MODEL: Mutex<Option<MenuModel>> = Mutex::new(None);
@@ -377,8 +377,8 @@ pub(crate) static MENU_MODEL: Mutex<Option<MenuModel>> = Mutex::new(None);
 /// entier de mémoire statique, d'où `Slot8` pour que le `*h` ne pante pas).
 static mut MENU_BAR_HANDLE: Slot8 = Slot8([0; 8]);
 
-fn fresh_menu(id_base: i16, title: L10n, lang: i16, items: &[(L10n, bool)]) -> Box<Menu> {
-    Box::new(Menu {
+fn fresh_menu(id_base: i16, title: L10n, lang: i16, items: &[(L10n, bool)]) -> Menu {
+    Menu {
         id: id_base + DELTA_LANGUE * lang,
         title,
         enabled: true,
@@ -391,7 +391,7 @@ fn fresh_menu(id_base: i16, title: L10n, lang: i16, items: &[(L10n, bool)]) -> B
                 checked: false,
             })
             .collect(),
-    })
+    }
 }
 
 pub(crate) fn build_model() -> MenuModel {
@@ -488,31 +488,31 @@ pub(crate) extern "C" fn SetMenuBar(_menuBar: Handle) {}
 #[unsafe(no_mangle)]
 pub(crate) extern "C" fn DrawMenuBar() {}
 
-fn find_menu<'a>(menus: &'a mut [Box<Menu>], handle: MenuHandle) -> Option<&'a mut Menu> {
+fn find_menu<'a>(menus: &'a mut [Menu], handle: MenuHandle) -> Option<&'a mut Menu> {
     if handle.is_null() {
         return None;
     }
     menus
         .iter_mut()
         .find(|menu| menu_handle_ptr(menu) == handle)
-        .map(|menu| &mut **menu)
+        .map(|menu| &mut *menu)
 }
 
-fn menu_at(menus: &[Box<Menu>], handle: MenuHandle) -> Option<&Menu> {
+fn menu_at(menus: &[Menu], handle: MenuHandle) -> Option<&Menu> {
     if handle.is_null() {
         return None;
     }
     menus
         .iter()
         .find(|menu| menu_handle_ptr(menu) == handle)
-        .map(|menu| &**menu)
+        .map(|menu| &*menu)
 }
 
-fn handle_is_known(menus: &[Box<Menu>], handle: MenuHandle) -> bool {
+fn handle_is_known(menus: &[Menu], handle: MenuHandle) -> bool {
     menu_at(menus, handle).is_some()
 }
 
-fn label_for(menus: &[Box<Menu>], handle: MenuHandle, item: i16) -> Option<&'static str> {
+fn label_for(menus: &[Menu], handle: MenuHandle, item: i16) -> Option<&'static str> {
     let lang = langue();
     let menu = menu_at(menus, handle)?;
     if item <= 0 {
@@ -524,8 +524,7 @@ fn label_for(menus: &[Box<Menu>], handle: MenuHandle, item: i16) -> Option<&'sta
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn DisableItem(menu: MenuHandle, item: i16) {
+pub(crate) fn DisableItem(menu: MenuHandle, item: i16) {
     if let Some(m) = &mut *MENU_MODEL.lock().unwrap() {
         if let Some(menu) = find_menu(&mut m.menus, menu) {
             if item == 0 {
