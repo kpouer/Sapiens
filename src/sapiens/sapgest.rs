@@ -1056,36 +1056,33 @@ impl Sapiens {
     /***********************************************************************
                             PRIMJAUGE:primaire pour les jauges
     ***********************************************************************/
-    pub(crate) extern "C" fn primjauge(&mut self, jaugeCredit: c_short) {
-        unsafe {
-            let app = self.GetApp();
-            self.sapglob.dervue = Vue::AUCUNE;
-            self.effima(0x050); /* Efface ecran sur 100 ligne */
-            self.tfrvirt();
-            /* Affichage sur Ecran */
-            self.Gotoxy(6, 1);
-            self.motlst2(*app.add(0));
-            self.Gotoxy(6, 3);
-            self.motlst2(*app.add(1));
-            self.Gotoxy(6, 5);
-            self.motlst2(*app.add(2));
-            self.Gotoxy(6, 7);
-            self.motlst2(*app.add(3));
-            self.Gotoxy(6, 9);
-            self.motlst2(*app.add(4));
-            if jaugeCredit != 0 {
-                self.Gotoxy(6, 11);
-                self.motlst2(*app.add(5));
-            }
-
-            /*trace des cadres jauges*/
-            let mut i: c_short = 0;
-            while i < 5 + jaugeCredit {
-                self.jauge(i, false);
-                i += 1;
-            }
-            self.TfrEcr(None);
+    pub(crate) fn primjauge(&mut self, jaugeCredit: c_short) {
+        self.sapglob.dervue = Vue::AUCUNE;
+        self.effima(0x050); /* Efface ecran sur 100 ligne */
+        self.tfrvirt();
+        /* Affichage sur Ecran */
+        self.Gotoxy(6, 1);
+        self.motlst2(0);
+        self.Gotoxy(6, 3);
+        self.motlst2(1);
+        self.Gotoxy(6, 5);
+        self.motlst2(2);
+        self.Gotoxy(6, 7);
+        self.motlst2(3);
+        self.Gotoxy(6, 9);
+        self.motlst2(4);
+        if jaugeCredit != 0 {
+            self.Gotoxy(6, 11);
+            self.motlst2(5);
         }
+
+        /*trace des cadres jauges*/
+        let mut i: c_short = 0;
+        while i < 5 + jaugeCredit {
+            self.jauge(i, false);
+            i += 1;
+        }
+        self.TfrEcr(None);
     }
 
     /***********************************************************************

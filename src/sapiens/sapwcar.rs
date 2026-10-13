@@ -1,7 +1,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
-#![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
-use crate::acam::{ClipRect, DisposeRgn, GetClip, MoveTo, NewRgn, RGBForeColor, SetClip, SetRect};
+#![allow(unsafe_op_in_unsafe_fn)]
+use crate::acam::{ClipRect, DisposeRgn, GetClip, MoveTo, NewRgn, RGBForeColor, SetClip};
 use crate::langue::Langue::ES;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtCar, CvtCarLissage, langue};
@@ -388,7 +388,9 @@ impl Sapiens {
     /***********************************************************************
                             MOTLST2:Affiche Pour jauges
     ***********************************************************************/
-    pub(crate) fn motlst2(&mut self, debut: *mut c_char) {
+    pub(crate) fn motlst2(&mut self, debut_index: usize) {
+        let app = self.GetApp();
+        let debut = app[debut_index];
         let mut p = debut as *mut u8;
         unsafe {
             while *p != 0 {

@@ -168,13 +168,23 @@ impl Sapiens {
         }
     }
 
-    pub(crate) fn GetApp(&self) -> *mut *mut c_char {
+    pub(crate) fn GetApp(&self) -> &[*mut c_char] {
         if langue() == FR as c_short {
-            addr_of!(self.saptxt_fr.app) as *mut *mut c_char
+            &self.saptxt_fr.app
         } else if langue() == ES as c_short {
-            addr_of!(self.saptxt_es.app) as *mut *mut c_char
+            &self.saptxt_es.app
         } else {
-            addr_of!(self.saptxt_gb.app) as *mut *mut c_char
+            &self.saptxt_gb.app
+        }
+    }
+
+    pub(crate) fn GetApp_id(&self, i: usize) -> &*mut c_char {
+        if langue() == FR as c_short {
+            &self.saptxt_fr.app[i]
+        } else if langue() == ES as c_short {
+            &self.saptxt_es.app[i]
+        } else {
+            &self.saptxt_gb.app[i]
         }
     }
 
