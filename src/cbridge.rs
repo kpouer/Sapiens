@@ -35,13 +35,13 @@ pub(crate) const geneva: u32 = 0;
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct TEText {
-    pub(crate) txFont: ::std::os::raw::c_short,
-    pub(crate) txFace: ::std::os::raw::c_short,
-    pub(crate) txMode: ::std::os::raw::c_short,
-    pub(crate) txSize: ::std::os::raw::c_short,
-    pub(crate) lineHeight: ::std::os::raw::c_short,
-    pub(crate) fontAscent: ::std::os::raw::c_short,
-    pub(crate) fontDescent: ::std::os::raw::c_short,
+    pub(crate) txFont: i16,
+    pub(crate) txFace: i16,
+    pub(crate) txMode: i16,
+    pub(crate) txSize: i16,
+    pub(crate) lineHeight: i16,
+    pub(crate) fontAscent: i16,
+    pub(crate) fontDescent: i16,
     pub(crate) nLines: ::std::os::raw::c_long,
 }
 
@@ -49,7 +49,7 @@ pub(crate) struct TEText {
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct TMTask {
     pub(crate) qLink: *mut ::std::os::raw::c_void,
-    pub(crate) qType: ::std::os::raw::c_short,
+    pub(crate) qType: i16,
     pub(crate) tmAddr: *mut ::std::os::raw::c_void,
     pub(crate) tmCount: ::std::os::raw::c_long,
     pub(crate) tmWakeUp: ::std::os::raw::c_long,
@@ -82,7 +82,7 @@ pub(crate) struct TPrint__bindgen_ty_1 {
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct TPrint__bindgen_ty_2 {
-    pub(crate) bJDocLoop: ::std::os::raw::c_short,
+    pub(crate) bJDocLoop: i16,
 }
 
 pub(crate) type FILE = __sFILE;
@@ -104,7 +104,7 @@ pub(crate) struct __sFILEX {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct __sbuf {
-    pub(crate) _base: *mut ::std::os::raw::c_uchar,
+    pub(crate) _base: *mut u8,
     pub(crate) _size: ::std::os::raw::c_int,
 }
 impl Default for __sbuf {
@@ -125,24 +125,24 @@ pub(crate) const DRVR: u32 = 1146246738;
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct DateTimeRec {
-    pub(crate) year: ::std::os::raw::c_short,
-    pub(crate) month: ::std::os::raw::c_short,
-    pub(crate) day: ::std::os::raw::c_short,
-    pub(crate) hour: ::std::os::raw::c_short,
-    pub(crate) minute: ::std::os::raw::c_short,
-    pub(crate) second: ::std::os::raw::c_short,
-    pub(crate) dayOfWeek: ::std::os::raw::c_short,
+    pub(crate) year: i16,
+    pub(crate) month: i16,
+    pub(crate) day: i16,
+    pub(crate) hour: i16,
+    pub(crate) minute: i16,
+    pub(crate) second: i16,
+    pub(crate) dayOfWeek: i16,
 }
 pub(crate) type fpos_t = __darwin_off_t;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct __sFILE {
-    pub(crate) _p: *mut ::std::os::raw::c_uchar,
+    pub(crate) _p: *mut u8,
     pub(crate) _r: ::std::os::raw::c_int,
     pub(crate) _w: ::std::os::raw::c_int,
-    pub(crate) _flags: ::std::os::raw::c_short,
-    pub(crate) _file: ::std::os::raw::c_short,
+    pub(crate) _flags: i16,
+    pub(crate) _file: i16,
     pub(crate) _bf: __sbuf,
     pub(crate) _lbfsize: ::std::os::raw::c_int,
     pub(crate) _cookie: *mut ::std::os::raw::c_void,
@@ -258,7 +258,7 @@ unsafe extern "C" {
         __nitems: ::std::os::raw::c_ulong,
         __stream: *mut FILE,
     ) -> ::std::os::raw::c_ulong;
-    pub(crate) static mut version: ::std::os::raw::c_short;
+    pub(crate) static mut version: i16;
 
     pub(crate) fn fopen(
         __filename: *const ::std::os::raw::c_char,

@@ -30,7 +30,7 @@ pub(crate) type SndListHandle = *mut *mut c_void;
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct Pic {
-    pub(crate) picSize: ::std::os::raw::c_short,
+    pub(crate) picSize: i16,
     pub(crate) picFrame: Rect,
 }
 pub(crate) type PicHandle = *mut *mut Pic;
@@ -38,9 +38,8 @@ pub(crate) type TEHandle = *mut *mut TEText;
 
 pub(crate) type StringPtr = *mut u8;
 pub(crate) type KeyMap = *mut u64;
-pub(crate) type ControlActionProcPtr = ::std::option::Option<
-    unsafe extern "C" fn(control: ControlHandle, part: ::std::os::raw::c_short),
->;
+pub(crate) type ControlActionProcPtr =
+    ::std::option::Option<unsafe extern "C" fn(control: ControlHandle, part: i16)>;
 
 pub(crate) type ControlActionUPP = ControlActionProcPtr;
 

@@ -501,7 +501,7 @@ impl Sapiens {
     /***********************************************************************
                             DECVIE
     ***********************************************************************/
-    pub(crate) fn decvie(&mut self, sap_id: SapId, valeur: ::std::os::raw::c_ushort) {
+    pub(crate) fn decvie(&mut self, sap_id: SapId, valeur: u16) {
         let vie = self.sapglob.sap(sap_id).vie;
         if vie == 0 {
             return;
@@ -1056,7 +1056,7 @@ impl Sapiens {
     1 Pied agile,2 Yeux malins,3 Bras de roc,4 Hyenes folles
     5 Loup,6 ours,7 Lapin,8 Lagopede,0 rien ,-1 Joueur
     */
-    pub(crate) fn prm(&mut self, sap_id: SapId, type_: ::std::os::raw::c_short) {
+    pub(crate) fn prm(&mut self, sap_id: SapId, type_: i16) {
         let mut i;
 
         {

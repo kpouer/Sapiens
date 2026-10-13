@@ -45,7 +45,7 @@ pub(crate) extern "C" fn GetRectMainEcran(aireEcran: *mut Rect) {
 Retrace instanatanemen,t l'item demand�
 ********************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn RetraceItem(dialog: DialogPtr, item: ::std::os::raw::c_short) {
+pub(crate) extern "C" fn RetraceItem(dialog: DialogPtr, item: i16) {
     let mut itemType: c_short = 0;
     let mut handle = Handle::default();
     let mut box_ = Rect::default();

@@ -46,9 +46,9 @@ pub(crate) mod sapwsyl;
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct liste {
     pub(crate) typeRef: TypeReference,
-    pub(crate) taille: ::std::os::raw::c_uchar,
-    pub(crate) maxtaille: ::std::os::raw::c_uchar,
-    pub(crate) elements: [::std::os::raw::c_uchar; 30usize],
+    pub(crate) taille: u8,
+    pub(crate) maxtaille: u8,
+    pub(crate) elements: [u8; 30],
 }
 
 impl Default for liste {
@@ -64,8 +64,8 @@ impl Default for liste {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct PalCoul {
-    pub(crate) nbEntrees: ::std::os::raw::c_short,
-    pub(crate) tabIndex: *mut ::std::os::raw::c_short,
+    pub(crate) nbEntrees: i16,
+    pub(crate) tabIndex: *mut i16,
     pub(crate) tabRgb: *mut RGBColor,
 }
 impl Default for PalCoul {
@@ -80,10 +80,10 @@ impl Default for PalCoul {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Mob {
-    pub(crate) indexPalette: ::std::os::raw::c_short,
-    pub(crate) nbcol: ::std::os::raw::c_short,
-    pub(crate) nbligne: ::std::os::raw::c_short,
-    pub(crate) vide: ::std::os::raw::c_short,
+    pub(crate) indexPalette: i16,
+    pub(crate) nbcol: i16,
+    pub(crate) nbligne: i16,
+    pub(crate) vide: i16,
     pub(crate) datas: Ptr,
 }
 
@@ -138,7 +138,7 @@ pub(crate) const NOM_PREF: &[u8; 12] = b"Sapiens.cfg\0";
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct cellule {
     pub(crate) adresse: *mut ::std::os::raw::c_void,
-    pub(crate) taille: ::std::os::raw::c_uchar,
+    pub(crate) taille: u8,
 }
 impl Default for cellule {
     fn default() -> Self {
@@ -153,35 +153,35 @@ impl Default for cellule {
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub(crate) struct sap {
-    pub(crate) colonne: ::std::os::raw::c_short,
-    pub(crate) ligne: ::std::os::raw::c_uchar,
-    pub(crate) sens: ::std::os::raw::c_uchar,
-    pub(crate) vitesse: ::std::os::raw::c_uchar,
-    pub(crate) objet: ::std::os::raw::c_uchar,
-    pub(crate) hauteur: ::std::os::raw::c_uchar,
-    pub(crate) action: ::std::os::raw::c_uchar,
-    pub(crate) vie: ::std::os::raw::c_uchar,
-    pub(crate) force: ::std::os::raw::c_uchar,
-    pub(crate) agressivite: ::std::os::raw::c_uchar,
-    pub(crate) souffle: ::std::os::raw::c_uchar,
-    pub(crate) deltah: ::std::os::raw::c_uchar,
-    pub(crate) blockimpact: ::std::os::raw::c_uchar,
-    pub(crate) ligneimpact: ::std::os::raw::c_uchar,
-    pub(crate) colimpact: ::std::os::raw::c_uchar,
-    pub(crate) forcehache: ::std::os::raw::c_uchar,
-    pub(crate) coeur: ::std::os::raw::c_short,
-    pub(crate) cptrsouffle: ::std::os::raw::c_short,
-    pub(crate) nbresag: ::std::os::raw::c_short,
-    pub(crate) animal: ::std::os::raw::c_short,
-    pub(crate) linsag: ::std::os::raw::c_short,
-    pub(crate) colsag: ::std::os::raw::c_short,
-    pub(crate) snssag: ::std::os::raw::c_short,
-    pub(crate) fuite: ::std::os::raw::c_short,
-    pub(crate) flg_mort: ::std::os::raw::c_short,
-    pub(crate) poslcoeur: ::std::os::raw::c_short,
-    pub(crate) posccoeur: ::std::os::raw::c_short,
+    pub(crate) colonne: i16,
+    pub(crate) ligne: u8,
+    pub(crate) sens: u8,
+    pub(crate) vitesse: u8,
+    pub(crate) objet: u8,
+    pub(crate) hauteur: u8,
+    pub(crate) action: u8,
+    pub(crate) vie: u8,
+    pub(crate) force: u8,
+    pub(crate) agressivite: u8,
+    pub(crate) souffle: u8,
+    pub(crate) deltah: u8,
+    pub(crate) blockimpact: u8,
+    pub(crate) ligneimpact: u8,
+    pub(crate) colimpact: u8,
+    pub(crate) forcehache: u8,
+    pub(crate) coeur: i16,
+    pub(crate) cptrsouffle: i16,
+    pub(crate) nbresag: i16,
+    pub(crate) animal: i16,
+    pub(crate) linsag: i16,
+    pub(crate) colsag: i16,
+    pub(crate) snssag: i16,
+    pub(crate) fuite: i16,
+    pub(crate) flg_mort: i16,
+    pub(crate) poslcoeur: i16,
+    pub(crate) posccoeur: i16,
     pub(crate) sapanim: [*mut ::std::os::raw::c_char; 15usize],
-    pub(crate) cross: [::std::os::raw::c_uchar; 8usize],
+    pub(crate) cross: [u8; 8usize],
     pub(crate) adversaire: Option<SapId>,
     pub(crate) possession: *mut liste,
 }
@@ -198,52 +198,54 @@ impl Default for sap {
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct brin {
-    pub(crate) type_: ::std::os::raw::c_ushort,
-    pub(crate) lin: ::std::os::raw::c_ushort,
-    pub(crate) col: ::std::os::raw::c_ushort,
-    pub(crate) sens: ::std::os::raw::c_ushort,
+    pub(crate) type_: u16,
+    pub(crate) lin: u16,
+    pub(crate) col: u16,
+    pub(crate) sens: u16,
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct h_chron {
-    pub(crate) h: ::std::os::raw::c_short,
-    pub(crate) q: ::std::os::raw::c_short,
-    pub(crate) pal: [::std::os::raw::c_short; 32usize],
+    pub(crate) h: i16,
+    pub(crate) q: i16,
+    pub(crate) pal: [i16; 32],
     pub(crate) TabCouleursCiel: *mut IndexColor,
-    pub(crate) TabPaletteDistance: *mut *mut ::std::os::raw::c_short,
+    pub(crate) TabPaletteDistance: *mut *mut i16,
 }
 impl Default for h_chron {
     fn default() -> Self {
-        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
+        Self {
+            h: 0,
+            q: 0,
+            pal: [0; 32],
+            TabCouleursCiel: std::ptr::null_mut(),
+            TabPaletteDistance: std::ptr::null_mut(),
         }
     }
 }
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct evt {
-    pub(crate) type_: ::std::os::raw::c_uchar,
-    pub(crate) posx: ::std::os::raw::c_uchar,
-    pub(crate) posy: ::std::os::raw::c_uchar,
-    pub(crate) distmax: ::std::os::raw::c_uchar,
-    pub(crate) rnd: ::std::os::raw::c_uchar,
-    pub(crate) evt: ::std::os::raw::c_uchar,
-    pub(crate) message: ::std::os::raw::c_uchar,
+    pub(crate) type_: u8,
+    pub(crate) posx: u8,
+    pub(crate) posy: u8,
+    pub(crate) distmax: u8,
+    pub(crate) rnd: u8,
+    pub(crate) evt: u8,
+    pub(crate) message: u8,
 }
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct gemcadre {
-    pub(crate) ligne: ::std::os::raw::c_short,
-    pub(crate) colon: ::std::os::raw::c_short,
-    pub(crate) haut: ::std::os::raw::c_short,
-    pub(crate) larg: ::std::os::raw::c_short,
+    pub(crate) ligne: i16,
+    pub(crate) colon: i16,
+    pub(crate) haut: i16,
+    pub(crate) larg: i16,
 }
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct IndexColor {
-    pub(crate) index: ::std::os::raw::c_short,
+    pub(crate) index: i16,
     pub(crate) rgb: RGBColor,
 }
 pub(crate) type IndexColorPtr = *mut IndexColor;
@@ -265,16 +267,17 @@ pub(crate) enum FormeVue {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct reference {
-    pub(crate) nomref: [::std::os::raw::c_char; 64usize],
-    pub(crate) param1: ::std::os::raw::c_uchar,
-    pub(crate) param2: ::std::os::raw::c_uchar,
+    pub(crate) nomref: [i8; 64],
+    pub(crate) param1: u8,
+    pub(crate) param2: u8,
 }
+
 impl Default for reference {
     fn default() -> Self {
-        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
+        Self {
+            nomref: [0; 64],
+            param1: 0,
+            param2: 0,
         }
     }
 }
@@ -471,14 +474,14 @@ macro_rules! MOB_AIDE {
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct Forme {
-    pub(crate) nbrdisk: ::std::os::raw::c_uchar,
-    pub(crate) relief: ::std::os::raw::c_uchar,
-    pub(crate) hauteur: ::std::os::raw::c_ushort,
-    pub(crate) rayon: ::std::os::raw::c_ushort,
-    pub(crate) dskrayon: [::std::os::raw::c_ushort; 16usize],
+    pub(crate) nbrdisk: u8,
+    pub(crate) relief: u8,
+    pub(crate) hauteur: u16,
+    pub(crate) rayon: u16,
+    pub(crate) dskrayon: [u16; 16usize],
     pub(crate) dskdelta: [::std::os::raw::c_char; 32usize],
-    pub(crate) num_mob: ::std::os::raw::c_short,
-    pub(crate) numMob3d: ::std::os::raw::c_short,
+    pub(crate) num_mob: i16,
+    pub(crate) numMob3d: i16,
 }
 /// Identifie une des formes statiques du décor 3d (voir `sap3d.rs`).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -518,10 +521,10 @@ pub(crate) struct Mont {
     /// Lien vers l'objet suivant de la chaîne de rendu (tri par distance).
     /// Index dans le bloc contigu `Sap3d::aigoual`, `None` = fin de chaîne.
     pub(crate) chaine: Option<MontId>,
-    pub(crate) distance: ::std::os::raw::c_ushort,
-    pub(crate) posx: ::std::os::raw::c_ushort,
-    pub(crate) posy: ::std::os::raw::c_ushort,
-    pub(crate) ign: ::std::os::raw::c_ushort,
+    pub(crate) distance: u16,
+    pub(crate) posx: u16,
+    pub(crate) posy: u16,
+    pub(crate) ign: u16,
     pub(crate) forme: Option<FormeId>,
 }
 pub(crate) type MontId = u32;
