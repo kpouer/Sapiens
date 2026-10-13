@@ -3,8 +3,9 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 use crate::acam::{ClipRect, DisposeRgn, GetClip, MoveTo, NewRgn, RGBForeColor, SetClip};
 use crate::langue::Langue::ES;
+use crate::langue::langue;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
-use crate::sapiens::saptxt::{CvtCar, CvtCarLissage, langue};
+use crate::sapiens::saptxt::{CvtCar, CvtCarLissage};
 use crate::sapiens::sapwbrt::{DoEraseRect, DoPaintRect};
 use crate::sapiens::{NB_MOTS_BKMOTS, POLICE_LISSAGE, STYLE_LISSAGE};
 use crate::shared::{Boolean, CGrafPtr, FontInfo, Point, RGBColor, Rect, RgnHandle};
@@ -105,23 +106,22 @@ impl Sapiens {
     /*************************************************************************
                         TailleCar
     **************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn TailleCar(&self, car: c_short, taille: c_short) -> c_short {
+    pub(crate) unsafe fn TailleCar(&self, car: c_short, taille: c_short) -> c_short {
         if self.sapwcar.lissage_police || langue() == ES as c_short {
             /* ES Pour les caracteres speciaux */
             let car = CvtCarLissage(car);
             TextFont(POLICE_LISSAGE as i16);
             TextSize(taille);
             TextFace(STYLE_LISSAGE as i16);
-            return CharWidth(car as i8);
+            CharWidth(car as i8)
         } else {
             let car = CvtCar(car);
             if taille == 10 {
                 let num = self.sapwind.Fonte10 + car - 31;
-                return (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 2;
+                (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 2
             } else {
                 let num = self.sapwind.Fonte14 + car - 31;
-                return (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 3;
+                (*addr_of!(self.sapwbrt.TabMob))[num as usize].nbcol + 3
             }
         }
     }

@@ -20,9 +20,10 @@ use crate::cbridge::{
     strcpy, strlen, userItem, watchCursor, whiteColor,
 };
 use crate::exchange::take_menu_command;
+use crate::langue::{langue, set_langue};
 use crate::port;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
-use crate::sapiens::saptxt::{CvtDefaultLangRess, langue, set_langue};
+use crate::sapiens::saptxt::CvtDefaultLangRess;
 use crate::sapiens::sapwbrt::{
     DoEraseRect, DoFrameRect, DoLine, DoMoveTo, DoPenSize, DoTextSize, DoZoomRect,
     SapiensCreeOffscreen, SetPathInData,

@@ -7,9 +7,9 @@
 use crate::acam::{FAUX, SetRect, TickCount, VRAI};
 use crate::cbridge::strcat;
 use crate::langue::Langue::{ES, FR};
+use crate::langue::langue;
 use crate::port;
 use crate::sapiens::sapglob::{ListeId, SapId, tccol, tclin, tcncol, tcnlin, tcolcdr, tposcur};
-use crate::sapiens::saptxt::langue;
 use crate::sapiens::sapwbrt::{AffichePictDansAire, SetPathInData, SwapCouleur};
 use crate::sapiens::sapwind::{cadreg, hires};
 use crate::sapiens::{ECHELLE, Vue, geminterv, gemnbrecad};

@@ -6,6 +6,8 @@
 // système est fr/es, sinon Anglais). Les trois langues du jeu (0/1/2) sont
 // conservées.
 
+use std::os::raw::c_short;
+use std::sync::atomic::{AtomicI16, Ordering};
 use sys_locale::get_locale;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -51,6 +53,22 @@ impl From<i16> for Langue {
             _ => Langue::GB,
         }
     }
+}
+
+/* Etat mutable de SAPTXT.C. `langue` est un global partage entre le thread
+graphique egui et le thread jeu (et lu par des fonctions libres). Encapsule
+derriere `langue()` / `set_langue()` ; la statique `LANGUE` reste privee.
+Le reste est regroupe dans cette structure, champ de `Sapiens`. */
+static LANGUE: AtomicI16 = AtomicI16::new(-1);
+
+#[inline]
+pub(crate) fn langue() -> c_short {
+    LANGUE.load(Ordering::Relaxed)
+}
+
+#[inline]
+pub(crate) fn set_langue(l: c_short) {
+    LANGUE.store(l, Ordering::Relaxed);
 }
 
 /// Langue du système : préfixe `fr` → Français, `es` → Espagnol, sinon

@@ -13,10 +13,10 @@ use crate::cbridge::{
     CInfoPBRec, blackColor, fclose, fopen, getc, putc, remove, sprintf, strcpy, stricmp, strlen,
 };
 use crate::langue::Langue::{ES, FR};
+use crate::langue::langue;
 use crate::port;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapglob::{ListeId, SapId, tenerv};
-use crate::sapiens::saptxt::langue;
 use crate::sapiens::sapwbrt::{DoFrameRect, GetIndexPixBrt, PlotIndexPixBrt};
 use crate::sapiens::sapwcvt::Sapwcvt;
 use crate::sapiens::sapwind::{ValideUpdate, bande};

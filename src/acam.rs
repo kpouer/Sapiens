@@ -12,9 +12,8 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use crate::cbridge::{MenuHandle, OSErr, WindowPtr};
-use crate::langue::Langue;
+use crate::langue::{Langue, langue, set_langue};
 use crate::port;
-use crate::sapiens::saptxt::{langue, set_langue};
 use crate::shared::*;
 use std::ffi::c_void;
 use std::sync::Mutex;

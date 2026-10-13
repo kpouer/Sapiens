@@ -9,8 +9,9 @@ use crate::cbridge::{
     DialogPtr, MenuHandle, OSErr, fclose, fopen, fread, fwrite, gestaltFindFolderAttr, strcmp,
     strlen, times, whiteColor,
 };
+use crate::langue::{langue, set_langue};
 use crate::port;
-use crate::sapiens::saptxt::{CvtDefaultLangRess, langue, set_langue};
+use crate::sapiens::saptxt::CvtDefaultLangRess;
 use crate::sapiens::sapwbrt::{DoFrameRect, DoTextBox};
 use crate::sapiens::sapwind::{
     DefAfficheItem, DrawArrowPopUp, FixeMenu, GetRectItem, GetValBouton, OuvreDialogue,

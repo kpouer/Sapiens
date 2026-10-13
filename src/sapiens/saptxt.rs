@@ -3,11 +3,11 @@
 #![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
 use crate::Sapiens;
 use crate::langue::Langue::{ES, FR};
+use crate::langue::langue;
 use crate::sapiens::sapglob::Sapglob;
 use crate::sapiens::{TypeReference, reference};
 use std::os::raw::{c_char, c_int, c_short};
 use std::ptr::addr_of;
-use std::sync::atomic::{AtomicI16, Ordering};
 
 const DELTA_LANGUE: c_short = 1000;
 
@@ -20,22 +20,6 @@ const C_CROCHET_D: c_short = b']' as c_short;
 const C_CHAPEAU: c_short = b'^' as c_short;
 const C_BARRE: c_short = b'|' as c_short;
 const C_TRAIT_BAS: c_short = b'_' as c_short;
-
-/* Etat mutable de SAPTXT.C. `langue` est un global partage entre le thread
-graphique egui et le thread jeu (et lu par des fonctions libres). Encapsule
-derriere `langue()` / `set_langue()` ; la statique `LANGUE` reste privee.
-Le reste est regroupe dans cette structure, champ de `Sapiens`. */
-static LANGUE: AtomicI16 = AtomicI16::new(-1);
-
-#[inline]
-pub(crate) fn langue() -> c_short {
-    LANGUE.load(Ordering::Relaxed)
-}
-
-#[inline]
-pub(crate) fn set_langue(l: c_short) {
-    LANGUE.store(l, Ordering::Relaxed);
-}
 
 pub(crate) struct Saptxt {
     pub(crate) nomjoueur: [c_char; 9],
