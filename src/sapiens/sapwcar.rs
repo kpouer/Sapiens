@@ -3,7 +3,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 use crate::acam::{ClipRect, DisposeRgn, GetClip, MoveTo, NewRgn, RGBForeColor, SetClip};
 use crate::langue::Langue::ES;
-use crate::langue::langue;
+use crate::langue::langue_i16;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtCar, CvtCarLissage};
 use crate::sapiens::sapwbrt::{DoEraseRect, DoPaintRect};
@@ -107,7 +107,7 @@ impl Sapiens {
                         TailleCar
     **************************************************************************/
     pub(crate) unsafe fn TailleCar(&self, car: c_short, taille: c_short) -> c_short {
-        if self.sapwcar.lissage_police || langue() == ES as c_short {
+        if self.sapwcar.lissage_police || langue_i16() == ES as c_short {
             /* ES Pour les caracteres speciaux */
             let car = CvtCarLissage(car);
             TextFont(POLICE_LISSAGE as i16);
@@ -157,7 +157,7 @@ impl Sapiens {
         couleurOmbre: c_short,
         taille: c_short,
     ) {
-        if self.sapwcar.lissage_police || langue() == ES as c_short {
+        if self.sapwcar.lissage_police || langue_i16() == ES as c_short {
             /* ES Pour les caracteres speciaux */
             let mut info = FontInfo::default();
             let mut dx: c_short = 0;

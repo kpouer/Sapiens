@@ -9,7 +9,7 @@ use crate::cbridge::{
     DialogPtr, MenuHandle, OSErr, fclose, fopen, fread, fwrite, gestaltFindFolderAttr, strcmp,
     strlen, times, whiteColor,
 };
-use crate::langue::{langue, set_langue};
+use crate::langue::{langue_i16, set_langue};
 use crate::port;
 use crate::sapiens::saptxt::CvtDefaultLangRess;
 use crate::sapiens::sapwbrt::{DoFrameRect, DoTextBox};
@@ -83,7 +83,7 @@ impl Sapiens {
                 1,
                 f,
             );
-            let l_pref: c_short = langue();
+            let l_pref: c_short = langue_i16();
             fwrite(
                 &l_pref as *const c_short as *const c_void,
                 size_of::<c_short>() as c_ulong,
@@ -175,7 +175,7 @@ impl Sapiens {
                         1,
                         f,
                     );
-                    set_langue(l_pref);
+                    set_langue(l_pref.into());
                     let mut loi = [0u8; 2];
                     fread(
                         loi.as_mut_ptr() as *mut c_void,
@@ -210,7 +210,7 @@ unsafe extern "C" fn VectAfficheMenuLangue(window: DialogPtr, itemid: c_short) {
 
     let _g = port::on(window);
     GetRectItem(window, itemid, &raw mut r);
-    GetLibLangue(langue(), chaine.as_mut_ptr());
+    GetLibLangue(langue_i16(), chaine.as_mut_ptr());
     BackColor(whiteColor as c_short);
     r.right -= 14;
     TextFont(times as c_short);
@@ -309,11 +309,11 @@ impl Sapiens {
                         CreeMenuLangue(menuLangue);
                         let mut pt = GetMouse();
                         LocalToGlobal(&mut pt);
-                        result = PopUpMenuSelect(menuLangue, pt.v, pt.h, langue() + 1);
+                        result = PopUpMenuSelect(menuLangue, pt.v, pt.h, langue_i16() + 1);
                         DeleteMenu(ID_MENU);
                         DisposeMenu(menuLangue);
                         if result != 0 {
-                            set_langue((result - 1) as c_short);
+                            set_langue(((result - 1) as c_short).into());
                             VectAfficheMenuLangue(dialog, ITEM_LANGUE);
                         }
                     }

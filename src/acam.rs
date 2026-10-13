@@ -12,7 +12,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use crate::cbridge::{MenuHandle, OSErr, WindowPtr};
-use crate::langue::{Langue, langue, set_langue};
+use crate::langue::{Langue, langue};
 use crate::port;
 use crate::shared::*;
 use std::ffi::c_void;
@@ -324,26 +324,6 @@ pub(crate) extern "C" fn NewCWindow(
 /// Décalage d'ID appliqué par `CvtDefaultLangRess` selon la langue (SAPIENS.H).
 const DELTA_LANGUE: i16 = 1000;
 
-/// Langue du jeu : la sélection (Auto/Fr/En/Es) est imposée côté Rust à
-/// chaque frame ; cet appel écrit le global C `langue` et reconstruit la barre
-/// de menus (IDs langue). Les touches `HOMME`/`FEMME`/`OUI` sont recalculées
-/// côté jeu par `Sapglob::init_and_check_texts` (defsap / init_graph).
-pub(crate) fn set_game_language(l: Langue) {
-    set_langue(l as i16);
-    *MENU_MODEL.lock().unwrap() = Some(build_model());
-}
-
-/// Valeur brute du global C `langue` (peut valoir -1 tant que le C n'a pas
-/// choisi ; l'écran egui la corrige avec `set_game_language`).
-pub(crate) fn game_lang_raw() -> Langue {
-    langue().into()
-}
-
-fn current_lang() -> i16 {
-    let l = langue();
-    if l == 1 || l == 2 { l } else { 0 }
-}
-
 /// Textes d'un titre ou item dans les trois langues du jeu.
 #[derive(Clone, Copy)]
 struct L10n {
@@ -357,11 +337,11 @@ const fn l10n(fr: &'static str, gb: &'static str, es: &'static str) -> L10n {
 }
 
 impl L10n {
-    fn label(&self, lang: i16) -> &'static str {
+    fn label(&self, lang: Langue) -> &'static str {
         match lang {
-            0 => self.fr,
-            2 => self.es,
-            _ => self.gb,
+            Langue::FR => self.fr,
+            Langue::ES => self.es,
+            Langue::GB => self.gb,
         }
     }
 }
@@ -384,13 +364,13 @@ struct Menu {
 
 /// Modèle complet de la barre de menus. Les `Menu` sont dans des `Box` dont
 /// l'adresse (le `MenuHandle`) est stable tant que la langue ne change pas.
-struct MenuModel {
+pub(crate) struct MenuModel {
     /// Langue avec laquelle le modèle a été construit (0/1/2).
-    lang: i16,
+    lang: Langue,
     menus: Vec<Box<Menu>>,
 }
 
-static MENU_MODEL: Mutex<Option<MenuModel>> = Mutex::new(None);
+pub(crate) static MENU_MODEL: Mutex<Option<MenuModel>> = Mutex::new(None);
 
 /// Emplacement stable du « handle » de barre de menus : `GetNewMBar` renvoie
 /// son adresse (FixeMenu passera ce pointeur à `DisposHandle`, no-op sur un
@@ -414,8 +394,8 @@ fn fresh_menu(id_base: i16, title: L10n, lang: i16, items: &[(L10n, bool)]) -> B
     })
 }
 
-fn build_model() -> MenuModel {
-    let lang = current_lang();
+pub(crate) fn build_model() -> MenuModel {
+    let lang = langue();
     // menu 128 (pomme) : itemInformation=1, itemAide=2.
     let pomme = [
         (
@@ -455,10 +435,25 @@ fn build_model() -> MenuModel {
     MenuModel {
         lang,
         menus: vec![
-            fresh_menu(128, l10n("SAPIENS", "SAPIENS", "SAPIENS"), lang, &pomme),
-            fresh_menu(129, l10n("Fichier", "File", "Archivo"), lang, &fichier),
-            fresh_menu(130, l10n("Voir", "View", "Ver"), lang, &voir),
-            fresh_menu(131, l10n("Fenêtre", "Window", "Ventana"), lang, &fenetre),
+            fresh_menu(
+                128,
+                l10n("SAPIENS", "SAPIENS", "SAPIENS"),
+                lang as i16,
+                &pomme,
+            ),
+            fresh_menu(
+                129,
+                l10n("Fichier", "File", "Archivo"),
+                lang as i16,
+                &fichier,
+            ),
+            fresh_menu(130, l10n("Voir", "View", "Ver"), lang as i16, &voir),
+            fresh_menu(
+                131,
+                l10n("Fenêtre", "Window", "Ventana"),
+                lang as i16,
+                &fenetre,
+            ),
         ],
     }
 }
@@ -518,7 +513,7 @@ fn handle_is_known(menus: &[Box<Menu>], handle: MenuHandle) -> bool {
 }
 
 fn label_for(menus: &[Box<Menu>], handle: MenuHandle, item: i16) -> Option<&'static str> {
-    let lang = current_lang();
+    let lang = langue();
     let menu = menu_at(menus, handle)?;
     if item <= 0 {
         Some(menu.title.label(lang))
@@ -625,7 +620,7 @@ pub(crate) struct MenuSnapshot {
 /// pour construire `menuID<<16|item` ; `base_id` sert à retrouver un menu
 /// indépendamment de la langue (raccourcis clavier).
 pub(crate) fn menus_snapshot() -> Vec<MenuSnapshot> {
-    let lang = current_lang();
+    let lang = langue();
     let mut g = MENU_MODEL.lock().unwrap();
     // Si la langue C a changé ailleurs (ChargePref/Alert), on reconstruit le
     // modèle pour garder IDs de menus et libellés cohérents.

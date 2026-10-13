@@ -18,7 +18,9 @@ pub(crate) mod text;
 
 use crate::acam::Random;
 use crate::exchange::{Cursor, get_cursor, set_menu_command};
-use crate::langue::{LangMode, Langue, effective_lang, load_lang_mode, save_lang_mode};
+use crate::langue::{
+    LangMode, Langue, effective_lang, langue, load_lang_mode, save_lang_mode, set_game_language,
+};
 use crate::sapiens::sap3d::Sap3d;
 use crate::sapiens::sapcomb::Sapcomb;
 use crate::sapiens::sapenreg::Sapenreg;
@@ -60,10 +62,10 @@ fn main() {
         eprintln!("AVERTISSEMENT: CARGO_MANIFEST_DIR absent, chemins des données non résolus");
     }
 
-    // Langue : mode choisi (Auto = langue du système), imposé au C avant que
-    // le thread jeu ne choisisse via son Alert (SAPWIND.C).
-    let lang_mode = load_lang_mode();
-    acam::set_game_language(effective_lang(lang_mode));
+    // Langue : initialisée par `--lang` (sinon fichier persisté), puis imposée
+    // au C avant que le thread jeu ne démarre.
+    let lang_mode = initial_lang_mode();
+    set_game_language(effective_lang(lang_mode));
 
     // Compteur 11 ms pour sapiensTimer (SAPWCLAV.C).
     let sapiens_timer = Arc::new(AtomicU64::new(0));
@@ -112,6 +114,27 @@ fn main() {
     std::process::exit(0);
 }
 
+/// Mode de langue initial, déterminé par `--lang <auto|fr|en|es>` (ou
+/// `--lang=<...>`). Sans argument, on relit le fichier persisté, sinon `Auto`.
+/// En cas de valeur invalide, on signale l'usage et on retombe sur le fichier.
+fn initial_lang_mode() -> LangMode {
+    let mut args = std::env::args().skip(1);
+    while let Some(arg) = args.next() {
+        let value = if arg == "--lang" {
+            args.next()
+        } else {
+            arg.strip_prefix("--lang=").map(str::to_string)
+        };
+        if let Some(v) = value {
+            match LangMode::from_arg(&v) {
+                Some(mode) => return mode,
+                None => eprintln!("--lang attendu : auto|fr|en|es (reçu « {v} »)"),
+            }
+        }
+    }
+    load_lang_mode()
+}
+
 fn timer_loop(t: Arc<AtomicU64>) {
     loop {
         std::thread::sleep(std::time::Duration::from_millis(11));
@@ -121,7 +144,7 @@ fn timer_loop(t: Arc<AtomicU64>) {
 
 /// Sous-menu « Fichier → Langue » : Auto / Français / Anglais / Espagnol.
 fn render_language_menu(ui: &mut egui::Ui, mode: &mut LangMode) {
-    let lang = acam::game_lang_raw();
+    let lang = langue();
     let title = match lang {
         Langue::FR => "Langue",
         Langue::ES => "Idioma",
@@ -131,7 +154,7 @@ fn render_language_menu(ui: &mut egui::Ui, mode: &mut LangMode) {
         for opt in [LangMode::Auto, LangMode::Fr, LangMode::En, LangMode::Es] {
             if ui.selectable_label(*mode == opt, opt.label(lang)).clicked() {
                 *mode = opt;
-                acam::set_game_language(effective_lang(opt));
+                set_game_language(effective_lang(opt));
                 save_lang_mode(opt);
                 ui.close_menu();
             }
@@ -199,8 +222,8 @@ impl eframe::App for SapiensApp {
         // (un `Sapiens.cfg` chargé par ChargePref pourrait la remettre en
         // cause au démarrage).
         let effective = effective_lang(self.lang_mode);
-        if acam::game_lang_raw() != effective {
-            acam::set_game_language(effective);
+        if langue() != effective {
+            set_game_language(effective);
         }
 
         // Raccourcis clavier (équivalents MenuKey) avant la barre de menus.

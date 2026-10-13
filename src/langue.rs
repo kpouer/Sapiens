@@ -1,15 +1,25 @@
 // ---------------------------------------------------------------------------
 // Langue du jeu (menu « Fichier → Langue »)
 // ---------------------------------------------------------------------------
-// Le choix de l'utilisateur est persisté côté Rust (`langue` C est ensuite
-// imposé à chaque frame) : Auto = langue du système (Français/Espagnol si le
-// système est fr/es, sinon Anglais). Les trois langues du jeu (0/1/2) sont
-// conservées.
+// Deux notions distinctes :
+//   - `Langue`   : le global C historique (0 = fr, 1 = gb, 2 = es) lu par le
+//                  code porté pour choisir textes et ressources.
+//   - `LangMode` : le choix de l'utilisateur côté Rust (Auto/Fr/En/Es), qui
+//                  décide de la `Langue` effective (Auto = langue du système).
+//
+// L'initialisation vient d'un paramètre de ligne de commande (`--lang`, traité
+// dans `main.rs`) ; à défaut elle est relue du fichier `lang` persisté, puis
+// retombe sur `Auto`. Le menu egui persiste le choix via `save_lang_mode`.
 
 use std::os::raw::c_short;
 use std::sync::atomic::{AtomicI16, Ordering};
 use sys_locale::get_locale;
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/// Sélection de l'utilisateur : Auto = langue du système.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) enum LangMode {
     Auto,
@@ -36,8 +46,31 @@ impl LangMode {
             (_, LangMode::Es) => "Spanish",
         }
     }
+
+    /// Mode correspondant à une valeur de `--lang` (`auto`/`fr`/`en`/`es`).
+    pub(crate) fn from_arg(s: &str) -> Option<Self> {
+        match s.to_ascii_lowercase().as_str() {
+            "auto" => Some(LangMode::Auto),
+            "fr" | "fr-fr" | "francais" | "français" => Some(LangMode::Fr),
+            "en" | "en-us" | "english" | "anglais" => Some(LangMode::En),
+            "es" | "es-es" | "spanish" | "espagnol" => Some(LangMode::Es),
+            _ => None,
+        }
+    }
+
+    /// Représentation persistée dans le fichier `lang`.
+    fn as_str(&self) -> &'static str {
+        match self {
+            LangMode::Auto => "auto",
+            LangMode::Fr => "fr",
+            LangMode::En => "en",
+            LangMode::Es => "es",
+        }
+    }
 }
 
+/// Langue C effective (discriminants attendus par le code porté et les
+/// ressources : 0 = fr, 1 = gb, 2 = es).
 #[derive(Copy, Clone, PartialEq)]
 pub(crate) enum Langue {
     FR = 0,
@@ -49,27 +82,40 @@ impl From<i16> for Langue {
     fn from(value: i16) -> Self {
         match value {
             0 => Langue::FR,
-            1 => Langue::ES,
+            2 => Langue::ES,
             _ => Langue::GB,
         }
     }
 }
 
-/* Etat mutable de SAPTXT.C. `langue` est un global partage entre le thread
-graphique egui et le thread jeu (et lu par des fonctions libres). Encapsule
-derriere `langue()` / `set_langue()` ; la statique `LANGUE` reste privee.
-Le reste est regroupe dans cette structure, champ de `Sapiens`. */
+// ---------------------------------------------------------------------------
+// Global C `langue`
+// ---------------------------------------------------------------------------
+// `langue` est partagé entre le thread graphique egui et le thread jeu (et lu
+// par des fonctions libres). Encapsulé derrière `langue()` / `set_langue()` ;
+// la statique `LANGUE` reste privée.
+
 static LANGUE: AtomicI16 = AtomicI16::new(-1);
 
 #[inline]
-pub(crate) fn langue() -> c_short {
+pub(crate) fn langue_i16() -> c_short {
     LANGUE.load(Ordering::Relaxed)
 }
 
 #[inline]
-pub(crate) fn set_langue(l: c_short) {
-    LANGUE.store(l, Ordering::Relaxed);
+pub(crate) fn set_langue(l: Langue) {
+    LANGUE.store(l as i16, Ordering::Relaxed);
 }
+
+/// Valeur brute du global C `langue` (peut valoir -1 tant que rien ne l'a
+/// fixée ; l'écran egui la corrige avec `set_game_language`).
+pub(crate) fn langue() -> Langue {
+    langue_i16().into()
+}
+
+// ---------------------------------------------------------------------------
+// Détection système / mapping mode → langue
+// ---------------------------------------------------------------------------
 
 /// Langue du système : préfixe `fr` → Français, `es` → Espagnol, sinon
 /// (anglais ou autre) → Anglais.
@@ -96,6 +142,10 @@ pub(crate) fn effective_lang(mode: LangMode) -> Langue {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Persistance (fichier `lang` sous le dossier de configuration utilisateur)
+// ---------------------------------------------------------------------------
+
 fn lang_path() -> std::path::PathBuf {
     let home = std::env::var("HOME")
         .or_else(|_| std::env::var("USERPROFILE"))
@@ -110,26 +160,28 @@ fn lang_path() -> std::path::PathBuf {
 
 pub(crate) fn load_lang_mode() -> LangMode {
     match std::fs::read_to_string(lang_path()) {
-        Ok(s) => match s.trim() {
-            "fr" => LangMode::Fr,
-            "en" => LangMode::En,
-            "es" => LangMode::Es,
-            _ => LangMode::Auto,
-        },
+        Ok(s) => LangMode::from_arg(s.trim()).unwrap_or(LangMode::Auto),
         Err(_) => LangMode::Auto,
     }
 }
 
 pub(crate) fn save_lang_mode(mode: LangMode) {
     let p = lang_path();
-    let s = match mode {
-        LangMode::Auto => "auto",
-        LangMode::Fr => "fr",
-        LangMode::En => "en",
-        LangMode::Es => "es",
-    };
     if let Some(dir) = p.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
-    let _ = std::fs::write(&p, s);
+    let _ = std::fs::write(&p, mode.as_str());
+}
+
+// ---------------------------------------------------------------------------
+// Initialisation haut niveau
+// ---------------------------------------------------------------------------
+
+/// Langue du jeu : la sélection (Auto/Fr/En/Es) est imposée côté Rust à
+/// chaque frame ; cet appel écrit le global C `langue` et reconstruit la barre
+/// de menus (IDs langue). Les touches `HOMME`/`FEMME`/`OUI` sont recalculées
+/// côté jeu par `Sapglob::init_and_check_texts` (defsap / init_graph).
+pub(crate) fn set_game_language(l: Langue) {
+    set_langue(l);
+    *crate::acam::MENU_MODEL.lock().unwrap() = Some(crate::acam::build_model());
 }

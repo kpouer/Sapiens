@@ -20,7 +20,7 @@ use crate::cbridge::{
     strcpy, strlen, userItem, watchCursor, whiteColor,
 };
 use crate::exchange::take_menu_command;
-use crate::langue::{langue, set_langue};
+use crate::langue::{langue_i16, set_langue};
 use crate::port;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::CvtDefaultLangRess;
@@ -1321,9 +1321,9 @@ impl Sapiens {
         InitDefautConfigSortieNumerique();
         self.MusicInit(1); /* Lance musique 1 */
         /* Choix de la langue*/
-        if langue() == -1 {
+        if langue_i16() == -1 {
             CarboniseSetCursorArrow();
-            set_langue(Alert(ALRT_VERSION, core::ptr::null_mut()) - 1);
+            set_langue((Alert(ALRT_VERSION, core::ptr::null_mut()) - 1).into());
             SetCursor(GetCursor(watchCursor as c_short));
         }
         unsafe {
