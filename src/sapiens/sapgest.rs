@@ -6,8 +6,8 @@
 ***********************************************************************/
 use crate::Sapiens;
 use crate::acam::{
-    CtoPstr, DisposPtr, FAUX, ForeColor, Line, MoveTo, PtoCstr, RGBForeColor, SetPt, SetRect,
-    TickCount, VRAI,
+    CtoPstr, DisposPtr, FAUX, ForeColor, Line, MoveTo, PtoCstr, RGBForeColor, SetRect, TickCount,
+    VRAI,
 };
 use crate::cbridge::{
     CInfoPBRec, blackColor, fclose, fopen, getc, putc, remove, sprintf, strcpy, stricmp, strlen,
@@ -1091,7 +1091,6 @@ impl Sapiens {
     pub(crate) extern "C" fn defsap(&mut self) {
         unsafe {
             let mut rval = Rect::default();
-            let mut pt = Point::default();
 
             self.sapglob.sapvit = 0;
             let nomjoueur_ptr = &raw mut self.saptxt.nomjoueur as *mut c_char;
@@ -1182,7 +1181,7 @@ impl Sapiens {
                     self.sapglob.resistance = self.sapglob.param[4];
                     while self.getkey(0) != 0 { /* Epuise le clavier */ }
                 } else {
-                    SetPt(&mut pt, self.sapglob.sposx, self.sapglob.sposy);
+                    let pt = Point::new(self.sapglob.sposx, self.sapglob.sposy);
                     let mut i: c_short = 0;
                     while i < 5 {
                         self.AireJauge(i, &mut r);
@@ -1468,7 +1467,6 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn DEF3D(&mut self) {
         let mut r = Rect::default();
-        let mut pt = Point::default();
 
         self.sapglob.pal_chron = self.sapglob.palhaute;
         self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut c_short;
@@ -1503,7 +1501,7 @@ impl Sapiens {
             if MouseDansSuite(self.sapglob.sposx, self.sapglob.sposy) {
                 cont = 0;
             } else {
-                SetPt(&mut pt, self.sapglob.sposx, self.sapglob.sposy);
+                let pt = Point::new(self.sapglob.sposx, self.sapglob.sposy);
                 let mut i: c_short = 0;
                 while i < NB_JAUGES_3D as c_short {
                     AIREJAUGE3d(i, &mut r);
@@ -1728,7 +1726,6 @@ Saisi un nom de fichier pour une ecriture
 <= Format du fichier ou 0 si aucun
 ********************************************************************/
 fn SaisieNomFichierAventureEcriture(nom: *mut c_char) -> Boolean {
-    let mut point = Point::default();
     let mut reply = SFReply {
         good: false,
         vRefNum: 0,
@@ -1739,8 +1736,7 @@ fn SaisieNomFichierAventureEcriture(nom: *mut c_char) -> Boolean {
     let mut titre = [0 as c_char; 255];
 
     unsafe {
-        SetPt(
-            &mut point,
+        let point = Point::new(
             ((qd.screenBits.bounds.right - 304) / 2) as c_short,
             ((qd.screenBits.bounds.bottom - 184) / 2) as c_short,
         );
@@ -1931,6 +1927,7 @@ impl Sapiens {
         }
     }
 
+    #[allow(dead_code)]
     fn ajuste(&mut self) {
         let mut car = 0;
         self.sceveu(10);

@@ -889,8 +889,7 @@ pub(crate) fn Color2Index(c: &RGBColor) -> i16 {
 // Rectangles
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SetRect(r: *mut Rect, left: i16, top: i16, right: i16, bottom: i16) {
+pub(crate) fn SetRect(r: *mut Rect, left: i16, top: i16, right: i16, bottom: i16) {
     if r.is_null() {
         return;
     }
@@ -904,8 +903,7 @@ pub(crate) extern "C" fn SetRect(r: *mut Rect, left: i16, top: i16, right: i16, 
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn UnionRect(src1: *const Rect, src2: *const Rect, dst: *mut Rect) {
+pub(crate) fn UnionRect(src1: *const Rect, src2: *const Rect, dst: *mut Rect) {
     if src1.is_null() || src2.is_null() || dst.is_null() {
         return;
     }
@@ -914,8 +912,7 @@ pub(crate) extern "C" fn UnionRect(src1: *const Rect, src2: *const Rect, dst: *m
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SectRect(src1: *const Rect, src2: *const Rect, dst: *mut Rect) -> Boolean {
+pub(crate) fn SectRect(src1: *const Rect, src2: *const Rect, dst: *mut Rect) -> Boolean {
     if src1.is_null() || src2.is_null() || dst.is_null() {
         return false;
     }
@@ -926,15 +923,6 @@ pub(crate) extern "C" fn SectRect(src1: *const Rect, src2: *const Rect, dst: *mu
         } else {
             !(*dst).is_empty() as Boolean
         }
-    }
-}
-
-pub(crate) fn SetPt(pt: *mut Point, h: i16, v: i16) {
-    if pt.is_null() {
-        return;
-    }
-    unsafe {
-        *pt = Point { v, h };
     }
 }
 
@@ -1010,7 +998,7 @@ pub(crate) fn FrameRoundRect(r: &Rect, _ovalWidth: i16, _ovalHeight: i16) {
     if p.is_null() {
         return;
     }
-    frame_rect(p, &*r);
+    frame_rect(p, r);
 }
 
 #[unsafe(no_mangle)]
