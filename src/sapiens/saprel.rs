@@ -704,6 +704,7 @@ impl Sapiens {
     /***************************************************************************
     => Les deux parametres correspondants au choix
     */
+    #[allow(dead_code)]
     pub(crate) fn modrel(&mut self) {
         unsafe {
             let tfr: c_ushort;
@@ -1482,54 +1483,51 @@ impl Sapiens {
                             OUTARM :Armes en sorties
     ***********************************************************************/
     pub(crate) fn outarm(&mut self) {
-        unsafe {
-            let mut i: c_uchar;
-            let tfr: c_uchar;
+        let mut i: c_uchar;
+        let tfr: c_uchar;
 
-            self.sapglob.tlpos[1] = 1;
-            self.sapglob.tlpos[4] = 1;
+        self.sapglob.tlpos[1] = 1;
+        self.sapglob.tlpos[4] = 1;
 
+        i = self.sapglob.liste1.taille;
+        /*on enleve les sagaies de la liste en fonction de ce qui reste en sortie
+        bien sur comme la taille va bouger on remet les positions ds les listes
+
+        zéro*/
+        while i != 0 {
+            i -= 1;
+            if self.sapglob.liste1.elements[i as usize] == 23 {
+                let sap1 = &mut self.sapglob.sap1;
+                if sap1.nbresag != 0 {
+                    sap1.nbresag -= 1;
+                } else {
+                    self.enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
+                }
+            }
+        }
+
+        let forcehache = self.sapglob.sap1.forcehache;
+        if forcehache == 0 {
+            /*pas de hache*/
             i = self.sapglob.liste1.taille;
-            /*on enleve les sagaies de la liste en fonction de ce qui reste en sortie
-            bien sur comme la taille va bouger on remet les positions ds les listes
-
-            zéro*/
             while i != 0 {
                 i -= 1;
-                if self.sapglob.liste1.elements[i as usize] == 23 {
-                    let sap1 = &mut self.sapglob.sap1;
-                    if sap1.nbresag != 0 {
-                        sap1.nbresag -= 1;
-                    } else {
-                        self.enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
-                    }
+                if self.sapglob.liste1.elements[i as usize] == 21
+                    || self.sapglob.liste1.elements[i as usize] == 22
+                {
+                    self.enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
+                    i = 0;
                 }
             }
-
-            let forcehache = self.sapglob.sap1.forcehache;
-            if forcehache == 0 {
-                /*pas de hache*/
-                i = self.sapglob.liste1.taille;
-                while i != 0 {
-                    i -= 1;
-                    if self.sapglob.liste1.elements[i as usize] == 21
-                        || self.sapglob.liste1.elements[i as usize] == 22
-                    {
-                        self.enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
-                        i = 0;
-                    }
-                }
-            }
-            let sap1 = &self.sapglob.sap1;
-            if sap1.vie != self.sapglob.entvie {
-                /*il a encaissé*/
-                tfr = self
-                    .sapglob
-                    .fatig
-                    .wrapping_sub(self.sapglob.entvie.wrapping_sub(sap1.vie) / 2);
-                self.sapglob.fatig = if tfr < self.sapglob.fatig { tfr } else { 0 };
-            }
-            return;
+        }
+        let sap1 = &self.sapglob.sap1;
+        if sap1.vie != self.sapglob.entvie {
+            /*il a encaissé*/
+            tfr = self
+                .sapglob
+                .fatig
+                .wrapping_sub(self.sapglob.entvie.wrapping_sub(sap1.vie) / 2);
+            self.sapglob.fatig = if tfr < self.sapglob.fatig { tfr } else { 0 };
         }
     }
 

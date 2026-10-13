@@ -1466,7 +1466,6 @@ impl Sapiens {
         let mut part;
         let mut windowResult = WindowPtr::default();
         let mut event = EventRecord::default();
-        let mut bounds = Rect::default();
 
         /* Commande de menu venue de la barre egui : elle s'execute ici, sur le
         thread C, la ou vit le `&mut Sapiens`. Le swap a ete fait, donc un modal
@@ -1478,85 +1477,83 @@ impl Sapiens {
         let _g = port::on(self.sapwind.mainWindow);
         let window = FrontWindow();
         self.CheckChangeMusique();
-        unsafe {
-            while GetNextEvent(everyEvent as i16, &mut event) {
-                match event.what as u32 {
-                    _keyDown => {
-                        self.sapwind.toucheClav =
-                            (event.message as c_short & charCodeMask as c_short) as c_short;
-                        self.DoEvtClavier(&raw const event as *const _);
-                    }
-                    _mouseDown => {
-                        /* On cherche quelle fenetre a été cliquée */
-                        part = FindWindow(event.where_, &mut windowResult);
-                        /* Où a-t'on cliqué ??? */
-                        match part as u32 {
-                            /* Dans la barre de menu , alors on le traite */
-                            _inMenuBar => {
-                                self.DoMenuCommand(MenuSelect(event.where_));
-                            }
-                            /* Sur le bureau, alors le bureau se débrouille ... sauf si c'est un pseudo document */
-                            _inSysWindow => {
-                                SystemClick(&event, windowResult);
-                            }
-                            /* Dans le deplacement */
-                            _inDrag => {
-                                SelectWindow(windowResult);
-                                bounds = port::SCREEN;
-                                DragWindow(windowResult, event.where_, &bounds);
-                            }
-                            /* Dans une fenetre : alors on le traite */
-                            _inContent => {
-                                if windowResult != window {
-                                    SelectWindow(windowResult);
-                                }
-
-                                //if(window==mainWindow)
-                                //       DoClick(event.where);
-                            }
-                            _ => {}
+        while GetNextEvent(everyEvent as i16, &mut event) {
+            match event.what as u32 {
+                _keyDown => {
+                    self.sapwind.toucheClav =
+                        (event.message as c_short & charCodeMask as c_short) as c_short;
+                    self.DoEvtClavier(&raw const event as *const _);
+                }
+                _mouseDown => {
+                    /* On cherche quelle fenetre a été cliquée */
+                    part = FindWindow(event.where_, &mut windowResult);
+                    /* Où a-t'on cliqué ??? */
+                    match part as u32 {
+                        /* Dans la barre de menu , alors on le traite */
+                        _inMenuBar => {
+                            self.DoMenuCommand(MenuSelect(event.where_));
                         }
+                        /* Sur le bureau, alors le bureau se débrouille ... sauf si c'est un pseudo document */
+                        _inSysWindow => {
+                            SystemClick(&event, windowResult);
+                        }
+                        /* Dans le deplacement */
+                        _inDrag => {
+                            SelectWindow(windowResult);
+                            let bounds = port::SCREEN;
+                            DragWindow(windowResult, event.where_, &bounds);
+                        }
+                        /* Dans une fenetre : alors on le traite */
+                        _inContent => {
+                            if windowResult != window {
+                                SelectWindow(windowResult);
+                            }
+
+                            //if(window==mainWindow)
+                            //       DoClick(event.where);
+                        }
+                        _ => {}
                     }
-                    _updateEvt => {
-                        if port::is_window(window) {
-                            //                    AcamGetPortOffscreen(&gbak);
-                            port::set(window);
-                            BeginUpdate(window);
+                }
+                _updateEvt => {
+                    if port::is_window(window) {
+                        //                    AcamGetPortOffscreen(&gbak);
+                        port::set(window);
+                        BeginUpdate(window);
+                        self.TfrEcr(None);
+                        self.tfrima();
+                        if self.sapglob.dervue == Vue::LATERALE {
+                            self.tfrdemi();
+                        }
+                        EndUpdate(window);
+                        //                    AcamSetPortOffscreen(gbak);
+                    }
+                }
+                _activateEvt => {
+                    if (event.message & 1) > 0 {
+                        /* on reprends le traitement */
+                    } else {
+                        /* On est arrêté */
+                        self.souris.MontreSouris();
+                    }
+                }
+                _app4Evt => {
+                    if (event.message >> 24) == 1 {
+                        if (event.message & 1) > 0 {
+                            /* on reprends le traitement */
+                            port::set(self.sapwind.mainWindow);
                             self.TfrEcr(None);
                             self.tfrima();
                             if self.sapglob.dervue == Vue::LATERALE {
                                 self.tfrdemi();
                             }
-                            EndUpdate(window);
-                            //                    AcamSetPortOffscreen(gbak);
-                        }
-                    }
-                    _activateEvt => {
-                        if (event.message & 1) > 0 {
-                            /* on reprends le traitement */
                         } else {
                             /* On est arrêté */
                             self.souris.MontreSouris();
                         }
                     }
-                    _app4Evt => {
-                        if (event.message >> 24) == 1 {
-                            if (event.message & 1) > 0 {
-                                /* on reprends le traitement */
-                                port::set(self.sapwind.mainWindow);
-                                self.TfrEcr(None);
-                                self.tfrima();
-                                if self.sapglob.dervue == Vue::LATERALE {
-                                    self.tfrdemi();
-                                }
-                            } else {
-                                /* On est arrêté */
-                                self.souris.MontreSouris();
-                            }
-                        }
-                    }
-                    _ => {}
                 }
+                _ => {}
             }
         }
         SystemTask();
@@ -1582,21 +1579,18 @@ impl SapWind {
     /*******************************************************************
                             FixeTailleMainWindow
     ********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn FixeTailleMainWindow(&self) {
+    pub(crate) fn FixeTailleMainWindow(&self) {
         let mut rect = Rect::default();
 
-        unsafe {
-            let _g = port::on(self.mainWindow);
-            SetRect(
-                &mut rect,
-                0,
-                0,
-                (320.0 * ECHELLE as f32 * self.SapZoom) as i16,
-                (200.0 * ECHELLE as f32 * self.SapZoom) as i16,
-            );
-            SizeWindow(self.mainWindow, rect.right, rect.bottom, true);
-        }
+        let _g = port::on(self.mainWindow);
+        SetRect(
+            &mut rect,
+            0,
+            0,
+            (320.0 * ECHELLE as f32 * self.SapZoom) as i16,
+            (200.0 * ECHELLE as f32 * self.SapZoom) as i16,
+        );
+        SizeWindow(self.mainWindow, rect.right, rect.bottom, true);
     }
 }
 

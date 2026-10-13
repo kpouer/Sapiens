@@ -548,77 +548,75 @@ impl Sapiens {
                   AFLIST:Affiche liste en entr�e
     ***********************************************************************/
     fn aflist(&mut self, debliste_id: ListeId) {
-        unsafe {
-            let _j: c_short = 0;
-            let mut r = Rect::default();
+        let _j: c_short = 0;
+        let mut r = Rect::default();
 
-            let _g = port::on(self.sapwind.debecr);
-            if self.sapglob.s_menu == self.saplist.inverse_option.LastMenuInvers {
-                self.saplist.inverse_option.LastMenuInvers = -1;
-            }
-            /*ligne et colonne au debut du cadre*/
-            self.Gotoxy(self.sapglob.ccol as c_short, self.sapglob.clin as c_short);
-            let mut i = self.sapglob.cnlin as c_uchar; /*i recoit le nombre de ligne du cadre*/
-            if self.sapglob.lpos == 0 {
-                self.sapglob.lpos = 1;
-            }
-
-            let taille = self.sapglob.liste(debliste_id).taille;
-            if (self.sapglob.lpos as c_uchar) > taille {
-                self.sapglob.lpos = taille;
-            }
-            let mut travl2 = self.sapglob.lpos.wrapping_sub(1); /*debut d'affichage*/
-            /* On efface le fond de la liste */
-            SetRect(
-                &mut r,
-                (self.sapglob.colaff as c_short) * 6 * ECHELLE as c_short,
-                (self.sapglob.linaff as c_short) * 7 * ECHELLE as c_short - 1,
-                (self.sapglob.colaff as c_short + self.sapglob.cncol as c_short)
-                    * 6
-                    * ECHELLE as c_short,
-                (self.sapglob.linaff as c_short + self.sapglob.cnlin as c_short)
-                    * 7
-                    * ECHELLE as c_short,
-            );
-            self.BoxFill(self.sapwind.debecr, &mut r, 0x542 as c_short);
-            /* On affiche tous les mots */
-            let taille = self.sapglob.liste(debliste_id).taille;
-            if taille != 0 {
-                /* On n'est pas en haut de la liste, fleche vers le haut */
-                if travl2 > 1 {
-                    self.Gotoxy(
-                        (self.sapglob.ccol as c_short + self.sapglob.cncol as c_short) - 1,
-                        self.sapglob.linaff as c_short,
-                    );
-                    self.affcar('<' as c_short);
-                    self.Gotoxy(self.sapglob.ccol as c_short, self.sapglob.clin as c_short);
-                }
-                while i != 0 {
-                    i = i.wrapping_sub(1);
-                    self.affmot(debliste_id, travl2 as c_ushort); /*on affiche le mot*/
-                    travl2 = travl2.wrapping_add(1);
-                    self.Gotoxy(
-                        self.sapglob.ccol as c_short,
-                        (self.sapglob.linaff + 1) as c_short,
-                    );
-                }
-                /* On n'est pas en bas de la liste, fleche vers le bas */
-                let taille = self.sapglob.liste(debliste_id).taille;
-                if travl2 < taille {
-                    self.Gotoxy(
-                        (self.sapglob.ccol as c_short + self.sapglob.cncol as c_short) - 1,
-                        (self.sapglob.linaff - 1) as c_short,
-                    );
-                    self.affcar('>' as c_short);
-                }
-            } else {
-                /* Liste vide */
-                self.mot(c"...".as_ptr() as *mut c_char);
-            }
-            /* Transfert de la liste sur l'ecran */
-            r.InsetRect(-48, -48);
-            self.TfrEcr(Some(&r));
+        let _g = port::on(self.sapwind.debecr);
+        if self.sapglob.s_menu == self.saplist.inverse_option.LastMenuInvers {
+            self.saplist.inverse_option.LastMenuInvers = -1;
         }
+        /*ligne et colonne au debut du cadre*/
+        self.Gotoxy(self.sapglob.ccol as c_short, self.sapglob.clin as c_short);
+        let mut i = self.sapglob.cnlin as c_uchar; /*i recoit le nombre de ligne du cadre*/
+        if self.sapglob.lpos == 0 {
+            self.sapglob.lpos = 1;
+        }
+
+        let taille = self.sapglob.liste(debliste_id).taille;
+        if (self.sapglob.lpos as c_uchar) > taille {
+            self.sapglob.lpos = taille;
+        }
+        let mut travl2 = self.sapglob.lpos.wrapping_sub(1); /*debut d'affichage*/
+        /* On efface le fond de la liste */
+        SetRect(
+            &mut r,
+            (self.sapglob.colaff as c_short) * 6 * ECHELLE as c_short,
+            (self.sapglob.linaff as c_short) * 7 * ECHELLE as c_short - 1,
+            (self.sapglob.colaff as c_short + self.sapglob.cncol as c_short)
+                * 6
+                * ECHELLE as c_short,
+            (self.sapglob.linaff as c_short + self.sapglob.cnlin as c_short)
+                * 7
+                * ECHELLE as c_short,
+        );
+        self.BoxFill(self.sapwind.debecr, &mut r, 0x542 as c_short);
+        /* On affiche tous les mots */
+        let taille = self.sapglob.liste(debliste_id).taille;
+        if taille != 0 {
+            /* On n'est pas en haut de la liste, fleche vers le haut */
+            if travl2 > 1 {
+                self.Gotoxy(
+                    (self.sapglob.ccol as c_short + self.sapglob.cncol as c_short) - 1,
+                    self.sapglob.linaff as c_short,
+                );
+                self.affcar('<' as c_short);
+                self.Gotoxy(self.sapglob.ccol as c_short, self.sapglob.clin as c_short);
+            }
+            while i != 0 {
+                i = i.wrapping_sub(1);
+                self.affmot(debliste_id, travl2 as c_ushort); /*on affiche le mot*/
+                travl2 = travl2.wrapping_add(1);
+                self.Gotoxy(
+                    self.sapglob.ccol as c_short,
+                    (self.sapglob.linaff + 1) as c_short,
+                );
+            }
+            /* On n'est pas en bas de la liste, fleche vers le bas */
+            let taille = self.sapglob.liste(debliste_id).taille;
+            if travl2 < taille {
+                self.Gotoxy(
+                    (self.sapglob.ccol as c_short + self.sapglob.cncol as c_short) - 1,
+                    (self.sapglob.linaff - 1) as c_short,
+                );
+                self.affcar('>' as c_short);
+            }
+        } else {
+            /* Liste vide */
+            self.mot(c"...".as_ptr() as *mut c_char);
+        }
+        /* Transfert de la liste sur l'ecran */
+        r.InsetRect(-48, -48);
+        self.TfrEcr(Some(&r));
     }
 
     /***********************************************************************

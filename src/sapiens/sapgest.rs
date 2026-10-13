@@ -1359,24 +1359,22 @@ impl Sapiens {
     fn JAUGE3d(&self, i: c_short, val: f32) {
         let mut r = Rect::default();
 
-        unsafe {
-            AIREJAUGE3d(i, &mut r);
-            self.boxf(r.top - 1, r.left - 1, r.bottom + 1, r.right + 1, 16);
-            self.boxf(
-                r.top,
-                r.left,
-                r.bottom,
-                r.left + (CAR_UTILE as f32 * val) as c_short,
-                14,
-            );
-            self.boxf(
-                r.top,
-                r.left + (CAR_UTILE as f32 * val) as c_short,
-                r.bottom,
-                r.right,
-                4,
-            );
-        }
+        AIREJAUGE3d(i, &mut r);
+        self.boxf(r.top - 1, r.left - 1, r.bottom + 1, r.right + 1, 16);
+        self.boxf(
+            r.top,
+            r.left,
+            r.bottom,
+            r.left + (CAR_UTILE as f32 * val) as c_short,
+            14,
+        );
+        self.boxf(
+            r.top,
+            r.left + (CAR_UTILE as f32 * val) as c_short,
+            r.bottom,
+            r.right,
+            4,
+        );
     }
 
     /***********************************************************************
@@ -1388,78 +1386,76 @@ impl Sapiens {
         let mut i: c_short = 0;
         let mut r = Rect::default();
         let _g = port::on(self.sapwind.debecr);
-        unsafe {
-            self.boxf(0, 32, 101, 287, 5);
+        self.boxf(0, 32, 101, 287, 5);
 
-            /* La jauge est tracee dans debecr (hors-ecran, echelle 1) : la mise a
-            l'echelle se fait plus tard, au recopie vers l'ecran. */
-            macro_rules! aire_zoom {
-                ($i:expr) => {{
-                    AIREJAUGE3d($i, &mut r);
-                    r = port::zoomed(port::current(), &r);
-                }};
-            }
-
-            aire_zoom!(i);
-            i += 1;
-            r.left = 80;
-            r.right = r.left + 64;
-            self.Affmob3d(self.sapwind.mob3D + 7, &mut r, null_mut()); //Nuage
-
-            aire_zoom!(i);
-            i += 1;
-            r.left = 120;
-            r.right = r.left + 16;
-            self.Affmob3d(self.sapwind.mob3D + 28, &mut r, null_mut()); //Oiseau
-
-            aire_zoom!(i);
-            i += 1;
-            r.InsetRect(0, -2);
-            r.left = 110;
-            r.right = r.left + 26;
-            self.Affmob3d(self.sapwind.mob3D + 34, &mut r, null_mut()); //Pierre
-
-            aire_zoom!(i);
-            i += 1;
-            r.InsetRect(0, -4);
-            r.left = 110;
-            r.right = r.left + 32;
-            self.Affmob3d(self.sapwind.mob3D + 10, &mut r, null_mut()); //Arbre
-
-            aire_zoom!(i);
-            i += 1;
-            r.InsetRect(0, -4);
-            r.left = 110;
-            r.right = r.left + 32;
-            self.Affmob3d(self.sapwind.mobAvplan + MOB_HERBE_BASE, &mut r, null_mut()); //Herbe
-
-            self.AfficheSuite();
-
-            let mut j: c_short = 0;
-            self.JAUGE3d(j, self.sap3d.nbNuages as f32 / (NB_NUAGES_MAX as f32));
-            j += 1;
-            self.JAUGE3d(j, self.sap3d.nbOiseaux as f32 / (NB_OISEAUX_MAX as f32));
-            j += 1;
-            self.JAUGE3d(j, self.sap3d.nbRochers as f32 / (NB_ROCHERS_MAX as f32));
-            j += 1;
-            self.JAUGE3d(j, self.sap3d.nbArbres as f32 / (NB_ARBRES_MAX as f32));
-            j += 1;
-            self.JAUGE3d(
-                j,
-                self.sapcomb.nbHerbes as f32 / (NB_MAX_HERBE_AV_PLAN as f32),
-            );
-            SetRect(&mut r, 0, 0, 600, 400);
-            self.TfrEcr(Some(&r));
-            SetRect(
-                &mut r,
-                0,
-                0,
-                320 * ECHELLE as c_short,
-                200 * ECHELLE as c_short,
-            );
-            CarboniseInvalRect(&raw const r);
-            ValideUpdate();
+        /* La jauge est tracee dans debecr (hors-ecran, echelle 1) : la mise a
+        l'echelle se fait plus tard, au recopie vers l'ecran. */
+        macro_rules! aire_zoom {
+            ($i:expr) => {{
+                AIREJAUGE3d($i, &mut r);
+                r = port::zoomed(port::current(), &r);
+            }};
         }
+
+        aire_zoom!(i);
+        i += 1;
+        r.left = 80;
+        r.right = r.left + 64;
+        self.Affmob3d(self.sapwind.mob3D + 7, &mut r, null_mut()); //Nuage
+
+        aire_zoom!(i);
+        i += 1;
+        r.left = 120;
+        r.right = r.left + 16;
+        self.Affmob3d(self.sapwind.mob3D + 28, &mut r, null_mut()); //Oiseau
+
+        aire_zoom!(i);
+        i += 1;
+        r.InsetRect(0, -2);
+        r.left = 110;
+        r.right = r.left + 26;
+        self.Affmob3d(self.sapwind.mob3D + 34, &mut r, null_mut()); //Pierre
+
+        aire_zoom!(i);
+        i += 1;
+        r.InsetRect(0, -4);
+        r.left = 110;
+        r.right = r.left + 32;
+        self.Affmob3d(self.sapwind.mob3D + 10, &mut r, null_mut()); //Arbre
+
+        aire_zoom!(i);
+        i += 1;
+        r.InsetRect(0, -4);
+        r.left = 110;
+        r.right = r.left + 32;
+        self.Affmob3d(self.sapwind.mobAvplan + MOB_HERBE_BASE, &mut r, null_mut()); //Herbe
+
+        self.AfficheSuite();
+
+        let mut j: c_short = 0;
+        self.JAUGE3d(j, self.sap3d.nbNuages as f32 / (NB_NUAGES_MAX as f32));
+        j += 1;
+        self.JAUGE3d(j, self.sap3d.nbOiseaux as f32 / (NB_OISEAUX_MAX as f32));
+        j += 1;
+        self.JAUGE3d(j, self.sap3d.nbRochers as f32 / (NB_ROCHERS_MAX as f32));
+        j += 1;
+        self.JAUGE3d(j, self.sap3d.nbArbres as f32 / (NB_ARBRES_MAX as f32));
+        j += 1;
+        self.JAUGE3d(
+            j,
+            self.sapcomb.nbHerbes as f32 / (NB_MAX_HERBE_AV_PLAN as f32),
+        );
+        SetRect(&mut r, 0, 0, 600, 400);
+        self.TfrEcr(Some(&r));
+        SetRect(
+            &mut r,
+            0,
+            0,
+            320 * ECHELLE as c_short,
+            200 * ECHELLE as c_short,
+        );
+        CarboniseInvalRect(&raw const r);
+        ValideUpdate();
     }
 
     /***********************************************************************

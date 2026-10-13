@@ -370,7 +370,7 @@ impl Sapiens {
         nbMobs: c_short,
         vide: c_short,
     ) -> c_short {
-        let mut f: *mut FILE = std::ptr::null_mut();
+        let f: *mut FILE;
         let n: c_short;
         let mut nbcol: c_short = 0;
         let mut nbligne: c_short = 0;
@@ -378,7 +378,7 @@ impl Sapiens {
         let mut r: u8 = 0;
         let mut g: u8 = 0;
         let mut b: u8 = 0;
-        let mut rgb: *mut BRGBColor = std::ptr::null_mut();
+        let mut rgb: *mut BRGBColor;
         let mut chaine = [0i8; 255];
         unsafe {
             strcpy(chaine.as_mut_ptr(), nom);
@@ -1373,20 +1373,17 @@ impl Sapiens {
     Efface a partir du virtuel ou se trace les personnages en
     recopiant la premiere partie de l'ecran virtuel sur la deuxieme
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn effdemi(&self) {
-        unsafe {
-            let mut rsourc = Rect::default();
-            SetRect(
-                &mut rsourc,
-                0,
-                (32 * ECHELLE) as i16,
-                (255 * ECHELLE) as i16,
-                ((32 + TAILLE_TFR) * ECHELLE) as i16,
-            );
-            let rp = &rsourc as *const Rect;
-            CopyOffscreen(self.sapwind.Ecran2, self.sapwind.Ecran1, rp, rp);
-        }
+    pub(crate) fn effdemi(&self) {
+        let mut rsourc = Rect::default();
+        SetRect(
+            &mut rsourc,
+            0,
+            (32 * ECHELLE) as i16,
+            (255 * ECHELLE) as i16,
+            ((32 + TAILLE_TFR) * ECHELLE) as i16,
+        );
+        let rp = &rsourc as *const Rect;
+        CopyOffscreen(self.sapwind.Ecran2, self.sapwind.Ecran1, rp, rp);
     }
 
     /*************************************************************************

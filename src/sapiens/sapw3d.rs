@@ -204,12 +204,12 @@ impl Sapiens {
         pdist: *mut c_short,
         pangabs: *mut c_short,
     ) -> c_short {
-        let mut erreur: c_short = 0;
+        let mut erreur: c_short;
         let mut dx: c_short = 0;
         let mut dy: c_short = 0;
         let mut dz: c_short = 0;
         let mut dist: c_short = 0;
-        let mut angle: c_short = 0;
+        let mut angle: c_short;
         let mut posg: c_short = 0;
         let mut posd: c_short = 0;
 
@@ -287,21 +287,21 @@ impl Sapiens {
     pub(crate) unsafe fn visu2(&mut self) {
         let mut j: c_short;
         let mut i: i32;
-        let mut ligne: c_short = 0;
+        let mut ligne: c_short;
         let mut gauche: c_short = 0;
         let mut droite: c_short = 0;
         let mut newgauche: c_short = 0;
         let mut newdroite: c_short = 0;
-        let mut dx: c_short = 0;
+        let mut dx: c_short;
         let mut dz: c_short = 0;
         let mut dist: c_short = 0;
-        let mut angle: c_short = 0;
-        let mut hauteurDisque: c_short = 0;
-        let mut err: c_short = 0;
-        let mut xd: c_short = 0;
-        let mut yd: c_short = 0;
-        let mut zd: c_short = 0;
-        let mut rd: c_short = 0;
+        let mut angle: c_short;
+        let mut hauteurDisque: c_short;
+        let mut err: c_short;
+        let mut xd: c_short;
+        let mut yd: c_short;
+        let mut zd: c_short;
+        let mut rd: c_short;
         let mut hmec: c_short = 10;
         let mut angabs: c_short = 0;
 
@@ -798,21 +798,19 @@ impl Sapiens {
                                     Le personnage tourne la tete, le tableau des lignes du sol bouge
     *********************************************************************************/
     fn TourneSol(&mut self) {
-        unsafe {
-            if self.sapglob.dzeta != self.sapw3d.LAST_DZETA {
-                let delta = self.sapglob.dzeta as i32 - self.sapw3d.LAST_DZETA as i32;
-                for i in 1..NB_INTERV {
-                    if self.sapw3d.TAB_LIGNE_SOL[i].hauteur != 0 {
-                        self.sapw3d.TAB_LIGNE_SOL[i].offsetEnMob =
-                            ((self.datum(delta, i)) % LARGEUR_MOB as i32) as c_short;
-                        self.sapw3d.TAB_LIGNE_SOL[i].offsetEcran =
-                            (-(self.sapw3d.TAB_LIGNE_SOL[i].offsetEnMob as i64)
-                                * self.sapw3d.TAB_LIGNE_SOL[i].hauteur as i64
-                                / HAUTEUR_MOB) as c_short;
-                    }
+        if self.sapglob.dzeta != self.sapw3d.LAST_DZETA {
+            let delta = self.sapglob.dzeta as i32 - self.sapw3d.LAST_DZETA as i32;
+            for i in 1..NB_INTERV {
+                if self.sapw3d.TAB_LIGNE_SOL[i].hauteur != 0 {
+                    self.sapw3d.TAB_LIGNE_SOL[i].offsetEnMob =
+                        ((self.datum(delta, i)) % LARGEUR_MOB as i32) as c_short;
+                    self.sapw3d.TAB_LIGNE_SOL[i].offsetEcran =
+                        (-(self.sapw3d.TAB_LIGNE_SOL[i].offsetEnMob as i64)
+                            * self.sapw3d.TAB_LIGNE_SOL[i].hauteur as i64
+                            / HAUTEUR_MOB) as c_short;
                 }
-                self.sapw3d.LAST_DZETA = self.sapglob.dzeta;
             }
+            self.sapw3d.LAST_DZETA = self.sapglob.dzeta;
         }
     }
 
@@ -827,9 +825,9 @@ impl Sapiens {
                                                             CalcY
             Calcule le Y ecran en fonction du delta d'altitude et de la distance
     *******************************************************************************/
-    fn CalcY(&self, idx: c_short) -> c_short {
+    const fn CalcY(&self, idx: c_short) -> c_short {
         let dist = self.sapw3d.TAB_LIGNE_SOL[idx as usize].dist as i64;
-        unsafe { (256 * (38 + self.sapglob.zj as i64 / 20) / dist) as c_short }
+        (256 * (38 + self.sapglob.zj as i64 / 20) / dist) as c_short
     }
 
     /*******************************************************************************
@@ -837,37 +835,35 @@ impl Sapiens {
                                     Le personnage avance, le tableau des lignes du sol bouge
     *********************************************************************************/
     pub(crate) fn AvanceSol(&mut self, dist: c_short) {
-        unsafe {
-            if dist != 0 {
-                self.sapw3d.SOL_RAND_SEED =
-                    TickCount() + self.sapglob.xj as c_long + self.sapglob.yj as c_long;
+        if dist != 0 {
+            self.sapw3d.SOL_RAND_SEED =
+                TickCount() + self.sapglob.xj as c_long + self.sapglob.yj as c_long;
+        }
+        /* Est-ce l'init ? oui -> on calcule tout*/
+        if self.sapw3d.TAB_LIGNE_SOL[0].dist == 0 {
+            let mut d: i32 = 70;
+            for i in 0..NB_INTERV {
+                self.sapw3d.TAB_LIGNE_SOL[NB_INTERV - 1 - i].dist = d as c_short;
+                self.sapw3d.TAB_LIGNE_SOL[NB_INTERV - 1 - i].y =
+                    self.CalcY((NB_INTERV - 1 - i) as c_short);
+                d += LARGEUR_BANDE_SOL;
             }
-            /* Est-ce l'init ? oui -> on calcule tout*/
-            if self.sapw3d.TAB_LIGNE_SOL[0].dist == 0 {
-                let mut d: i32 = 70;
-                for i in 0..NB_INTERV {
-                    self.sapw3d.TAB_LIGNE_SOL[NB_INTERV - 1 - i].dist = d as c_short;
-                    self.sapw3d.TAB_LIGNE_SOL[NB_INTERV - 1 - i].y =
-                        self.CalcY((NB_INTERV - 1 - i) as c_short);
-                    d += LARGEUR_BANDE_SOL;
+        } else {
+            for i in 0..NB_INTERV {
+                self.sapw3d.TAB_LIGNE_SOL[i].dist =
+                    (self.sapw3d.TAB_LIGNE_SOL[i].dist as i32 - dist as i32) as c_short;
+                self.sapw3d.TAB_LIGNE_SOL[i].y = self.CalcY(i as c_short);
+            }
+            /* La ligne la plus proche s'est-elle barrée ? */
+            while self.sapw3d.TAB_LIGNE_SOL[NB_INTERV - 1].dist < 70 {
+                /* On décale le tableau */
+                for i in (1..NB_INTERV).rev() {
+                    self.sapw3d.TAB_LIGNE_SOL[i] = self.sapw3d.TAB_LIGNE_SOL[i - 1];
                 }
-            } else {
-                for i in 0..NB_INTERV {
-                    self.sapw3d.TAB_LIGNE_SOL[i].dist =
-                        (self.sapw3d.TAB_LIGNE_SOL[i].dist as i32 - dist as i32) as c_short;
-                    self.sapw3d.TAB_LIGNE_SOL[i].y = self.CalcY(i as c_short);
-                }
-                /* La ligne la plus proche s'est-elle barrée ? */
-                while self.sapw3d.TAB_LIGNE_SOL[NB_INTERV - 1].dist < 70 {
-                    /* On décale le tableau */
-                    for i in (1..NB_INTERV).rev() {
-                        self.sapw3d.TAB_LIGNE_SOL[i] = self.sapw3d.TAB_LIGNE_SOL[i - 1];
-                    }
-                    /* On recalcule le dernier élément */
-                    self.sapw3d.TAB_LIGNE_SOL[0].dist =
-                        (self.sapw3d.TAB_LIGNE_SOL[1].dist as i32 + LARGEUR_BANDE_SOL) as c_short;
-                    self.sapw3d.TAB_LIGNE_SOL[0].y = self.CalcY(0);
-                }
+                /* On recalcule le dernier élément */
+                self.sapw3d.TAB_LIGNE_SOL[0].dist =
+                    (self.sapw3d.TAB_LIGNE_SOL[1].dist as i32 + LARGEUR_BANDE_SOL) as c_short;
+                self.sapw3d.TAB_LIGNE_SOL[0].y = self.CalcY(0);
             }
         }
     }
@@ -1225,7 +1221,7 @@ impl Sapiens {
         let mut x: c_short = 0;
         let mut y: c_short = 0;
         let mut dist: c_short = 0;
-        let mut rd: c_short = 0;
+        let mut rd: c_short;
         let mut r: Rect = Rect::default();
 
         let _g = port::on(self.sapwind.Ecran1);
