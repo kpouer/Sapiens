@@ -134,11 +134,9 @@ impl Sapiens {
         let rgn2 = NewRgn();
         let rgnClip = NewRgn();
         let r1 = port::zoomed(port::window(), &oldRect);
-        unsafe {
-            let r2 = port::zoomed(port::window(), &*(&raw const self.sapwclav.rsouris));
-            RectRgn(rgn1, &r1);
-            RectRgn(rgn2, &r2);
-        }
+        let r2 = port::zoomed(port::window(), &self.sapwclav.rsouris);
+        RectRgn(rgn1, &r1);
+        RectRgn(rgn2, &r2);
         DiffRgn(rgn1, rgn2, rgn1);
         GetClip(rgnClip);
         SetClip(rgn1);
@@ -167,7 +165,7 @@ pub(crate) fn KeyPressed(km: *mut KeyMap, ascii: c_short) -> Boolean {
 /*************************************************************
                     GetKeyMap
 ***************************************************************/
-pub(crate) fn GetKeyMap(bitmap: *mut c_short) -> c_short {
+pub(crate) fn GetKeyMap(bitmap: *mut i16) -> i16 {
     let mut theKeys = KeyMap::default();
 
     unsafe {
