@@ -158,13 +158,13 @@ impl Sapiens {
         }
     }
 
-    pub(crate) fn GetMesCon(&self) -> *mut *mut c_char {
+    pub(crate) fn GetMesCon(&self) -> &[*mut c_char] {
         if langue() == FR as c_short {
-            addr_of!(self.saptxt_fr.mescon) as *mut *mut c_char
+            &self.saptxt_fr.mescon
         } else if langue() == ES as c_short {
-            addr_of!(self.saptxt_es.mescon) as *mut *mut c_char
+            &self.saptxt_es.mescon
         } else {
-            addr_of!(self.saptxt_gb.mescon) as *mut *mut c_char
+            &self.saptxt_gb.mescon
         }
     }
 
