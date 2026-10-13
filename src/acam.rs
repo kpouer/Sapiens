@@ -377,9 +377,9 @@ pub(crate) static MENU_MODEL: Mutex<Option<MenuModel>> = Mutex::new(None);
 /// entier de mémoire statique, d'où `Slot8` pour que le `*h` ne pante pas).
 static mut MENU_BAR_HANDLE: Slot8 = Slot8([0; 8]);
 
-fn fresh_menu(id_base: i16, title: L10n, lang: i16, items: &[(L10n, bool)]) -> Menu {
+fn fresh_menu(id_base: i16, title: L10n, lang: Langue, items: &[(L10n, bool)]) -> Menu {
     Menu {
-        id: id_base + DELTA_LANGUE * lang,
+        id: id_base + DELTA_LANGUE * lang as i16,
         title,
         enabled: true,
         items: items
@@ -435,25 +435,10 @@ pub(crate) fn build_model() -> MenuModel {
     MenuModel {
         lang,
         menus: vec![
-            fresh_menu(
-                128,
-                l10n("SAPIENS", "SAPIENS", "SAPIENS"),
-                lang as i16,
-                &pomme,
-            ),
-            fresh_menu(
-                129,
-                l10n("Fichier", "File", "Archivo"),
-                lang as i16,
-                &fichier,
-            ),
-            fresh_menu(130, l10n("Voir", "View", "Ver"), lang as i16, &voir),
-            fresh_menu(
-                131,
-                l10n("Fenêtre", "Window", "Ventana"),
-                lang as i16,
-                &fenetre,
-            ),
+            fresh_menu(128, l10n("SAPIENS", "SAPIENS", "SAPIENS"), lang, &pomme),
+            fresh_menu(129, l10n("Fichier", "File", "Archivo"), lang, &fichier),
+            fresh_menu(130, l10n("Voir", "View", "Ver"), lang, &voir),
+            fresh_menu(131, l10n("Fenêtre", "Window", "Ventana"), lang, &fenetre),
         ],
     }
 }
@@ -536,7 +521,6 @@ pub(crate) fn DisableItem(menu: MenuHandle, item: i16) {
     }
 }
 
-#[unsafe(no_mangle)]
 pub(crate) extern "C" fn EnableItem(menu: MenuHandle, item: i16) {
     if let Some(m) = &mut *MENU_MODEL.lock().unwrap() {
         if let Some(menu) = find_menu(&mut m.menus, menu) {
