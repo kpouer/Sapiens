@@ -178,16 +178,6 @@ impl Sapiens {
         }
     }
 
-    pub(crate) fn GetApp_id(&self, i: usize) -> &*mut c_char {
-        if langue() == FR as c_short {
-            &self.saptxt_fr.app[i]
-        } else if langue() == ES as c_short {
-            &self.saptxt_es.app[i]
-        } else {
-            &self.saptxt_gb.app[i]
-        }
-    }
-
     pub(crate) fn GetBkMot(&self) -> *mut *mut c_char {
         if langue() == FR as c_short {
             addr_of!(self.saptxt_fr.bkmots) as *mut *mut c_char
