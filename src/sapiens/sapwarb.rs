@@ -6,7 +6,6 @@ use crate::sapiens::sapw3d::{cosshort, sinshort};
 use crate::shared::Ptr;
 use crate::{Sapiens, port};
 use std::os::raw::c_short;
-use std::ptr::addr_of_mut;
 
 pub(crate) struct Sapwarb {
     niveau: c_short,    /*niveau de recusrsivite*/
@@ -47,13 +46,7 @@ impl Sapiens {
     /**************************************************************************
                             calpar
     ***************************************************************************/
-    unsafe fn calpar(
-        &mut self,
-        largeur: c_short,
-        ang: *mut c_short,
-        lr: *mut c_short,
-        lo: *mut c_short,
-    ) {
+    fn calpar(&mut self, largeur: c_short, ang: *mut c_short, lr: *mut c_short, lo: *mut c_short) {
         let mut n = self.sapwarb.largtronc as i32
             - ((self.random.rnd0() as i32
                 * self.sapwarb.qutlgn as i32
@@ -63,14 +56,18 @@ impl Sapiens {
             n = (self.sapwarb.largtronc as i32 * self.random.rnd0() as i32) >> 8;
         }
         n += 1;
-        *lo = n as c_short;
+        unsafe {
+            *lo = n as c_short;
+        }
         let mut largeur =
             ((self.random.rnd0() as i32 * (largeur >> 1) as i32) >> 8) + (largeur >> 2) as i32 + 1;
         if self.random.rnd0() <= 40 {
             largeur += 1;
         }
-        *ang = (((self.random.rnd0() as i32 * 70) >> 8) + self.sapwarb.amini as i32) as c_short;
-        *lr = largeur as c_short;
+        unsafe {
+            *ang = (((self.random.rnd0() as i32 * 70) >> 8) + self.sapwarb.amini as i32) as c_short;
+            *lr = largeur as c_short;
+        }
     }
 
     /**************************************************************************
@@ -80,7 +77,7 @@ impl Sapiens {
     ;   Densif,Fortou,Numfeu
     ; <- oh que c'est joli !
     ***************************************************************************/
-    unsafe fn touffe(&mut self, colonne: c_short, ligne: c_short) {
+    fn touffe(&mut self, colonne: c_short, ligne: c_short) {
         let mut angle: c_short = 0; /* D5*/
         let mut forme: c_short = 0;
 
@@ -122,7 +119,7 @@ impl Sapiens {
     /**************************************************************************
                                 tracebranche
     ***************************************************************************/
-    unsafe fn tracebranche(
+    fn tracebranche(
         &mut self,
         angle: c_short,    /*D1*/
         colonne: c_short,  /*D2*/
@@ -211,10 +208,7 @@ impl Sapiens {
                 self.sapwarb.TabIndexFeuilleNuit = std::ptr::null_mut();
             }
             self.sapwarb.niveau = 0;
-            let tabcoulp = addr_of_mut!(self.sapwarb.tabcoul) as *mut c_short;
-            for i in 0..9 {
-                *tabcoulp.add(i) = tram_arbre[i];
-            }
+            self.sapwarb.tabcoul[..tram_arbre.len()].copy_from_slice(&tram_arbre);
             /* On tire au hasard le numero de la feuille */
             self.sapwarb.numfeu = (((self.random.rnd0() as i32 * 9) >> 8) * 4) as c_short;
             /* On tire les autres parametres au hasard (5 parametres)*/
