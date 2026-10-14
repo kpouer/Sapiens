@@ -195,41 +195,39 @@ impl Sapiens {
     ***************************************************************************/
     #[unsafe(no_mangle)]
     pub(crate) extern "C" fn arbre(&mut self, ligne: c_short, colonne: c_short) {
-        unsafe {
-            let _g = port::on(self.sapwind.Ecran1);
-            /* La position du meteore varie de 74 a 0 puis de 0 a 74 */
-            if self.sapglob.heure > 512 {
-                self.sapwarb.TabIndexFeuilleNuit = self.CalculePaletteAttenuee(
-                    crate::MOB_FEUILLE!(self.sapwind),
-                    0.50 + (self.sapglob.metpos as f32) / 150.0,
-                    999,
-                );
-            } else {
-                self.sapwarb.TabIndexFeuilleNuit = std::ptr::null_mut();
-            }
-            self.sapwarb.niveau = 0;
-            self.sapwarb.tabcoul[..tram_arbre.len()].copy_from_slice(&tram_arbre);
-            /* On tire au hasard le numero de la feuille */
-            self.sapwarb.numfeu = (((self.random.rnd0() as i32 * 9) >> 8) * 4) as c_short;
-            /* On tire les autres parametres au hasard (5 parametres)*/
-            self.sapwarb.amini = (((self.random.rnd0() as i32 * tabrnd[0] as i32) >> 8)
-                + tabrnd[1] as i32) as c_short;
-            self.sapwarb.qutlgn = (((self.random.rnd0() as i32 * tabrnd[2] as i32) >> 8)
-                + tabrnd[3] as i32) as c_short;
-            self.sapwarb.densif = (((self.random.rnd0() as i32 * tabrnd[4] as i32) >> 8)
-                + tabrnd[5] as i32) as c_short;
-            self.sapwarb.fortou[0] = (((self.random.rnd0() as i32 * tabrnd[6] as i32) >> 8)
-                + tabrnd[7] as i32) as c_short;
-            self.sapwarb.fortou[1] = (((self.random.rnd0() as i32 * tabrnd[8] as i32) >> 8)
-                + tabrnd[9] as i32) as c_short;
-            let longueur = (((self.random.rnd0() as i32 * 6) >> 8) + 10) as c_short;
-            let largeur = (((self.random.rnd0() as i32 * 10) >> 8) + 10) as c_short;
-            self.sapwarb.largtronc = largeur;
-            self.tracebranche(256, colonne, ligne, longueur, largeur);
-            if !self.sapwarb.TabIndexFeuilleNuit.is_null() {
-                DisposPtr(self.sapwarb.TabIndexFeuilleNuit as Ptr);
-            }
+        let _g = port::on(self.sapwind.Ecran1);
+        /* La position du meteore varie de 74 a 0 puis de 0 a 74 */
+        if self.sapglob.heure > 512 {
+            self.sapwarb.TabIndexFeuilleNuit = self.CalculePaletteAttenuee(
+                crate::MOB_FEUILLE!(self.sapwind),
+                0.50 + (self.sapglob.metpos as f32) / 150.0,
+                999,
+            );
+        } else {
             self.sapwarb.TabIndexFeuilleNuit = std::ptr::null_mut();
         }
+        self.sapwarb.niveau = 0;
+        self.sapwarb.tabcoul[..tram_arbre.len()].copy_from_slice(&tram_arbre);
+        /* On tire au hasard le numero de la feuille */
+        self.sapwarb.numfeu = (((self.random.rnd0() as i32 * 9) >> 8) * 4) as c_short;
+        /* On tire les autres parametres au hasard (5 parametres)*/
+        self.sapwarb.amini =
+            (((self.random.rnd0() as i32 * tabrnd[0] as i32) >> 8) + tabrnd[1] as i32) as c_short;
+        self.sapwarb.qutlgn =
+            (((self.random.rnd0() as i32 * tabrnd[2] as i32) >> 8) + tabrnd[3] as i32) as c_short;
+        self.sapwarb.densif =
+            (((self.random.rnd0() as i32 * tabrnd[4] as i32) >> 8) + tabrnd[5] as i32) as c_short;
+        self.sapwarb.fortou[0] =
+            (((self.random.rnd0() as i32 * tabrnd[6] as i32) >> 8) + tabrnd[7] as i32) as c_short;
+        self.sapwarb.fortou[1] =
+            (((self.random.rnd0() as i32 * tabrnd[8] as i32) >> 8) + tabrnd[9] as i32) as c_short;
+        let longueur = (((self.random.rnd0() as i32 * 6) >> 8) + 10) as c_short;
+        let largeur = (((self.random.rnd0() as i32 * 10) >> 8) + 10) as c_short;
+        self.sapwarb.largtronc = largeur;
+        self.tracebranche(256, colonne, ligne, longueur, largeur);
+        if !self.sapwarb.TabIndexFeuilleNuit.is_null() {
+            DisposPtr(self.sapwarb.TabIndexFeuilleNuit as Ptr);
+        }
+        self.sapwarb.TabIndexFeuilleNuit = std::ptr::null_mut();
     }
 }

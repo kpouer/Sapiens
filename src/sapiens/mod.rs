@@ -538,7 +538,7 @@ pub(crate) const NB_HOMMES: u32 = 0;
 pub(crate) const NB_ARBRES: u32 = 800;
 
 pub(crate) const PRECISION_SILEX: u32 = 300;
-pub(crate) const NB_ETOILES: u32 = 10000;
+pub(crate) const NB_ETOILES: usize = 10000;
 pub(crate) const NB_NUAGES_MAX: u32 = 2000;
 pub(crate) const NB_OISEAUX_MAX: u32 = 400;
 pub(crate) const NB_ROCHERS_MAX: u32 = 50000;

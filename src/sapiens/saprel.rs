@@ -486,89 +486,85 @@ impl Sapiens {
     /*quoi 0:normal,1:ni param en baisse ni message,2 baisse mais pas mess*/
     #[unsafe(no_mangle)]
     pub(crate) extern "C" fn chrono(&mut self, quoi: c_short) {
-        unsafe {
-            let mut avemess: c_uchar;
+        let mut avemess: c_uchar;
 
-            if self.sapglob.minute != 0 {
-                self.sapglob.minute -= 1;
-                return;
-            }
-            self.sapglob.minute = 5;
-            self.sapglob.heure += 1;
-            if (self.sapglob.heure & 255) == 90 {
-                self.sapglob.heure += 336;
-            }
-            self.sapglob.heure &= 0x03ff;
-
-            if (self.sapglob.heure & 0xFF) == 0 {
-                self.pastmp();
-            }
-            /*mise en place des evts couleurs*/
-            while self.sapglob.heure
-                >= self.sapglob.tabheur[self.sapglob.pos_evt as usize].h as c_ushort
-            {
-                /* dois t'on modifier le degrad couleur */
-                if self.sapglob.tabheur[self.sapglob.pos_evt as usize].q != 0 {
-                    /* Changement du degrade du ciel avec les huits couleurs ST en entrée*/
-                    self.sapglob.ciel_degr = self.sapglob.tabheur[self.sapglob.pos_evt as usize]
-                        .pal
-                        .as_mut_ptr();
-                    self.sapw3d.FixeDegradesFonctionHeure(
-                        self.sapglob.tabheur[self.sapglob.pos_evt as usize].clone(),
-                    );
-                } else {
-                    /* On fixe la pal haute */
-                    self.sapglob.palhaute = self.sapglob.tabheur[self.sapglob.pos_evt as usize]
-                        .pal
-                        .as_mut_ptr();
-                }
-                self.sapglob.pos_evt += 1;
-                if self.sapglob.pos_evt >= NBREVTHEURE as c_short {
-                    self.sapglob.pos_evt = 0;
-                    self.sapglob.heure = 0;
-                }
-            }
-            if self.sapglob.heure == 0 {
-                self.sapglob.flefba = 0;
-                self.comment(114); /* Un nouveau jour ...*/
-                self.sapglob.jour_act += 1;
-            }
-            /* Position du meteore */
-            if self.sapglob.heure & 0x100 != 0 {
-                self.sapglob.metpos = (self.sapglob.heure & 0xFF).wrapping_sub(180);
-                self.sapglob.angsol = 256;
-            } else {
-                self.sapglob.metpos = 75u16.wrapping_sub(self.sapglob.heure & 0xFF);
-                self.sapglob.angsol = 768;
-            }
-            if quoi == 1 {
-                return;
-            }
-            self.sapglob.finjou = 1; /*deperissement de la viande*/
-            self.sapglob.faim = self.sapglob.faim.wrapping_sub(2);
-            avemess = 0;
-            if self.sapglob.faim > 253 {
-                self.sapglob.faim = 5;
-                self.gainsbour();
-                avemess = 93;
-            }
-            self.sapglob.soif = self.sapglob.soif.wrapping_sub(4);
-            if self.sapglob.soif > 251 {
-                self.sapglob.soif = 5;
-                self.gainsbour();
-                avemess = 94;
-            }
-            self.sapglob.fatig = self.sapglob.fatig.wrapping_sub(2);
-            if self.sapglob.fatig > 253 {
-                self.sapglob.fatig = 5;
-                self.gainsbour();
-                avemess = 95;
-            }
-            if avemess != 0 && quoi == 0 {
-                self.efbadi();
-                self.comment(avemess as c_ushort);
-            }
+        if self.sapglob.minute != 0 {
+            self.sapglob.minute -= 1;
             return;
+        }
+        self.sapglob.minute = 5;
+        self.sapglob.heure += 1;
+        if (self.sapglob.heure & 255) == 90 {
+            self.sapglob.heure += 336;
+        }
+        self.sapglob.heure &= 0x03ff;
+        if (self.sapglob.heure & 0xFF) == 0 {
+            self.pastmp();
+        }
+        /*mise en place des evts couleurs*/
+        while self.sapglob.heure
+            >= self.sapglob.tabheur[self.sapglob.pos_evt as usize].h as c_ushort
+        {
+            /* dois t'on modifier le degrad couleur */
+            if self.sapglob.tabheur[self.sapglob.pos_evt as usize].q != 0 {
+                /* Changement du degrade du ciel avec les huits couleurs ST en entrée*/
+                self.sapglob.ciel_degr = self.sapglob.tabheur[self.sapglob.pos_evt as usize]
+                    .pal
+                    .as_mut_ptr();
+                self.sapw3d.FixeDegradesFonctionHeure(
+                    self.sapglob.tabheur[self.sapglob.pos_evt as usize].clone(),
+                );
+            } else {
+                /* On fixe la pal haute */
+                self.sapglob.palhaute = self.sapglob.tabheur[self.sapglob.pos_evt as usize]
+                    .pal
+                    .as_mut_ptr();
+            }
+            self.sapglob.pos_evt += 1;
+            if self.sapglob.pos_evt >= NBREVTHEURE as c_short {
+                self.sapglob.pos_evt = 0;
+                self.sapglob.heure = 0;
+            }
+        }
+        if self.sapglob.heure == 0 {
+            self.sapglob.flefba = 0;
+            self.comment(114); /* Un nouveau jour ...*/
+            self.sapglob.jour_act += 1;
+        }
+        /* Position du meteore */
+        if self.sapglob.heure & 0x100 != 0 {
+            self.sapglob.metpos = (self.sapglob.heure & 0xFF).wrapping_sub(180);
+            self.sapglob.angsol = 256;
+        } else {
+            self.sapglob.metpos = 75u16.wrapping_sub(self.sapglob.heure & 0xFF);
+            self.sapglob.angsol = 768;
+        }
+        if quoi == 1 {
+            return;
+        }
+        self.sapglob.finjou = 1; /*deperissement de la viande*/
+        self.sapglob.faim = self.sapglob.faim.wrapping_sub(2);
+        avemess = 0;
+        if self.sapglob.faim > 253 {
+            self.sapglob.faim = 5;
+            self.gainsbour();
+            avemess = 93;
+        }
+        self.sapglob.soif = self.sapglob.soif.wrapping_sub(4);
+        if self.sapglob.soif > 251 {
+            self.sapglob.soif = 5;
+            self.gainsbour();
+            avemess = 94;
+        }
+        self.sapglob.fatig = self.sapglob.fatig.wrapping_sub(2);
+        if self.sapglob.fatig > 253 {
+            self.sapglob.fatig = 5;
+            self.gainsbour();
+            avemess = 95;
+        }
+        if avemess != 0 && quoi == 0 {
+            self.efbadi();
+            self.comment(avemess as c_ushort);
         }
     }
 

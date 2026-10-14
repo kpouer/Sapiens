@@ -1110,7 +1110,6 @@ pub(crate) fn RemplitZoneLignes(y: c_short, tab_couleur: &[IndexColor]) {
     unsafe {
         data = data.add((tailleLigne as i64 * y as i64) as usize);
         let taille = tab_couleur.len();
-        let mut t = taille;
         for t in 0..taille {
             std::ptr::write_bytes(data, tab_couleur[t].index as u8, tailleLigne as usize);
             data = data.add(tailleLigne as usize);

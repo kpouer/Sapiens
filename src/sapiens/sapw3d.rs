@@ -12,7 +12,7 @@
 use std::os::raw::{c_char, c_long, c_short, c_uchar, c_ushort};
 use std::ptr::{addr_of_mut, null_mut};
 
-use crate::acam::{DisposPtr, NewPtr, NewPtrClear, Random, SetRect, TickCount};
+use crate::acam::{DisposPtr, NewPtrClear, Random, SetRect, TickCount};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapwbrt::RemplitZoneLignes;
 use crate::sapiens::sapwcvt::Sapwcvt;
@@ -23,8 +23,6 @@ use crate::sapiens::{
 use crate::shared::{Ptr, RGBColor, Rect};
 use crate::stubs::DisposePtr;
 use crate::{Sapiens, port};
-
-const M_PI: f64 = 3.14159265;
 
 const LARGEUR_ECRAN: i32 = 512;
 const HAUTEUR_ECRAN: i32 = 256;
@@ -37,23 +35,6 @@ const LARGEUR_BANDE_SOL: i32 = 80;
 const LARGEUR_MOB: i64 = 256;
 const HAUTEUR_MOB: i64 = 32;
 const HAUTEUR_MIN_BANDE: i32 = 5;
-
-/*; corresp densite->couleur ecran chaque trame*/
-const TAB_TRAM: [c_short; 40] = [
-    3, 4, 5, 6, 4, 5, 6, 6, 3, 4, 4, 5, 10, 10, 0, 0, 3, 3, 4, 5, 11, 14, 12, 12, 11, 14, 14, 12,
-    11, 11, 14, 12, 10, 0, 0, 0, 10, 10, 0, 0,
-];
-
-const TAB_ECL: [u8; 256] = [
-    2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2,
-    2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 2, 2,
-    3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, 1, 1, 1, 2, 2, 2,
-    3, 3, 3, 2, 2, 2, 1, 1, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 2, 2, 2, 1, 1, 0, 0, 1, 1, 2, 2, 2, 3,
-    3, 3, 3, 3, 2, 2, 2, 1, 0, 0, 1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 2, 2, 2, 1, 0, 0, 1, 2, 2, 2, 3, 3,
-    3, 3, 3, 3, 2, 2, 2, 1, 1, 0, 1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 2, 2, 2, 1, 1, 0, 1, 2, 2, 2, 3, 3,
-    2, 3, 3, 3, 3, 2, 2, 1, 1, 1, 1, 2, 2, 3, 3, 3, 2, 2, 3, 3, 3, 2, 2, 1, 1, 1, 1, 2, 2, 3, 3, 3,
-    2, 2, 2, 3, 3, 3, 2, 2, 2, 1, 2, 2, 3, 3, 3, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2,
-];
 
 /* Les lignes sont organisees du plus loin au plus pres. */
 #[derive(Debug, Copy, Clone, Default)]
@@ -68,14 +49,12 @@ struct LigneSol {
 }
 
 pub(crate) struct Sapw3d {
-    TAMP_DENS: [u8; 16],
-    DENS_DZET: [u8; 10],
     TAB_PALETTE_DISTANCE: *mut *mut c_short,
     TAB_COULEURS_CIEL: [IndexColor; NB_LIGNES_CIEL],
     COULEUR_ORAGE_JOUR: c_short,
     COULEUR_ORAGE_NUIT: c_short,
     IOTA_PALETTE_STD: f32,
-    TAB_ETOILES: *mut Etoile,
+    TAB_ETOILES: [Etoile; NB_ETOILES],
     COUL_PULSE: c_short,
     METEORE: c_short,
     X_METEORE: c_short,
@@ -88,14 +67,12 @@ pub(crate) struct Sapw3d {
 impl Default for Sapw3d {
     fn default() -> Self {
         Self {
-            TAMP_DENS: [0; 16],
-            DENS_DZET: [0; 10],
             TAB_PALETTE_DISTANCE: null_mut(),
             TAB_COULEURS_CIEL: [IndexColor::default(); NB_LIGNES_CIEL],
             COULEUR_ORAGE_JOUR: 0,
             COULEUR_ORAGE_NUIT: 0,
             IOTA_PALETTE_STD: 0.14,
-            TAB_ETOILES: null_mut(),
+            TAB_ETOILES: [Etoile::default(); NB_ETOILES],
             COUL_PULSE: 0,
             METEORE: 0,
             X_METEORE: 0,
@@ -110,10 +87,10 @@ impl Default for Sapw3d {
 #[derive(Debug, Default, Copy, Clone)]
 #[repr(C)]
 struct Etoile {
-    x: c_short, /* 0 à AIRE_X_ETOILE */
-    y: c_short, /* 0 à 128 */
-    magnitude: c_short,
-    couleur: c_short,
+    x: i16, /* 0 à AIRE_X_ETOILE */
+    y: i16, /* 0 à 128 */
+    magnitude: i16,
+    couleur: i16,
 }
 
 /**************************************************************************
@@ -145,123 +122,6 @@ pub(crate) const fn distance(dx: c_long, dy: c_long) -> c_short {
         dx = 32700;
     }
     dx as c_short
-}
-
-impl Sapiens {
-    /************************************************************************
-                            caldisI
-    => x,y,z, rayon d'un disque
-    @= dx,dy,dz distance
-    <= erreur (0 ok)
-    *************************************************************************/
-    unsafe fn caldisI(
-        &self,
-        x: c_ushort,
-        y: c_ushort,
-        z: c_ushort,
-        rayon: c_ushort,
-        pdx: *mut c_short,
-        pdy: *mut c_short,
-        pdz: *mut c_short,
-        pdistance: *mut c_short,
-    ) -> c_short {
-        let dx = x as c_long - self.sapglob.xj as c_long;
-        let dy = y as c_long - self.sapglob.yj as c_long;
-        let dz = z as c_long - self.sapglob.zj as c_long;
-        if dx.abs() < 32000 && dy.abs() < 32000 {
-            *pdx = dx as c_short;
-            *pdy = dy as c_short;
-            *pdz = dz as c_short;
-            let mut dist =
-                ((dx as f64 * dx as f64 + dy as f64 * dy as f64).sqrt() - rayon as f64) as c_long;
-            if dist < 0 {
-                dist = 0;
-            }
-            if dist < 20000 {
-                *pdistance = dist as c_short;
-                return 0;
-            }
-        }
-        *pdistance = -1;
-        2
-    }
-
-    /************************************************************************
-                            disk3dI
-    => x,y,z, rayon d'un disque
-    @= xecr gauche, x ecr droit , distance, delta z, angle
-    <= erreur (0 ok)
-    *************************************************************************/
-    unsafe fn disk3dI(
-        &self,
-        x: c_ushort,
-        y: c_ushort,
-        z: c_ushort,
-        rayon: c_ushort,
-        pxg: *mut c_short,
-        pxd: *mut c_short,
-        pdz: *mut c_short,
-        pdist: *mut c_short,
-        pangabs: *mut c_short,
-    ) -> c_short {
-        let mut erreur: c_short;
-        let mut dx: c_short = 0;
-        let mut dy: c_short = 0;
-        let mut dz: c_short = 0;
-        let mut dist: c_short = 0;
-        let mut angle: c_short;
-        let mut posg: c_short = 0;
-        let mut posd: c_short = 0;
-
-        erreur = self.caldisI(x, y, z, rayon, &mut dx, &mut dy, &mut dz, &mut dist);
-        if erreur == 0 {
-            /* Onzedisk */
-            if (dist as i32) < (self.sapglob.dismin as i32) {
-                if dist != 0 {
-                    dist = 1;
-                }
-                erreur = 1;
-            }
-            *pdist = dist;
-            /* Angle du centre de la montagne */
-            if dx == 0 {
-                if dy > 0 {
-                    angle = 256;
-                } else {
-                    angle = 768;
-                }
-            } else {
-                angle = ((f64::atan2(dy as f64, dx as f64) * 512.0) / M_PI) as c_short;
-            }
-            *pangabs = angle;
-            angle = ((angle as i32 - self.sapglob.dzeta as i32) & 1023) as c_short;
-            /* Angle occupé par le disque */
-            if dist == 0 {
-                posg = 0;
-                posd = 255;
-            } else {
-                let rayecr = ((f64::atan2(rayon as f64, dist as f64) * 512.0) / M_PI) as c_short;
-                posg = ((angle as i32 + rayecr as i32) & 1023) as c_short;
-                posd = ((angle as i32 - rayecr as i32) & 1023) as c_short;
-                if posg as i32 > 512 {
-                    posg = (posg as i32 - 1024) as c_short;
-                }
-                if posd as i32 > 512 {
-                    posd = (posd as i32 - 1024) as c_short;
-                }
-                posg = (128 - posg as i32) as c_short;
-                posd = (128 - posd as i32) as c_short;
-                if posg as i32 > posd as i32 {
-                    erreur = 3;
-                }
-            }
-        }
-        *pdz = dz;
-        *pxg = posg;
-        *pxd = posd;
-        *pdist = dist;
-        erreur
-    }
 }
 
 /*******************************************
@@ -497,33 +357,22 @@ impl Sapiens {
     *****************************************************************************/
     pub(crate) fn CalculeEtoiles(&mut self) {
         let mut rgb = RGBColor::default();
+        let _g = port::on(self.sapwind.Ecran1);
 
-        unsafe {
-            let _g = port::on(self.sapwind.Ecran1);
-            /* Couleur de l'etoile */
-            if !self.sapw3d.TAB_ETOILES.is_null() {
-                DisposPtr(self.sapw3d.TAB_ETOILES as Ptr);
-            }
-            self.sapw3d.TAB_ETOILES =
-                NewPtr((NB_ETOILES as c_long) * (std::mem::size_of::<Etoile>() as c_long))
-                    as *mut Etoile;
-            if self.sapw3d.TAB_ETOILES.is_null() {
-                return;
-            }
-            rgb.red = 65535;
-            rgb.green = 65535;
-            rgb.blue = 65535;
-            self.sapw3d.COUL_PULSE = SapColor2Index(&rgb);
-            for i in 0..NB_ETOILES as i64 {
-                let e = &mut *self.sapw3d.TAB_ETOILES.add(i as usize);
-                e.x = self.random.myRandom(0, AIRE_X_ETOILE as c_long) as c_short;
-                e.y = self.random.myRandom(0, AIRE_Y_ETOILE as c_long) as c_short;
-                e.magnitude = self.random.myRandom(0, MAX_MAGNITUDE as c_long) as c_short;
-                rgb.red = (55000 - e.y as c_long * (32768 / AIRE_Y_ETOILE as c_long)) as c_ushort;
-                rgb.green = rgb.red;
-                rgb.blue = 0;
-                e.couleur = SapColor2Index(&rgb);
-            }
+        /* Couleur de l'etoile */
+        self.sapw3d.TAB_ETOILES = [Etoile::default(); NB_ETOILES];
+        rgb.red = 65535;
+        rgb.green = 65535;
+        rgb.blue = 65535;
+        self.sapw3d.COUL_PULSE = SapColor2Index(&rgb);
+        for e in &mut self.sapw3d.TAB_ETOILES {
+            e.x = self.random.myRandom(0, AIRE_X_ETOILE as c_long) as c_short;
+            e.y = self.random.myRandom(0, AIRE_Y_ETOILE as c_long) as c_short;
+            e.magnitude = self.random.myRandom(0, MAX_MAGNITUDE as c_long) as c_short;
+            rgb.red = (55000 - e.y as c_long * (32768 / AIRE_Y_ETOILE as c_long)) as c_ushort;
+            rgb.green = rgb.red;
+            rgb.blue = 0;
+            e.couleur = SapColor2Index(&rgb);
         }
     }
 
@@ -540,7 +389,6 @@ impl Sapiens {
                 };
                 let data = info.pixels;
                 let tailleLigne = info.row_bytes;
-                let mut p = self.sapw3d.TAB_ETOILES;
                 let magnitude: c_short = if (self.sapglob.heure as i32) < MAX_MAGNITUDE {
                     (MAX_MAGNITUDE - self.sapglob.heure as i32) as c_short
                 } else if (self.sapglob.heure as i32) < 480 + MAX_MAGNITUDE {
@@ -548,8 +396,8 @@ impl Sapiens {
                 } else {
                     MAX_MAGNITUDE as c_short
                 };
-                for _ in 0..NB_ETOILES as i64 {
-                    if (*p).magnitude <= magnitude {
+                for p in &mut self.sapw3d.TAB_ETOILES {
+                    if p.magnitude <= magnitude {
                         let x = (((self.sapglob.dzeta as i32 * 2 - (*p).x as i32 - 512) & 2047)
                             - 512
                             + 256) as i16;
@@ -564,7 +412,6 @@ impl Sapiens {
                             *data.offset(off) = coul as u8;
                         }
                     }
-                    p = p.add(1);
                 }
                 if self.sapw3d.METEORE != 0 {
                     let x = (((self.sapglob.dzeta as i32 * 2 - self.sapw3d.X_METEORE as i32 - 512)
