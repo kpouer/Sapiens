@@ -10,7 +10,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use std::os::raw::{c_char, c_long, c_short, c_uchar, c_ushort};
-use std::ptr::{addr_of, addr_of_mut, null_mut};
+use std::ptr::{addr_of_mut, null_mut};
 
 use crate::acam::{DisposPtr, NewPtr, NewPtrClear, Random, SetRect, TickCount};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
@@ -262,173 +262,6 @@ impl Sapiens {
         *pdist = dist;
         erreur
     }
-
-    /*************************************************************************
-    ;-_-_-_-_-_-_-_-_-_- Calcoul: calcule tableau coul -_-_-_-_-_-_-_-_-_-_
-    ; => d0: n. trame
-    **************************************************************************/
-    fn calcoul(&self, trame: c_short) {
-        let tc = addr_of!(self.sapwarb.tabcoul) as *mut c_short;
-        unsafe {
-            for i in 0..9 {
-                let n = self.sapw3d.DENS_DZET[i] as i32;
-                *tc.add(i + 1) = TAB_TRAM[(trame as i32 * 4 + n) as usize] as c_short;
-            }
-        }
-    }
-
-    /*****************************************************************************
-    ;-_-_-_-_-_-_-_-_-_ Visu: visualise montagnes 3D -_-_-_-_-_-_-_-_-_-_-_
-    ;=> (c) pointeur vers debut structure montagne
-    ;<= montagnes   sur ecran
-    ; WARNING !!! Taille de la structure modifiée par le 68000 !!!!!
-    ******************************************************************************/
-    #[allow(dead_code)]
-    pub(crate) unsafe fn visu2(&mut self) {
-        let mut j: c_short;
-        let mut i: i32;
-        let mut ligne: c_short;
-        let mut gauche: c_short = 0;
-        let mut droite: c_short = 0;
-        let mut newgauche: c_short = 0;
-        let mut newdroite: c_short = 0;
-        let mut dx: c_short;
-        let mut dz: c_short = 0;
-        let mut dist: c_short = 0;
-        let mut angle: c_short;
-        let mut hauteurDisque: c_short;
-        let mut err: c_short;
-        let mut xd: c_short;
-        let mut yd: c_short;
-        let mut zd: c_short;
-        let mut rd: c_short;
-        let mut hmec: c_short = 10;
-        let mut angabs: c_short = 0;
-
-        let _g = port::on(self.sapwind.Ecran1);
-        /* Calcule le tableau d'ensoleillement en fonction du jour et de la nuit
-        Jour ou Nuit */
-        // d1=((((76-metpos)&0xFF)/6)<<4)&240; if(heure&256) j=d1; else j=d1+8;
-        let jj = (((76 - self.sapglob.metpos as i32) & 0xFF) / 6) << 4 & 240;
-        if self.sapglob.heure & 256 != 0 {
-            j = jj as c_short;
-        } else {
-            j = (jj as i32 + 8) as c_short;
-        }
-        for i in 0..16i32 {
-            self.sapw3d.TAMP_DENS[i as usize] = TAB_ECL[j as usize];
-            j = (j as i32 + 1) as c_short;
-        }
-
-        hmec = 10;
-        for mont in self.sap3d.chaine() {
-            let Some(forme) = mont.forme.map(FormeId::forme) else {
-                continue;
-            };
-            let mut oscil: c_short = 0;
-            xd = mont.posx as c_short;
-            yd = mont.posy as c_short;
-            zd = forme.hauteur as c_short;
-            rd = forme.rayon as c_short;
-            err = self.disk3dI(
-                xd as c_ushort,
-                yd as c_ushort,
-                zd as c_ushort,
-                rd as c_ushort,
-                &mut gauche,
-                &mut droite,
-                &mut dz,
-                &mut dist,
-                &mut angabs,
-            );
-            /* Calcul des couleurs */
-            j = (((angabs as i32 - 480) & 1023) >> 6) as c_short;
-            /* 8 couleurs vues par le joueur */
-            for i in 0..9i32 {
-                self.sapw3d.DENS_DZET[i as usize] = self.sapw3d.TAMP_DENS[(j as i32 & 15) as usize];
-                j = (j as i32 + 1) as c_short;
-            }
-            self.calcoul(forme.relief as c_short);
-            /* Pas d'erreur */
-            angle = ((((f64::atan2(dz as f64, dist as f64) * 512.0) / M_PI) as c_short) & 1023)
-                as c_short;
-            if angle as i32 > 512 {
-                angle = (angle as i32 - 1024) as c_short;
-            }
-            ligne = 64 - angle as i32 as c_short;
-            hauteurDisque = ((((f64::atan2(mont.ign as f64, dist as f64) * 512.0) / M_PI)
-                as c_short)
-                & 1023) as c_short;
-            /* On boucle pour tous les disques */
-            i = 0;
-            while i < forme.nbrdisk as i32 && err < 2 {
-                if err != 0 {
-                    hmec = (hmec as i32 + mont.ign as i32) as c_short;
-                    ligne = 100;
-                }
-                err = 0;
-                if ligne < 320 {
-                    zd = (zd as i32 + mont.ign as i32) as c_short;
-                    rd = forme.dskrayon[i as usize] as c_short;
-                    dx = forme.dskdelta[i as usize * 2] as c_short;
-                    /* Changement de trame */
-                    if (dx as i32 & 255) == 128 {
-                        dx = forme.dskdelta[i as usize * 2 + 1] as c_short;
-                        /* On calcule la trame */
-                        self.calcoul(dx);
-                        /* Et pas de delta */
-                        xd = mont.posx as c_short;
-                        yd = mont.posy as c_short;
-                    } else {
-                        /* On applique les delta */
-                        xd = (mont.posx as i32 + dx as i32) as c_short;
-                        yd = (mont.posy as i32 + forme.dskdelta[i as usize * 2 + 1] as i32)
-                            as c_short;
-                    }
-                    err = self.disk3dI(
-                        xd as c_ushort,
-                        yd as c_ushort,
-                        zd as c_ushort,
-                        rd as c_ushort,
-                        &mut newgauche,
-                        &mut newdroite,
-                        &mut dz,
-                        &mut dist,
-                        &mut angabs,
-                    );
-                    if err != 0 {
-                        gauche = newgauche;
-                        droite = newdroite;
-                    } else {
-                        if hauteurDisque == 0 {
-                            oscil ^= 1;
-                            if oscil != 0 {
-                                self.TraceDisque(
-                                    &mut gauche,
-                                    &mut droite,
-                                    &mut ligne,
-                                    newgauche,
-                                    newdroite,
-                                    1,
-                                );
-                            }
-                        } else {
-                            self.TraceDisque(
-                                &mut gauche,
-                                &mut droite,
-                                &mut ligne,
-                                newgauche,
-                                newdroite,
-                                hauteurDisque,
-                            );
-                        }
-                    }
-                }
-                i += 1;
-            }
-        }
-        self.sapglob.zj = hmec as c_ushort;
-    }
 }
 
 /*******************************************
@@ -437,7 +270,7 @@ impl Sapiens {
 @= x,y ecran, distance
 <= VRAI si visible
 ********************************************/
-unsafe fn CalcPoint3D(
+fn CalcPoint3D(
     pxj: c_long,
     pyj: c_long,
     pzj: c_long,
@@ -466,7 +299,9 @@ unsafe fn CalcPoint3D(
         return 0;
     }
     tmp = distance(xp, yp) as c_long;
-    *dist = tmp as c_short;
+    unsafe {
+        *dist = tmp as c_short;
+    }
     if tmp == 0 {
         return 0;
     }
@@ -490,8 +325,10 @@ unsafe fn CalcPoint3D(
     if yl > 32760 {
         yl = 32760;
     }
-    *x = xl as c_short;
-    *y = yl as c_short;
+    unsafe {
+        *x = xl as c_short;
+        *y = yl as c_short;
+    }
 
     1
 }
