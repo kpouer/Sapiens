@@ -5,8 +5,8 @@ use crate::acam::{
     NewPtr, PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect, SetRect,
 };
 use crate::cbridge::{
-    DialogPtr, FILE, FixeChemin, GetMainDevice, RetraceRect, blackColor, fclose, fopen, fscanf,
-    getc, patOr, printf, sprintf, srcCopy, strcpy, whiteColor,
+    DialogPtr, FILE, GetMainDevice, RetraceRect, blackColor, fclose, fopen, getc, patOr, printf,
+    sprintf, srcCopy, strcpy, whiteColor,
 };
 use crate::langue::Langue::GB;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
@@ -257,107 +257,6 @@ fn CvtColorToIndex(pal: *mut PalCoul, rgb: *const BRGBColor) -> c_short {
 
 impl Sapiens {
     /******************************************************************
-                        FuturChargeFichierBrt
-    Chargement en PNG des anciens fichiers MOBS
-    ******************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn FuturChargeFichierBrt(
-        &mut self,
-        nom: *mut c_char,
-        id: c_short,
-        nbMobs: c_short,
-        vide: c_short,
-    ) -> c_short {
-        /* Collapse() change le port courant : la garde le restaure. */
-        let _g = port::preserve();
-        let mut nomPng = [0i8; 512];
-        let mut offscreenSource: CGrafPtr;
-        let mut aire;
-        let mut rowByte: c_short;
-        let mut ps: Ptr;
-        let mut pd: Ptr;
-        let mut rgb = BRGBColor::default();
-        let f: *mut FILE;
-
-        PushPath();
-        unsafe {
-            FixeChemin(0i64, c"PAL".as_ptr() as *mut c_char);
-            sprintf(nomPng.as_mut_ptr(), c"%s.pal".as_ptr(), nom);
-            f = fopen(nomPng.as_mut_ptr(), c"r".as_ptr());
-            if !f.is_null() {
-                let mut n: c_short = 0;
-                fscanf(f, c"%hd".as_ptr(), &mut n as *mut c_short);
-                self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].nbEntrees = n;
-                let taille = (n as i64) * (size_of::<BRGBColor>() as i64);
-                self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabRgb =
-                    NewPtr(taille) as *mut BRGBColor;
-                self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabIndex =
-                    NewPtr((n as i64) * (size_of::<c_short>() as i64)) as *mut c_short;
-                for i in 0..n.max(0) as usize {
-                    let tri = self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabIndex;
-                    let trr = self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabRgb;
-                    fscanf(
-                        f,
-                        c" %hd %hd %hd %hd".as_ptr(),
-                        tri.add(i),
-                        trr.add(i) as *mut c_short,
-                        (trr.add(i) as *mut c_short).add(1),
-                        (trr.add(i) as *mut c_short).add(2),
-                    );
-                }
-                fclose(f);
-            }
-            PopPath();
-
-            PushPath();
-            FixeChemin(0i64, c"PNG".as_ptr() as *mut c_char);
-            for curid in id as i32..(id as i32 + nbMobs as i32) {
-                sprintf(
-                    nomPng.as_mut_ptr(),
-                    c"%s-%d.png".as_ptr(),
-                    nom,
-                    curid as c_int,
-                );
-                offscreenSource = ConvertPNGFileToOffscreen(nomPng.as_mut_ptr());
-                if !offscreenSource.is_null() {
-                    ps = port::info(offscreenSource).map_or(std::ptr::null_mut(), |i| i.pixels);
-                    aire = port::info(offscreenSource).map_or(Rect::default(), |i| i.bounds);
-                    rowByte = port::info(offscreenSource).map_or(0, |i| i.row_bytes);
-                    let taille = (aire.right as i64) * (aire.bottom as i64);
-                    self.sapwbrt.TabMob[curid as usize].nbcol = aire.right;
-                    self.sapwbrt.TabMob[curid as usize].nbligne = aire.bottom;
-                    self.sapwbrt.TabMob[curid as usize].indexPalette = self.sapwbrt.nbPalettes;
-                    pd = NewPtr(taille);
-                    self.sapwbrt.TabMob[curid as usize].datas = pd;
-                    self.sapwbrt.TabMob[curid as usize].vide = vide;
-                    for y in 0..aire.bottom.max(0) as usize {
-                        let mut p = ps.add((y as i64 * rowByte as i64) as usize);
-                        for _ in 0..aire.right.max(0) as usize {
-                            rgb.red = (*p as u16) << 8;
-                            p = p.add(1);
-                            rgb.green = (*p as u16) << 8;
-                            p = p.add(1);
-                            rgb.blue = (*p as u16) << 8;
-                            p = p.add(2);
-                            *pd = CvtColorToIndex(
-                                std::ptr::addr_of!(
-                                    self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize]
-                                ) as *mut PalCoul,
-                                &rgb,
-                            ) as u8;
-                            pd = pd.add(1);
-                        }
-                    }
-                    port::close(offscreenSource);
-                }
-            }
-            PopPath();
-            self.sapwbrt.nbPalettes = (self.sapwbrt.nbPalettes as i32 + 1) as i16;
-            nbMobs
-        }
-    }
-
-    /******************************************************************
                         ChargeFichierBrt
     Chargement des fichiers MOBS en RVB 256 couleurs
     => nom du fichier, premier mob
@@ -581,12 +480,7 @@ impl Sapiens {
     Affiche un mob sur le port en cours
     *************************************************************************/
     #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn Affmob3d(
-        &self,
-        num: c_short,
-        aire: *mut Rect,
-        tabIndex: *mut c_short,
-    ) {
+    pub(crate) extern "C" fn Affmob3d(&self, num: c_short, aire: &Rect, tabIndex: *mut c_short) {
         let mob = &self.sapwbrt.TabMob[num as usize];
         unsafe {
             let mut mon_aire: Rect = *aire;

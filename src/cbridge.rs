@@ -284,10 +284,6 @@ unsafe extern "C" {
         __stream: *mut FILE,
     ) -> ::std::os::raw::c_ulong;
     pub(crate) fn remove(arg1: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
-    pub(crate) fn FixeChemin(
-        pathBase: ::std::os::raw::c_long,
-        path: *mut ::std::os::raw::c_char,
-    ) -> OSErr;
 
     pub(crate) static mut Ecran: CGrafPtr;
 
