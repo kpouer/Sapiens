@@ -18,7 +18,7 @@ use crate::sapiens::sapwbrt::RemplitZoneLignes;
 use crate::sapiens::sapwcvt::Sapwcvt;
 use crate::sapiens::{
     ECHELLE, FormeId, IndexColor, MontId, NB_DEGRADE_DISTANCE, NB_ETOILES, NB_LIGNES_CIEL,
-    NB_LIGNES_TERRE, NBREVTHEURE, Vue, h_chron,
+    NB_LIGNES_TERRE, NBREVTHEURE, h_chron,
 };
 use crate::shared::{Ptr, RGBColor, Rect};
 use crate::stubs::DisposePtr;
@@ -400,7 +400,7 @@ impl Sapiens {
             rgbDep.blue = (rgbDep.blue as i64 + incBlue) as c_ushort;
             let idx = &mut *tab_couleurs_ciel.add(i as usize);
             idx.rgb = rgbDep;
-            idx.index = SapColor2Index(&mut rgbDep);
+            idx.index = SapColor2Index(&rgbDep);
         }
     }
 
@@ -445,54 +445,42 @@ impl Sapiens {
                         CalculeToutDegrades
     Calcule l'ensemble des degrades de palette en fonction de l'heure en cours
     *****************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn CalculeToutDegrades(&mut self) {
+    pub(crate) fn CalculeToutDegrades(&mut self) {
         let mut rgb = RGBColor::default();
 
         let _g = port::on(self.sapwind.Ecran1);
         /* Pour l'ensemble des evenements on calcule le degrade */
         let t = addr_of_mut!(self.sapglob.tabheur) as *mut h_chron;
-        for i in 0..NBREVTHEURE as i32 {
-            let e = &mut *t.add(i as usize);
-            if e.q != 0 {
-                if !e.TabCouleursCiel.is_null() {
-                    DisposPtr(e.TabCouleursCiel as Ptr);
+        unsafe {
+            for i in 0..NBREVTHEURE as i32 {
+                let e = &mut *t.add(i as usize);
+                if e.q != 0 {
+                    if !e.TabCouleursCiel.is_null() {
+                        DisposPtr(e.TabCouleursCiel as Ptr);
+                    }
+                    if !e.TabPaletteDistance.is_null() {
+                        DisposPtr(e.TabPaletteDistance as Ptr);
+                    }
+                    e.TabCouleursCiel = NewPtrClear(
+                        (std::mem::size_of::<IndexColor>() as c_long) * (NB_LIGNES_CIEL as c_long),
+                    ) as *mut IndexColor;
+                    e.TabPaletteDistance = NewPtrClear(
+                        (std::mem::size_of::<*mut c_short>() as c_long)
+                            * (NB_DEGRADE_DISTANCE as c_long),
+                    ) as *mut *mut c_short;
+                    self.CalculeDegradeDuCiel(e.pal.as_mut_ptr(), e.TabCouleursCiel);
+                    self.CalculeDegradeDistance(e.h, e.TabPaletteDistance);
                 }
-                if !e.TabPaletteDistance.is_null() {
-                    DisposPtr(e.TabPaletteDistance as Ptr);
-                }
-                e.TabCouleursCiel = NewPtrClear(
-                    (std::mem::size_of::<IndexColor>() as c_long) * (NB_LIGNES_CIEL as c_long),
-                ) as *mut IndexColor;
-                e.TabPaletteDistance = NewPtrClear(
-                    (std::mem::size_of::<*mut c_short>() as c_long)
-                        * (NB_DEGRADE_DISTANCE as c_long),
-                ) as *mut *mut c_short;
-                self.CalculeDegradeDuCiel(e.pal.as_mut_ptr(), e.TabCouleursCiel);
-                self.CalculeDegradeDistance(e.h, e.TabPaletteDistance);
             }
         }
         rgb.red = 20000;
         rgb.green = 20000;
         rgb.blue = 20000;
-        self.sapw3d.COULEUR_ORAGE_JOUR = SapColor2Index(&mut rgb);
+        self.sapw3d.COULEUR_ORAGE_JOUR = SapColor2Index(&rgb);
         rgb.red = 8000;
         rgb.green = 8000;
         rgb.blue = 8000;
-        self.sapw3d.COULEUR_ORAGE_NUIT = SapColor2Index(&mut rgb);
-    }
-
-    /****************************************************************************
-                        ChangeIotaPalette
-    *****************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn ChangeIotaPalette(&mut self, combien: f32) {
-        self.sapw3d.IOTA_PALETTE_STD += combien;
-        self.CalculeToutDegrades();
-        if self.sapglob.dervue == Vue::PAYSAGE {
-            self.affich(self.sapglob.dzeta as c_ushort);
-            self.tfrima();
-        }
+        self.sapw3d.COULEUR_ORAGE_NUIT = SapColor2Index(&rgb);
     }
 }
 
@@ -528,7 +516,7 @@ impl Sapiens {
             rgb.red = 65535;
             rgb.green = 65535;
             rgb.blue = 65535;
-            self.sapw3d.COUL_PULSE = SapColor2Index(&mut rgb);
+            self.sapw3d.COUL_PULSE = SapColor2Index(&rgb);
             for i in 0..NB_ETOILES as i64 {
                 let e = &mut *self.sapw3d.TAB_ETOILES.add(i as usize);
                 e.x = self.random.myRandom(0, AIRE_X_ETOILE as c_long) as c_short;
@@ -537,7 +525,7 @@ impl Sapiens {
                 rgb.red = (55000 - e.y as c_long * (32768 / AIRE_Y_ETOILE as c_long)) as c_ushort;
                 rgb.green = rgb.red;
                 rgb.blue = 0;
-                e.couleur = SapColor2Index(&mut rgb);
+                e.couleur = SapColor2Index(&rgb);
             }
         }
     }

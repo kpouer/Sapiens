@@ -30,13 +30,12 @@ impl Sapwcvt {
         for r in 0..8i16 {
             for v in 0..8i16 {
                 for b in 0..8i16 {
-                    let mut rgb = RGBColor {
+                    let rgb = RGBColor {
                         red: (r as u16) * 9362,
                         green: (v as u16) * 9362,
                         blue: (b as u16) * 9362,
                     };
-                    *tabcvt.add(((r << 8) + (v << 4) + b) as usize) =
-                        SapColor2Index(&mut rgb) as u8;
+                    *tabcvt.add(((r << 8) + (v << 4) + b) as usize) = SapColor2Index(&rgb) as u8;
                 }
             }
         }
@@ -47,7 +46,7 @@ impl Sapwcvt {
             rgb.red >>= 1;
             rgb.green >>= 1;
             rgb.blue >>= 1;
-            *tabcvtombre.add(i as usize) = SapColor2Index(&mut rgb) as u8;
+            *tabcvtombre.add(i as usize) = SapColor2Index(&rgb) as u8;
         }
     }
 

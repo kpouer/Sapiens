@@ -532,7 +532,7 @@ impl Sapiens {
                             val = 65535;
                         }
                         rgb.blue = val as u16;
-                        (*tabIndex.add(i)) = SapColor2Index(&mut rgb);
+                        (*tabIndex.add(i)) = SapColor2Index(&rgb);
                     } else {
                         (*tabIndex.add(i)) = SapColor2Index(&*palette.tabRgb.add(i));
                     }
