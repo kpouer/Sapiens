@@ -479,11 +479,9 @@ impl Sapiens {
                     Affmob3d
     Affiche un mob sur le port en cours
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn Affmob3d(&self, num: c_short, aire: &Rect, tabIndex: *mut c_short) {
+    pub(crate) fn Affmob3d(&self, num: c_short, mut mon_aire: Rect, tabIndex: *mut c_short) {
         let mob = &self.sapwbrt.TabMob[num as usize];
         unsafe {
-            let mut mon_aire: Rect = *aire;
             let tx: c_short = mob.nbcol;
             let ty: c_short = mob.nbligne;
             let vide: u8 = mob.vide as u8;

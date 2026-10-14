@@ -604,7 +604,7 @@ impl Sapiens {
             while k < 512 {
                 self.Affmob3d(
                     self.sapwind.mob3D + 25,
-                    &mut r,
+                    r,
                     *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
                 );
                 r.OffsetRect(largeur as c_short, 0);
@@ -616,7 +616,7 @@ impl Sapiens {
                 r.OffsetRect(-largeur as c_short, 0);
                 self.Affmob3d(
                     self.sapwind.mob3D + 25,
-                    &mut r,
+                    r,
                     *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
                 );
                 k -= largeur;
@@ -662,7 +662,7 @@ impl Sapiens {
                 while kk < 512 {
                     self.Affmob3d(
                         nmob,
-                        &mut r,
+                        r,
                         *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
                     );
                     r.OffsetRect(largeur2 as c_short, 0);
@@ -674,7 +674,7 @@ impl Sapiens {
                     r.OffsetRect(-largeur2 as c_short, 0);
                     self.Affmob3d(
                         nmob,
-                        &mut r,
+                        r,
                         *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
                     );
                     kk -= largeur2;
@@ -949,7 +949,7 @@ impl Sapiens {
                     }
                     self.Affmob3d(
                         self.sapwind.mob3D + forme.numMob3d,
-                        &mut r,
+                        r,
                         *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
                     );
                 }

@@ -146,7 +146,7 @@ impl Sapiens {
             }
             self.Affmob3d(
                 (*self.sapwcart.tab_elt_car.add(jmin as usize)).mob,
-                &mut (*self.sapwcart.tab_elt_car.add(jmin as usize)).aire,
+                (*self.sapwcart.tab_elt_car.add(jmin as usize)).aire,
                 null_mut(),
             );
             (*self.sapwcart.tab_elt_car.add(jmin as usize)).aire.bottom = 32767;

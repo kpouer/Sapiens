@@ -1401,34 +1401,34 @@ impl Sapiens {
         i += 1;
         r.left = 80;
         r.right = r.left + 64;
-        self.Affmob3d(self.sapwind.mob3D + 7, &mut r, null_mut()); //Nuage
+        self.Affmob3d(self.sapwind.mob3D + 7, r, null_mut()); //Nuage
 
         aire_zoom!(i);
         i += 1;
         r.left = 120;
         r.right = r.left + 16;
-        self.Affmob3d(self.sapwind.mob3D + 28, &mut r, null_mut()); //Oiseau
+        self.Affmob3d(self.sapwind.mob3D + 28, r, null_mut()); //Oiseau
 
         aire_zoom!(i);
         i += 1;
         r.InsetRect(0, -2);
         r.left = 110;
         r.right = r.left + 26;
-        self.Affmob3d(self.sapwind.mob3D + 34, &mut r, null_mut()); //Pierre
+        self.Affmob3d(self.sapwind.mob3D + 34, r, null_mut()); //Pierre
 
         aire_zoom!(i);
         i += 1;
         r.InsetRect(0, -4);
         r.left = 110;
         r.right = r.left + 32;
-        self.Affmob3d(self.sapwind.mob3D + 10, &mut r, null_mut()); //Arbre
+        self.Affmob3d(self.sapwind.mob3D + 10, r, null_mut()); //Arbre
 
         aire_zoom!(i);
         i += 1;
         r.InsetRect(0, -4);
         r.left = 110;
         r.right = r.left + 32;
-        self.Affmob3d(self.sapwind.mobAvplan + MOB_HERBE_BASE, &mut r, null_mut()); //Herbe
+        self.Affmob3d(self.sapwind.mobAvplan + MOB_HERBE_BASE, r, null_mut()); //Herbe
 
         self.AfficheSuite();
 
