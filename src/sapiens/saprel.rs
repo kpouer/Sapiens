@@ -513,8 +513,9 @@ impl Sapiens {
                     self.sapglob.ciel_degr = self.sapglob.tabheur[self.sapglob.pos_evt as usize]
                         .pal
                         .as_mut_ptr();
-                    let x = addr_of_mut!(self.sapglob.tabheur[self.sapglob.pos_evt as usize]);
-                    self.FixeDegradesFonctionHeure(x);
+                    self.sapw3d.FixeDegradesFonctionHeure(
+                        self.sapglob.tabheur[self.sapglob.pos_evt as usize].clone(),
+                    );
                 } else {
                     /* On fixe la pal haute */
                     self.sapglob.palhaute = self.sapglob.tabheur[self.sapglob.pos_evt as usize]

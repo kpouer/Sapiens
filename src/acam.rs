@@ -104,16 +104,19 @@ pub(crate) extern "C" fn GetCursor(_id: i16) -> Cursor {
 // ---------------------------------------------------------------------------
 
 #[unsafe(no_mangle)]
+#[deprecated]
 pub(crate) extern "C" fn NewPtr(size: i64) -> Ptr {
     alloc_pixels(size.max(0) as usize)
 }
 
 #[unsafe(no_mangle)]
+#[deprecated]
 pub(crate) extern "C" fn NewPtrClear(size: i64) -> Ptr {
     alloc_pixels(size.max(0) as usize)
 }
 
 #[unsafe(no_mangle)]
+#[deprecated]
 pub(crate) extern "C" fn DisposPtr(p: Ptr) {
     free_pixels(p);
 }

@@ -204,12 +204,12 @@ pub(crate) struct brin {
     pub(crate) sens: u16,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct h_chron {
     pub(crate) h: i16,
     pub(crate) q: i16,
     pub(crate) pal: [i16; 32],
-    pub(crate) TabCouleursCiel: *mut IndexColor,
+    pub(crate) TabCouleursCiel: [IndexColor; NB_LIGNES_CIEL],
     pub(crate) TabPaletteDistance: *mut *mut i16,
 }
 impl Default for h_chron {
@@ -218,7 +218,7 @@ impl Default for h_chron {
             h: 0,
             q: 0,
             pal: [0; 32],
-            TabCouleursCiel: std::ptr::null_mut(),
+            TabCouleursCiel: [IndexColor::default(); NB_LIGNES_CIEL],
             TabPaletteDistance: std::ptr::null_mut(),
         }
     }
@@ -558,7 +558,7 @@ pub(crate) const STR_VRAC: u32 = 0;
 pub(crate) const SAGAIE: u32 = 23;
 pub(crate) const NB_MOTS_BKMOTS: u32 = 46;
 pub(crate) const NBREVTHEURE: u32 = 37;
-pub(crate) const NB_LIGNES_CIEL: u32 = 128;
+pub(crate) const NB_LIGNES_CIEL: usize = 128;
 pub(crate) const NB_LIGNES_TERRE: u32 = 72;
 pub(crate) const NB_DEGRADE_DISTANCE: u32 = 72;
 pub(crate) const NBREVTDESTINE: u32 = 40;

@@ -5,7 +5,9 @@
 #![allow(non_upper_case_globals)]
 
 use crate::Sapiens;
-use crate::sapiens::{TypeMuse, TypeReference, Vue, cellule, liste, sap};
+use crate::sapiens::{
+    IndexColor, NB_LIGNES_CIEL, TypeMuse, TypeReference, Vue, cellule, liste, sap,
+};
 use crate::sapiens::{evt, gemcadre, gemnbrecad, h_chron};
 use std::os::raw::{c_char, c_short, c_uchar, c_ushort};
 use std::ptr::{addr_of_mut, null_mut};
@@ -1655,12 +1657,12 @@ const fn pal_s<const N: usize>(v: [c_short; N]) -> [c_short; 32] {
     out
 }
 
-const fn hc(h: c_short, q: c_short, pal: [c_short; 32]) -> h_chron {
+fn hc(h: c_short, q: c_short, pal: [c_short; 32]) -> h_chron {
     h_chron {
         h,
         q,
         pal,
-        TabCouleursCiel: null_mut(),
+        TabCouleursCiel: [IndexColor::default(); NB_LIGNES_CIEL],
         TabPaletteDistance: null_mut(),
     }
 }

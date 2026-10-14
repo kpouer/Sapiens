@@ -71,7 +71,7 @@ pub(crate) struct Sapw3d {
     TAMP_DENS: [u8; 16],
     DENS_DZET: [u8; 10],
     TAB_PALETTE_DISTANCE: *mut *mut c_short,
-    TAB_COULEURS_CIEL: *mut IndexColor,
+    TAB_COULEURS_CIEL: [IndexColor; NB_LIGNES_CIEL],
     COULEUR_ORAGE_JOUR: c_short,
     COULEUR_ORAGE_NUIT: c_short,
     IOTA_PALETTE_STD: f32,
@@ -91,7 +91,7 @@ impl Default for Sapw3d {
             TAMP_DENS: [0; 16],
             DENS_DZET: [0; 10],
             TAB_PALETTE_DISTANCE: null_mut(),
-            TAB_COULEURS_CIEL: null_mut(),
+            TAB_COULEURS_CIEL: [IndexColor::default(); NB_LIGNES_CIEL],
             COULEUR_ORAGE_JOUR: 0,
             COULEUR_ORAGE_NUIT: 0,
             IOTA_PALETTE_STD: 0.14,
@@ -374,7 +374,7 @@ impl Sapiens {
     unsafe fn CalculeDegradeDuCiel(
         &self,
         palette: *mut c_short,
-        tab_couleurs_ciel: *mut IndexColor,
+        tab_couleurs_ciel: &mut [IndexColor],
     ) {
         let mut rgbDep = RGBColor::default();
         let mut rgbDest = RGBColor::default();
@@ -398,7 +398,7 @@ impl Sapiens {
             rgbDep.red = (rgbDep.red as i64 + incRed) as c_ushort;
             rgbDep.green = (rgbDep.green as i64 + incGreen) as c_ushort;
             rgbDep.blue = (rgbDep.blue as i64 + incBlue) as c_ushort;
-            let idx = &mut *tab_couleurs_ciel.add(i as usize);
+            let idx = &mut tab_couleurs_ciel[i as usize];
             idx.rgb = rgbDep;
             idx.index = SapColor2Index(&rgbDep);
         }
@@ -455,20 +455,15 @@ impl Sapiens {
             for i in 0..NBREVTHEURE as i32 {
                 let e = &mut *t.add(i as usize);
                 if e.q != 0 {
-                    if !e.TabCouleursCiel.is_null() {
-                        DisposPtr(e.TabCouleursCiel as Ptr);
-                    }
                     if !e.TabPaletteDistance.is_null() {
                         DisposPtr(e.TabPaletteDistance as Ptr);
                     }
-                    e.TabCouleursCiel = NewPtrClear(
-                        (std::mem::size_of::<IndexColor>() as c_long) * (NB_LIGNES_CIEL as c_long),
-                    ) as *mut IndexColor;
+                    e.TabCouleursCiel = [IndexColor::default(); NB_LIGNES_CIEL];
                     e.TabPaletteDistance = NewPtrClear(
                         (std::mem::size_of::<*mut c_short>() as c_long)
                             * (NB_DEGRADE_DISTANCE as c_long),
                     ) as *mut *mut c_short;
-                    self.CalculeDegradeDuCiel(e.pal.as_mut_ptr(), e.TabCouleursCiel);
+                    self.CalculeDegradeDuCiel(e.pal.as_mut_ptr(), &mut e.TabCouleursCiel);
                     self.CalculeDegradeDistance(e.h, e.TabPaletteDistance);
                 }
             }
@@ -484,16 +479,18 @@ impl Sapiens {
     }
 }
 
-impl Sapiens {
+impl Sapw3d {
     /****************************************************************************
                         FixeDegradesFonctionHeure
     En fonctione de l'evenement de changement de l'aire injecte les tabelaux de couleurs
     *****************************************************************************/
-    pub(crate) unsafe extern "C" fn FixeDegradesFonctionHeure(&mut self, chron: *mut h_chron) {
-        self.sapw3d.TAB_COULEURS_CIEL = (*chron).TabCouleursCiel;
-        self.sapw3d.TAB_PALETTE_DISTANCE = (*chron).TabPaletteDistance;
+    pub(crate) const fn FixeDegradesFonctionHeure(&mut self, chron: h_chron) {
+        self.TAB_COULEURS_CIEL = chron.TabCouleursCiel;
+        self.TAB_PALETTE_DISTANCE = chron.TabPaletteDistance;
     }
+}
 
+impl Sapiens {
     /****************************************************************************
                         CalculeEtoiles
                 Effacement de la 3d
@@ -935,7 +932,7 @@ impl Sapiens {
 
         /* Le degrade du ciel */
         /* Un orage est en cours */
-        RemplitZoneLignes(0, NB_LIGNES_CIEL as c_short, self.sapw3d.TAB_COULEURS_CIEL);
+        RemplitZoneLignes(0, &self.sapw3d.TAB_COULEURS_CIEL);
         self.AfficheEtoiles();
         /* Le meteore */
         self.Affmobbrt(

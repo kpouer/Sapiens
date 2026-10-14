@@ -13,7 +13,7 @@ use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapgest::Sapgest;
 use crate::sapiens::saptxt::{CvtDefaultLangRess, CvtLangRess};
 use crate::sapiens::sapwind::{SapiensExit, ValideUpdate};
-use crate::sapiens::{ECHELLE, IndexColorPtr, Mob, NB_MAX_MOB, PalCoul};
+use crate::sapiens::{ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalCoul};
 use crate::shared::RGBColor as BRGBColor;
 use crate::shared::{CGrafPtr, Handle, Ptr, RGBColor, Rect, RgnHandle};
 use crate::stubs::{
@@ -1101,7 +1101,7 @@ pub(crate) extern "C" fn RemplitLigneBrut(y1: c_short, y2: c_short, index: c_sho
 Remplit la zone  avec le tableau de couleur  donne
 => ligne debut (pixel ecran reel), nbre de lignes, Tableau de couleurs
 ******************************************************************/
-pub(crate) fn RemplitZoneLignes(y: c_short, taille: c_short, mut tab_couleur: IndexColorPtr) {
+pub(crate) fn RemplitZoneLignes(y: c_short, tab_couleur: &[IndexColor]) {
     let Some(info) = port::info(port::current()) else {
         return;
     };
@@ -1109,12 +1109,11 @@ pub(crate) fn RemplitZoneLignes(y: c_short, taille: c_short, mut tab_couleur: In
     let tailleLigne = info.row_bytes;
     unsafe {
         data = data.add((tailleLigne as i64 * y as i64) as usize);
+        let taille = tab_couleur.len();
         let mut t = taille;
-        while t != 0 {
-            t -= 1;
-            std::ptr::write_bytes(data, (*tab_couleur).index as u8, tailleLigne as usize);
+        for t in 0..taille {
+            std::ptr::write_bytes(data, tab_couleur[t].index as u8, tailleLigne as usize);
             data = data.add(tailleLigne as usize);
-            tab_couleur = tab_couleur.add(1);
         }
     }
 }

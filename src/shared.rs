@@ -215,8 +215,10 @@ pub(crate) static WINDOW_PORT: AtomicPtr<SapPort> = AtomicPtr::new(std::ptr::nul
 // Registre des allocations (Ptr/Handle) pour pouvoir les libérer
 // ---------------------------------------------------------------------------
 
+#[deprecated]
 pub(crate) static ALLOCS: Mutex<Vec<(usize, usize)>> = Mutex::new(Vec::new());
 
+#[deprecated]
 pub(crate) fn alloc_pixels(len: usize) -> *mut u8 {
     let mut v: Vec<u8> = vec![0u8; len.max(1)];
     let p = v.as_mut_ptr();
@@ -225,6 +227,7 @@ pub(crate) fn alloc_pixels(len: usize) -> *mut u8 {
     p
 }
 
+#[deprecated]
 pub(crate) fn free_pixels(ptr: *mut u8) {
     if ptr.is_null() {
         return;
