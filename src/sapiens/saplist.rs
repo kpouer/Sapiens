@@ -896,7 +896,7 @@ impl Sapiens {
             /*affichage de la liste*/
             if self.sapglob.menu != 0 {
                 self.saplist.sliste[1] = self.sapglob.stdlist;
-                (*addr_of_mut!(self.sapglob.smenu))[1] = self.sapglob.menu as c_char;
+                self.sapglob.smenu[1] = self.sapglob.menu as c_char;
             }
             self.sapglob.s_menu = self.sapglob.menu as c_short;
             self.aflist(self.sapglob.stdlist);
