@@ -14,7 +14,7 @@ use crate::acam::{
 };
 use crate::cbridge::{strcat, strcpy, whiteColor};
 use crate::port;
-use crate::sapiens::sapglob::{ListeId, SapId, tabprf, tenerv, tobje};
+use crate::sapiens::sapglob::{ListeId, SapId, Sapglob, tabprf, tenerv, tobje};
 use crate::sapiens::sapw3d::distance;
 use crate::sapiens::sapwbrt::{CopyOffscreen, DoMoveTo, DoPenSize};
 use crate::sapiens::sapwmus::attends_bruit;
@@ -156,18 +156,8 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn sceveu(&mut self, quoi: c_ushort) {
         unsafe {
-            let mut rsourc = Rect {
-                top: 0,
-                left: 0,
-                bottom: 0,
-                right: 0,
-            };
-            let mut rdest = Rect {
-                top: 0,
-                left: 0,
-                bottom: 0,
-                right: 0,
-            };
+            let mut rsourc;
+            let mut rdest;
             let scenme = self.sap_lang.GetScenme();
 
             self.sapglob.dervue = Vue::AUCUNE;
@@ -233,11 +223,10 @@ impl Sapiens {
     Affiche le message correspondant à la phase du scenario
     Le message s'affiche sur l'aire 3d
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn SceveuBulle(&mut self, quoi: c_ushort) {
+    pub(crate) fn SceveuBulle(&mut self, quoi: c_ushort) {
+        let scenme = self.sap_lang.GetScenme();
+        self.effaceBulles();
         unsafe {
-            let scenme = self.sap_lang.GetScenme();
-            self.effaceBulles();
             self.bulle(*scenme.add(quoi as usize) as Ptr, 1);
         }
     }
@@ -277,21 +266,23 @@ impl Sapiens {
             }
         }
     }
+}
 
+impl Sapglob {
     /***********************************************************************
                             TFRENE:
     ***********************************************************************/
     pub(crate) fn tfrene(&mut self) {
-        if self.sapglob.presence < 5 && self.sapglob.presence != 0 {
-            if self.sapglob.fpress != 0 {
-                self.sapglob.enetoi[self.sapglob.tribu as usize - 1] = self.sapglob.enerv;
-                if self.sapglob.chef != 0 || self.sapglob.tribu != 1 {
-                    self.sapglob.tagress[self.sapglob.tribu as usize - 1] = self.sapglob.agress;
-                }
+        if self.presence < 5 && self.presence != 0 && self.fpress != 0 {
+            self.enetoi[self.tribu as usize - 1] = self.enerv;
+            if self.chef != 0 || self.tribu != 1 {
+                self.tagress[self.tribu as usize - 1] = self.agress;
             }
         }
     }
+}
 
+impl Sapiens {
     /**************************************************************************
                     COMMENT:affiche un commentaire
     *************************************************************************
@@ -1026,7 +1017,7 @@ impl Sapiens {
                             QUITTE:On lui fait peur :il s'enfuit
     ***********************************************************************/
     pub(crate) fn quitte(&mut self) {
-        self.tfrene();
+        self.sapglob.tfrene();
         self.sapglob.flcomb = 0;
         self.sapglob.presence = 0;
         self.idialo();

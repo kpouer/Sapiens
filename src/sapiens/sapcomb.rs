@@ -2374,7 +2374,7 @@ impl Sapiens {
             }
             /* c'est parfait coupez */
 
-            self.tfrene(); /*on transfere l'enervement*/
+            self.sapglob.tfrene(); /*on transfere l'enervement*/
             self.outarm(); /*armes en sortie*/
             self.sapglob.flcomb = 0;
             self.sapglob.flefba = 0;

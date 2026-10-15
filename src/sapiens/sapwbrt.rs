@@ -30,16 +30,15 @@ const TAILLE_TFR: u32 = 66;
 
 /*********************************************************************
                             RetraceItem
-Retrace instanatanemen,t l'item demand�
+Retrace instanatanemen,t l'item demandé
 ********************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn RetraceItem(dialog: DialogPtr, item: i16) {
+pub(crate) fn RetraceItem(dialog: DialogPtr, item: i16) {
     let mut itemType: c_short = 0;
     let mut handle = Handle::default();
     let mut box_ = Rect::default();
 
+    GetDItem(dialog, item, &mut itemType, &mut handle, &mut box_);
     unsafe {
-        GetDItem(dialog, item, &mut itemType, &mut handle, &mut box_);
         RetraceRect(dialog, &mut box_);
     }
 }

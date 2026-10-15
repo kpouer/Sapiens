@@ -1990,7 +1990,7 @@ impl Sapiens {
     /***********************************************************************
                                     TRGEST:gestion
     ***********************************************************************/
-    pub(crate) fn trgest(&mut self, regb: c_ushort) {
+    pub(crate) fn trgest(&mut self, regb: u16) {
         self.souris.MontreSouris();
         match regb {
             /* Informations */
