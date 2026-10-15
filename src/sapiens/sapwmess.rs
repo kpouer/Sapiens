@@ -37,8 +37,7 @@ impl Sapiens {
                 TfrBadAss
     Le message s'affiche sur debecr, on le transfere sur le reel
     *****************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn TfrBadAss(&mut self) {
+    pub(crate) fn TfrBadAss(&mut self) {
         self.eff_sour();
         CopyOffscreen(
             self.sapwind.debecr,

@@ -157,7 +157,6 @@ pub(crate) struct PortInfo {
     pub(crate) bounds: Rect,
     /// Octets par ligne (`row_bytes`).
     pub(crate) row_bytes: i16,
-    pub(crate) depth: i16,
 }
 
 /// Description du tampon de `p`, ou `None` si le port n'existe pas.
@@ -171,7 +170,6 @@ pub(crate) fn info(p: CGrafPtr) -> Option<PortInfo> {
             pixels: pp.pixels,
             bounds: pp.bounds,
             row_bytes: pp.row_bytes,
-            depth: pp.depth,
         })
     }
 }

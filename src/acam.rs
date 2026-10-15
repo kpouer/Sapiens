@@ -256,8 +256,7 @@ pub(crate) extern "C" fn PtoCstr(str: StringPtr) -> *mut i8 {
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn CtoPstr(str: *mut i8) -> *mut u8 {
+pub(crate) fn CtoPstr(str: *mut i8) -> *mut u8 {
     if str.is_null() {
         return std::ptr::null_mut();
     }
@@ -273,7 +272,6 @@ pub(crate) extern "C" fn CtoPstr(str: *mut i8) -> *mut u8 {
     }
 }
 
-#[unsafe(no_mangle)]
 pub(crate) extern "C" fn GetIndString(s: StringPtr, _id: i16, _index: i16) {
     if s.is_null() {
         return;
@@ -287,7 +285,6 @@ pub(crate) extern "C" fn GetIndString(s: StringPtr, _id: i16, _index: i16) {
 // Fenêtre principale
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
 pub(crate) extern "C" fn NewCWindow(
     _storage: *mut c_void,
     bounds: *const Rect,
