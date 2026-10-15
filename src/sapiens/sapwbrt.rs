@@ -906,11 +906,9 @@ impl Sapiens {
     Les  coordonnees sont donnees en ecran ST 320x200
     (C) Ligne dep,Col dep,Ligne fin,col.fin,couleur ST
     ***************************************************************************/
-    pub(crate) fn BoxFill(&self, gfx: CGrafPtr, r: *mut Rect, couleur: c_short) {
-        unsafe {
-            if (*r).is_empty() {
-                return;
-            }
+    pub(crate) fn BoxFill(&self, gfx: CGrafPtr, r: &mut Rect, couleur: i16) {
+        if r.is_empty() {
+            return;
         }
         let Some(info) = port::info(gfx) else {
             return;

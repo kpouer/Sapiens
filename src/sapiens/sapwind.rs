@@ -649,7 +649,7 @@ impl Sapiens {
         unsafe {
             self.BoxFill(
                 port::current(),
-                &raw mut aire,
+                &mut aire,
                 *self.sapglob.palhaute.offset(index as isize),
             );
         }
