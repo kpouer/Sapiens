@@ -12,7 +12,7 @@ use crate::cbridge::{
     CInfoPBRec, blackColor, fclose, fopen, getc, putc, remove, sprintf, strcpy, stricmp, strlen,
 };
 use crate::langue::Langue::{ES, FR};
-use crate::langue::langue_i16;
+use crate::langue::langue;
 use crate::port;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapglob::{ListeId, SapId, tenerv};
@@ -1716,9 +1716,9 @@ fn SaisieNomFichierAventureEcriture(nom: *mut c_char) -> Boolean {
         );
         strcpy(chaine.as_mut_ptr(), nom);
         CtoPstr(chaine.as_mut_ptr());
-        if langue_i16() == FR as c_short {
+        if langue() == FR {
             strcpy(titre.as_mut_ptr(), c"Fichier".as_ptr());
-        } else if langue_i16() == ES as c_short {
+        } else if langue() == ES {
             strcpy(titre.as_mut_ptr(), c"Archivo".as_ptr());
         } else {
             strcpy(titre.as_mut_ptr(), c"File".as_ptr());

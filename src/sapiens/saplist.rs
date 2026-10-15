@@ -7,7 +7,7 @@
 use crate::acam::{FAUX, TickCount, VRAI};
 use crate::cbridge::strcat;
 use crate::langue::Langue::{ES, FR};
-use crate::langue::langue_i16;
+use crate::langue::langue;
 use crate::port;
 use crate::sapiens::sapglob::{ListeId, SapId, tccol, tclin, tcncol, tcnlin, tcolcdr, tposcur};
 use crate::sapiens::sapwbrt::{AffichePictDansAire, SetPathInData, SwapCouleur};
@@ -1069,9 +1069,9 @@ impl Sapiens {
         SetPathInData(&self.sapgest, c"docs".as_ptr() as *mut c_char);
         GetNomCheminCourant(chaine.as_mut_ptr());
         unsafe {
-            if langue_i16() == FR as c_short {
+            if langue() == FR {
                 strcat(chaine.as_mut_ptr(), c"sapiens_fr.html".as_ptr());
-            } else if langue_i16() == ES as c_short {
+            } else if langue() == ES {
                 strcat(chaine.as_mut_ptr(), c"sapiens_es.html".as_ptr());
             } else {
                 strcat(chaine.as_mut_ptr(), c"sapiens_gb.html".as_ptr());

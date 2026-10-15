@@ -1,8 +1,8 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
-#![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
+#![allow(unsafe_op_in_unsafe_fn)]
 use crate::langue::Langue::{ES, FR};
-use crate::langue::langue_i16;
+use crate::langue::{langue, langue_i16};
 use crate::sapiens::sapglob::Sapglob;
 use crate::sapiens::saptxt_es::Saptxt_es;
 use crate::sapiens::saptxt_fr::Saptxt_fr;
@@ -104,9 +104,9 @@ pub(crate) struct SapLang {
 
 impl SapLang {
     pub(crate) fn GetRefer0(&self) -> *mut reference {
-        if langue_i16() == FR as c_short {
+        if langue() == FR {
             addr_of!(self.saptxt_fr.refer0) as *mut reference
-        } else if langue_i16() == ES as c_short {
+        } else if langue() == ES {
             addr_of!(self.saptxt_es.refer0) as *mut reference
         } else {
             addr_of!(self.saptxt_gb.refer0) as *mut reference
@@ -114,9 +114,9 @@ impl SapLang {
     }
 
     pub(crate) fn GetRefer1(&self) -> *mut reference {
-        if langue_i16() == FR as c_short {
+        if langue() == FR {
             addr_of!(self.saptxt_fr.refer1) as *mut reference
-        } else if langue_i16() == ES as c_short {
+        } else if langue() == ES {
             addr_of!(self.saptxt_es.refer1) as *mut reference
         } else {
             addr_of!(self.saptxt_gb.refer1) as *mut reference
@@ -124,9 +124,9 @@ impl SapLang {
     }
 
     pub(crate) fn GetRefer2(&self) -> *mut reference {
-        if langue_i16() == FR as c_short {
+        if langue() == FR {
             addr_of!(self.saptxt_fr.refer2) as *mut reference
-        } else if langue_i16() == ES as c_short {
+        } else if langue() == ES {
             addr_of!(self.saptxt_es.refer2) as *mut reference
         } else {
             addr_of!(self.saptxt_gb.refer2) as *mut reference
@@ -134,9 +134,9 @@ impl SapLang {
     }
 
     pub(crate) fn GetRefer3(&self) -> *mut reference {
-        if langue_i16() == FR as c_short {
+        if langue() == FR {
             addr_of!(self.saptxt_fr.refer3) as *mut reference
-        } else if langue_i16() == ES as c_short {
+        } else if langue() == ES {
             addr_of!(self.saptxt_es.refer3) as *mut reference
         } else {
             addr_of!(self.saptxt_gb.refer3) as *mut reference
@@ -152,9 +152,9 @@ impl SapLang {
     }
 
     pub(crate) fn GetMesCon(&self) -> &[*mut c_char] {
-        if langue_i16() == FR as c_short {
+        if langue() == FR {
             &self.saptxt_fr.mescon
-        } else if langue_i16() == ES as c_short {
+        } else if langue() == ES {
             &self.saptxt_es.mescon
         } else {
             &self.saptxt_gb.mescon
@@ -162,9 +162,9 @@ impl SapLang {
     }
 
     pub(crate) fn GetApp(&self) -> &[*mut c_char] {
-        if langue_i16() == FR as c_short {
+        if langue() == FR {
             &self.saptxt_fr.app
-        } else if langue_i16() == ES as c_short {
+        } else if langue() == ES {
             &self.saptxt_es.app
         } else {
             &self.saptxt_gb.app
@@ -172,9 +172,9 @@ impl SapLang {
     }
 
     pub(crate) fn GetBkMot(&self) -> *mut *mut c_char {
-        if langue_i16() == FR as c_short {
+        if langue() == FR {
             addr_of!(self.saptxt_fr.bkmots) as *mut *mut c_char
-        } else if langue_i16() == ES as c_short {
+        } else if langue() == ES {
             addr_of!(self.saptxt_es.bkmots) as *mut *mut c_char
         } else {
             addr_of!(self.saptxt_gb.bkmots) as *mut *mut c_char
@@ -182,9 +182,9 @@ impl SapLang {
     }
 
     pub(crate) fn GetScenme(&self) -> *mut *mut c_char {
-        if langue_i16() == FR as c_short {
+        if langue() == FR {
             addr_of!(self.saptxt_fr.scenme) as *mut *mut c_char
-        } else if langue_i16() == ES as c_short {
+        } else if langue() == ES {
             addr_of!(self.saptxt_es.scenme) as *mut *mut c_char
         } else {
             addr_of!(self.saptxt_gb.scenme) as *mut *mut c_char
@@ -205,13 +205,13 @@ pub(crate) fn CvtDefaultLangRess(id: c_short) -> c_short {
 impl Sapglob {
     // Choisit les touches « homme », « femme », « oui » selon la langue courante.
     pub(crate) unsafe fn init_and_check_texts(&mut self) {
-        match langue_i16() {
-            x if x == FR as c_short => {
+        match langue() {
+            FR => {
                 self.homme = b'H';
                 self.femme = b'F';
                 self.oui = b'O';
             }
-            x if x == ES as c_short => {
+            ES => {
                 self.homme = b'H';
                 self.femme = b'M';
                 self.oui = b'S';
@@ -246,7 +246,7 @@ pour le lissage
 **************************************************************************/
 pub(crate) fn CvtCarLissage(car: c_short) -> c_short {
     // Conversion
-    if langue_i16() == FR as c_short {
+    if langue() == FR {
         match car {
             C_POURCENT => 0x90, /* ê */
             C_ET => 0x8E,       /* é */
@@ -254,7 +254,7 @@ pub(crate) fn CvtCarLissage(car: c_short) -> c_short {
             C_DIESE => 0x8D,    /* ç */
             _ => car,
         }
-    } else if langue_i16() == ES as c_short {
+    } else if langue() == ES {
         match car {
             C_CROCHET_G => 0xC0, /* Point d'interrogation inverse */
             C_CROCHET_D => 0xC1, /* Point d'excalamtion inverse */

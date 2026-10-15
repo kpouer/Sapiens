@@ -1134,11 +1134,7 @@ pub(crate) extern "C" fn CopyBits(
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn ScrollRect(r: *const Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
-    if r.is_null() {
-        return;
-    }
+pub(crate) fn ScrollRect(r: &Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
     let p = cur();
     if p.is_null() {
         return;
