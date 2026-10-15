@@ -343,8 +343,7 @@ pub(crate) extern "C" fn GetPicture(_resID: i16) -> PicHandle {
     std::ptr::null_mut()
 }
 pub(crate) fn DrawPicture(_pic: PicHandle, _dstRect: &Rect) {}
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetRectFilePng(_name: *mut i8, _r: *mut Rect) -> Boolean {
+pub(crate) fn GetRectFilePng(_name: *mut i8, _r: &mut Rect) -> Boolean {
     false
 }
 
