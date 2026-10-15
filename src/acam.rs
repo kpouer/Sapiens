@@ -872,12 +872,14 @@ pub(crate) fn RGBForeColor(c: &RGBColor) {
     }
 }
 
-pub(crate) fn Index2Color(index: i16, color: &mut RGBColor) {
+pub(crate) fn Index2Color(index: i16) -> RGBColor {
     let i = index.clamp(0, 255) as usize;
     let (r, g, b) = lut_rgb(i as u8);
-    color.red = ((r as u16) << 8) | r as u16;
-    color.green = ((g as u16) << 8) | g as u16;
-    color.blue = ((b as u16) << 8) | b as u16;
+    RGBColor {
+        red: ((r as u16) << 8) | r as u16,
+        green: ((g as u16) << 8) | g as u16,
+        blue: ((b as u16) << 8) | b as u16,
+    }
 }
 
 pub(crate) fn Color2Index(c: &RGBColor) -> i16 {

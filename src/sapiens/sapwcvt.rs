@@ -41,8 +41,7 @@ impl Sapwcvt {
         }
         let tabcvtombre = addr_of_mut!(self.TabCvtCoulOmbre) as *mut u8;
         for i in 0..256i16 {
-            let mut rgb = RGBColor::default();
-            Index2Color(i, &mut rgb);
+            let mut rgb = Index2Color(i);
             rgb.red >>= 1;
             rgb.green >>= 1;
             rgb.blue >>= 1;
