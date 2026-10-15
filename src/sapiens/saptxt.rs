@@ -1,7 +1,6 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 #![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
-use crate::Sapiens;
 use crate::langue::Langue::{ES, FR};
 use crate::langue::langue_i16;
 use crate::sapiens::sapglob::Sapglob;

@@ -139,10 +139,7 @@ fn CalcPoint3D(
     mut xp: c_long,
     mut yp: c_long,
     mut zp: c_long,
-    x: *mut c_short,
-    y: *mut c_short,
-    dist: *mut c_short,
-) -> c_short {
+) -> Option<(i16, i16, i16)> {
     let mut tmp: c_long;
     /* --- Rabat les positions du point en fn du joueur  --- */
     xp -= pxj;
@@ -156,15 +153,13 @@ fn CalcPoint3D(
 
     /* --- Visible ? --- */
     if xp <= 2 {
-        return 0;
+        return None;
     }
     tmp = distance(xp, yp) as c_long;
-    unsafe {
-        *dist = tmp as c_short;
-    }
     if tmp == 0 {
-        return 0;
+        return None;
     }
+    let dist = tmp;
     /* --- Calcule x écran --- */
     let xl = LARGEUR_ECRAN as c_long / 2 - (LARGEUR_ECRAN as c_long / 2) * yp / xp;
 
@@ -185,12 +180,10 @@ fn CalcPoint3D(
     if yl > 32760 {
         yl = 32760;
     }
-    unsafe {
-        *x = xl as c_short;
-        *y = yl as c_short;
-    }
+    let x = xl as c_short;
+    let y = yl as c_short;
 
-    1
+    Some((x, y, dist as i16))
 }
 
 impl Sapiens {
@@ -887,9 +880,6 @@ impl Sapiens {
     L'affichage se fait sur ecran 1
     ******************************************************************************************/
     pub(crate) unsafe fn visu(&mut self) {
-        let mut x: c_short = 0;
-        let mut y: c_short = 0;
-        let mut dist: c_short = 0;
         let mut rd: c_short;
         let mut r: Rect = Rect::default();
 
@@ -905,7 +895,7 @@ impl Sapiens {
             let Some(forme) = m.forme.map(FormeId::forme) else {
                 continue;
             };
-            if CalcPoint3D(
+            if let Some((x, y, dist)) = CalcPoint3D(
                 self.sapglob.xj as c_long,
                 self.sapglob.yj as c_long,
                 self.sapglob.zj as c_long,
@@ -914,11 +904,7 @@ impl Sapiens {
                 m.posx as c_long,
                 m.posy as c_long,
                 forme.hauteur as c_long,
-                &mut x,
-                &mut y,
-                &mut dist,
-            ) != 0
-            {
+            ) {
                 rd = (forme.rayon as c_long * 2 * 256 / dist as c_long) as c_short;
                 let hauteurDisque =
                     (m.ign as c_long * forme.nbrdisk as c_long * 256 / dist as c_long) as c_short;
