@@ -981,37 +981,33 @@ impl Sapiens {
                             AireJauge
     Calcule l'aire ecran totale d'une jauge
     ***********************************************************************/
-    pub(crate) fn AireJauge(&self, i: c_short, r: *mut Rect) {
-        SetRect(
-            r,
+    fn AireJauge(&self, i: i16) -> Rect {
+        Rect::new(
             114,
             6 + 14 * i,
             (114 + self.sapglob.maxparam[self.sapglob.sexe as usize][i as usize] / 2 + 2) as i16,
             16 + 14 * i,
-        );
+        )
     }
 
     /***********************************************************************
                             AireValJauge
     Calcule l'aire ecran de la valeur interne d'une jauge
     ***********************************************************************/
-    pub(crate) extern "C" fn AireValJauge(&self, i: c_short, r: *mut Rect) {
-        SetRect(
-            r,
+    fn AireValJauge(&self, i: i16) -> Rect {
+        Rect::new(
             115,
             7 + 14 * i,
             (115 + self.sapglob.param[i as u8 as usize] / 2) as i16,
             15 + 14 * i,
-        );
+        )
     }
 
     /***********************************************************************
                             AfficheCadreJauge
     ***********************************************************************/
-    pub(crate) extern "C" fn AfficheCadreJauge(&self, i: c_short) {
-        let mut r = Rect::default();
-
-        self.AireJauge(i, &mut r);
+    pub(crate) fn AfficheCadreJauge(&self, i: i16) {
+        let mut r = self.AireJauge(i);
         ForeColor(blackColor as i16);
         r.left *= ECHELLE as i16;
         r.right *= ECHELLE as i16;
@@ -1026,15 +1022,12 @@ impl Sapiens {
     => numero de la jauge, indeicateur de transfert sur le reel
     ***********************************************************************/
     pub(crate) extern "C" fn jauge(&self, i: c_short, tfr: Boolean) {
-        let mut rval = Rect::default();
-        let mut r = Rect::default();
-
         let _g = port::on(self.sapwind.debecr);
-        self.AireValJauge(i, &mut rval);
+        let rval = self.AireValJauge(i);
         self.AfficheCadreJauge(i);
         self.boxf(rval.top, rval.left, rval.bottom, rval.right, 2);
         /* Effacement de la partie droite */
-        self.AireJauge(i, &mut r);
+        let mut r = self.AireJauge(i);
         if self.sapglob.param[i as usize] / 2
             < self.sapglob.maxparam[self.sapglob.sexe as usize][i as usize] / 2
         {
@@ -1184,7 +1177,7 @@ impl Sapiens {
                     let pt = Point::new(self.sapglob.sposx, self.sapglob.sposy);
                     let mut i: c_short = 0;
                     while i < 5 {
-                        self.AireJauge(i, &mut r);
+                        r = self.AireJauge(i);
                         if r.pt_in_rect(pt) {
                             pos = i as c_char;
                             /* Fleche */
@@ -1197,7 +1190,7 @@ impl Sapiens {
                                 true,
                             );
                             loop {
-                                self.AireValJauge(pos as c_short, &mut rval);
+                                rval = self.AireValJauge(pos as i16);
                                 /* On augmente la jauge */
                                 if self.sapglob.sposx > rval.right
                                     && self.sapglob.param[5] != 0
