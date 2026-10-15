@@ -53,7 +53,7 @@ impl Sapiens {
             if self.saplist.inverse_option.LastMenuInvers >= 0 {
                 SwapCouleur(
                     self.sapwind.debecr,
-                    &raw mut self.saplist.inverse_option.rInvert,
+                    &self.saplist.inverse_option.rInvert,
                     self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(4)) as usize] as c_short,
                     self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(1)) as usize] as c_short,
                 );
@@ -85,7 +85,7 @@ impl Sapiens {
                 );
                 SwapCouleur(
                     self.sapwind.debecr,
-                    &raw mut self.saplist.inverse_option.rInvert,
+                    &self.saplist.inverse_option.rInvert,
                     self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(1)) as usize] as c_short,
                     self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(4)) as usize] as c_short,
                 );

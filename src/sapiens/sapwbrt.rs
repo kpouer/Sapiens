@@ -873,18 +873,17 @@ pub(crate) extern "C" fn GetIndexPixBrt(gfx: CGrafPtr, x: c_short, y: c_short) -
                     SwapCouleur
 dans un rectangle du port en entree swappe deux couleurs
 ******************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SwapCouleur(gfx: CGrafPtr, r: *mut Rect, coul1: c_short, coul2: c_short) {
+pub(crate) fn SwapCouleur(gfx: CGrafPtr, r: &Rect, coul1: i16, coul2: i16) {
     let Some(info) = port::info(gfx) else {
         return;
     };
     let data = info.pixels;
     let tailleLigne = info.row_bytes;
+    let mut y = r.top;
     unsafe {
-        let mut y = (*r).top;
-        while y < (*r).bottom {
-            let mut p = data.add((y as i64 * tailleLigne as i64 + (*r).left as i64) as usize);
-            let mut x = (*r).right - (*r).left;
+        while y < r.bottom {
+            let mut p = data.add((y as i64 * tailleLigne as i64 + r.left as i64) as usize);
+            let mut x = r.right - r.left;
             while x != 0 {
                 x -= 1;
                 if *p == coul1 as u8 {
