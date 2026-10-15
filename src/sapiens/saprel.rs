@@ -87,16 +87,16 @@ impl Sapiens {
     => Chaine a traiter
     @= taille maximale en colonne x, nbre de lignes t
     **************************************************************************/
-    unsafe fn TailleChaine(&self, mut debut: *mut c_char, tx: *mut c_short, ty: *mut c_short) {
-        unsafe {
-            let mut x: c_short = 0;
-            let mut taillex: c_short = 0;
-            let mut y: c_short = 0;
+    fn TailleChaine(&self, mut debut: *mut c_char) -> (i16, i16) {
+        let mut x = 0;
+        let mut taillex = 0;
+        let mut y = 0;
 
-            *ty = 0;
+        let mut ty = 0;
+        unsafe {
             while *debut != 0 {
                 if *debut == b'\r' as c_char {
-                    *ty += 1;
+                    ty += 1;
                     x = 0;
                     debut = debut.add(1);
                 } else {
@@ -104,11 +104,11 @@ impl Sapiens {
                     if x > taillex {
                         taillex = x;
                     }
-                    *ty += y;
+                    ty += y;
                 }
             }
-            *tx = taillex;
         }
+        (taillex, ty)
     }
 
     unsafe fn TailleCarMess(
@@ -123,9 +123,7 @@ impl Sapiens {
             *debut = p.add(1);
             if car > 128 {
                 let chaine = self.GetStrBkMot(car);
-                let mut tx = 0;
-                let mut ty = 0;
-                self.TailleChaine(chaine, &mut tx, &mut ty);
+                let (tx, ty) = self.TailleChaine(chaine);
                 *taillex += tx;
                 *tailley += ty;
             } else {
@@ -360,13 +358,11 @@ impl Sapiens {
             let rgn: RgnHandle;
             let mut x: c_short;
             let mut y: c_short;
-            let mut tx: c_short = 0;
-            let mut ty: c_short = 0;
             let mut p: Ptr = debut;
 
             let _g = port::on(self.sapwind.debecr);
             /* Calcul de la taille de la chaine en pixel */
-            self.TailleChaine(p as *mut c_char, &mut tx, &mut ty);
+            let (mut tx, ty) = self.TailleChaine(p as *mut c_char);
             if tx < 64 {
                 tx = 64;
             }
