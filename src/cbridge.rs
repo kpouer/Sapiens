@@ -221,7 +221,6 @@ pub(crate) type DialogPtr = *mut ::std::os::raw::c_void;
 unsafe extern "C" {
     pub(crate) fn putc(arg1: ::std::os::raw::c_int, arg2: *mut FILE) -> ::std::os::raw::c_int;
 
-    pub(crate) fn GetMainDevice() -> GDHandle;
     pub(crate) fn RetraceRect(d: DialogPtr, r: *mut Rect);
     pub(crate) fn strlen(__s: *const ::std::os::raw::c_char) -> ::std::os::raw::c_ulong;
     pub(crate) fn strcmp(

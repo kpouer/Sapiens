@@ -906,15 +906,6 @@ pub(crate) fn SetRect(r: *mut Rect, left: i16, top: i16, right: i16, bottom: i16
     }
 }
 
-pub(crate) fn UnionRect(src1: *const Rect, src2: *const Rect, dst: *mut Rect) {
-    if src1.is_null() || src2.is_null() || dst.is_null() {
-        return;
-    }
-    unsafe {
-        *dst = (*src1).union(&*src2);
-    }
-}
-
 pub(crate) fn SectRect(src1: *const Rect, src2: *const Rect, dst: *mut Rect) -> Boolean {
     if src1.is_null() || src2.is_null() || dst.is_null() {
         return false;

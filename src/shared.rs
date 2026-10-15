@@ -108,14 +108,14 @@ impl Rect {
         }
     }
 
-    pub(crate) fn union(&self, other: &Rect) -> Rect {
+    pub(crate) fn union(&self, other: &Self) -> Self {
         if self.is_empty() {
             return *other;
         }
         if other.is_empty() {
             return *self;
         }
-        Rect {
+        Self {
             left: self.left.min(other.left),
             top: self.top.min(other.top),
             right: self.right.max(other.right),

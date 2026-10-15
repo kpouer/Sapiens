@@ -5,8 +5,8 @@ use crate::acam::{
     NewPtr, PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect, SetRect,
 };
 use crate::cbridge::{
-    DialogPtr, FILE, GetMainDevice, RetraceRect, blackColor, fclose, fopen, getc, patOr, printf,
-    sprintf, srcCopy, strcpy, whiteColor,
+    DialogPtr, FILE, RetraceRect, blackColor, fclose, fopen, getc, patOr, printf, sprintf, srcCopy,
+    strcpy, whiteColor,
 };
 use crate::langue::Langue::GB;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
@@ -27,18 +27,6 @@ use std::mem::size_of;
 use std::os::raw::{c_char, c_int, c_long, c_short, c_void};
 
 const TAILLE_TFR: u32 = 66;
-
-/*********************************************************************
-                    GetRectMainEcran
-Donne l'aire de l'ecran principal
- ********************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetRectMainEcran(aireEcran: *mut Rect) {
-    unsafe {
-        let gd = GetMainDevice();
-        *aireEcran = (*(*gd)).gdRect;
-    }
-}
 
 /*********************************************************************
                             RetraceItem

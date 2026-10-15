@@ -10,7 +10,7 @@ use std::sync::atomic::Ordering;
 use crate::Sapiens;
 use crate::acam::{
     BackColor, BlockMove, CloseRgn, DisposeRgn, EraseRgn, FAUX, FrameRgn, FrameRoundRect, GetClip,
-    LineTo, NewRgn, OpenRgn, SetClip, SetRect, TickCount, UnionRect, VRAI,
+    LineTo, NewRgn, OpenRgn, SetClip, SetRect, TickCount, VRAI,
 };
 use crate::cbridge::{strcat, strcpy, whiteColor};
 use crate::port;
@@ -401,11 +401,7 @@ impl Sapiens {
                             - TAILLE_QUEUE
                             - 4,
                     );
-                    UnionRect(
-                        &raw const self.saprel.rBulleAdversaire,
-                        &raw const r,
-                        &raw mut self.saprel.rBulleAdversaire,
-                    );
+                    self.saprel.rBulleAdversaire = self.saprel.rBulleAdversaire.union(&r);
                     rbase = self.saprel.rBulleAdversaire;
                 } else {
                     self.saprel.rBulleAdversaire = r;
