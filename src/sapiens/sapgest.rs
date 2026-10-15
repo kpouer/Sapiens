@@ -1462,8 +1462,6 @@ impl Sapiens {
                             DEF3D: Defini la 3d
     ***********************************************************************/
     pub(crate) fn DEF3D(&mut self) {
-        let mut r = Rect::default();
-
         self.sapglob.pal_chron = self.sapglob.palhaute;
         self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut c_short;
         /* Affichage sur Ecran */
@@ -1473,8 +1471,7 @@ impl Sapiens {
         self.sapglob.dsposx = 160;
         self.sapglob.sposy = 50;
         self.sapglob.dsposy = 50;
-        SetRect(
-            &mut r,
+        let mut r = Rect::new(
             16 * ECHELLE as c_short,
             0,
             (320 - 16) * ECHELLE as c_short,

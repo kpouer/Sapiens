@@ -20,7 +20,7 @@ use crate::MOB_HERBE;
 use crate::MOB_IMPACT;
 use crate::MOB_MORT;
 use crate::MOB_SANG_A_TERRE;
-use crate::acam::{FAUX, SetRect, VRAI};
+use crate::acam::{FAUX, VRAI};
 use crate::cbridge::{geneva, teJustLeft};
 use crate::port;
 use crate::sapiens::sapglob::{
@@ -279,9 +279,7 @@ impl Sapiens {
             let c = self.sapglob.peuple(id).posccoeur as c_short;
             self.affomb(self.sapwind.mobFace + 31, l - 2, c - 2, 4, 4, FAUX);
             self.affomb(self.sapwind.mobFace + 30, l - 2 + 22, c - 2, 4, 4, FAUX);
-            let mut r: Rect = Rect::default();
-            SetRect(
-                &raw mut r,
+            let mut r = Rect::new(
                 (c - 2) * ECHELLE as c_short,
                 (l - 2) * ECHELLE as c_short,
                 (c + 16 + 2) * ECHELLE as c_short,
@@ -356,8 +354,7 @@ impl Sapiens {
     fn AffStrVolatile(&mut self, pt: Point, chaine: *mut c_char) {
         unsafe {
             if !chaine.is_null() && CStr::from_ptr(chaine).to_bytes().len() != 0 {
-                let mut raff: Rect = Rect::default();
-                SetRect(&raw mut raff, pt.h - 8, pt.v - 8, pt.h + 100, pt.v + 40);
+                let mut raff = Rect::new(pt.h - 8, pt.v - 8, pt.h + 100, pt.v + 40);
                 if raff.left < 0 {
                     raff.OffsetRect(-raff.left, 0);
                 }
@@ -392,10 +389,8 @@ impl Sapiens {
         unsafe {
             /* on balaye les quatre sapiens*/
             for i in SapId::iter() {
-                let mut r: Rect = Rect::default();
                 /* Dans le symbole du coeur */
-                SetRect(
-                    &raw mut r,
+                let mut r = Rect::new(
                     self.sapglob.peuple(i).posccoeur as c_short * ECHELLE as c_short - 4,
                     self.sapglob.peuple(i).poslcoeur as c_short * ECHELLE as c_short - 4,
                     self.sapglob.peuple(i).posccoeur as c_short * ECHELLE as c_short + 36,

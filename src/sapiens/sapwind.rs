@@ -1462,7 +1462,7 @@ impl Sapiens {
                             GereInterface
     Gestion générale de l'interface
     ********************************************************************/
-    pub(crate) extern "C" fn GereInterface(&mut self) {
+    pub(crate) fn GereInterface(&mut self) {
         let mut part;
         let mut windowResult = WindowPtr::default();
         let mut event = EventRecord::default();
@@ -1597,10 +1597,7 @@ impl SapWind {
 /*******************************************************************
                         SapiensExit
 ********************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SapiensExit(code: c_short) {
+pub(crate) fn SapiensExit(code: i32) {
     ArreteMusique(true);
-    exit(code as i32);
+    exit(code);
 }
-
-/*EOF*/

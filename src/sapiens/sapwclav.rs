@@ -66,8 +66,7 @@ impl Sapiens {
     /*************************************************************************
                         litclav
     **************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn litclav(&mut self) -> c_short {
+    pub(crate) fn litclav(&mut self) -> c_short {
         self.GereInterface();
         let n = self.sapwind.toucheClav;
         self.sapwind.toucheClav = 0;
