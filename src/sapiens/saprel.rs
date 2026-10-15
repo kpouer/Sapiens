@@ -100,7 +100,7 @@ impl Sapiens {
                     x = 0;
                     debut = debut.add(1);
                 } else {
-                    self.TailleCarMess(&mut debut, &mut x, &mut y);
+                    (x, y) = self.TailleCarMess(&mut debut, x, y);
                     if x > taillex {
                         taillex = x;
                     }
@@ -111,12 +111,12 @@ impl Sapiens {
         (taillex, ty)
     }
 
-    unsafe fn TailleCarMess(
+    fn TailleCarMess(
         &self,
         debut: *mut *mut c_char,
-        taillex: *mut c_short,
-        tailley: *mut c_short,
-    ) {
+        mut taillex: i16,
+        mut tailley: i16,
+    ) -> (i16, i16) {
         unsafe {
             let p = *debut;
             let car = *p as u8 as c_short;
@@ -124,12 +124,13 @@ impl Sapiens {
             if car > 128 {
                 let chaine = self.GetStrBkMot(car);
                 let (tx, ty) = self.TailleChaine(chaine);
-                *taillex += tx;
-                *tailley += ty;
+                taillex += tx;
+                tailley += ty;
             } else {
-                *taillex += self.TailleCar(car, 10);
+                taillex += self.TailleCar(car, 10);
             }
         }
+        (taillex, tailley)
     }
 
     /***********************************************************************
