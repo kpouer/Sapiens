@@ -429,17 +429,16 @@ impl Sapiens {
     /******************************************************************
                         CalculeAireMob
     ******************************************************************/
-    pub(crate) fn CalculeAireMob(&self, num: c_short, x: c_short, y: c_short, r: *mut Rect) {
+    pub(crate) const fn CalculeAireMob(&self, num: i16, x: i16, y: i16) -> Rect {
         let mob = &self.sapwbrt.TabMob[num as usize];
         let x = ((x as i32) * (ECHELLE as i32)) as i16;
         let y = ((y as i32) * (ECHELLE as i32)) as i16;
-        SetRect(
-            r,
+        Rect::new(
             x,
             y,
             (x as i32 + mob.nbcol as i32) as i16,
             (y as i32 + mob.nbligne as i32) as i16,
-        );
+        )
     }
 
     /*************************************************************************
@@ -1228,9 +1227,7 @@ impl Sapiens {
     recopiant la premiere partie de l'ecran virtuel sur la deuxieme
     *************************************************************************/
     pub(crate) fn effdemi(&self) {
-        let mut rsourc = Rect::default();
-        SetRect(
-            &mut rsourc,
+        let rsourc = Rect::new(
             0,
             (32 * ECHELLE) as i16,
             (255 * ECHELLE) as i16,
@@ -1255,13 +1252,10 @@ impl Sapiens {
     Efface la zone de la vue 3d sur debecr
     => Couleur RVB St
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn effvirt(&self, couleur: c_short) {
-        let mut r = Rect::default();
-        SetRect(
-            &mut r,
+    pub(crate) fn effvirt(&self, couleur: c_short) {
+        let mut r = Rect::new(
             (32 * ECHELLE) as i16,
-            (1 * ECHELLE) as i16,
+            ECHELLE as i16,
             ((32 + 255) * ECHELLE) as i16,
             (101 * ECHELLE) as i16,
         );
@@ -1274,21 +1268,11 @@ impl Sapiens {
     debecr virtuel
     Transfere d'Ecran (premiere partie) vers debecr
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn tfrvirt(&self) {
-        let mut rsourc = Rect::default();
-        let mut rdest = Rect::default();
-        SetRect(
-            &mut rsourc,
-            0,
-            0,
-            (255 * ECHELLE) as i16,
-            (100 * ECHELLE) as i16,
-        );
-        SetRect(
-            &mut rdest,
+    pub(crate) fn tfrvirt(&self) {
+        let rsourc = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
+        let rdest = Rect::new(
             (32 * ECHELLE) as i16,
-            (1 * ECHELLE) as i16,
+            ECHELLE as i16,
             ((32 + 255) * ECHELLE) as i16,
             ((1 + 100) * ECHELLE) as i16,
         );
@@ -1299,13 +1283,8 @@ impl Sapiens {
                     tfrmenufenetre
     => actif, inactif
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn tfrmenufenetre(&self, etat: c_short) {
-        let mut r = Rect::default();
-        let mut rgb = RGBColor::default();
-
-        SetRect(
-            &mut r,
+    pub(crate) fn tfrmenufenetre(&self, etat: c_short) {
+        let r = Rect::new(
             0,
             (113 * ECHELLE) as i16,
             (320 * ECHELLE) as i16,
@@ -1317,13 +1296,15 @@ impl Sapiens {
         } else {
             let _g = port::on(self.sapwind.mainWindow);
             CarboniseSetPatGray();
-            rgb.red = 15000;
-            rgb.green = 6000;
-            rgb.blue = 2000;
+            let rgb = RGBColor {
+                red: 15000,
+                green: 6000,
+                blue: 2000,
+            };
 
             RGBForeColor(&rgb);
             PenMode(patOr as i16);
-            DoPaintRect(&mut r);
+            DoPaintRect(&r);
             ForeColor(blackColor as i16);
             PenNormal();
         }
@@ -1333,14 +1314,7 @@ impl Sapiens {
     *************************************************************************/
     #[unsafe(no_mangle)]
     pub(crate) extern "C" fn CopyEcran1Sur2(&self) {
-        let mut rsourc = Rect::default();
-        SetRect(
-            &mut rsourc,
-            0,
-            0,
-            (255 * ECHELLE) as i16,
-            (100 * ECHELLE) as i16,
-        );
+        let rsourc = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
         let rp = &rsourc as *const Rect;
         CopyOffscreen(self.sapwind.Ecran1, self.sapwind.Ecran2, rp, rp);
     }
@@ -1354,14 +1328,7 @@ impl Sapiens {
         if let Some(r) = r {
             CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, r, r);
         } else {
-            let mut r2 = Rect::default();
-            SetRect(
-                &mut r2,
-                0,
-                0,
-                (320 * ECHELLE) as i16,
-                (200 * ECHELLE) as i16,
-            );
+            let r2 = Rect::new(0, 0, (320 * ECHELLE) as i16, (200 * ECHELLE) as i16);
             let rp = &r2 as *const Rect;
             CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, rp, rp);
         }
@@ -1399,20 +1366,11 @@ impl Sapiens {
     Affiche un mob sur l'ecran debecr
     => Numero du mob, position y (0-200) ,position x (0-320), transfert
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn AffDebecr(
-        &self,
-        mob: c_short,
-        y: c_short,
-        x: c_short,
-        transfere: c_short,
-    ) {
-        let mut r = Rect::default();
-
+    pub(crate) fn AffDebecr(&self, mob: i16, y: i16, x: i16, transfere: i16) {
         let _g = port::on(self.sapwind.debecr);
         self.Affmobbrt(mob, x, y, 0, std::ptr::null_mut());
         if transfere != 0 {
-            self.CalculeAireMob(mob, x, y, &mut r);
+            let r = self.CalculeAireMob(mob, x, y);
             self.TfrEcr(Some(&r));
         }
     }

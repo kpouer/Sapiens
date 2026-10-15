@@ -24,7 +24,6 @@ pub(crate) mod sapgest;
 pub(crate) mod sapglob;
 pub(crate) mod saplist;
 pub(crate) mod saprel;
-pub(crate) mod sapscrollbar;
 pub(crate) mod saptxt;
 pub(crate) mod saptxt_es;
 pub(crate) mod saptxt_fr;

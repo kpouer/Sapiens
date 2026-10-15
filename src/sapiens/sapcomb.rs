@@ -2201,7 +2201,7 @@ impl Sapiens {
         /*affichage des herbes a l'arriere plan */
         for _ in 0..nb {
             num = self.CalculeMobHerbe();
-            self.CalculeAireMob(num, 0, 0, &raw mut r);
+            r = self.CalculeAireMob(num, 0, 0);
             //AffmobPalette(num,LIGNE_CHEMIN+12-(r.bottom/2)+(i/3),myRandom(0,256),rnd0()&1,TabIndexHerbeFond);
             let y = (LIGNE_CHEMIN as i64 + 12 - (r.bottom / 2) as i64 + self.random.myRandom(0, 3))
                 as c_short;
@@ -2213,7 +2213,7 @@ impl Sapiens {
         for i in 0..self.sapcomb.NbHerbeAvPlan {
             num = self.CalculeMobHerbe();
             self.sapcomb.herbe[i as usize].type_ = num as c_ushort;
-            self.CalculeAireMob(num, 0, 0, &raw mut r);
+            r = self.CalculeAireMob(num, 0, 0);
             self.sapcomb.herbe[i as usize].lin = (LIGNE_MAX_HERBE_AV_PLAN as i32
                 - (self.sapcomb.NbHerbeAvPlan as i32 - i as i32)
                     * (LIGNE_MAX_HERBE_AV_PLAN as i32 - LIGNE_BASE_HERBE_AV_PLAN as i32)

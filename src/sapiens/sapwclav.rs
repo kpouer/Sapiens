@@ -5,7 +5,7 @@
 Fixe l'aire dans laquelle il ne faut plus afficher la souris systeme
 **************************************************************************/
 use crate::Sapiens;
-use crate::acam::{DiffRgn, DisposeRgn, FAUX, GetClip, NewRgn, RectRgn, SetClip, SetRect, VRAI};
+use crate::acam::{DiffRgn, DisposeRgn, FAUX, GetClip, NewRgn, RectRgn, SetClip, VRAI};
 use crate::cbridge::{QElemPtr, TMTask};
 use crate::exchange::{Cursor, set_cursor};
 use crate::port;
@@ -87,22 +87,20 @@ impl Sapiens {
             &raw mut self.sapwclav.rsouris,
             &raw mut self.sapwclav.rsouris,
         );
-        SetRect(&raw mut self.sapwclav.rsouris, 0, 0, 0, 0);
+        self.sapwclav.rsouris = Rect::default();
     }
 
     /**************************************************************************
     ;--     Aff_sour_: Affiche la souris graphique menus
     ; => N. mob,Ligne,Colonne
     **************************************************************************/
-    pub(crate) fn aff_sour(&mut self, mob: c_short, ligne: c_short, colonne: c_short) {
-        let mut rsource: Rect = Rect::default();
+    pub(crate) fn aff_sour(&mut self, mob: i16, ligne: i16, colonne: i16) {
         let mut r: Rect = Rect::default();
         let mut oldRect: Rect = self.sapwclav.rsouris;
         /* Effacement a l'ancienne position */
         /* Aire de la souris sur l'ecran */
-        let p_rsouris = &raw mut self.sapwclav.rsouris;
-        self.CalculeAireMob(mob, colonne, ligne, p_rsouris);
-        self.CalculeAireMob(mob, 0, 0, &raw mut rsource);
+        self.sapwclav.rsouris = self.CalculeAireMob(mob, colonne, ligne);
+        let mut rsource = self.CalculeAireMob(mob, 0, 0);
         /* On gere l'ombre */
         self.sapwclav.rsouris.right += 8;
         self.sapwclav.rsouris.bottom += 8;

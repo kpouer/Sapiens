@@ -10,7 +10,7 @@ use std::sync::atomic::Ordering;
 use crate::Sapiens;
 use crate::acam::{
     BackColor, BlockMove, CloseRgn, DisposeRgn, EraseRgn, FAUX, FrameRgn, FrameRoundRect, GetClip,
-    LineTo, NewRgn, OpenRgn, SetClip, SetRect, TickCount, VRAI,
+    LineTo, NewRgn, OpenRgn, SetClip, TickCount, VRAI,
 };
 use crate::cbridge::{strcat, strcpy, whiteColor};
 use crate::port;
@@ -208,15 +208,8 @@ impl Sapiens {
             if quoi == 6
             /* Bravo tu as gagné */
             {
-                SetRect(
-                    &mut rdest,
-                    0,
-                    0,
-                    (255 * ECHELLE) as c_short,
-                    (100 * ECHELLE) as c_short,
-                );
-                SetRect(
-                    &mut rsourc,
+                rdest = Rect::new(0, 0, (255 * ECHELLE) as c_short, (100 * ECHELLE) as c_short);
+                rsourc = Rect::new(
                     (32 * ECHELLE) as c_short,
                     ECHELLE as c_short,
                     ((32 + 255) * ECHELLE) as c_short,
@@ -332,20 +325,20 @@ impl Sapiens {
             CopyOffscreen(
                 self.sapwind.debecr,
                 self.sapwind.mainWindow,
-                &raw mut self.saprel.rBulleJoueur,
-                &raw mut self.saprel.rBulleJoueur,
+                &self.saprel.rBulleJoueur,
+                &self.saprel.rBulleJoueur,
             );
         }
-        SetRect(&raw mut self.saprel.rBulleJoueur, 0, 0, 0, 0);
+        self.saprel.rBulleJoueur = Rect::default();
         if !self.saprel.rBulleAdversaire.is_empty() {
             CopyOffscreen(
                 self.sapwind.debecr,
                 self.sapwind.mainWindow,
-                &raw mut self.saprel.rBulleAdversaire,
-                &raw mut self.saprel.rBulleAdversaire,
+                &self.saprel.rBulleAdversaire,
+                &self.saprel.rBulleAdversaire,
             );
         }
-        SetRect(&raw mut self.saprel.rBulleAdversaire, 0, 0, 0, 0);
+        self.saprel.rBulleAdversaire = Rect::default();
     }
 
     /**************************************************************************

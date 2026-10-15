@@ -12,7 +12,7 @@ use crate::Sapiens;
 use crate::acam::{
     BackColor, BlockMove, CheckItem, CtoPstr, DisableItem, DisposHandle, DrawMenuBar, EnableItem,
     FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, MaxMem, NewCWindow,
-    PenNormal, PtoCstr, Random, SetMenuBar, SetRect, TickCount, VRAI,
+    PenNormal, PtoCstr, Random, SetMenuBar, TickCount, VRAI,
 };
 use crate::cbridge::{
     DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, ctrlItem,
@@ -144,14 +144,13 @@ impl SapWind {
     }
 
     /// Taille en pixels (ST 320x200) de l'aire de jeu multipliée par SapZoom.
-    fn aire_rect(&self, r: *mut Rect) {
-        SetRect(
-            r,
+    const fn aire_rect(&self) -> Rect {
+        Rect::new(
             0,
             0,
             (320.0 * ECHELLE as f32 * self.SapZoom) as c_short,
             (200.0 * ECHELLE as f32 * self.SapZoom) as c_short,
-        );
+        )
     }
 }
 
@@ -545,9 +544,7 @@ pub(crate) fn DrawArrowPopUp(r: *mut Rect) {
     let mut i: c_short = 0;
     unsafe {
         let y = ((*r).bottom + (*r).top) / 2 + 3;
-        let mut box_: Rect = Rect::default();
-        SetRect(
-            &raw mut box_,
+        let box_ = Rect::new(
             (*r).right - 15,
             (*r).top + 1,
             (*r).right - 1,
@@ -1086,7 +1083,6 @@ impl Sapiens {
 Affiche le tramage de fond de la fenetre
 ***********************************************************************************/
 unsafe fn AfficheFond(gfx: CGrafPtr) {
-    let mut r: Rect = Rect::default();
     let _g = port::on(gfx);
     let portRect = port::bounds(gfx);
     /* Le fond au dessus de l'awale */
@@ -1097,7 +1093,7 @@ unsafe fn AfficheFond(gfx: CGrafPtr) {
         while x < portRect.right + 16 {
             BackColor(whiteColor as c_short);
             ForeColor(blackColor as c_short);
-            SetRect(&raw mut r, x, y, x + 64, y + 64);
+            let r = Rect::new(x, y, x + 64, y + 64);
             DrawPicture(picMotif, &r);
             x += 64;
         }
@@ -1195,7 +1191,6 @@ impl SapWind {
         x_in: c_short,
         y: c_short,
     ) {
-        let mut r: Rect = Rect::default();
         let mut x: c_short = x_in;
 
         CtoPstr(chaine);
@@ -1216,7 +1211,6 @@ impl SapWind {
         DrawString(chaine as *mut u8);
         ForeColor(blackColor as c_short);
         PtoCstr(chaine as *mut u8);
-        self.aire_rect(&raw mut r);
     }
 }
 
@@ -1397,7 +1391,7 @@ impl Sapiens {
             }
             let timeBase = TickCount() + 5 * 60;
 
-            self.sapwind.aire_rect(&raw mut r);
+            r = self.sapwind.aire_rect();
             CarboniseInvalRect(&raw const r);
             ValideUpdate();
             /* On initialise le menu */
@@ -1580,17 +1574,10 @@ impl SapWind {
                             FixeTailleMainWindow
     ********************************************************************/
     pub(crate) fn FixeTailleMainWindow(&self) {
-        let mut rect = Rect::default();
-
         let _g = port::on(self.mainWindow);
-        SetRect(
-            &mut rect,
-            0,
-            0,
-            (320.0 * ECHELLE as f32 * self.SapZoom) as i16,
-            (200.0 * ECHELLE as f32 * self.SapZoom) as i16,
-        );
-        SizeWindow(self.mainWindow, rect.right, rect.bottom, true);
+        let right = (320.0 * ECHELLE as f32 * self.SapZoom) as i16;
+        let bottom = (200.0 * ECHELLE as f32 * self.SapZoom) as i16;
+        SizeWindow(self.mainWindow, right, bottom, true);
     }
 }
 

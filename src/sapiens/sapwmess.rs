@@ -1,12 +1,10 @@
 /****************************************************************************
             Encadre et efface le message
 *****************************************************************************/
-use crate::acam::SetRect;
 use crate::sapiens::sapwbrt::{CopyOffscreen, DoEraseRect, DoFrameRect, DoPenSize, DoScrollRect};
 use crate::shared::Rect;
 use crate::stubs::CarboniseInvalRect;
 use crate::{Sapiens, port};
-use std::os::raw::c_short;
 
 pub(crate) struct Sapwmess {
     pub(crate) rMess: Rect,
@@ -64,17 +62,9 @@ impl Sapiens {
     *****************************************************************************/
     pub(crate) fn scrollbadass(&mut self) {
         let mut i;
-        let mut reff = Rect {
-            top: 0,
-            left: 0,
-            bottom: 0,
-            right: 0,
-        };
-
         self.eff_sour();
         let _g = port::on(self.sapwind.mainWindow);
-        SetRect(
-            &raw mut reff,
+        let reff = Rect::new(
             self.sapwmess.rMess.left,
             self.sapwmess.rMess.top,
             self.sapwmess.rMess.left + 8,

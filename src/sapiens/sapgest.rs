@@ -6,8 +6,7 @@
 ***********************************************************************/
 use crate::Sapiens;
 use crate::acam::{
-    CtoPstr, DisposPtr, FAUX, ForeColor, Line, MoveTo, PtoCstr, RGBForeColor, SetRect, TickCount,
-    VRAI,
+    CtoPstr, DisposPtr, FAUX, ForeColor, Line, MoveTo, PtoCstr, RGBForeColor, TickCount, VRAI,
 };
 use crate::cbridge::{
     CInfoPBRec, blackColor, fclose, fopen, getc, putc, remove, sprintf, strcpy, stricmp, strlen,
@@ -1337,8 +1336,8 @@ Trace une jauge dans debecr
 ***********************************************************************/
 const CAR_UTILE: c_short = 180;
 
-fn AIREJAUGE3d(i: c_short, r: *mut Rect) {
-    SetRect(r, 75, 7 + 14 * i, 75 + CAR_UTILE, 15 + 14 * i);
+const fn AIREJAUGE3d(i: i16) -> Rect {
+    Rect::new(75, 7 + 14 * i, 75 + CAR_UTILE, 15 + 14 * i)
 }
 
 /***********************************************************************
@@ -1350,9 +1349,7 @@ const NB_JAUGES_3D: c_short = 5;
 
 impl Sapiens {
     fn JAUGE3d(&self, i: c_short, val: f32) {
-        let mut r = Rect::default();
-
-        AIREJAUGE3d(i, &mut r);
+        let r = AIREJAUGE3d(i);
         self.boxf(r.top - 1, r.left - 1, r.bottom + 1, r.right + 1, 16);
         self.boxf(
             r.top,
@@ -1385,7 +1382,7 @@ impl Sapiens {
         l'echelle se fait plus tard, au recopie vers l'ecran. */
         macro_rules! aire_zoom {
             ($i:expr) => {{
-                AIREJAUGE3d($i, &mut r);
+                r = AIREJAUGE3d($i);
                 r = port::zoomed(port::current(), &r);
             }};
         }
@@ -1438,15 +1435,9 @@ impl Sapiens {
             j,
             self.sapcomb.nbHerbes as f32 / (NB_MAX_HERBE_AV_PLAN as f32),
         );
-        SetRect(&mut r, 0, 0, 600, 400);
+        let r = Rect::new(0, 0, 600, 400);
         self.TfrEcr(Some(&r));
-        SetRect(
-            &mut r,
-            0,
-            0,
-            320 * ECHELLE as c_short,
-            200 * ECHELLE as c_short,
-        );
+        let r = Rect::new(0, 0, 320 * ECHELLE as c_short, 200 * ECHELLE as c_short);
         CarboniseInvalRect(&raw const r);
         ValideUpdate();
     }
@@ -1490,7 +1481,7 @@ impl Sapiens {
                 let pt = Point::new(self.sapglob.sposx, self.sapglob.sposy);
                 let mut i: c_short = 0;
                 while i < NB_JAUGES_3D as c_short {
-                    AIREJAUGE3d(i, &mut r);
+                    r = AIREJAUGE3d(i);
                     if pt.v >= r.top && pt.v <= r.bottom {
                         pos = i as c_char;
                         loop {

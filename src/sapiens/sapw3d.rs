@@ -12,7 +12,7 @@
 use std::os::raw::{c_char, c_long, c_short, c_uchar, c_ushort};
 use std::ptr::{addr_of_mut, null_mut};
 
-use crate::acam::{DisposPtr, NewPtrClear, Random, SetRect, TickCount};
+use crate::acam::{DisposPtr, NewPtrClear, Random, TickCount};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapwbrt::RemplitZoneLignes;
 use crate::sapiens::sapwcvt::Sapwcvt;
@@ -573,8 +573,7 @@ impl Sapiens {
             } else {
                 j - HAUTEUR_MIN_BANDE
             };
-            SetRect(
-                &mut r,
+            r = Rect::new(
                 (256 - offset as i32) as c_short,
                 top as c_short,
                 (256 + largeur - offset as i32) as c_short,
@@ -631,8 +630,7 @@ impl Sapiens {
                     NB_LIGNES_CIEL as i32
                 };
                 let bottom = self.sapw3d.TAB_LIGNE_SOL[i as usize].y as i32 + NB_LIGNES_CIEL as i32;
-                SetRect(
-                    &mut r,
+                r = Rect::new(
                     (256 - offset) as c_short,
                     top as c_short,
                     (256 + largeur2 - offset) as c_short,
@@ -881,7 +879,6 @@ impl Sapiens {
     ******************************************************************************************/
     pub(crate) unsafe fn visu(&mut self) {
         let mut rd: c_short;
-        let mut r: Rect = Rect::default();
 
         let _g = port::on(self.sapwind.Ecran1);
         self.sapglob.zj = self
@@ -908,8 +905,7 @@ impl Sapiens {
                 rd = (forme.rayon as c_long * 2 * 256 / dist as c_long) as c_short;
                 let hauteurDisque =
                     (m.ign as c_long * forme.nbrdisk as c_long * 256 / dist as c_long) as c_short;
-                SetRect(
-                    &mut r,
+                let r = Rect::new(
                     (x as i32 - rd as i32 / 2) as c_short,
                     (y as i32 - hauteurDisque as i32) as c_short,
                     (x as i32 + rd as i32 / 2) as c_short,

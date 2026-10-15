@@ -2,7 +2,7 @@
 #![allow(non_upper_case_globals)]
 
 use crate::Sapiens;
-use crate::acam::{ForeColor, NewPtr, SectRect, SetRect};
+use crate::acam::{ForeColor, NewPtr, SectRect};
 use crate::cbridge::{blackColor, whiteColor};
 use crate::port;
 use crate::sapiens::sapwbrt::{CopyOffscreen, DoFrameRect, SapiensCreeOffscreen};
@@ -87,28 +87,25 @@ impl Sapiens {
         unsafe {
             if forme.num_mob == 8 {
                 /* (num_mob==BASEMOB+8) Fumee -> BASEMOB=0 */
-                SetRect(
-                    &mut (*eltCart).aire,
+                (*eltCart).aire = Rect::new(
                     (x - 8) as c_short,
                     (y - 32) as c_short,
                     (x + 8) as c_short,
                     (y + 32) as c_short,
                 );
             } else if r < 16 {
-                SetRect(
-                    &mut (*eltCart).aire,
-                    (x - 8) as c_short,
-                    (y - 8) as c_short,
-                    (x + 8) as c_short,
-                    (y + 8) as c_short,
+                (*eltCart).aire = Rect::new(
+                    (x - 8) as i16,
+                    (y - 8) as i16,
+                    (x + 8) as i16,
+                    (y + 8) as i16,
                 );
             } else {
-                SetRect(
-                    &mut (*eltCart).aire,
-                    (x - r / 2) as c_short,
-                    (y - r / 8) as c_short,
-                    (x + r / 2) as c_short,
-                    (y + r / 8) as c_short,
+                (*eltCart).aire = Rect::new(
+                    (x - r / 2) as i16,
+                    (y - r / 8) as i16,
+                    (x + r / 2) as i16,
+                    (y + r / 8) as i16,
                 );
             }
             let mut rb = Rect::default();
@@ -194,8 +191,7 @@ impl Sapiens {
             if self.sapwcart.tab_elt_car.is_null() {
                 return;
             }
-            SetRect(
-                addr_of_mut!(self.sapwcart.aire_carte),
+            self.sapwcart.aire_carte = Rect::new(
                 0,
                 0,
                 (TAILLE_X_CARTE * ECHELLE) as c_short,
@@ -257,7 +253,6 @@ impl Sapiens {
     #[unsafe(no_mangle)]
     pub(crate) unsafe extern "C" fn zoocar(&mut self) {
         let mut bitmap: c_short = 0;
-        let mut r = Rect::default();
 
         let _g = port::on(self.sapwind.mainWindow);
 
@@ -267,8 +262,7 @@ impl Sapiens {
                 break;
             }
         }
-        SetRect(
-            &mut r,
+        let mut r = Rect::new(
             (160 * ECHELLE) as c_short,
             (117 * ECHELLE) as c_short,
             ((160 + TAILLE_X_CARTE) * ECHELLE) as c_short,

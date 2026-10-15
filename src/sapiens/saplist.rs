@@ -4,7 +4,7 @@
 **************************************************************************/
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
-use crate::acam::{FAUX, SetRect, TickCount, VRAI};
+use crate::acam::{FAUX, TickCount, VRAI};
 use crate::cbridge::strcat;
 use crate::langue::Langue::{ES, FR};
 use crate::langue::langue_i16;
@@ -61,8 +61,7 @@ impl Sapiens {
                 self.saplist.inverse_option.LastMenuInvers = -1;
             }
             if menusel >= 0 {
-                SetRect(
-                    &raw mut self.saplist.inverse_option.rInvert,
+                self.saplist.inverse_option.rInvert = Rect::new(
                     (tccol[menusel as usize] as c_short) * 6 * ECHELLE as c_short,
                     (tclin[menusel as usize] as c_short
                         - self.sapglob.tlpos[menusel as usize] as c_short
@@ -429,8 +428,7 @@ impl Sapiens {
                         /* Bouton et pas d'icone */
                         let pt = GetMouse().zoom(port::window_zoom());
 
-                        SetRect(
-                            &mut r,
+                        r = Rect::new(
                             (32 * ECHELLE) as i16,
                             (1 * ECHELLE) as i16,
                             ((32 + 255) * ECHELLE) as i16,
@@ -569,8 +567,7 @@ impl Sapiens {
         }
         let mut travl2 = self.sapglob.lpos.wrapping_sub(1); /*debut d'affichage*/
         /* On efface le fond de la liste */
-        SetRect(
-            &mut r,
+        r = Rect::new(
             (self.sapglob.colaff as c_short) * 6 * ECHELLE as c_short,
             (self.sapglob.linaff as c_short) * 7 * ECHELLE as c_short - 1,
             (self.sapglob.colaff as c_short + self.sapglob.cncol as c_short)
@@ -1091,14 +1088,11 @@ impl Sapiens {
     => 0 vue laterale, 1 paysage
     ***********************************************************************/
     pub(crate) fn AffichePictAide(&self, mode: c_short) {
-        let mut r = Rect::default();
         let _g = port::on(self.sapwind.mainWindow);
-        let num = if mode == 0 {
-            SetRect(&mut r, 320 - 125, 230, 320 + 125, 230 + 160);
-            131
+        let (num, r) = if mode == 0 {
+            (131, Rect::new(320 - 125, 230, 320 + 125, 230 + 160))
         } else {
-            SetRect(&mut r, 32, 230, 32 + 250, 230 + 160);
-            132
+            (132, Rect::new(32, 230, 32 + 250, 230 + 160))
         };
         AffichePictDansAire(&self.sapgest, num, &r);
     }

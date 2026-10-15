@@ -28,7 +28,6 @@ use crate::sapiens::sapgest::Sapgest;
 use crate::sapiens::sapglob::Sapglob;
 use crate::sapiens::saplist::Saplist;
 use crate::sapiens::saprel::Saprel;
-use crate::sapiens::sapscrollbar::Sapscrollbar;
 use crate::sapiens::saptxt::{SapLang, Saptxt};
 use crate::sapiens::sapw3d::Sapw3d;
 use crate::sapiens::sapwarb::Sapwarb;
@@ -176,7 +175,6 @@ struct Sapiens {
     sapwcar: Sapwcar,
     sapwcart: Sapwcart,
     saprel: Saprel,
-    sapscrollbar: Sapscrollbar,
     sapwmess: Sapwmess,
     sapgest: Sapgest,
     sapenreg: Sapenreg,
