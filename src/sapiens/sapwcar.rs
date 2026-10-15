@@ -240,7 +240,7 @@ impl Sapiens {
 impl Sapiens {
     pub(crate) fn GetStrBkMot(&self, car: c_short) -> *mut c_char {
         let vide: *mut c_char = c"".as_ptr() as *mut c_char;
-        let bkmots = self.GetBkMot();
+        let bkmots = self.sap_lang.GetBkMot();
         let mut p: *mut c_char = vide;
         let car = car - 129;
         unsafe {
@@ -383,7 +383,7 @@ impl Sapiens {
                             MOTLST2:Affiche Pour jauges
     ***********************************************************************/
     pub(crate) fn motlst2(&mut self, debut_index: usize) {
-        let app = self.GetApp();
+        let app = self.sap_lang.GetApp();
         let debut = app[debut_index];
         let mut p = debut as *mut u8;
         unsafe {

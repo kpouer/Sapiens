@@ -69,7 +69,7 @@ impl Sapiens {
                     AFSTAT:affiche menu status
     ***********************************************************************/
     pub(crate) fn afstat(&mut self) {
-        let refer3 = self.GetRefer3();
+        let refer3 = self.sap_lang.GetRefer3();
         unsafe {
             (*refer3.wrapping_add(7)).nomref[0] = ((self.sapglob.faim / 64) + 0x91) as c_char;
             (*refer3.wrapping_add(8)).nomref[0] = ((self.sapglob.soif / 64) + 0x91) as c_char;
@@ -168,7 +168,7 @@ impl Sapiens {
                 bottom: 0,
                 right: 0,
             };
-            let scenme = self.GetScenme();
+            let scenme = self.sap_lang.GetScenme();
 
             self.sapglob.dervue = Vue::AUCUNE;
             if quoi == 6 {
@@ -243,7 +243,7 @@ impl Sapiens {
     #[unsafe(no_mangle)]
     pub(crate) extern "C" fn SceveuBulle(&mut self, quoi: c_ushort) {
         unsafe {
-            let scenme = self.GetScenme();
+            let scenme = self.sap_lang.GetScenme();
             self.effaceBulles();
             self.bulle(*scenme.add(quoi as usize) as Ptr, 1);
         }
@@ -312,7 +312,7 @@ impl Sapiens {
             self.scrollbadi();
         }
         self.sapglob.flagbadi = 1;
-        let mescon = self.GetMesCon();
+        let mescon = self.sap_lang.GetMesCon();
         p = mescon[(rang - 1) as usize] as *mut c_uchar;
         unsafe {
             while *p != 0 {
@@ -578,7 +578,7 @@ impl Sapiens {
             if self.sapglob.fdialo != 0 {
                 /*y cause */
                 let rang = ((context - 1) * 4 + (self.random.Rnd() & 3) as c_ushort) as c_short;
-                let mescon = self.GetMesCon();
+                let mescon = self.sap_lang.GetMesCon();
                 strcpy(chaine.as_mut_ptr(), mescon[rang as usize]);
                 if !mess_add.is_null() {
                     strcat(chaine.as_mut_ptr(), mess_add);
@@ -609,7 +609,7 @@ impl Sapiens {
     #[unsafe(no_mangle)]
     pub(crate) extern "C" fn intrsq(&self, objet: c_ushort) -> c_ushort {
         unsafe {
-            let refer1 = self.GetRefer1();
+            let refer1 = self.sap_lang.GetRefer1();
 
             let mut valeur = (*refer1.add((objet - 1) as usize)).param1 & 0xF;
             if objet == self.sapglob.predil as c_ushort {
@@ -815,7 +815,7 @@ impl Sapiens {
                 self.prends(); /*on prends la chose*/
                 /* Remerciement du self.sapglob.chef */
                 self.effaceBulles();
-                let mescon = self.GetMesCon();
+                let mescon = self.sap_lang.GetMesCon();
                 match self.sapglob.scenar {
                     1 => self.bulle(mescon[81] as Ptr, 1),
                     2 => self.bulle(mescon[82] as Ptr, 1),
@@ -1104,7 +1104,7 @@ impl Sapiens {
                             BONNECHASS
     ***********************************************************************/
     pub(crate) fn bonnechass(&mut self) {
-        let mescon = self.GetMesCon();
+        let mescon = self.sap_lang.GetMesCon();
         unsafe {
             if self.sapglob.enerv > 102 * 256 {
                 /*énervé!!!*/
@@ -1146,7 +1146,7 @@ impl Sapiens {
                 let sap3 = &mut self.sapglob.sap3;
                 sap3.vie = 200;
                 /*je suis avec toi*/
-                let mescon = self.GetMesCon();
+                let mescon = self.sap_lang.GetMesCon();
                 self.bulle(mescon[99] as Ptr, 1);
                 self.sapglob.flagbadi = 0;
             } else {
@@ -1154,7 +1154,7 @@ impl Sapiens {
             }
         } else {
             /*je ne suis pas celle que vous croyez*/
-            let mescon = self.GetMesCon();
+            let mescon = self.sap_lang.GetMesCon();
             self.bulle(mescon[98] as Ptr, 1);
             self.excite(2000);
         }
@@ -1166,9 +1166,9 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn tuveuquoi(&mut self) {
         let valeur: c_uchar;
-        let refer1 = self.GetRefer1();
-        let mescon = self.GetMesCon();
-        let scenme = self.GetScenme();
+        let refer1 = self.sap_lang.GetRefer1();
+        let mescon = self.sap_lang.GetMesCon();
+        let scenme = self.sap_lang.GetScenme();
         unsafe {
             if self.sapglob.enerv > 102 * 256 {
                 self.cause(13, core::ptr::null()); /*ta vie !!*/
@@ -1221,7 +1221,7 @@ impl Sapiens {
     pub(crate) fn trdire(&mut self, diquoi: c_ushort) {
         let tfr: c_short;
         let mut enerv2: c_ushort;
-        let refer1 = self.GetRefer1();
+        let refer1 = self.sap_lang.GetRefer1();
         if self.sapglob.fdialo == 0 {
             return; /*si pas de dialogue alors rien*/
         }
@@ -1253,7 +1253,7 @@ impl Sapiens {
                         enerv2 = 0;
                     }
                     self.sapglob.enerv = enerv2;
-                    let mescon = self.GetMesCon();
+                    let mescon = self.sap_lang.GetMesCon();
                     if self.sapglob.enerv > 0x3400 {
                         /*c'est donc toi*/
                         self.bulle(mescon[71] as Ptr, 1);
@@ -1291,7 +1291,7 @@ impl Sapiens {
                         self.cause(12, self.GetStrBkMot(129 + 3)); /*'je suis'*/
                         if self.sapglob.fpress == 0 && self.sapglob.chef == 0 {
                             /*et toi??*/
-                            let mescon = self.GetMesCon();
+                            let mescon = self.sap_lang.GetMesCon();
                             self.bulle(mescon[64] as Ptr, 1);
                             self.excite(200);
                         }
@@ -1311,7 +1311,7 @@ impl Sapiens {
                     /*trop énervé pour négocier*/
                     {
                         /*rien...*/
-                        let mescon = self.GetMesCon();
+                        let mescon = self.sap_lang.GetMesCon();
                         self.bulle(mescon[65] as Ptr, 1);
                         tfr = (self.sapglob.enerv as i32).wrapping_add(200) as c_short;
                         if (self.sapglob.enerv as i32) < (tfr as i32) {

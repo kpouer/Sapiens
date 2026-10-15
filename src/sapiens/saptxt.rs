@@ -5,6 +5,9 @@ use crate::Sapiens;
 use crate::langue::Langue::{ES, FR};
 use crate::langue::langue_i16;
 use crate::sapiens::sapglob::Sapglob;
+use crate::sapiens::saptxt_es::Saptxt_es;
+use crate::sapiens::saptxt_fr::Saptxt_fr;
+use crate::sapiens::saptxt_gb::Saptxt_gb;
 use crate::sapiens::{TypeReference, reference};
 use std::os::raw::{c_char, c_int, c_short};
 use std::ptr::addr_of;
@@ -93,7 +96,14 @@ pub(crate) const fn sc(s: &[u8]) -> *mut c_char {
     s.as_ptr() as *mut c_char
 }
 
-impl Sapiens {
+#[derive(Default)]
+pub(crate) struct SapLang {
+    saptxt_fr: Saptxt_fr,
+    saptxt_gb: Saptxt_gb,
+    saptxt_es: Saptxt_es,
+}
+
+impl SapLang {
     pub(crate) fn GetRefer0(&self) -> *mut reference {
         if langue_i16() == FR as c_short {
             addr_of!(self.saptxt_fr.refer0) as *mut reference

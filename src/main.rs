@@ -29,10 +29,7 @@ use crate::sapiens::sapglob::Sapglob;
 use crate::sapiens::saplist::Saplist;
 use crate::sapiens::saprel::Saprel;
 use crate::sapiens::sapscrollbar::Sapscrollbar;
-use crate::sapiens::saptxt::Saptxt;
-use crate::sapiens::saptxt_es::Saptxt_es;
-use crate::sapiens::saptxt_fr::Saptxt_fr;
-use crate::sapiens::saptxt_gb::Saptxt_gb;
+use crate::sapiens::saptxt::{SapLang, Saptxt};
 use crate::sapiens::sapw3d::Sapw3d;
 use crate::sapiens::sapwarb::Sapwarb;
 use crate::sapiens::sapwbrt::Sapwbrt;
@@ -185,9 +182,7 @@ struct Sapiens {
     sapenreg: Sapenreg,
     sapwcvt: Sapwcvt,
     saptxt: Saptxt,
-    saptxt_fr: Saptxt_fr,
-    saptxt_gb: Saptxt_gb,
-    saptxt_es: Saptxt_es,
+    sap_lang: SapLang,
 }
 
 struct SapiensApp {

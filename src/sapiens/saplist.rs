@@ -356,8 +356,9 @@ impl Sapiens {
                                 + self.sapglob.tlpos[self.sapglob.s_menu as usize] as c_short
                                 - 1) as c_uchar;
                             if self.sapglob.rega < self.sapglob.liste(self.sapglob.stdlist).taille {
-                                let refer =
-                                    self.GetRefer(self.sapglob.liste(self.sapglob.stdlist).typeRef);
+                                let refer = self
+                                    .sap_lang
+                                    .GetRefer(self.sapglob.liste(self.sapglob.stdlist).typeRef);
                                 /*mise en place de stock1 et stock2*/
                                 let ref_ = refer.wrapping_add(
                                     (self.sapglob.liste(self.sapglob.stdlist).elements
@@ -378,7 +379,7 @@ impl Sapiens {
                                 );
                                 /* si sous menu affichage et sortie*/
                                 if self.sapglob.s_menu > 0 {
-                                    let refer = self.GetRefer(
+                                    let refer = self.sap_lang.GetRefer(
                                         self.sapglob.liste(self.saplist.sliste[1]).typeRef,
                                     );
 
@@ -535,7 +536,7 @@ impl Sapiens {
         unsafe {
             if (rang as c_uchar) < (*debliste).taille {
                 /*rang a afficher existe*/
-                let refer = self.GetRefer((*debliste).typeRef);
+                let refer = self.sap_lang.GetRefer((*debliste).typeRef);
                 self.mot(
                     refer.add(((*debliste).elements[rang as usize].wrapping_sub(1)) as usize)
                         as *mut c_char,
@@ -809,7 +810,7 @@ impl Sapiens {
         unsafe {
             let mut j: c_short = 0;
             let t = TickCount();
-            let refer1 = self.GetRefer1();
+            let refer1 = self.sap_lang.GetRefer1();
 
             self.sapglob.menu = entmenu; /*force variable globale*/
             self.sapglob.clin = tclin[self.sapglob.menu as usize] as c_ushort;
@@ -1147,7 +1148,9 @@ impl Sapiens {
             }
             5 => {
                 if self.sapglob.presence > 0 {
-                    let refer = self.GetRefer(self.sapglob.liste(self.saplist.sliste[1]).typeRef);
+                    let refer = self
+                        .sap_lang
+                        .GetRefer(self.sapglob.liste(self.saplist.sliste[1]).typeRef);
                     if self.sapglob.dervue != Vue::LATERALE {
                         self.tfrima();
                     }
