@@ -442,14 +442,14 @@ impl Sapiens {
             SetClip(rgn);
             x = r.left + 8;
             y = r.top + 6;
-            self.GotoxyPixel(x, y);
+            self.sapwcar.GotoxyPixel(x, y);
             while *p == b' ' {
                 p = p.add(1);
             }
             while *p != 0 {
                 if *p == b'\r' {
                     y += 14;
-                    self.GotoxyPixel(x, y);
+                    self.sapwcar.GotoxyPixel(x, y);
                     loop {
                         p = p.add(1);
                         if *p != b' ' {

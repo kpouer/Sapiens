@@ -91,16 +91,20 @@ impl Sapiens {
         self.sapglob.colaff = x;
         self.sapglob.linaff = y;
     }
+}
 
+impl Sapwcar {
     /*************************************************************************
                         GotoxyPixel
     Positionne l'ecriture des caracteres en y et x pixel
     => position en colonne et ligne caracteres
     **************************************************************************/
     pub(crate) fn GotoxyPixel(&mut self, x: c_short, y: c_short) {
-        self.sapwcar.pt_ecr_car = Point::new(x, y);
+        self.pt_ecr_car = Point::new(x, y);
     }
+}
 
+impl Sapiens {
     /*************************************************************************
                         TailleCar
     **************************************************************************/
