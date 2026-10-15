@@ -150,8 +150,8 @@ pub(crate) fn DoFrameRect(aire: &Rect) {
             DoPaintRect
 *****************************************************************************/
 pub(crate) fn DoPaintRect(aire: &Rect) {
-    let mut r = DoZoomRect(aire);
-    PaintRect(&mut r);
+    let r = DoZoomRect(aire);
+    PaintRect(&r);
 }
 /****************************************************************************
             DoPenSize
@@ -233,27 +233,6 @@ Convertit un chemin mac en chemin PC
 #[unsafe(no_mangle)]
 #[allow(unused_variables)]
 pub(crate) extern "C" fn CvtPathMacToPC(nom: *mut c_char) {}
-/******************************************************************
-                   CvtColorToIndex
-******************************************************************/
-fn CvtColorToIndex(pal: *mut PalCoul, rgb: *const BRGBColor) -> c_short {
-    let mut deltamin: i64 = -1;
-    let mut imin: c_short = 0;
-    unsafe {
-        for i in 0..(*pal).nbEntrees.max(0) as usize {
-            let e = (*pal).tabRgb.add(i).read();
-            let dr = ((*rgb).red as i64 - e.red as i64).abs();
-            let dg = ((*rgb).green as i64 - e.green as i64).abs();
-            let db = ((*rgb).blue as i64 - e.blue as i64).abs();
-            let delta = dr + dg + db;
-            if deltamin < 0 || delta < deltamin {
-                deltamin = delta;
-                imin = i as c_short;
-            }
-        }
-    }
-    imin
-}
 
 impl Sapiens {
     /******************************************************************

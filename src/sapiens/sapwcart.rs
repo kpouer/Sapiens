@@ -48,10 +48,8 @@ impl Default for Sapwcart {
 impl Sapiens {
     /*;-_-_-_-_-_-_-_-_  Routine 2: transfere carte  sur ecran -_-_-_-_-_-_-_-
      */
-    unsafe fn tfrcar(&mut self) {
-        let mut rdest = Rect::default();
-        SetRect(
-            &mut rdest,
+    fn tfrcar(&mut self) {
+        let rdest = Rect::new(
             (160 * ECHELLE) as c_short,
             (117 * ECHELLE) as c_short,
             ((160 + TAILLE_X_CARTE) * ECHELLE) as c_short,
@@ -61,13 +59,13 @@ impl Sapiens {
             self.sapwcart.ecr_carte,
             self.sapwind.debecr,
             addr_of_mut!(self.sapwcart.aire_carte),
-            &mut rdest,
+            &rdest,
         );
         CopyOffscreen(
             self.sapwcart.ecr_carte,
             self.sapwind.mainWindow,
             addr_of_mut!(self.sapwcart.aire_carte),
-            &mut rdest,
+            &rdest,
         );
     }
 
@@ -76,7 +74,7 @@ impl Sapiens {
     ; => Pointeur sur la structure montagne ,Zoom_
     ; <= Xc,Yc (Yc à 0 si montagne invisible)
     */
-    unsafe fn calc_cart(&self, mont: &Mont, eltCart: *mut EltCart) -> u8 {
+    fn calc_cart(&self, mont: &Mont, eltCart: *mut EltCart) -> u8 {
         let Some(forme) = mont.forme.map(FormeId::forme) else {
             return 0;
         };
@@ -86,40 +84,42 @@ impl Sapiens {
         let y = ((self.sapglob.xj as i64 - mont.posx as i64) / (self.sapglob.zoom as i64))
             + TAILLE_Y_CARTE;
         let r = forme.rayon as i64 / (self.sapglob.zoom as i64 / 2);
-        if forme.num_mob == 8 {
-            /* (num_mob==BASEMOB+8) Fumee -> BASEMOB=0 */
-            SetRect(
-                &mut (*eltCart).aire,
-                (x - 8) as c_short,
-                (y - 32) as c_short,
-                (x + 8) as c_short,
-                (y + 32) as c_short,
-            );
-        } else if r < 16 {
-            SetRect(
-                &mut (*eltCart).aire,
-                (x - 8) as c_short,
-                (y - 8) as c_short,
-                (x + 8) as c_short,
-                (y + 8) as c_short,
-            );
-        } else {
-            SetRect(
-                &mut (*eltCart).aire,
-                (x - r / 2) as c_short,
-                (y - r / 8) as c_short,
-                (x + r / 2) as c_short,
-                (y + r / 8) as c_short,
-            );
-        }
-        let mut rb = Rect::default();
-        if SectRect(
-            &(*eltCart).aire,
-            addr_of!(self.sapwcart.aire_carte),
-            &mut rb,
-        ) {
-            (*eltCart).mob = self.sapwind.mob3D + forme.numMob3d;
-            return 1; /* VRAI */
+        unsafe {
+            if forme.num_mob == 8 {
+                /* (num_mob==BASEMOB+8) Fumee -> BASEMOB=0 */
+                SetRect(
+                    &mut (*eltCart).aire,
+                    (x - 8) as c_short,
+                    (y - 32) as c_short,
+                    (x + 8) as c_short,
+                    (y + 32) as c_short,
+                );
+            } else if r < 16 {
+                SetRect(
+                    &mut (*eltCart).aire,
+                    (x - 8) as c_short,
+                    (y - 8) as c_short,
+                    (x + 8) as c_short,
+                    (y + 8) as c_short,
+                );
+            } else {
+                SetRect(
+                    &mut (*eltCart).aire,
+                    (x - r / 2) as c_short,
+                    (y - r / 8) as c_short,
+                    (x + r / 2) as c_short,
+                    (y + r / 8) as c_short,
+                );
+            }
+            let mut rb = Rect::default();
+            if SectRect(
+                &(*eltCart).aire,
+                addr_of!(self.sapwcart.aire_carte),
+                &mut rb,
+            ) {
+                (*eltCart).mob = self.sapwind.mob3D + forme.numMob3d;
+                return 1; /* VRAI */
+            }
         }
         0 /* FAUX */
     }
@@ -130,26 +130,29 @@ impl Sapiens {
 => Nombre d'objets a afficher
 ***************************************************************************/
 impl Sapiens {
-    unsafe fn aff_mont(&self, nb: c_short) {
+    fn aff_mont(&self, nb: c_short) {
         loop {
             let mut minyc;
             let mut jmin: c_short = 0;
             minyc = 32767;
-            for j in 0..nb {
-                if (*self.sapwcart.tab_elt_car.add(j as usize)).aire.bottom < minyc {
-                    jmin = j;
-                    minyc = (*self.sapwcart.tab_elt_car.add(j as usize)).aire.bottom;
+            unsafe {
+                for j in 0..nb {
+                    if (*self.sapwcart.tab_elt_car.add(j as usize)).aire.bottom < minyc {
+                        jmin = j;
+                        minyc = (*self.sapwcart.tab_elt_car.add(j as usize)).aire.bottom;
+                    }
                 }
+                if minyc == 32767 {
+                    return;
+                }
+                self.Affmob3d(
+                    (*self.sapwcart.tab_elt_car.add(jmin as usize)).mob,
+                    (*self.sapwcart.tab_elt_car.add(jmin as usize)).aire,
+                    null_mut(),
+                );
+
+                (*self.sapwcart.tab_elt_car.add(jmin as usize)).aire.bottom = 32767;
             }
-            if minyc == 32767 {
-                return;
-            }
-            self.Affmob3d(
-                (*self.sapwcart.tab_elt_car.add(jmin as usize)).mob,
-                (*self.sapwcart.tab_elt_car.add(jmin as usize)).aire,
-                null_mut(),
-            );
-            (*self.sapwcart.tab_elt_car.add(jmin as usize)).aire.bottom = 32767;
         }
     }
 }
@@ -172,8 +175,7 @@ impl Sapiens {
     /***********************************************************************
                              CARTE:
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn carte(&mut self) {
+    pub(crate) fn carte(&mut self) {
         let mut j: c_long;
         let angle: c_short;
         let mut r = Rect::default();
@@ -201,7 +203,7 @@ impl Sapiens {
             );
         }
         let _g = port::on(self.sapwcart.ecr_carte);
-        (*addr_of_mut!(self.sapglob.smenu))[1] = 111;
+        self.sapglob.smenu[1] = 111;
         /* efface carte */
         self.EffCarte();
         /* trie les objets */
@@ -211,8 +213,10 @@ impl Sapiens {
                 break;
             }
             if mont.forme.is_some_and(|id| id.forme().num_mob >= 0) {
-                if self.calc_cart(mont, &mut *self.sapwcart.tab_elt_car.add(j as usize)) != 0 {
-                    j += 1;
+                unsafe {
+                    if self.calc_cart(mont, &mut *self.sapwcart.tab_elt_car.add(j as usize)) != 0 {
+                        j += 1;
+                    }
                 }
             }
         }
@@ -235,8 +239,7 @@ impl Sapiens {
     /***********************************************************************
                            ChangeZoomCarte
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn ChangeZoomCarte(&mut self, delta: c_short) {
+    pub(crate) fn ChangeZoomCarte(&mut self, delta: c_short) {
         let mut z = self.sapglob.zoom as c_short + delta;
         if z > 160 {
             z = 160;
@@ -273,7 +276,7 @@ impl Sapiens {
         );
         r.InsetRect(-1, -1);
         ForeColor(whiteColor as i16);
-        DoFrameRect(&mut r);
+        DoFrameRect(&r);
         ForeColor(blackColor as i16);
         self.carte();
         loop {
@@ -307,6 +310,6 @@ impl Sapiens {
                 break;
             }
         }
-        DoFrameRect(&mut r);
+        DoFrameRect(&r);
     }
 }

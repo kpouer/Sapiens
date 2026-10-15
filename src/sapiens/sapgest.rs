@@ -1017,7 +1017,7 @@ impl Sapiens {
         r.right *= ECHELLE as i16;
         r.top *= ECHELLE as i16;
         r.bottom *= ECHELLE as i16;
-        DoFrameRect(&mut r);
+        DoFrameRect(&r);
     }
 
     /***********************************************************************

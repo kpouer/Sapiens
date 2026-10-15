@@ -2,7 +2,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 
-use crate::shared::{CGrafPtr, Rect};
+use crate::shared::Rect;
 pub(crate) type __int64_t = ::std::os::raw::c_longlong;
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
@@ -116,7 +116,6 @@ impl Default for __sbuf {
         }
     }
 }
-pub(crate) type ModalFilterUPP = *mut ::std::os::raw::c_void;
 pub(crate) const patOr: u32 = 1;
 pub(crate) const srcCopy: u32 = 0;
 pub(crate) type THPrint = *mut *mut TPrint;
@@ -237,11 +236,6 @@ unsafe extern "C" {
         __dst: *mut ::std::os::raw::c_char,
         __src: *const ::std::os::raw::c_char,
     ) -> *mut ::std::os::raw::c_char;
-    pub(crate) fn strncmp(
-        __s1: *const ::std::os::raw::c_char,
-        __s2: *const ::std::os::raw::c_char,
-        __n: ::std::os::raw::c_ulong,
-    ) -> ::std::os::raw::c_int;
     pub(crate) fn sprintf(
         arg1: *mut ::std::os::raw::c_char,
         arg2: *const ::std::os::raw::c_char,
@@ -258,7 +252,6 @@ unsafe extern "C" {
         __nitems: ::std::os::raw::c_ulong,
         __stream: *mut FILE,
     ) -> ::std::os::raw::c_ulong;
-    pub(crate) static mut version: i16;
 
     pub(crate) fn fopen(
         __filename: *const ::std::os::raw::c_char,
@@ -284,7 +277,4 @@ unsafe extern "C" {
         __stream: *mut FILE,
     ) -> ::std::os::raw::c_ulong;
     pub(crate) fn remove(arg1: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
-
-    pub(crate) static mut Ecran: CGrafPtr;
-
 }

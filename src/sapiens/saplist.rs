@@ -863,8 +863,7 @@ impl Sapiens {
             /*reduction du nbre d'elements*/
             if self.sapglob.criter != 0 {
                 /*critere retenu*/
-                let mut i: c_short = 0;
-                i = 0;
+                let mut i = 0;
                 self.sapglob.lpos = 111;
                 while (i as c_ushort) != self.sapglob.liste(self.sapglob.stdlist).taille as c_ushort
                 {

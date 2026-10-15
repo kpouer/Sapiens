@@ -40,7 +40,6 @@ pub(crate) mod sapwind;
 pub(crate) mod sapwmess;
 pub(crate) mod sapwmus;
 pub(crate) mod sapwpref;
-pub(crate) mod sapwsyl;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -248,8 +247,6 @@ pub(crate) struct IndexColor {
     pub(crate) index: i16,
     pub(crate) rgb: RGBColor,
 }
-pub(crate) type IndexColorPtr = *mut IndexColor;
-
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum Vue {
     AUCUNE = 0,

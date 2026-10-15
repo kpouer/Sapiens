@@ -31,7 +31,7 @@ impl Sapiens {
         let mut r = self.sapwmess.rMess;
         r.InsetRect(-1, -1);
         DoEraseRect(&mut r);
-        DoFrameRect(&mut r);
+        DoFrameRect(&r);
         DoPenSize(1, 1);
     }
 
