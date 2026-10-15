@@ -461,8 +461,7 @@ impl Sapiens {
     ***********************************************************************/
     /*duree du jour 4*90=360 heures*/
     /*quoi 0:normal,1:ni param en baisse ni message,2 baisse mais pas mess*/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn chrono(&mut self, quoi: c_short) {
+    pub(crate) fn chrono(&mut self, quoi: c_short) {
         let mut avemess: c_uchar;
 
         if self.sapglob.minute != 0 {
@@ -586,16 +585,14 @@ impl Sapiens {
     => Objet a rechercher.La recherche se fait sur refer1
     <= valeur de l'objet f(presilection)
     */
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn intrsq(&self, objet: c_ushort) -> c_ushort {
+    pub(crate) fn intrsq(&self, objet: c_ushort) -> c_ushort {
+        let refer1 = self.sap_lang.GetRefer1();
         unsafe {
-            let refer1 = self.sap_lang.GetRefer1();
-
             let mut valeur = (*refer1.add((objet - 1) as usize)).param1 & 0xF;
             if objet == self.sapglob.predil as c_ushort {
-                valeur = valeur * 2;
+                valeur *= 2;
             }
-            return valeur as c_ushort;
+            valeur as c_ushort
         }
     }
 
@@ -669,58 +666,6 @@ impl Sapiens {
                 return;
             }
             self.cause(11, core::ptr::null());
-            return;
-        }
-    }
-
-    /***************************************************************************/
-    /*              MODREL:Initialise l'enervement si pas DONNE ou DIRE        */
-    /***************************************************************************
-    => Les deux parametres correspondants au choix
-    */
-    #[allow(dead_code)]
-    pub(crate) fn modrel(&mut self) {
-        unsafe {
-            let tfr: c_ushort;
-            if self.sapglob.tlpos[0] as u8 == 5 /*dire*/ || self.sapglob.tlpos[0] as u8 == 6 /*donner*/ || self.sapglob.fdialo == 0
-            {
-                return;
-            }
-            /*Autre action alors qu'adversaire presentt => self.sapglob.enervement*/
-            tfr = self.sapglob.enerv.wrapping_add(100);
-            if self.sapglob.enerv < tfr {
-                self.sapglob.enerv = tfr;
-            }
-            if self.sapglob.flefba != 0 {
-                /*attends une duree ou une touche*/
-                /*Sappause (100);
-                self.sapglob.flefba=0;*/
-            }
-            if self.sapglob.enerv < 51 * 256
-            /*pas tres self.sapglob.enerve*/
-            {
-                if self.sapglob.fpress != 0 {
-                    self.cause(7, core::ptr::null());
-                } else {
-                    self.cause(2, core::ptr::null());
-                }
-                return;
-            }
-            if self.sapglob.enerv < 102 * 256 {
-                self.cause(8, core::ptr::null()); /*moyennement self.sapglob.enerve*/
-            }
-            if (self.random.Rnd() as c_ushort) > self.sapglob.enerv / 512 {
-                if self.sapglob.enerv < 153 * 256 {
-                    self.cause(9, core::ptr::null());
-                } else {
-                    if self.sapglob.enerv < 204 * 256 {
-                        self.cause(10, core::ptr::null());
-                    } else {
-                        self.cause(11, core::ptr::null());
-                    }
-                }
-            }
-            return;
         }
     }
 
@@ -746,19 +691,18 @@ impl Sapiens {
     unsigned short rangb;simule registre B [0,eltmax[
     **************************************************************************/
     pub(crate) fn trdonn(&mut self, rangb: c_ushort) {
-        unsafe {
-            let objet: c_uchar;
-            let tfr: c_uchar;
-            let mut valeur: c_ushort;
+        let objet: c_uchar;
+        let tfr: c_uchar;
+        let mut valeur: c_ushort;
 
-            if self.sapglob.fdialo == 0 {
-                return; /*pas de dialogue alors rien*/
-            }
-            objet = self.sapglob.liste1.elements[rangb as usize]; /*on prendsl'objet ds la liste*/
-            self.sapglob.flefba = 0;
-            if self.sapglob.chef != 0 && self.sapglob.tribu == 1
-            /*on donne à son self.sapglob.chef*/
-            {
+        if self.sapglob.fdialo == 0 {
+            return; /*pas de dialogue alors rien*/
+        }
+        objet = self.sapglob.liste1.elements[rangb as usize]; /*on prendsl'objet ds la liste*/
+        self.sapglob.flefba = 0;
+        unsafe {
+            if self.sapglob.chef != 0 && self.sapglob.tribu == 1 {
+                /*on donne à son self.sapglob.chef*/
                 if self.sapglob.scenar != 1 {
                     /* on compare l'objet
                     l'objet desiré*/
@@ -768,19 +712,16 @@ impl Sapiens {
                         self.SceveuBulle((self.sapglob.scenar - 1) as c_ushort); /*on raffiche l'objet desire*/
                         return;
                     }
-                } else
-                /*scenario = viande*/
-                {
-                    if objet < 35 || objet > 39
-                    /*viande pourrie ou autre*/
-                    {
+                } else {
+                    /*scenario = viande*/
+                    if objet < 35 || objet > 39 {
+                        /*viande pourrie ou autre*/
                         self.SceveuBulle((self.sapglob.scenar - 1) as c_ushort);
                         return;
                     }
                     self.sapglob.scenpr = ((40 - objet) as i32 - 1) as c_char; /*on enleve au total*/
-                    if self.sapglob.scenpr > 0
-                    /* pas fini !!!*/
-                    {
+                    if self.sapglob.scenpr > 0 {
+                        /* pas fini !!!*/
                         self.prends(); /* enleve viande*/
                         self.sapglob.list10.taille = 0; /* mise à zéro taille*/
                         self.effaceBulles();
@@ -835,9 +776,8 @@ impl Sapiens {
                 /*bien compense*/
                 valeur = 0;
             }
-            if self.sapglob.fpress == 0
-            /*pas presente => cado */
-            {
+            if self.sapglob.fpress == 0 {
+                /*pas presente => cado */
                 if self.sapglob.list10.taille <= self.sapglob.list10.maxtaille {
                     self.prends(); /*y a de la place : on prends*/
                     if self.sapglob.enerv < 102 * 256 {
@@ -877,30 +817,26 @@ impl Sapiens {
                     /*ok il prends*/
                     self.sapglob.vlchan = valeur as c_uchar;
                     self.cause(4, core::ptr::null()); /*marché conclu*/
-                    if self.sapglob.echan == 1
-                    /*protection*/
-                    {
+                    if self.sapglob.echan == 1 {
+                        /*protection*/
                         self.sapglob.enetoi[self.sapglob.tribu as usize - 1] = 0; /*enerv =0*/
                         self.sapglob.echan = 25; /*onguent*/
-                    }
-                    /*on permute les deux*/
-                    else {
+                    } else {
+                        /*on permute les deux*/
                         tfr = self.sapglob.liste1.elements[rangb as usize];
                         self.sapglob.liste1.elements[rangb as usize] = self.sapglob.echan;
                         self.sapglob.echan = tfr;
                         self.inimen(self.sapglob.s_menu as c_ushort);
                     }
-                } else
-                /*insuffisant*/
-                {
+                } else {
+                    /*insuffisant*/
                     self.cause(3, core::ptr::null()); /*c'est pas assez glandu !!!*/
                     self.excite(50);
                 }
             }
             /*si donne et pas trop self.sapglob.enerve*/
-            else
-            /*enerv<e*/
-            {
+            else {
+                /*enerv<e*/
                 if self.sapglob.list10.taille < self.sapglob.list10.maxtaille {
                     /*il ya de la place*/
                     self.prends();

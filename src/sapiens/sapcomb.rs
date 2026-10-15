@@ -24,8 +24,8 @@ use crate::acam::{FAUX, VRAI};
 use crate::cbridge::{geneva, teJustLeft};
 use crate::port;
 use crate::sapiens::sapglob::{
-    ListeId, SapId, bestagress, besthaut, bestlin, bestvie, hautlin, hautou, qtviande, tabinp,
-    tribforce, tribvie,
+    ListeId, SapId, Sapglob, bestagress, besthaut, bestlin, bestvie, hautlin, hautou, qtviande,
+    tabinp, tribforce, tribvie,
 };
 use crate::sapiens::sapwbrt::{DoEraseRect, DoFrameRect, DoTextBox, DoTextSize};
 use crate::sapiens::sapwmus::attends_bruit;
@@ -104,19 +104,21 @@ pub(crate) const fn incsou(s: &mut sap, combien: c_ushort) {
     }
 }
 
-impl Sapiens {
+impl Sapglob {
     /***********************************************************************
                     POSAN:
     ***********************************************************************/
     pub(crate) fn posan(&mut self, sap_id: SapId, mut anim: c_short) {
         anim -= 1;
         for i in 0..14 {
-            if self.sapglob.debban[anim as usize][i] as u8 > 0 {
-                self.sapglob.sap_mut(sap_id).sapanim[i] = self.sapglob.debban[anim as usize][i];
+            if self.debban[anim as usize][i] as u8 > 0 {
+                self.sap_mut(sap_id).sapanim[i] = self.debban[anim as usize][i];
             }
         }
     }
+}
 
+impl Sapiens {
     /***********************************************************************
                     ARRET:
     ***********************************************************************/
@@ -142,12 +144,12 @@ impl Sapiens {
                 sapiens.vitesse
             };
             if (vitesse & 2) != 0 {
-                self.posan(sap_id, 2); /*arret*/
+                self.sapglob.posan(sap_id, 2); /*arret*/
             } else {
-                self.posan(sap_id, 1);
+                self.sapglob.posan(sap_id, 1);
             }
             let objet = self.sapglob.sap(sap_id).objet;
-            self.posan(sap_id, objet as c_short + 6);
+            self.sapglob.posan(sap_id, objet as c_short + 6);
             return;
         }
         let hauteur = self.sapglob.sap(sap_id).hauteur;
@@ -167,7 +169,7 @@ impl Sapiens {
                 let sapiens = self.sapglob.sap(sap_id);
                 (sapiens.vitesse, sapiens.sens)
             };
-            self.posan(
+            self.sapglob.posan(
                 sap_id,
                 (((vitesse - 1) / 2) as c_short ^ sens as c_short) + 12,
             );
@@ -193,7 +195,7 @@ impl Sapiens {
         {
             self.pogne(sap_id); /*recursif*/
         } else {
-            self.posan(sap_id, objet as c_short + 6); /*positionne animation*/
+            self.sapglob.posan(sap_id, objet as c_short + 6); /*positionne animation*/
         }
     }
 
@@ -772,9 +774,9 @@ impl Sapiens {
             }
             (sapiens.hauteur, sapiens.objet)
         };
-        self.posan(sap_id, hauteur as c_short + 8);
+        self.sapglob.posan(sap_id, hauteur as c_short + 8);
         self.arret(sap_id);
-        self.posan(sap_id, objet as c_short + 6);
+        self.sapglob.posan(sap_id, objet as c_short + 6);
     }
 
     /***********************************************************************
@@ -1024,7 +1026,7 @@ impl Sapiens {
 
                 (*s).objet = 0;
             }
-            self.posan(sap_id, 2); /*arret par defaut*/
+            self.sapglob.posan(sap_id, 2); /*arret par defaut*/
             let s = self.sapglob.sap_mut(sap_id);
             if (*s).colonne > 32 {
                 (*s).sens = 0;
@@ -1055,10 +1057,10 @@ impl Sapiens {
         {
             {
                 let s = self.sapglob.sap_mut(sap_id);
-                (*s).snssag = 255;
-                (*s).fuite = 0;
-                (*s).blockimpact = 0;
-                (*s).flg_mort = 0;
+                s.snssag = 255;
+                s.fuite = 0;
+                s.blockimpact = 0;
+                s.flg_mort = 0;
             }
             /*On va redeterminer who pour iniune*/
             if sap_id == SapId::Sap1 {
@@ -1077,8 +1079,8 @@ impl Sapiens {
             if type_ == 0 {
                 /*non present*/
                 let s = self.sapglob.sap_mut(sap_id);
-                (*s).colonne = 200;
-                (*s).vie = 0;
+                s.colonne = 200;
+                s.vie = 0;
                 return;
             }
         }
@@ -1094,15 +1096,15 @@ impl Sapiens {
             } else {
                 let viecopain = self.sapglob.viecopain;
                 let s = self.sapglob.sap_mut(sap_id);
-                (*s).vie = (viecopain as u16 * 60 + 20) as c_uchar;
+                s.vie = (viecopain as u16 * 60 + 20) as c_uchar;
             }
             {
                 let s = self.sapglob.sap_mut(sap_id);
                 if type_ < 0 || type_ >= 4 {
                     // Note : bug dans le code original
-                    (*s).forcehache = 0;
+                    s.forcehache = 0;
                 } else {
-                    (*s).forcehache = tribforce[type_ as usize - 1] as c_uchar;
+                    s.forcehache = tribforce[type_ as usize - 1] as c_uchar;
                 }
             }
             self.iniune(sap_id);
@@ -1117,9 +1119,8 @@ impl Sapiens {
             }
         }
 
-        if type_ < 5
-        /*homme*/
-        {
+        if type_ < 5 {
+            /*homme*/
             loop {
                 self.sapglob.sap_mut(sap_id).cross[FormeVue::BUSTE as usize] =
                     (2 * self.random.myRandom(0, 4)) as c_uchar;
@@ -1136,9 +1137,8 @@ impl Sapiens {
                         i = 2 * (self.random.Rnd() & 3); /*gueule*/
                     }
                 }
-                if type_ == 4
-                /*hyene folle*/
-                {
+                if type_ == 4 {
+                    /*hyene folle*/
                     i = 10; /*masque hyene folle*/
                 }
                 if i != self.sapglob.sap1.cross[FormeVue::TETE as usize] as i16 {
@@ -1158,9 +1158,9 @@ impl Sapiens {
             let colonne = self.sapglob.sap1.colonne;
             let s = self.sapglob.sap_mut(sap_id);
             if colonne > 32 {
-                (*s).colonne = 2;
+                s.colonne = 2;
             } else {
-                (*s).colonne = 54;
+                s.colonne = 54;
             }
         }
         self.iniune(sap_id);
@@ -1174,47 +1174,44 @@ impl Sapiens {
             s.agressivite = (agress as u16 / 256) as c_uchar;
             s.forcehache = tribforce[type_ as usize - 1] as c_uchar;
             s.vie = tribvie[type_ as usize - 1] as c_uchar;
-            if chef > 0 && tribu == 1
-            /*si notre chef alors dur dur*/
-            {
-                (*s).agressivite = 255;
-                (*s).forcehache = 40;
-                (*s).vie = 200;
+            if chef > 0 && tribu == 1 {
+                /*si notre chef alors dur dur*/
+                s.agressivite = 255;
+                s.forcehache = 40;
+                s.vie = 200;
             }
-            if type_ == 0
-            /*personne*/
-            {
-                (*s).sapanim[0] = std::ptr::null_mut(); /*pas généré*/
-                (*s).sapanim[1] = std::ptr::null_mut();
-                (*s).colonne = 200;
-                (*s).vie = 0;
+            if type_ == 0 {
+                /*personne*/
+                s.sapanim[0] = std::ptr::null_mut(); /*pas généré*/
+                s.sapanim[1] = std::ptr::null_mut();
+                s.colonne = 200;
+                s.vie = 0;
             }
             self.posvit(sap_id);
-        } else
-        /*bestiole*/
-        {
+        } else {
+            /*bestiole*/
             if type_ >= 7 {
                 let x = addr_of_mut!(self.sapglob.anlap1) as *mut c_char;
                 let s = self.sapglob.sap_mut(sap_id);
-                (*s).sapanim[1] = x;
+                s.sapanim[1] = x;
             } else {
                 let x = addr_of_mut!(self.sapglob.anlou1) as *mut c_char;
                 let s = self.sapglob.sap_mut(sap_id);
-                (*s).sapanim[1] = x;
+                s.sapanim[1] = x;
             }
             let s = self.sapglob.sap_mut(sap_id);
-            (*s).sapanim[0] = (*s).sapanim[1];
-            (*s).sapanim[2] = std::ptr::null_mut(); /*plus d'animation apres 1*/
-            (*s).sapanim[3] = std::ptr::null_mut();
-            (*s).cross[0] = (((type_ & 1) ^ 1) * 4) as c_uchar;
-            (*s).animal = ((type_ - 5) ^ 2) + 1;
-            (*s).vie = bestvie[type_ as usize - 5] as c_uchar;
-            (*s).ligne = bestlin[type_ as usize - 5] as c_uchar;
-            (*s).hauteur = besthaut[type_ as usize - 5] as c_uchar;
-            (*s).agressivite = bestagress[type_ as usize - 5] as c_uchar;
-            (*s).vitesse = 0; /*fuite à 0*/
-            (*s).objet = 1; /*pour frappe*/
-            (*s).forcehache = 10; /*dents*/
+            s.sapanim[0] = (*s).sapanim[1];
+            s.sapanim[2] = std::ptr::null_mut(); /*plus d'animation apres 1*/
+            s.sapanim[3] = std::ptr::null_mut();
+            s.cross[0] = (((type_ & 1) ^ 1) * 4) as c_uchar;
+            s.animal = ((type_ - 5) ^ 2) + 1;
+            s.vie = bestvie[type_ as usize - 5] as c_uchar;
+            s.ligne = bestlin[type_ as usize - 5] as c_uchar;
+            s.hauteur = besthaut[type_ as usize - 5] as c_uchar;
+            s.agressivite = bestagress[type_ as usize - 5] as c_uchar;
+            s.vitesse = 0; /*fuite à 0*/
+            s.objet = 1; /*pour frappe*/
+            s.forcehache = 10; /*dents*/
         }
         self.decvie(sap_id, 0); /* met en place coeur*/
         self.generique(FAUX);
@@ -1236,9 +1233,9 @@ impl Sapiens {
                 s.hauteur = hauteur; /*donc on le fait*/
                 s.action = 0;
             }
-            self.posan(sap_id, hauteur as c_short + 8);
+            self.sapglob.posan(sap_id, hauteur as c_short + 8);
             self.arret(sap_id);
-            self.posan(sap_id, objet as c_short + 6);
+            self.sapglob.posan(sap_id, objet as c_short + 6);
         }
     }
 
@@ -1277,7 +1274,7 @@ impl Sapiens {
                 } /*si objet =sagaie*/
                 s.objet
             };
-            self.posan(sap_id, objet as c_short + 3);
+            self.sapglob.posan(sap_id, objet as c_short + 3);
         } /*si souffle correct*/
     }
 
@@ -1398,12 +1395,12 @@ impl Sapiens {
                                             self.arret(sap_id);
                                             let hauteur = self.sapglob.sap(sap_id).hauteur;
                                             if hauteur != 0 {
-                                                self.posan(sap_id, hauteur as c_short + 8);
+                                                self.sapglob.posan(sap_id, hauteur as c_short + 8);
                                             } else {
-                                                self.posan(sap_id, 2);
+                                                self.sapglob.posan(sap_id, 2);
                                             }
                                             let objet = self.sapglob.sap(sap_id).objet;
-                                            self.posan(sap_id, objet as c_short + 6);
+                                            self.sapglob.posan(sap_id, objet as c_short + 6);
                                             self.sapglob.sap_mut(sap_id).action &= 127;
                                             return 1; /*on le refait*/
                                         }
@@ -1448,7 +1445,7 @@ impl Sapiens {
                             let sapiens = self.sapglob.sap_mut(sap_id);
                             (*sapiens).hauteur -= 1;
                             self.arret(sap_id);
-                            self.posan(sap_id, 10); /*a genoux*/
+                            self.sapglob.posan(sap_id, 10); /*a genoux*/
                             return 1; /*on le refait*/
                         }
                         if tfr == 5
