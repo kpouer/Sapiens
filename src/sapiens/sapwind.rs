@@ -16,8 +16,8 @@ use crate::acam::{
 };
 use crate::cbridge::{
     DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, ctrlItem,
-    editText, everyEvent, geneva, helvetica, itemDisable, optionKey, radCtrl, statText, strcat,
-    strcpy, strlen, userItem, watchCursor, whiteColor,
+    editText, everyEvent, geneva, helvetica, optionKey, radCtrl, statText, strcat, strcpy, strlen,
+    userItem, watchCursor, whiteColor,
 };
 use crate::exchange::take_menu_command;
 use crate::langue::{langue_i16, set_langue};
@@ -40,9 +40,9 @@ use crate::stubs::{
     CarboniseNewUserItemProc, CarboniseSetCursorArrow, CarboniseSetPortDialog,
     CarboniseValideUpdate, DisposeRoutineDescriptor, DragWindow, DrawPicture, EndUpdate,
     FindWindow, FrontWindow, GetCtlValue, GetDItem, GetDialogItem, GetIText, GetNewDialog,
-    GetNextEvent, GetPicture, GetResource, HLock, HUnlock, HiliteControl, HiliteMenu,
+    GetNextEvent, GetPicture, GetResource, HLock, HUnlock, HiliteMenu,
     InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc, ParamText, PopPath,
-    PushPath, ReleaseResource, SelectWindow, SetCTitle, SetCtlValue, SetCursor, SetDItem,
+    PushPath, ReleaseResource, SelectWindow, SetCTitle, SetCtlValue, SetCursor,
     SetDialogDefaultItem, SetDialogItem, SetIText, SetWTitle, SizeWindow, SystemClick, SystemTask,
 };
 use crate::text::{DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize};
@@ -164,8 +164,7 @@ Structure des 'vers'
 taille de la chaine courte suivi de la chaine courte
 taille de la chaine longue suivi de la chaine longue
 ******************************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn GetVersionSapiens(chaine: *mut c_char) -> Boolean {
+pub(crate) fn GetVersionSapiens(chaine: *mut c_char) -> Boolean {
     unsafe {
         chaine.write(0);
         let ress: Handle = GetResource(VERS, 1);
@@ -219,37 +218,6 @@ impl Sapiens {
         );
         self.DoAlertSapiens(CvtDefaultLangRess(134)); /* ALRT_COLLAPSE */
     }
-
-    /***********************************************************************************
-                     Confirme
-    Affichage d'un message d'erreur formaté
-        RMQ: Cette fonction supporte un affichage formaté identique au printf du C.
-    => Message à afficher sous la forme "format", arguments
-    <= VRAI si confirmation
-    ***********************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn Confirme(&self, format: *mut c_char) -> Boolean {
-        unsafe {
-            let mut chaine: [c_char; TAILLE_STR_MESS_FORMATE as usize] = [0; 512];
-            let mut etat: c_short = 0;
-
-            /* On fixe la zone à la zone de secours de l'interface */
-            if !format.is_null() {
-                let src = std::ffi::CStr::from_ptr(format);
-                copie_chaine(&mut chaine, &src.to_string_lossy());
-                CarboniseSetCursorArrow();
-                CtoPstr(chaine.as_mut_ptr());
-                ParamText(
-                    &raw mut chaine as *mut u8,
-                    TRANS_VIDE.as_ptr() as *mut u8,
-                    TRANS_VIDE.as_ptr() as *mut u8,
-                    TRANS_VIDE.as_ptr() as *mut u8,
-                );
-                etat = self.DoAlertSapiens(CvtDefaultLangRess(135)); /* ALRT_CONFIRMATION */
-            }
-            etat == 1
-        }
-    }
 }
 
 /***********************************************************************************
@@ -263,67 +231,38 @@ pub(crate) fn MessInit(_format: *mut c_char) {}
 => Fixe une valeur type chainedans un item
 <= VRAI si la valeur est bonne, FAUX si la valeur a été tronquée
 **********************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn SetValItem(
-    dialog: DialogPtr,
-    itemHit: c_short,
-    c: *mut c_char,
-) -> c_short {
+pub(crate) fn SetValItem(dialog: DialogPtr, itemHit: c_short, c: *mut c_char) -> c_short {
+    let mut itemType: c_short = 0;
+    let mut control: Handle = core::ptr::null_mut();
+    let mut box_: Rect = Rect::default();
+    let mut chaine: [c_char; 255] = [0; 255];
     unsafe {
-        let mut itemType: c_short = 0;
-        let mut control: Handle = core::ptr::null_mut();
-        let mut box_: Rect = Rect::default();
-        let mut chaine: [c_char; 255] = [0; 255];
-
         strcpy(&raw mut chaine as *mut c_char, c);
-        /* C'est un texte ??? */
-        GetDItem(
-            dialog,
-            itemHit,
-            &raw mut itemType,
-            &raw mut control,
-            &raw mut box_,
-        );
-        /* On fixe la chaine */
-        CtoPstr(chaine.as_mut_ptr());
-        if (itemType & editText as c_short) != 0 || (itemType & statText as c_short) != 0 {
-            SetIText(control, &raw mut chaine as *mut u8);
-        }
-        if (itemType & ctrlItem as c_short) != 0 {
-            SetCTitle(control, &raw mut chaine as *mut u8);
-        }
-        VRAI as c_short
     }
-}
-
-/***********************************************************************************
-                          SetShortItem
- Fixe une valeur de type short dans un item en respectant le formatage
-**********************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn SetShortItem(
-    dialog: DialogPtr,
-    itemHit: c_short,
-    val: c_short,
-) -> c_short {
-    unsafe {
-        let mut chaine: [c_char; 80] = [0; 80];
-
-        copie_chaine(&mut chaine, &format!("{val}"));
-        SetValItem(dialog, itemHit, &raw mut chaine as *mut c_char)
+    /* C'est un texte ??? */
+    GetDItem(
+        dialog,
+        itemHit,
+        &raw mut itemType,
+        &raw mut control,
+        &raw mut box_,
+    );
+    /* On fixe la chaine */
+    CtoPstr(chaine.as_mut_ptr());
+    if (itemType & editText as c_short) != 0 || (itemType & statText as c_short) != 0 {
+        SetIText(control, &raw mut chaine as *mut u8);
     }
+    if (itemType & ctrlItem as c_short) != 0 {
+        SetCTitle(control, &raw mut chaine as *mut u8);
+    }
+    VRAI as c_short
 }
 
 /***********************************************************************************
                                 SetValBouton
 => Fixe une valeur VRAI ou FAUX dans un bouton
 **********************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SetValBouton(
-    dialog: DialogPtr,
-    itemHit: c_short,
-    value: Boolean,
-) -> c_short {
+pub(crate) fn SetValBouton(dialog: DialogPtr, itemHit: c_short, value: Boolean) -> c_short {
     let mut itemType: c_short = 0;
     let mut control: Handle = core::ptr::null_mut();
     let mut box_: Rect = Rect::default();
@@ -355,8 +294,7 @@ pub(crate) extern "C" fn SetValBouton(
                                 GetValBouton
 =>lit une valeur VRAI ou FAUX dans un bouton
 **********************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn GetValBouton(dialog: DialogPtr, itemHit: c_short) -> c_short {
+pub(crate) fn GetValBouton(dialog: DialogPtr, itemHit: c_short) -> c_short {
     let mut itemType: c_short = 0;
     let mut control: Handle = core::ptr::null_mut();
     let mut box_: Rect = Rect::default();
@@ -385,50 +323,10 @@ pub(crate) unsafe extern "C" fn GetValBouton(dialog: DialogPtr, itemHit: c_short
 }
 
 /***********************************************************************************
-                                SetActiveItem
-=> Fixe un Item à actif ou inactif si c'est un control
-**********************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn SetActiveItem(dialog: DialogPtr, itemHit: c_short, value: Boolean) {
-    let mut itemType: c_short = 0;
-    let mut control: Handle = core::ptr::null_mut();
-    let mut box_: Rect = Rect::default();
-
-    GetDItem(
-        dialog,
-        itemHit,
-        &raw mut itemType,
-        &raw mut control,
-        &raw mut box_,
-    );
-    if value {
-        itemType &= (0xFFFF - itemDisable) as c_short;
-    } else {
-        itemType |= itemDisable as c_short;
-    }
-    if (itemType & editText as c_short) != 0 && !value {
-        itemType = statText as c_short;
-    }
-    if (itemType & statText as c_short) != 0 && value {
-        itemType = editText as c_short;
-    }
-    SetDItem(dialog, itemHit, itemType, control, &raw mut box_);
-
-    if (itemType & ctrlItem as c_short) != 0 {
-        HiliteControl(control, if value { 0 } else { 255 });
-    }
-}
-
-/***********************************************************************************
                                 GetValItem
 Lit  une valeur type chaine dans un item texte editable
 **********************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn GetValItem(
-    dialog: DialogPtr,
-    itemHit: c_short,
-    chaine: *mut c_char,
-) -> c_short {
+pub(crate) fn GetValItem(dialog: DialogPtr, itemHit: c_short, chaine: *mut c_char) -> c_short {
     let mut itemType: c_short = 0;
     let mut handle: Handle = core::ptr::null_mut();
     let mut box_: Rect = Rect::default();
@@ -447,29 +345,6 @@ pub(crate) unsafe extern "C" fn GetValItem(
         VRAI as c_short
     } else {
         FAUX as c_short
-    }
-}
-
-/***********************************************************************************
-                                GetShortItem
- Lit une valeur de type short dans un item en respectant le formatage
-**********************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn GetShortItem(
-    dialog: DialogPtr,
-    itemHit: c_short,
-    val: *mut c_short,
-) -> c_short {
-    unsafe {
-        let mut chaine: [c_char; 255] = [0; 255];
-
-        if GetValItem(dialog, itemHit, &raw mut chaine as *mut c_char) != 0 {
-            let cstr = std::ffi::CStr::from_ptr(&raw const chaine as *const c_char);
-            if let Ok(v) = cstr.to_string_lossy().trim().parse::<i16>() {
-                *val = v;
-            }
-        }
-        VRAI as c_short
     }
 }
 

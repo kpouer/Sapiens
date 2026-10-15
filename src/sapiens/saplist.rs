@@ -302,7 +302,7 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn clavm(&mut self) {
         let mut y: c_short;
-        let mut r = Rect::default();
+        let mut r;
 
         /* gestion souris pour clavm */
         self.aff_sour(self.sapglob.icone, self.sapglob.sposy, self.sapglob.sposx);
@@ -548,7 +548,7 @@ impl Sapiens {
     ***********************************************************************/
     fn aflist(&mut self, debliste_id: ListeId) {
         let _j: c_short = 0;
-        let mut r = Rect::default();
+        let mut r;
 
         let _g = port::on(self.sapwind.debecr);
         if self.sapglob.s_menu == self.saplist.inverse_option.LastMenuInvers {

@@ -213,14 +213,6 @@ fn wintel2moto(x: c_short) -> c_short {
     let u = x as u16;
     (((u << 8) & 0xFF00) | ((u >> 8) & 0x00FF)) as c_short
 }
-/******************************************************************
-                    CvtPathMacToPC
-Convertit un chemin mac en chemin PC
-(identite sur Mac : le bloc #ifdef PC n'est pas compile)
-******************************************************************/
-#[unsafe(no_mangle)]
-#[allow(unused_variables)]
-pub(crate) extern "C" fn CvtPathMacToPC(nom: *mut c_char) {}
 
 impl Sapiens {
     /******************************************************************
@@ -248,7 +240,6 @@ impl Sapiens {
         let mut chaine = [0i8; 255];
         unsafe {
             strcpy(chaine.as_mut_ptr(), nom);
-            CvtPathMacToPC(chaine.as_mut_ptr());
             /* On ouvre le fichier en lecture */
             f = fopen(chaine.as_mut_ptr(), c"rb".as_ptr());
             if f.is_null() {

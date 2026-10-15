@@ -547,7 +547,6 @@ impl Sapiens {
                 paslec = (forcef ^ 255) * 8 + 128;
                 yact = posyf_l as c_ushort;
                 calc = posyf_l as c_ushort + 1;
-                tfr = 0;
                 onde = 0;
                 trav1 = 0;
                 while onde < 100 {
@@ -1081,16 +1080,14 @@ impl Sapiens {
                             DEFSAP: Defini un sapiens
     ***********************************************************************/
     pub(crate) extern "C" fn defsap(&mut self) {
+        self.sapglob.sapvit = 0;
+        let nomjoueur_ptr = &raw mut self.saptxt.nomjoueur as *mut c_char;
+        let taille = self.getnom(88, nomjoueur_ptr, 8);
+        if taille == 0 {
+            return;
+        }
+        self.sapglob.flefba = 0;
         unsafe {
-            let mut rval = Rect::default();
-
-            self.sapglob.sapvit = 0;
-            let nomjoueur_ptr = &raw mut self.saptxt.nomjoueur as *mut c_char;
-            let taille = self.getnom(88, nomjoueur_ptr, 8);
-            if taille == 0 {
-                return;
-            }
-            self.sapglob.flefba = 0;
             *(&raw mut self.saptxt.nomjoueur as *mut c_char).add(taille as usize) = 0;
             /* definitions des quotas personnage*/
             for i in 0..5usize {
@@ -1189,7 +1186,7 @@ impl Sapiens {
                                 true,
                             );
                             loop {
-                                rval = self.AireValJauge(pos as i16);
+                                let rval = self.AireValJauge(pos as i16);
                                 /* On augmente la jauge */
                                 if self.sapglob.sposx > rval.right
                                     && self.sapglob.param[5] != 0
@@ -1374,7 +1371,7 @@ impl Sapiens {
     ***********************************************************************/
     fn JAUGES3D(&self) {
         let mut i: c_short = 0;
-        let mut r = Rect::default();
+        let mut r;
         let _g = port::on(self.sapwind.debecr);
         self.boxf(0, 32, 101, 287, 5);
 

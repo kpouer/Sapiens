@@ -535,7 +535,7 @@ impl Sapiens {
                                     On affiche les lignes du sol
     *********************************************************************************/
     unsafe fn AfficheSol(&mut self) {
-        let mut r: Rect = Rect::default();
+        let mut r;
         let mut rdep: Rect;
         let mut i: i32;
         let mut numPalette: i32;
