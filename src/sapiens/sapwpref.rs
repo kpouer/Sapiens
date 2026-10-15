@@ -97,7 +97,6 @@ impl Sapiens {
                 f,
             );
             fclose(f);
-            return;
         }
     }
 }

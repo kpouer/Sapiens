@@ -30,7 +30,7 @@ impl Sapiens {
         let _g = port::on(self.sapwind.debecr);
         let mut r = self.sapwmess.rMess;
         r.InsetRect(-1, -1);
-        DoEraseRect(&mut r);
+        DoEraseRect(&r);
         DoFrameRect(&r);
         DoPenSize(1, 1);
     }
@@ -63,8 +63,8 @@ impl Sapiens {
                 Scrolling du message
     *****************************************************************************/
     pub(crate) fn scrollbadass(&mut self) {
-        let mut i: c_short;
-        let mut reff: Rect = Rect {
+        let mut i;
+        let mut reff = Rect {
             top: 0,
             left: 0,
             bottom: 0,
@@ -89,5 +89,3 @@ impl Sapiens {
         self.efbadass();
     }
 }
-
-/*EOF*/

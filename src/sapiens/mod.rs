@@ -247,6 +247,7 @@ pub(crate) struct IndexColor {
     pub(crate) index: i16,
     pub(crate) rgb: RGBColor,
 }
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum Vue {
     AUCUNE = 0,
@@ -254,6 +255,7 @@ pub(crate) enum Vue {
     LATERALE = 2,
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum FormeVue {
     BUSTE = 3,

@@ -1098,7 +1098,7 @@ unsafe fn AfficheFond(gfx: CGrafPtr) {
             BackColor(whiteColor as c_short);
             ForeColor(blackColor as c_short);
             SetRect(&raw mut r, x, y, x + 64, y + 64);
-            DrawPicture(picMotif, &raw const r as *const Rect);
+            DrawPicture(picMotif, &r);
             x += 64;
         }
         y += 64;
@@ -1342,7 +1342,7 @@ impl Sapiens {
                     60,
                 );
                 let rdest = DoZoomRect(&r);
-                DrawPicture(pict, &raw const rdest);
+                DrawPicture(pict, &rdest);
                 ReleaseResource(pict as Handle);
             }
             /* Affichage de la version de sapiens */
