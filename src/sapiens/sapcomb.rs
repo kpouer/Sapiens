@@ -116,21 +116,21 @@ impl Sapglob {
             }
         }
     }
-}
 
-impl Sapiens {
     /***********************************************************************
                     ARRET:
     ***********************************************************************/
     pub(crate) fn arret(&mut self, sap_id: SapId) {
-        let sapiens = self.sapglob.sap_mut(sap_id);
-        if ((*sapiens).vitesse & 2) == 0
+        let sapiens = self.sap_mut(sap_id);
+        if (sapiens.vitesse & 2) == 0
         /*pas arret*/
         {
-            (*sapiens).vitesse = ((*sapiens).vitesse ^ 3) & 3;
+            sapiens.vitesse = (sapiens.vitesse ^ 3) & 3;
         }
     }
+}
 
+impl Sapiens {
     /***********************************************************************
                             POSVIT:Positionne vitesse
     ***********************************************************************/
@@ -154,7 +154,7 @@ impl Sapiens {
         }
         let hauteur = self.sapglob.sap(sap_id).hauteur;
         if hauteur != 1 {
-            self.arret(sap_id);
+            self.sapglob.arret(sap_id);
             let sapiens = self.sapglob.sap_mut(sap_id);
             (*sapiens).sens = ((((*sapiens).vitesse - 1) & 2) / 2) as c_uchar;
             return;
@@ -176,7 +176,7 @@ impl Sapiens {
             let sapiens = self.sapglob.sap_mut(sap_id);
             (*sapiens).vitesse = (*sapiens).sens + 2;
         }
-        self.arret(sap_id);
+        self.sapglob.arret(sap_id);
     }
 
     /***********************************************************************
@@ -775,7 +775,7 @@ impl Sapiens {
             (sapiens.hauteur, sapiens.objet)
         };
         self.sapglob.posan(sap_id, hauteur as c_short + 8);
-        self.arret(sap_id);
+        self.sapglob.arret(sap_id);
         self.sapglob.posan(sap_id, objet as c_short + 6);
     }
 
@@ -1234,7 +1234,7 @@ impl Sapiens {
                 s.action = 0;
             }
             self.sapglob.posan(sap_id, hauteur as c_short + 8);
-            self.arret(sap_id);
+            self.sapglob.arret(sap_id);
             self.sapglob.posan(sap_id, objet as c_short + 6);
         }
     }
@@ -1392,7 +1392,7 @@ impl Sapiens {
                                             as c_short)
                                             < 5
                                         {
-                                            self.arret(sap_id);
+                                            self.sapglob.arret(sap_id);
                                             let hauteur = self.sapglob.sap(sap_id).hauteur;
                                             if hauteur != 0 {
                                                 self.sapglob.posan(sap_id, hauteur as c_short + 8);
@@ -1444,7 +1444,7 @@ impl Sapiens {
                         {
                             let sapiens = self.sapglob.sap_mut(sap_id);
                             (*sapiens).hauteur -= 1;
-                            self.arret(sap_id);
+                            self.sapglob.arret(sap_id);
                             self.sapglob.posan(sap_id, 10); /*a genoux*/
                             return 1; /*on le refait*/
                         }
@@ -1703,7 +1703,7 @@ impl Sapiens {
                 let vitesse = self.sapglob.sap1.vitesse;
                 let scop = self.sapglob.sap_mut(scop_id);
                 (*scop).vitesse = vitesse; /*meme sens*/
-                self.arret(scop_id); /*arrete :vitesse*/
+                self.sapglob.arret(scop_id); /*arrete :vitesse*/
                 self.posvit(scop_id); /*il va s'arreter,positionner le sens et l'anim*/
             }
         }
