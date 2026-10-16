@@ -200,9 +200,7 @@ impl Sapglob {
             self.posan(sap_id, objet as c_short + 6); /*positionne animation*/
         }
     }
-}
 
-impl Sapiens {
     /***********************************************************************
                             JUGE:Etablit les adversaires
     **********************************************************************
@@ -215,63 +213,65 @@ impl Sapiens {
         let mut nbre: c_char = 0;
         /* ----->Mise en place des plans */
         for id in SapId::iter() {
-            if self.sapglob.peuple(id).vie != 0 {
+            if self.peuple(id).vie != 0 {
                 nbre += 1;
             }
         }
         /*----->nbre est le nombre d'acteurs*/
         /*------>si 4 alors deux couples sur deux plans*/
         if nbre == 4 {
-            self.sapglob.profond[2] = 7;
-            self.sapglob.profond[3] = 7;
+            self.profond[2] = 7;
+            self.profond[3] = 7;
         }
         /*sinon tout sur le premier plan*/
         else {
-            self.sapglob.profond[2] = 10;
-            self.sapglob.profond[3] = 10;
+            self.profond[2] = 10;
+            self.profond[3] = 10;
         }
         /*dans tout les cas*/
-        self.sapglob.profond[1] = 10;
-        self.sapglob.profond[0] = 10;
+        self.profond[1] = 10;
+        self.profond[0] = 10;
         /*si reste seulement clan1 alors sur deux plans*/
-        let sap1 = &self.sapglob.sap1;
-        if nbre == 2 && sap1.vie != 0 && self.sapglob.sap3.vie != 0 {
-            self.sapglob.profond[2] = 7;
+        let sap1 = &self.sap1;
+        if nbre == 2 && sap1.vie != 0 && self.sap3.vie != 0 {
+            self.profond[2] = 7;
         }
         /*On positionne l'adversaire de l'ami*/
-        if self.sapglob.sap4.vie != 0 {
-            self.sapglob.sap3.adversaire = Some(SapId::Sap4);
+        if self.sap4.vie != 0 {
+            self.sap3.adversaire = Some(SapId::Sap4);
         } else {
-            self.sapglob.sap3.adversaire = Some(SapId::Sap2);
+            self.sap3.adversaire = Some(SapId::Sap2);
         }
         /*On teste si un des deux clans est vide*/
-        if sap1.vie + self.sapglob.sap3.vie == 0 {
+        if sap1.vie + self.sap3.vie == 0 {
             return 1; /*clan 1 kaput*/
         }
-        if self.sapglob.sap2.vie + self.sapglob.sap4.vie == 0 {
+        if self.sap2.vie + self.sap4.vie == 0 {
             return 0; /*clan 2 kaput*/
         }
         /* Joueur toujours present ???*/
         if sap1.vie != 0 {
-            if self.sapglob.sap3.vie != 0
+            if self.sap3.vie != 0
             /*il a de l'aide ????*/
             {
                 /*oui il a de l'aide*/
-                self.sapglob.sap2.adversaire = Some(SapId::Sap1);
-                self.sapglob.sap4.adversaire = Some(SapId::Sap3);
+                self.sap2.adversaire = Some(SapId::Sap1);
+                self.sap4.adversaire = Some(SapId::Sap3);
             } else {
                 /*non il est seul */
-                self.sapglob.sap2.adversaire = Some(SapId::Sap1);
-                self.sapglob.sap4.adversaire = Some(SapId::Sap1);
+                self.sap2.adversaire = Some(SapId::Sap1);
+                self.sap4.adversaire = Some(SapId::Sap1);
             }
         } else {
             /*l'aide est seule */
-            self.sapglob.sap2.adversaire = Some(SapId::Sap3);
-            self.sapglob.sap4.adversaire = Some(SapId::Sap3);
+            self.sap2.adversaire = Some(SapId::Sap3);
+            self.sap4.adversaire = Some(SapId::Sap3);
         }
         2
     }
+}
 
+impl Sapiens {
     /**********************************************************************
                             InitGenerique
     ***********************************************************************/
@@ -596,8 +596,8 @@ impl Sapiens {
                     self.comment(111); /*Il est Evanoui*/
                 }
             }
-            if self.sapglob.presence as c_short != self.juge() {
-                self.sapglob.fin = (self.juge() + 1) as c_uchar;
+            if self.sapglob.presence as c_short != self.sapglob.juge() {
+                self.sapglob.fin = (self.sapglob.juge() + 1) as c_uchar;
             }
             if sap_id != SapId::Sap1 {
                 self.abando(sap_id); /*abandonne objets*/
@@ -2024,15 +2024,15 @@ impl Sapiens {
             }
             /*c'est con il fait rien*/
             let s2 = self.sapglob.sap_mut(sap_id2);
-            if (*s2).colonne < LIMITE_GAUCHE + 3 || (*s2).colonne > LIMITE_DROITE - 3 {
+            if s2.colonne < LIMITE_GAUCHE + 3 || s2.colonne > LIMITE_DROITE - 3 {
                 /*il sort de l'ecran : on le degenere*/
-                (*s2).sapanim[0] = core::ptr::null_mut();
-                (*s2).colonne = 200;
-                (*s2).vie = 0; /* a pu lapin*/
+                s2.sapanim[0] = core::ptr::null_mut();
+                s2.colonne = 200;
+                s2.vie = 0; /* a pu lapin*/
                 self.sapglob.present[self.sapglob.who as usize] = 0;
                 self.generique(VRAI);
-                if self.sapglob.presence as c_short != self.juge() {
-                    self.sapglob.fin = (self.juge() + 1) as c_uchar;
+                if self.sapglob.presence as c_short != self.sapglob.juge() {
+                    self.sapglob.fin = (self.sapglob.juge() + 1) as c_uchar;
                 }
             }
         }
@@ -2349,7 +2349,7 @@ impl Sapiens {
                     0
                 };
             self.inarme(); /* initialise les armes sap1,silence sur le plateau*/
-            self.sapglob.presence = self.juge(); /* on initialise les adversaires reciproques*/
+            self.sapglob.presence = self.sapglob.juge(); /* on initialise les adversaires reciproques*/
             /* Si le joueur est seul alors affichage du commentaire */
             let sap2 = &self.sapglob.sap2;
             let sap4 = &self.sapglob.sap4;
