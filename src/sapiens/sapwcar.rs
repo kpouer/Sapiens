@@ -99,7 +99,7 @@ impl Sapwcar {
     Positionne l'ecriture des caracteres en y et x pixel
     => position en colonne et ligne caracteres
     **************************************************************************/
-    pub(crate) fn GotoxyPixel(&mut self, x: c_short, y: c_short) {
+    pub(crate) fn GotoxyPixel(&mut self, x: i16, y: i16) {
         self.pt_ecr_car = Point::new(x, y);
     }
 }

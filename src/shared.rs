@@ -46,13 +46,13 @@ pub(crate) type ControlActionUPP = ControlActionProcPtr;
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub(crate) struct Point {
-    pub(crate) v: i16,
     pub(crate) h: i16,
+    pub(crate) v: i16,
 }
 
 impl Point {
-    pub(crate) const fn new(v: i16, h: i16) -> Self {
-        Self { v, h }
+    pub(crate) const fn new(h: i16, v: i16) -> Self {
+        Self { h, v }
     }
 
     pub(crate) const fn zoom(mut self, zoom: f32) -> Self {

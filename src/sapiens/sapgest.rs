@@ -315,7 +315,7 @@ impl Sapiens {
 /***********************************************************************
                         MouseDansSuite
 ***********************************************************************/
-const fn MouseDansSuite(posx: c_short, posy: c_short) -> bool {
+const fn MouseDansSuite(posx: i16, posy: i16) -> bool {
     AIRE_SUITE.pt_in_rect(Point::new(posx, posy))
 }
 
