@@ -237,11 +237,11 @@ impl Sapglob {
             self.profond[2] = 7;
         }
         /*On positionne l'adversaire de l'ami*/
-        if self.sap4.vie != 0 {
-            self.sap3.adversaire = Some(SapId::Sap4);
+        self.sap3.adversaire = if self.sap4.vie != 0 {
+            Some(SapId::Sap4)
         } else {
-            self.sap3.adversaire = Some(SapId::Sap2);
-        }
+            Some(SapId::Sap2)
+        };
         /*On teste si un des deux clans est vide*/
         if sap1.vie + self.sap3.vie == 0 {
             return 1; /*clan 1 kaput*/
@@ -295,20 +295,24 @@ impl Sapiens {
             DoFrameRect(&r);
         }
     }
+}
 
+impl Sapglob {
     /**********************************************************************
                             EffaceGenerique
     ***********************************************************************/
     fn EffaceGenerique(&self) {
         /* on balaye les quatre sapiens*/
-        for sap in self.sapglob.peuple_iter() {
+        for sap in self.peuple_iter() {
             let _l = sap.poslcoeur;
             let _c = sap.posccoeur;
             /*    AffDebecr(mobFace+31,l-2,c-2,FAUX);*/
             /*    AffDebecr(mobFace+30,l-2+22,c-2,FAUX);*/
         }
     }
+}
 
+impl Sapiens {
     /**********************************************************************
                             GENERIQUE:
     ***********************************************************************/
@@ -451,22 +455,22 @@ impl Sapiens {
             if animal != 0 {
                 /*c'est une bestiole*/
                 for _ in 0..qtviande[animal as usize - 1] {
-                    self.ajoutl(ListeId::Liste4, 37);
+                    self.sapglob.ajoutl(ListeId::Liste4, 37);
                 }
                 match animal {
                     1 => {
                         /*lapin*/
-                        self.ajoutl(ListeId::Liste4, 33); /*peau de lapin*/
+                        self.sapglob.ajoutl(ListeId::Liste4, 33); /*peau de lapin*/
                     }
                     3 => {
                         /*loup*/
-                        self.ajoutl(ListeId::Liste4, 35);
-                        self.ajoutl(ListeId::Liste4, 32);
+                        self.sapglob.ajoutl(ListeId::Liste4, 35);
+                        self.sapglob.ajoutl(ListeId::Liste4, 32);
                     }
                     4 => {
                         /*ours*/
-                        self.ajoutl(ListeId::Liste4, 34);
-                        self.ajoutl(ListeId::Liste4, 31);
+                        self.sapglob.ajoutl(ListeId::Liste4, 34);
+                        self.sapglob.ajoutl(ListeId::Liste4, 31);
                     }
                     _ => {}
                 }
@@ -475,7 +479,8 @@ impl Sapiens {
                 if self.sapglob.echan > 2
                 /* pas ma protection ou rien */
                 {
-                    self.ajoutl(ListeId::Liste4, self.sapglob.echan as c_ushort);
+                    self.sapglob
+                        .ajoutl(ListeId::Liste4, self.sapglob.echan as c_ushort);
                 }
                 let mut i = {
                     let s = self.sapglob.sap(sap_id);
@@ -487,7 +492,7 @@ impl Sapiens {
                         let s = self.sapglob.sap(sap_id);
                         (*(*s).possession).elements[i as usize] as c_ushort
                     };
-                    self.ajoutl(ListeId::Liste4, element);
+                    self.sapglob.ajoutl(ListeId::Liste4, element);
                 }
                 /*on quitte pour les autres morts*/
                 let s = self.sapglob.sap_mut(sap_id);
@@ -685,7 +690,7 @@ impl Sapiens {
                     4 * colsag,
                     snssag as c_short,
                 ); /*a terre*/
-                self.ajoutl(ListeId::Liste4, 45);
+                self.sapglob.ajoutl(ListeId::Liste4, 45);
                 let s1 = self.sapglob.sap_mut(sap_id1);
                 s1.snssag = 255; /*degenere sagaie*/
             } /*si touche*/
@@ -732,9 +737,9 @@ impl Sapiens {
                         snssag as c_short,
                     ); /*a terre*/
                     if self.random.Rnd() > 200 {
-                        self.ajoutl(ListeId::Liste4, SAGAIE as c_ushort);
+                        self.sapglob.ajoutl(ListeId::Liste4, SAGAIE as c_ushort);
                     } else {
-                        self.ajoutl(ListeId::Liste4, 45);
+                        self.sapglob.ajoutl(ListeId::Liste4, 45);
                     }
                     let s1 = self.sapglob.sap_mut(sap_id1);
                     (*s1).snssag = 255; /*degenere*/
@@ -2258,7 +2263,7 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn latera(&mut self) {
         /*affiche noms*/
-        self.EffaceGenerique();
+        self.sapglob.EffaceGenerique();
         self.generique(VRAI);
 
         self.sapglob.dismin = 50;

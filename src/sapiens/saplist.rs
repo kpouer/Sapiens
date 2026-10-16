@@ -9,7 +9,9 @@ use crate::cbridge::strcat;
 use crate::langue::Langue::{ES, FR};
 use crate::langue::langue;
 use crate::port;
-use crate::sapiens::sapglob::{ListeId, SapId, tccol, tclin, tcncol, tcnlin, tcolcdr, tposcur};
+use crate::sapiens::sapglob::{
+    ListeId, SapId, Sapglob, tccol, tclin, tcncol, tcnlin, tcolcdr, tposcur,
+};
 use crate::sapiens::sapwbrt::{AffichePictDansAire, SetPathInData, SwapCouleur};
 use crate::sapiens::sapwind::{cadreg, hires};
 use crate::sapiens::{ECHELLE, Vue, geminterv, gemnbrecad};
@@ -451,12 +453,14 @@ impl Sapiens {
             }
         }
     }
+}
 
+impl Sapglob {
     /***********************************************************************
                   AJOUTL:ajoute un element a une liste
     ***********************************************************************/
     pub(crate) fn ajoutl(&mut self, debliste_id: ListeId, element: c_ushort) -> c_ushort {
-        let debliste = self.sapglob.liste_mut(debliste_id);
+        let debliste = self.liste_mut(debliste_id);
         if debliste_id == ListeId::Listbidon {
             /*le premier element le recoit*/
             debliste.elements[0] = element as c_uchar;
@@ -470,7 +474,9 @@ impl Sapiens {
         }
         0 /*ok*/
     }
+}
 
+impl Sapiens {
     /***********************************************************************
                     ENLEVL:transfere un element d'une liste sur une autre
     ***********************************************************************/
@@ -488,7 +494,7 @@ impl Sapiens {
                 orgliste.taille = orgliste.taille.wrapping_sub(1);
                 orgliste.elements[rang as usize] as c_ushort
             };
-            let erreur = self.ajoutl(receptliste_id, element);
+            let erreur = self.sapglob.ajoutl(receptliste_id, element);
             if erreur != 0 {
                 /*pas de place en reception*/
                 let orgliste = self.sapglob.liste_mut(orgliste_id);

@@ -647,14 +647,7 @@ impl Sapiens {
     => Numero du mob, position x, position y, couleur
     <= rien
     ******************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn AffmobCar(
-        &self,
-        num: c_short,
-        x: c_short,
-        y: c_short,
-        couleur: c_short,
-    ) {
+    pub(crate) fn AffmobCar(&self, num: i16, x: i16, y: i16, couleur: i16) {
         let mob = &self.sapwbrt.TabMob[num as usize];
         let mut tx: c_short = mob.nbcol;
         let mut ty: c_short = mob.nbligne;
@@ -1371,11 +1364,11 @@ impl Sapiens {
     *************************************************************************/
     pub(crate) fn affomb(
         &self,
-        mob: c_short,
-        ligne: c_short,
-        colonne: c_short,
-        deltav: c_short,
-        deltah: c_short,
+        mob: i16,
+        ligne: i16,
+        colonne: i16,
+        deltav: i16,
+        deltah: i16,
         recopie: bool,
     ) {
         let mut r = Rect::default();
@@ -1392,14 +1385,7 @@ impl Sapiens {
     Affiche un mob sur l'ecran virtuel, en entree on a en plus le tableau des
     index de couleurs a utiliser
     *************************************************************************/
-    pub(crate) fn AffmobPalette(
-        &self,
-        mob: c_short,
-        y: c_short,
-        x: c_short,
-        inverse: c_short,
-        tabIndex: *mut c_short,
-    ) {
+    pub(crate) fn AffmobPalette(&self, mob: i16, y: i16, x: i16, inverse: i16, tabIndex: *mut i16) {
         let _g = port::on(self.sapwind.Ecran1);
         self.Affmobbrt(mob, x, y, inverse, tabIndex);
     }

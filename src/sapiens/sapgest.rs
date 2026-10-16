@@ -236,9 +236,9 @@ impl Sapiens {
             2 => self.sceveu(11),
             3 => self.sceveu(13),
             4 => {
-                self.ajoutl(ListeId::Liste1, 22);
-                self.ajoutl(ListeId::Liste1, 25);
-                self.ajoutl(ListeId::Liste1, 46);
+                self.sapglob.ajoutl(ListeId::Liste1, 22);
+                self.sapglob.ajoutl(ListeId::Liste1, 25);
+                self.sapglob.ajoutl(ListeId::Liste1, 46);
             }
             5 => self.sceveu(12),
             6 => cat(),
