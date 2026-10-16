@@ -178,12 +178,14 @@ impl Sapiens {
         }
         self.sapglob.arret(sap_id);
     }
+}
 
+impl Sapglob {
     /***********************************************************************
                     POGNE:Saisi objet à la main
     ***********************************************************************/
     pub(crate) fn pogne(&mut self, sap_id: SapId) {
-        let sapiens = self.sapglob.sap_mut(sap_id);
+        let sapiens = self.sap_mut(sap_id);
         let mut objet = (*sapiens).objet + 1;
         if objet > 2 {
             objet = 0;
@@ -195,10 +197,12 @@ impl Sapiens {
         {
             self.pogne(sap_id); /*recursif*/
         } else {
-            self.sapglob.posan(sap_id, objet as c_short + 6); /*positionne animation*/
+            self.posan(sap_id, objet as c_short + 6); /*positionne animation*/
         }
     }
+}
 
+impl Sapiens {
     /***********************************************************************
                             JUGE:Etablit les adversaires
     **********************************************************************
@@ -845,12 +849,12 @@ impl Sapiens {
                     if (*s2).objet == 1 {
                         /*destroy hache du sap2*/
                         (*s2).forcehache = 0;
-                        self.pogne(sap_id2);
+                        self.sapglob.pogne(sap_id2);
                     }
                     let s = self.sapglob.sap_mut(sap_id);
                     if (*s).objet == 1 {
                         (*s).forcehache = 0;
-                        self.pogne(sap_id);
+                        self.sapglob.pogne(sap_id);
                     }
                 }
                 /*Rnd insuffisant*/
@@ -1514,7 +1518,7 @@ impl Sapiens {
                         }
                         if tfr == 8 {
                             /*fin sagaie*/
-                            self.pogne(sap_id);
+                            self.sapglob.pogne(sap_id);
                             continue;
                         }
                     }
@@ -1614,7 +1618,7 @@ impl Sapiens {
             self.sapglob.fin = 129;
         }
         if (caract & 16) != 0 {
-            self.pogne(sap_id);
+            self.sapglob.pogne(sap_id);
             while (self.getkey(0) & 16) != 0 {}
         }
         if (caract & 32) != 0 {
@@ -1694,7 +1698,7 @@ impl Sapiens {
                 let scop = self.sapglob.sap_mut(scop_id);
                 /*si humain*/
                 if (*scop).objet != 0 {
-                    self.pogne(scop_id); /* plus d'objet a la main*/
+                    self.sapglob.pogne(scop_id); /* plus d'objet a la main*/
                 }
             }
             if self.sapglob.sap(scop_id).hauteur != 0 {
@@ -1779,7 +1783,7 @@ impl Sapiens {
             /*si pas sagaie en main il va la prendre*/
             {
                 if self.random.Rnd() < 20 && (*s2).nbresag != 0 {
-                    self.pogne(sap_id2); /*il essai*/
+                    self.sapglob.pogne(sap_id2); /*il essai*/
                     return;
                 }
             }
@@ -1861,7 +1865,7 @@ impl Sapiens {
                     return;
                 }
                 if (*s2).objet != 1 && self.random.Rnd() > 70 {
-                    self.pogne(sap_id2); /*prends sa hache*/
+                    self.sapglob.pogne(sap_id2); /*prends sa hache*/
                 }
                 if self.random.Rnd() > 80 {
                     self.avasap(sap_id2);
