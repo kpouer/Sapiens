@@ -8,31 +8,30 @@ use crate::sapiens::saptxt_es::Saptxt_es;
 use crate::sapiens::saptxt_fr::Saptxt_fr;
 use crate::sapiens::saptxt_gb::Saptxt_gb;
 use crate::sapiens::{TypeReference, reference};
-use std::os::raw::{c_char, c_int, c_short};
 use std::ptr::addr_of;
 
-const DELTA_LANGUE: c_short = 1000;
+const DELTA_LANGUE: i16 = 1000;
 
-const C_POURCENT: c_short = b'%' as c_short;
-const C_ET: c_short = b'&' as c_short;
-const C_DOLLAR: c_short = b'$' as c_short;
-const C_DIESE: c_short = b'#' as c_short;
-const C_CROCHET_G: c_short = b'[' as c_short;
-const C_CROCHET_D: c_short = b']' as c_short;
-const C_CHAPEAU: c_short = b'^' as c_short;
-const C_BARRE: c_short = b'|' as c_short;
-const C_TRAIT_BAS: c_short = b'_' as c_short;
+const C_POURCENT: i16 = b'%' as i16;
+const C_ET: i16 = b'&' as i16;
+const C_DOLLAR: i16 = b'$' as i16;
+const C_DIESE: i16 = b'#' as i16;
+const C_CROCHET_G: i16 = b'[' as i16;
+const C_CROCHET_D: i16 = b']' as i16;
+const C_CHAPEAU: i16 = b'^' as i16;
+const C_BARRE: i16 = b'|' as i16;
+const C_TRAIT_BAS: i16 = b'_' as i16;
 
 pub(crate) struct Saptxt {
-    pub(crate) nomjoueur: [c_char; 9],
-    pub(crate) nomcopain: [c_char; 7],
-    pub(crate) nomadversaire: [c_char; 255],
-    pub(crate) nomtribu: [c_char; 255],
-    pub(crate) nomsecondaire: [c_char; 255],
-    pub(crate) poschef: [c_char; 4],
-    pub(crate) maced: [c_char; 52],
+    pub(crate) nomjoueur: [i8; 9],
+    pub(crate) nomcopain: [i8; 7],
+    pub(crate) nomadversaire: [i8; 255],
+    pub(crate) nomtribu: [i8; 255],
+    pub(crate) nomsecondaire: [i8; 255],
+    pub(crate) poschef: [i8; 4],
+    pub(crate) maced: [i8; 52],
     #[allow(dead_code)]
-    pub(crate) traps: [*mut c_char; 7],
+    pub(crate) traps: [*mut i8; 7],
 }
 
 impl Default for Saptxt {
@@ -51,13 +50,13 @@ impl Default for Saptxt {
                 0x53, 0x4E, 0x49, 0x50, 0x48, 0x59, 0x47, 0x4C, 0x4F, 0x00,
             ],
             traps: [
-                c"CHAUVET".as_ptr() as *mut c_char,
-                c"GROTTE".as_ptr() as *mut c_char,
-                c"MUSICS".as_ptr() as *mut c_char,
-                c"DETAIL".as_ptr() as *mut c_char,
-                c"AUROCH".as_ptr() as *mut c_char,
-                c"MYRIAD".as_ptr() as *mut c_char,
-                c"CAT   ".as_ptr() as *mut c_char,
+                c"CHAUVET".as_ptr() as *mut i8,
+                c"GROTTE".as_ptr() as *mut i8,
+                c"MUSICS".as_ptr() as *mut i8,
+                c"DETAIL".as_ptr() as *mut i8,
+                c"AUROCH".as_ptr() as *mut i8,
+                c"MYRIAD".as_ptr() as *mut i8,
+                c"CAT   ".as_ptr() as *mut i8,
             ],
         }
     }
@@ -73,11 +72,11 @@ qui choisissent la table selon `langue`.
 
 /* Remplit le char nomref[64] de `struct reference` depuis une chaine
 MacRoman, exactement comme le fait le C : zéro jusqu'au bout. */
-pub(crate) const fn nomref(s: &[u8]) -> [c_char; 64] {
-    let mut out = [0 as c_char; 64];
+pub(crate) const fn nomref(s: &[u8]) -> [i8; 64] {
+    let mut out = [0 as i8; 64];
     let mut i = 0;
     while i < s.len() && i < 64 {
-        out[i] = s[i] as c_char;
+        out[i] = s[i] as i8;
         i += 1;
     }
     out
@@ -91,8 +90,8 @@ Le litteral DOIT garder son \0 final : en C il fait partie de la donnee, et
 le code fait strlen() dessus. Sans lui la lecture deborderait sur la suite
 du .rodata. Pour une chaine vide, ecrire b"\0" et surtout pas b"" : as_ptr()
 rendrait 0x1, un pointeur pendant, et le dereferencement planterait. */
-pub(crate) const fn sc(s: &[u8]) -> *mut c_char {
-    s.as_ptr() as *mut c_char
+pub(crate) const fn sc(s: &[u8]) -> *mut i8 {
+    s.as_ptr() as *mut i8
 }
 
 #[derive(Default)]
@@ -151,7 +150,7 @@ impl SapLang {
         }
     }
 
-    pub(crate) fn GetMesCon(&self) -> &[*mut c_char] {
+    pub(crate) fn GetMesCon(&self) -> &[*mut i8] {
         if langue() == FR {
             &self.saptxt_fr.mescon
         } else if langue() == ES {
@@ -161,7 +160,7 @@ impl SapLang {
         }
     }
 
-    pub(crate) fn GetApp(&self) -> &[*mut c_char] {
+    pub(crate) fn GetApp(&self) -> &[*mut i8] {
         if langue() == FR {
             &self.saptxt_fr.app
         } else if langue() == ES {
@@ -171,34 +170,34 @@ impl SapLang {
         }
     }
 
-    pub(crate) fn GetBkMot(&self) -> *mut *mut c_char {
+    pub(crate) fn GetBkMot(&self) -> *mut *mut i8 {
         if langue() == FR {
-            addr_of!(self.saptxt_fr.bkmots) as *mut *mut c_char
+            addr_of!(self.saptxt_fr.bkmots) as *mut *mut i8
         } else if langue() == ES {
-            addr_of!(self.saptxt_es.bkmots) as *mut *mut c_char
+            addr_of!(self.saptxt_es.bkmots) as *mut *mut i8
         } else {
-            addr_of!(self.saptxt_gb.bkmots) as *mut *mut c_char
+            addr_of!(self.saptxt_gb.bkmots) as *mut *mut i8
         }
     }
 
-    pub(crate) fn GetScenme(&self) -> *mut *mut c_char {
+    pub(crate) fn GetScenme(&self) -> *mut *mut i8 {
         if langue() == FR {
-            addr_of!(self.saptxt_fr.scenme) as *mut *mut c_char
+            addr_of!(self.saptxt_fr.scenme) as *mut *mut i8
         } else if langue() == ES {
-            addr_of!(self.saptxt_es.scenme) as *mut *mut c_char
+            addr_of!(self.saptxt_es.scenme) as *mut *mut i8
         } else {
-            addr_of!(self.saptxt_gb.scenme) as *mut *mut c_char
+            addr_of!(self.saptxt_gb.scenme) as *mut *mut i8
         }
     }
 }
 
 // Convertit un numero de ressource en numero de ressource langue pour la langue donnee
-pub(crate) const fn CvtLangRess(l: c_short, id: c_short) -> c_short {
-    (id as c_int + DELTA_LANGUE as c_int * l as c_int) as c_short
+pub(crate) const fn CvtLangRess(l: i16, id: i16) -> i16 {
+    (id as i32 + DELTA_LANGUE as i32 * l as i32) as i16
 }
 
 // Convertit un numero de ressource en numero de ressource langue pour la langue defaut
-pub(crate) fn CvtDefaultLangRess(id: c_short) -> c_short {
+pub(crate) fn CvtDefaultLangRess(id: i16) -> i16 {
     CvtLangRess(langue_i16(), id)
 }
 
@@ -229,7 +228,7 @@ impl Sapglob {
                     CvtCar
 Conversion d'un caractere special en caractere encode Windows selon la langue
 **************************************************************************/
-pub(crate) fn CvtCar(car: c_short) -> c_short {
+pub(crate) fn CvtCar(car: i16) -> i16 {
     match car {
         C_POURCENT => 0x8a, /* ê */
         C_ET => 0x82,       /* é */
@@ -244,7 +243,7 @@ pub(crate) fn CvtCar(car: c_short) -> c_short {
 Conversion d'un caractere special en caractere encode mac selon la langue
 pour le lissage
 **************************************************************************/
-pub(crate) fn CvtCarLissage(car: c_short) -> c_short {
+pub(crate) fn CvtCarLissage(car: i16) -> i16 {
     // Conversion
     if langue() == FR {
         match car {

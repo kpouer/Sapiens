@@ -29,28 +29,27 @@ use crate::stubs::{
     CarboniseInvalRect, DisposeRoutineDescriptor, PreservePath, RestorePath, SFGetFile, SFPutFile,
     SaisitChemin, SetPathApplication, SetVol, qd,
 };
-use std::ffi::c_ushort;
-use std::os::raw::{c_char, c_int, c_long, c_short, c_uchar, c_uint, c_void};
+use std::os::raw::c_void;
 use std::ptr::null_mut;
 use std::sync::atomic::Ordering;
 
-const NB_LIGNE_SILEX: c_short = 200;
-const NB_COL_SILEX: c_short = 300;
-const COULEUR_FOND_NUCLEUS: c_short = 0x000;
-static forsy1: [c_uchar; 100] = [
+const NB_LIGNE_SILEX: i16 = 200;
+const NB_COL_SILEX: i16 = 300;
+const COULEUR_FOND_NUCLEUS: i16 = 0x000;
+static forsy1: [u8; 100] = [
     0, 0, 0, 0, 1, 1, 2, 3, 4, 4, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14,
     15, 15, 16, 16, 16, 16, 17, 17, 18, 18, 18, 18, 19, 19, 20, 20, 20, 20, 21, 21, 22, 22, 22, 22,
     22, 22, 23, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 23, 23, 23, 23, 23, 23, 22, 22,
     22, 22, 21, 21, 20, 19, 18, 17, 16, 15, 14, 12, 10, 8, 6, 5, 3, 1, 0, 0, 0, 0, 0, 0,
 ];
-static forsy2: [c_uchar; 100] = [
+static forsy2: [u8; 100] = [
     0, 0, 0, 2, 4, 5, 6, 7, 8, 8, 8, 9, 10, 10, 11, 11, 12, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18,
     18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 28, 28, 29,
     29, 29, 29, 30, 30, 30, 30, 30, 30, 30, 30, 31, 31, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
     32, 32, 32, 32, 32, 32, 32, 31, 31, 30, 29, 28, 26, 24, 22, 20, 16, 12, 6, 0, 0, 0, 0, 0, 0,
 ];
 
-static formonde: [c_uchar; 100] = [
+static formonde: [u8; 100] = [
     50, 50, 50, 50, 49, 49, 49, 49, 48, 48, 47, 47, 47, 46, 46, 46, 46, 45, 45, 44, 43, 43, 42, 42,
     41, 40, 39, 39, 38, 38, 37, 37, 36, 35, 34, 34, 33, 33, 32, 32, 31, 30, 29, 28, 27, 26, 25, 25,
     24, 24, 23, 23, 22, 21, 20, 20, 19, 19, 18, 18, 17, 17, 16, 16, 15, 15, 15, 15, 14, 14, 13, 13,
@@ -58,15 +57,15 @@ static formonde: [c_uchar; 100] = [
 ];
 
 pub(crate) struct Sapgest {
-    forsyl: *const c_uchar,
-    palSilex: [c_ushort; 8],
+    forsyl: *const u8,
+    palSilex: [u16; 8],
     /* Nom du dernier fichier d'aventure propose a la sauvegarde */
-    nom_sauve: [c_char; 255],
+    nom_sauve: [i8; 255],
     /* Extension courante du filtre de selection de fichiers (ex-`ExtensionCmp`) */
-    extension_cmp: [c_char; 10],
+    extension_cmp: [i8; 10],
     /* Volume et repertoire de l'application (ex-globals SAPIENS.H) */
-    pub(crate) PathApplication: c_long,
-    pub(crate) volumeApplication: c_short,
+    pub(crate) PathApplication: i64,
+    pub(crate) volumeApplication: i16,
 }
 
 impl Default for Sapgest {
@@ -82,28 +81,28 @@ impl Default for Sapgest {
     }
 }
 
-const NB_COUL_SILEX: c_short = 8;
+const NB_COUL_SILEX: i16 = 8;
 
 /* Correspondance entre epaisseur et couleur */
-static epaiss: [c_ushort; 75] = [
+static epaiss: [u16; 75] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5,
     5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 7,
 ];
 
 /* Mobs du silex et curseurs (macros de SAPIENS.H, basees sur des globaux) */
-const MOB_DESIGNE_BASE: c_short = 17; /* mobFleches+17 */
-const MOB_HERBE_BASE: c_short = 1; /* mobAvplan+1 */
-const MOB_SILEX_SAGAIE_BASE: c_short = 13; /* mobSilex+13 */
-const MOB_SILEX_HACHE_BASE: c_short = 14; /* mobSilex+14 */
-const MOB_SILEX_CASSE_BASE: c_short = 15; /* mobSilex+15 */
-const MOB_DEHORS_BASE: c_short = 20; /* mobBambou+20 */
-const MOB_FRAPPE_BASE: c_short = 21; /* mobBambou+21 */
+const MOB_DESIGNE_BASE: i16 = 17; /* mobFleches+17 */
+const MOB_HERBE_BASE: i16 = 1; /* mobAvplan+1 */
+const MOB_SILEX_SAGAIE_BASE: i16 = 13; /* mobSilex+13 */
+const MOB_SILEX_HACHE_BASE: i16 = 14; /* mobSilex+14 */
+const MOB_SILEX_CASSE_BASE: i16 = 15; /* mobSilex+15 */
+const MOB_DEHORS_BASE: i16 = 20; /* mobBambou+20 */
+const MOB_FRAPPE_BASE: i16 = 21; /* mobBambou+21 */
 
-const MOB_COURANT_BASE: c_short = 22; /* mobBambou+22 */
+const MOB_COURANT_BASE: i16 = 22; /* mobBambou+22 */
 /* Traps de saisie (mots de passe de la version initiale) */
 
-static TRAPS: [[c_uchar; 7]; 7] = [
+static TRAPS: [[u8; 7]; 7] = [
     [b's', b'a', b'l', b'a', b'u', b'd', 0],
     [b'c', b'o', b'm', b'm', b'a', b'n', 0],
     [b'n', b'i', b'e', b'u', b'l', 0, 0],
@@ -169,13 +168,13 @@ impl Sapiens {
     Ecrit un point coloré directement sur l'ecran
     => ligne,colonne ,couleur ST
     ***********************************************************************/
-    pub(crate) fn plot_ecr(&self, y: c_short, x: c_short, couleur: c_short) {
+    pub(crate) fn plot_ecr(&self, y: i16, x: i16, couleur: i16) {
         let mut rgb = RGBColor::default();
         Sapwcvt::CvtCouleurEnRgb(self.sapglob.palhaute, couleur, &mut rgb);
         RGBForeColor(&rgb);
-        MoveTo(x * ECHELLE as c_short, y * ECHELLE as c_short);
-        Line(ECHELLE as c_short, 0);
-        ForeColor(blackColor as c_short);
+        MoveTo(x * ECHELLE as i16, y * ECHELLE as i16);
+        Line(ECHELLE as i16, 0);
+        ForeColor(blackColor as i16);
     }
 }
 
@@ -185,11 +184,11 @@ Lit un point coloré dans le silex
 => ligne,colonne
 <= couleur 0-NB_COUL_SILEX
 ***********************************************************************/
-fn lit_sil(sapiens: &Sapiens, y: c_short, x: c_short) -> c_short {
+fn lit_sil(sapiens: &Sapiens, y: i16, x: i16) -> i16 {
     let index = GetIndexPixBrt(sapiens.sapwind.Ecran1, x + 106, y);
-    let mut i: c_short = 0;
+    let mut i: i16 = 0;
     while i < NB_COUL_SILEX {
-        if sapiens.sapgest.palSilex[i as usize] as c_short == index {
+        if sapiens.sapgest.palSilex[i as usize] as i16 == index {
             return i;
         }
         i += 1;
@@ -203,12 +202,12 @@ fn lit_sil(sapiens: &Sapiens, y: c_short, x: c_short) -> c_short {
 Ecrit un point coloré dans le silex
 => ligne (0-400) ,colonne (0-640),couleur 0-NB_COUL_SILEX
 ***********************************************************************/
-fn ecrit_sil(sapiens: &Sapiens, y: c_short, x: c_short, couleur: c_short) {
+fn ecrit_sil(sapiens: &Sapiens, y: i16, x: i16, couleur: i16) {
     PlotIndexPixBrt(
         sapiens.sapwind.Ecran1,
         x + 106,
         y,
-        sapiens.sapgest.palSilex[couleur as usize] as c_short,
+        sapiens.sapgest.palSilex[couleur as usize] as i16,
     );
 }
 
@@ -221,10 +220,10 @@ impl Sapiens {
     /***********************************************************************
                     TRAPSURE:Acces reserve aux initiés...
     ***********************************************************************/
-    pub(crate) fn trapsure(&mut self, quoi: c_short) {
+    pub(crate) fn trapsure(&mut self, quoi: i16) {
         self.sapglob.flefba = 0;
         if quoi > 0 {
-            self.comment(114 + quoi as c_ushort);
+            self.comment(114 + quoi as u16);
         }
         match quoi {
             0 => self.DEF3D(),
@@ -249,8 +248,8 @@ impl Sapiens {
     /***********************************************************************
                             TABDRT: Etablit la position droite
     ***********************************************************************/
-    fn tabdrt(&self, pos: c_short) -> c_short {
-        let mut i: c_short = NB_COL_SILEX + 1;
+    fn tabdrt(&self, pos: i16) -> i16 {
+        let mut i: i16 = NB_COL_SILEX + 1;
         loop {
             i -= 1;
             if lit_sil(self, pos, i) != 0 || i <= NB_COL_SILEX / 2 {
@@ -262,8 +261,8 @@ impl Sapiens {
     /***********************************************************************
                             TABGAU: Etablit la position gauche
     ***********************************************************************/
-    fn tabgau(&self, pos: c_short) -> c_short {
-        let mut i: c_short = 0;
+    fn tabgau(&self, pos: i16) -> i16 {
+        let mut i: i16 = 0;
         loop {
             let courant = i;
             i += 1;
@@ -277,11 +276,11 @@ impl Sapiens {
                             VALSYL:
     Evalue l'erreur entre l'etat du nucleus et la forme theorique attendue
     ***********************************************************************/
-    fn valsyl(&self) -> c_ushort {
-        let mut i: c_short = 0;
-        let mut ecart: c_uint = 0;
+    fn valsyl(&self) -> u16 {
+        let mut i: i16 = 0;
+        let mut ecart: u32 = 0;
         while i < NB_LIGNE_SILEX {
-            let f = unsafe { *self.sapgest.forsyl.add((i / 2) as usize) } as c_short;
+            let f = unsafe { *self.sapgest.forsyl.add((i / 2) as usize) } as i16;
             let mut trav1 = (NB_COL_SILEX / 2) - 2 * f - self.tabgau(i); /*ecart par rapport à ma gauche*/
             if trav1 < 0 {
                 trav1 = -trav1;
@@ -290,10 +289,10 @@ impl Sapiens {
             if trav2 < 0 {
                 trav2 = -trav2;
             }
-            ecart = ecart.wrapping_add((trav1 + trav2) as c_uint);
+            ecart = ecart.wrapping_add((trav1 + trav2) as u32);
             i += 2;
         }
-        (ecart / 3) as c_ushort
+        (ecart / 3) as u16
     }
 
     /***********************************************************************
@@ -331,9 +330,9 @@ impl Sapiens {
         /*dessin du noyau*/
         self.tfrvirt();
         /*dessin de la forme ideale a obtenir*/
-        let mut i: c_short = 0;
+        let mut i: i16 = 0;
         while i < NB_LIGNE_SILEX {
-            let f = unsafe { *self.sapgest.forsyl.add((i / 2) as usize) } as c_short;
+            let f = unsafe { *self.sapgest.forsyl.add((i / 2) as usize) } as i16;
             if f != 0 {
                 self.plot_ecr(i / 2 + 1, 160 + f, 0x007);
                 self.plot_ecr(i / 2 + 1, 160 - f, 0x007);
@@ -351,32 +350,32 @@ impl Sapiens {
     Dessine un nucleus brut sur l'ecran 1
     ***********************************************************************/
     fn FabriqueNucleus(&mut self) {
-        let mut y: c_short;
-        let mut x: c_short;
-        let mut delta1: c_short;
-        let mut pos1: c_short;
-        let mut pos2: c_short;
-        let kk: c_short;
-        let mut couleur: c_short;
-        let mut posTheo: c_short;
+        let mut y: i16;
+        let mut x: i16;
+        let mut delta1: i16;
+        let mut pos1: i16;
+        let mut pos2: i16;
+        let kk: i16;
+        let mut couleur: i16;
+        let mut posTheo: i16;
 
         /* Palette du silex */
         self.effima(COULEUR_FOND_NUCLEUS);
         delta1 = 60;
         /* TIRAGE DU COEFF KK DE LA PIERRE DE 3 A 15 */
-        kk = self.random.myRandom(3, 16) as c_short;
+        kk = self.random.myRandom(3, 16) as i16;
         /* Pour l'ensemble des lignes du silex */
         y = 0;
         while y < NB_LIGNE_SILEX {
-            delta1 = delta1.wrapping_add(self.random.myRandom(-1, 2) as c_short);
+            delta1 = delta1.wrapping_add(self.random.myRandom(-1, 2) as i16);
             if delta1 < 0 {
                 delta1 = 0;
             }
-            posTheo = (unsafe { *self.sapgest.forsyl.add((y / 2) as usize) } as c_short
-                + unsafe { *self.sapgest.forsyl.add((y / 2 + 1) as usize) } as c_short)
+            posTheo = (unsafe { *self.sapgest.forsyl.add((y / 2) as usize) } as i16
+                + unsafe { *self.sapgest.forsyl.add((y / 2 + 1) as usize) } as i16)
                 / 2;
             pos1 = (NB_COL_SILEX / 2) - posTheo - delta1; /* position gauche du nucleus */
-            delta1 = delta1.wrapping_add(self.random.myRandom(-1, 2) as c_short);
+            delta1 = delta1.wrapping_add(self.random.myRandom(-1, 2) as i16);
             if delta1 < 0 {
                 delta1 = 0;
             }
@@ -436,7 +435,7 @@ impl Sapiens {
                            AppliqueNlleEpaiss
     Applique une nouvelle epaisseur si la nouvelle est inferieure a l'ancienne
     ***********************************************************************/
-    fn AppliqueNlleEpaiss(&mut self, y: c_short, x: c_short, epaiss_loc: c_short) {
+    fn AppliqueNlleEpaiss(&mut self, y: i16, x: i16, epaiss_loc: i16) {
         let ancEpaiss = lit_sil(self, y, x);
         if ancEpaiss < epaiss_loc || epaiss_loc == 0 {
             ecrit_sil(self, y, x, epaiss_loc);
@@ -449,77 +448,72 @@ impl Sapiens {
     => Position x et y du coup, force du coup
     <= Bruit a jouer
     ***********************************************************************/
-    fn AppliqueImpact(
-        &mut self,
-        mut posxf_l: c_short,
-        mut posyf_l: c_short,
-        forcef: c_short,
-    ) -> c_short {
-        let penet: c_short;
-        let posimp: c_short;
-        let mut onde: c_ushort;
-        let mut yact: c_ushort;
-        let mut calc: c_ushort;
-        let distcb: c_ushort;
-        let mut tfr: c_ushort;
-        let mut cass: c_ushort;
-        let senson: c_ushort;
-        let mut okbruit: c_ushort = 0;
-        let mut trav1: c_ushort;
-        let paslec: c_short;
-        let mut distact: c_short;
+    fn AppliqueImpact(&mut self, mut posxf_l: i16, mut posyf_l: i16, forcef: i16) -> i16 {
+        let penet: i16;
+        let posimp: i16;
+        let mut onde: u16;
+        let mut yact: u16;
+        let mut calc: u16;
+        let distcb: u16;
+        let mut tfr: u16;
+        let mut cass: u16;
+        let senson: u16;
+        let mut okbruit: u16 = 0;
+        let mut trav1: u16;
+        let paslec: i16;
+        let mut distact: i16;
 
         cass = 0;
-        posxf_l *= ECHELLE as c_short;
-        posyf_l *= ECHELLE as c_short;
+        posxf_l *= ECHELLE as i16;
+        posyf_l *= ECHELLE as i16;
         /* Le point d'impact est-il sur le nucleus si non on sort*/
         if (posxf_l > self.tabdrt(posyf_l)) || (posxf_l < self.tabgau(posyf_l)) {
             /* Dessin du silex */
             self.TraceSilex();
-            return okbruit as c_short;
+            return okbruit as i16;
         }
         /* Sens de l'ondex : coup a gauche ou a droite */
-        senson = (posxf_l < (NB_COL_SILEX / 2)) as c_ushort; /*vrai si gauche faux si droite*/
+        senson = (posxf_l < (NB_COL_SILEX / 2)) as u16; /*vrai si gauche faux si droite*/
         /* Tfr varie de 0 à 15*/
-        tfr = (forcef / 16) as c_ushort;
+        tfr = (forcef / 16) as u16;
         /* Penet varie de 0 à 50 */
-        penet = ((forcef * 50) / 256) as c_short;
+        penet = ((forcef * 50) / 256) as i16;
         if senson != 0 {
             /*gauche*/
-            tfr = tfr.wrapping_add(posxf_l as c_ushort); /*le coup porte vers l'interieur*/
-            if tfr < penet as c_ushort {
-                tfr = penet as c_ushort;
+            tfr = tfr.wrapping_add(posxf_l as u16); /*le coup porte vers l'interieur*/
+            if tfr < penet as u16 {
+                tfr = penet as u16;
             }
             /*si on depasse le milieu ca casse*/
-            if tfr > (NB_COL_SILEX / 2) as c_ushort {
+            if tfr > (NB_COL_SILEX / 2) as u16 {
                 cass = cass.wrapping_add(1);
             }
-            posimp = tfr as c_short - penet;
+            posimp = tfr as i16 - penet;
             /* Distance maximale */
-            distcb = penet as c_ushort + (posimp - self.tabgau(posyf_l)) as c_ushort;
+            distcb = penet as u16 + (posimp - self.tabgau(posyf_l)) as u16;
         } else {
             /*droite*/
-            tfr = posxf_l as c_ushort - tfr;
-            if tfr < (NB_COL_SILEX / 2) as c_ushort {
+            tfr = posxf_l as u16 - tfr;
+            if tfr < (NB_COL_SILEX / 2) as u16 {
                 cass = cass.wrapping_add(1); /*depasse le milieu casse*/
             }
-            posimp = tfr as c_short + penet;
-            distcb = penet as c_ushort - (posimp - self.tabdrt(posyf_l)) as c_ushort;
+            posimp = tfr as i16 + penet;
+            distcb = penet as u16 - (posimp - self.tabdrt(posyf_l)) as u16;
         }
-        if (((forcef - 1) * 48 / 256) as c_ushort) > distcb {
+        if (((forcef - 1) * 48 / 256) as u16) > distcb {
             /*force suffisante*/
             if cass != 0 {
                 /*c'est cassé...*/
                 okbruit = 3;
-                let mut a: c_short = 74;
+                let mut a: i16 = 74;
                 if posyf_l < NB_LIGNE_SILEX / 2 {
                     /* On casse le haut du silex */
-                    let mut i: c_short = posyf_l + 4;
+                    let mut i: i16 = posyf_l + 4;
                     while i >= 0 && i < NB_LIGNE_SILEX {
                         if a < 0 {
                             a = 0;
                         }
-                        let mut j: c_short = 0;
+                        let mut j: i16 = 0;
                         while j < NB_COL_SILEX {
                             self.AppliqueNlleEpaiss(i, j, 0);
                             j += 1;
@@ -528,12 +522,12 @@ impl Sapiens {
                         a = a.wrapping_sub(8);
                     }
                 } else {
-                    let mut i: c_short = posyf_l - 5;
+                    let mut i: i16 = posyf_l - 5;
                     while i >= 0 && i < NB_LIGNE_SILEX {
                         if a < 0 {
                             a = 0;
                         }
-                        let mut j: c_short = 0;
+                        let mut j: i16 = 0;
                         while j < NB_COL_SILEX {
                             self.AppliqueNlleEpaiss(i, j, 0);
                             j += 1;
@@ -545,27 +539,27 @@ impl Sapiens {
             } else {
                 /* Le silex n'est pas cassé , on taille un eclat*/
                 paslec = (forcef ^ 255) * 8 + 128;
-                yact = posyf_l as c_ushort;
-                calc = posyf_l as c_ushort + 1;
+                yact = posyf_l as u16;
+                calc = posyf_l as u16 + 1;
                 onde = 0;
                 trav1 = 0;
                 while onde < 100 {
                     /*on applique l'onde*/
-                    if yact < NB_LIGNE_SILEX as c_ushort {
-                        let mut a: c_short = if senson != 0 {
+                    if yact < NB_LIGNE_SILEX as u16 {
+                        let mut a: i16 = if senson != 0 {
                             /*gauche*/
-                            (formonde[onde as usize] as c_short * forcef) / 256 + posimp
+                            (formonde[onde as usize] as i16 * forcef) / 256 + posimp
                         } else {
                             /*DROITE*/
-                            posimp - (formonde[onde as usize] as c_short * forcef) / 256
+                            posimp - (formonde[onde as usize] as i16 * forcef) / 256
                         };
                         if senson != 0 {
-                            distact = a - self.tabgau(yact as c_short) as c_short;
+                            distact = a - self.tabgau(yact as i16) as i16;
                         } else {
-                            distact = self.tabdrt(yact as c_short) as c_short - a;
+                            distact = self.tabdrt(yact as i16) as i16 - a;
                         }
                         if distact > 0 {
-                            let mut pas: c_short = if senson != 0 {
+                            let mut pas: i16 = if senson != 0 {
                                 7400 / (distact + 1)
                             } else {
                                 7400 / distact
@@ -573,12 +567,12 @@ impl Sapiens {
                             if pas == 0 {
                                 pas = 1;
                             }
-                            let mut i: c_short = 7400;
+                            let mut i: i16 = 7400;
                             while i >= 0 {
                                 self.AppliqueNlleEpaiss(
-                                    yact as c_short,
+                                    yact as i16,
                                     a,
-                                    epaiss[(i / 100) as usize] as c_short,
+                                    epaiss[(i / 100) as usize] as i16,
                                 );
                                 i -= pas;
                                 if senson != 0 {
@@ -590,21 +584,21 @@ impl Sapiens {
                         }
                     } /* si yact <100 */
                     /* on fait le symetrique bas */
-                    if calc < NB_LIGNE_SILEX as c_ushort {
-                        let mut a: c_short = if senson != 0 {
+                    if calc < NB_LIGNE_SILEX as u16 {
+                        let mut a: i16 = if senson != 0 {
                             /* gauche */
-                            (formonde[onde as usize] as c_short * forcef) / 256 + posimp
+                            (formonde[onde as usize] as i16 * forcef) / 256 + posimp
                         } else {
                             /* droite */
-                            posimp - (formonde[onde as usize] as c_short * forcef) / 256
+                            posimp - (formonde[onde as usize] as i16 * forcef) / 256
                         };
                         if senson != 0 {
-                            distact = a - self.tabgau(calc as c_short) as c_short;
+                            distact = a - self.tabgau(calc as i16) as i16;
                         } else {
-                            distact = self.tabdrt(calc as c_short) as c_short - a;
+                            distact = self.tabdrt(calc as i16) as i16 - a;
                         }
                         if distact > 0 {
-                            let mut pas: c_short = if senson != 0 {
+                            let mut pas: i16 = if senson != 0 {
                                 7400 / (distact + 1)
                             } else {
                                 7400 / distact
@@ -612,12 +606,12 @@ impl Sapiens {
                             if pas == 0 {
                                 pas = 1;
                             }
-                            let mut i: c_short = 7400;
+                            let mut i: i16 = 7400;
                             while i >= 0 {
                                 self.AppliqueNlleEpaiss(
-                                    calc as c_short,
+                                    calc as i16,
                                     a,
-                                    epaiss[(i / 100) as usize] as c_short,
+                                    epaiss[(i / 100) as usize] as i16,
                                 );
                                 i -= pas;
                                 if senson != 0 {
@@ -631,11 +625,11 @@ impl Sapiens {
                     /* on passe a la ligne suivante */
                     calc = calc.wrapping_add(1);
                     yact = yact.wrapping_sub(1); /*ligne suiv haute*/
-                    trav1 = trav1.wrapping_add((paslec & 255) as c_ushort);
+                    trav1 = trav1.wrapping_add((paslec & 255) as u16);
                     /*plus retenue*/
                     onde = onde
-                        .wrapping_add((trav1 > 255) as c_ushort)
-                        .wrapping_add((paslec / 256) as c_ushort);
+                        .wrapping_add((trav1 > 255) as u16)
+                        .wrapping_add((paslec / 256) as u16);
                     trav1 &= 255; /*on garde que le PL*/
                 } /*balaye le silex*/
                 okbruit = 4; /*aigu*/
@@ -648,7 +642,7 @@ impl Sapiens {
         }
         /* Dessin du silex */
         self.TraceSilex();
-        okbruit as c_short
+        okbruit as i16
     }
 
     /***********************************************************************
@@ -656,15 +650,15 @@ impl Sapiens {
     => Silex a tailler
     <= Collapse sur le silex
     ***********************************************************************/
-    fn cursil(&mut self, regb: c_short) -> c_short {
-        let mut i: c_short;
+    fn cursil(&mut self, regb: i16) -> i16 {
+        let mut i: i16;
 
         /* On calcule les index de couleurs */
         let _g = port::on(self.sapwind.debecr);
         i = 0;
         while i < NB_COUL_SILEX {
             self.sapgest.palSilex[i as usize] =
-                SapColor2Index(&TAB_COUL_SILEX_RGB[i as usize]) as c_ushort;
+                SapColor2Index(&TAB_COUL_SILEX_RGB[i as usize]) as u16;
             i += 1;
         }
         /* On fixe l'ecart stochastique gauche et droite */
@@ -684,10 +678,10 @@ impl Sapiens {
         self.sapglob.flefba = 0;
         self.TraceSilex();
         let r = Rect::new(
-            16 * ECHELLE as c_short,
+            16 * ECHELLE as i16,
             0,
-            (320 - 16) * ECHELLE as c_short,
-            200 * ECHELLE as c_short,
+            (320 - 16) * ECHELLE as i16,
+            200 * ECHELLE as i16,
         );
         self.FixeAireNoMouse(r);
 
@@ -698,7 +692,7 @@ impl Sapiens {
                     break;
                 }
             }
-            let okbruit: c_uchar;
+            let okbruit: u8;
             loop {
                 (self.sapglob.bouton, self.sapglob.posxf, self.sapglob.posyf) = self.vq_mouse();
                 if (self.sapglob.posxf < 32)
@@ -746,7 +740,7 @@ impl Sapiens {
                     true,
                 );
                 self.FixeAireNoMouseAireBasse();
-                return self.valsyl() as c_short;
+                return self.valsyl() as i16;
             }
             /* Point d'application */
             self.plot_ecr(self.sapglob.posyf, self.sapglob.posxf, 0x700);
@@ -754,10 +748,10 @@ impl Sapiens {
                 /*on frappe*/
                 let t: u64 = TickCount() as u64;
                 /* On determine la force du coup */
-                let mut forcef: c_short;
+                let mut forcef: i16;
                 loop {
                     (self.sapglob.bouton, _, _) = self.vq_mouse();
-                    forcef = ((TickCount() as u64).wrapping_sub(t) * 4) as c_short;
+                    forcef = ((TickCount() as u64).wrapping_sub(t) * 4) as i16;
                     self.aff_sour(
                         self.sapwind.mobBambou + MOB_COURANT_BASE,
                         self.sapglob.posyf - 25 - forcef / 8 - 2,
@@ -782,7 +776,7 @@ impl Sapiens {
                 /* On applique l'impact : conversion de coordonnees */
                 okbruit =
                     self.AppliqueImpact(self.sapglob.posxf - 85, self.sapglob.posyf - 1, forcef)
-                        as c_uchar;
+                        as u8;
                 self.aff_sour(
                     self.sapwind.mobBambou + MOB_COURANT_BASE,
                     self.sapglob.posyf - 25,
@@ -790,7 +784,7 @@ impl Sapiens {
                 );
                 /* On joue le bruit */
                 if okbruit != 0 {
-                    self.bruit(okbruit as c_short);
+                    self.bruit(okbruit as i16);
                 }
             } /*on frappe*/
         }
@@ -799,15 +793,15 @@ impl Sapiens {
     /***********************************************************************
                             GETNOM:Saisi un nom de la taille donnée
     ***********************************************************************/
-    fn getnom(&mut self, mess: c_short, position: *mut c_char, taille: c_short) -> c_short {
-        let mut pos: c_short = 0;
-        let mut car: c_short;
+    fn getnom(&mut self, mess: i16, position: *mut i8, taille: i16) -> i16 {
+        let mut pos: i16 = 0;
+        let mut car: i16;
 
         unsafe {
             while self.litclav() != 0 {
                 //Purge
             }
-            let mut i: c_short = 0;
+            let mut i: i16 = 0;
             while i < taille {
                 self.sapglob.zoneu.elements[i as usize] = 32; /*on vide la zone*/
                 i += 1;
@@ -815,10 +809,10 @@ impl Sapiens {
             loop {
                 /* On affiche le commentaire */
                 self.efbadi();
-                self.comment(mess as c_ushort);
-                let mut i: c_short = 0;
+                self.comment(mess as u16);
+                let mut i: i16 = 0;
                 while i < taille && self.sapglob.zoneu.elements[i as usize] != b' ' {
-                    self.affcarmess(self.sapglob.zoneu.elements[i as usize] as c_short);
+                    self.affcarmess(self.sapglob.zoneu.elements[i as usize] as i16);
                     i += 1;
                 }
                 self.affcarmess(2); /* Curseur */
@@ -832,23 +826,23 @@ impl Sapiens {
                 if car == 13 {
                     /* Validation : test des trapsures */
                     for t in 0..7usize {
-                        let mut oktrap: c_short = 1;
+                        let mut oktrap: i16 = 1;
                         for j in 0..6usize {
                             if (TRAPS[t][j] & 223) != (self.sapglob.zoneu.elements[j] & 223) {
                                 oktrap = 0;
                             }
                         }
                         if oktrap != 0 {
-                            self.trapsure(t as c_short);
+                            self.trapsure(t as i16);
                             pos = 0;
                         }
                     }
                     if pos != 0 {
                         /*au moins un caractere*/
                         let mut p = position;
-                        let mut i: c_short = 0;
+                        let mut i: i16 = 0;
                         while i < taille {
-                            *p = self.sapglob.zoneu.elements[i as usize] as c_char;
+                            *p = self.sapglob.zoneu.elements[i as usize] as i8;
                             p = p.add(1);
                             i += 1;
                         }
@@ -857,12 +851,9 @@ impl Sapiens {
                     self.TfrBadAss();
                     return pos;
                 }
-                if car > 32
-                    && car <= b'z' as c_short
-                    && !(car >= b'0' as c_short && car <= b'9' as c_short)
-                {
+                if car > 32 && car <= b'z' as i16 && !(car >= b'0' as i16 && car <= b'9' as i16) {
                     if pos < taille {
-                        self.sapglob.zoneu.elements[pos as usize] = car as c_uchar;
+                        self.sapglob.zoneu.elements[pos as usize] = car as u8;
                         pos += 1;
                     }
                 } else if car == 8 && pos != 0 {
@@ -892,13 +883,13 @@ impl Sapiens {
         /*Presentation*/
         self.sapglob.heure = 10;
         self.chrono(0);
-        self.affich(self.sapglob.dzeta as c_ushort); /* Affiche la vue trois d sur ecran 1*/
+        self.affich(self.sapglob.dzeta as u16); /* Affiche la vue trois d sur ecran 1*/
         self.tfrvirt();
         self.sapglob.flefba = 1;
         self.InitGenerique();
         self.generique(FAUX);
         self.TfrEcr(None);
-        self.Frame3d((FAUX) as c_short);
+        self.Frame3d((FAUX) as i16);
         self.efbadi();
         self.comment(67); /*d et o guillion*/
         for mut i in 0..60 {
@@ -906,7 +897,7 @@ impl Sapiens {
             self.chrono(1);
             self.chrono(0);
             self.chrono(0);
-            self.affich(self.sapglob.dzeta as c_ushort);
+            self.affich(self.sapglob.dzeta as u16);
             self.tfrima();
             if (self.getkey(0) & (32 + 16)) > 0 {
                 i = 111;
@@ -1019,7 +1010,7 @@ impl Sapiens {
     Trace une jauge dans debecr
     => numero de la jauge, indeicateur de transfert sur le reel
     ***********************************************************************/
-    pub(crate) extern "C" fn jauge(&self, i: c_short, tfr: Boolean) {
+    pub(crate) extern "C" fn jauge(&self, i: i16, tfr: Boolean) {
         let _g = port::on(self.sapwind.debecr);
         let rval = self.AireValJauge(i);
         self.AfficheCadreJauge(i);
@@ -1047,7 +1038,7 @@ impl Sapiens {
     /***********************************************************************
                             PRIMJAUGE:primaire pour les jauges
     ***********************************************************************/
-    pub(crate) fn primjauge(&mut self, jaugeCredit: c_short) {
+    pub(crate) fn primjauge(&mut self, jaugeCredit: i16) {
         self.sapglob.dervue = Vue::AUCUNE;
         self.effima(0x050); /* Efface ecran sur 100 ligne */
         self.tfrvirt();
@@ -1068,7 +1059,7 @@ impl Sapiens {
         }
 
         /*trace des cadres jauges*/
-        let mut i: c_short = 0;
+        let mut i: i16 = 0;
         while i < 5 + jaugeCredit {
             self.jauge(i, false);
             i += 1;
@@ -1081,14 +1072,14 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) extern "C" fn defsap(&mut self) {
         self.sapglob.sapvit = 0;
-        let nomjoueur_ptr = &raw mut self.saptxt.nomjoueur as *mut c_char;
+        let nomjoueur_ptr = &raw mut self.saptxt.nomjoueur as *mut i8;
         let taille = self.getnom(88, nomjoueur_ptr, 8);
         if taille == 0 {
             return;
         }
         self.sapglob.flefba = 0;
         unsafe {
-            *(&raw mut self.saptxt.nomjoueur as *mut c_char).add(taille as usize) = 0;
+            *(&raw mut self.saptxt.nomjoueur as *mut i8).add(taille as usize) = 0;
             /* definitions des quotas personnage*/
             for i in 0..5usize {
                 self.sapglob.param[i] = 130;
@@ -1096,15 +1087,15 @@ impl Sapiens {
             self.sapglob.param[5] = 20;
             self.generique(VRAI);
             self.comment(89); /*   XX ou XY ???*/
-            let mut car: c_uchar = 0;
+            let mut car: u8 = 0;
             self.sapwind.reset_clav();
             self.sapglob.init_and_check_texts();
             let homme = self.sapglob.homme;
             let femme = self.sapglob.femme;
             while car != homme && car != femme {
-                car = (self.litclav() & 223) as c_uchar;
+                car = (self.litclav() & 223) as u8;
             }
-            self.affcarmess(car as c_short);
+            self.affcarmess(car as i16);
             self.TfrBadAss();
             if car == homme {
                 self.sapglob.sexe = 1;
@@ -1118,20 +1109,20 @@ impl Sapiens {
                 sap1.cross[FormeVue::TETE as usize] = 12;
             }
             self.sapglob.pal_chron = self.sapglob.palhaute;
-            self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut c_short;
+            self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut i16;
             self.primjauge(1);
             self.AfficheSuite();
-            let mut cont: c_char = 1;
-            let mut pos: c_char;
+            let mut cont: i8 = 1;
+            let mut pos: i8;
             self.sapglob.sposx = 160;
             self.sapglob.dsposx = 160;
             self.sapglob.sposy = 50;
             self.sapglob.dsposy = 50;
             let mut r = Rect::new(
-                16 * ECHELLE as c_short,
+                16 * ECHELLE as i16,
                 0,
-                (320 - 16) * ECHELLE as c_short,
-                200 * ECHELLE as c_short,
+                (320 - 16) * ECHELLE as i16,
+                200 * ECHELLE as i16,
             );
             self.FixeAireNoMouse(r);
 
@@ -1171,11 +1162,11 @@ impl Sapiens {
                     while self.getkey(0) != 0 { /* Epuise le clavier */ }
                 } else {
                     let pt = Point::new(self.sapglob.sposx, self.sapglob.sposy);
-                    let mut i: c_short = 0;
+                    let mut i: i16 = 0;
                     while i < 5 {
                         r = self.AireJauge(i);
                         if r.pt_in_rect(pt) {
-                            pos = i as c_char;
+                            pos = i as i8;
                             /* Fleche */
                             self.affomb(
                                 self.sapwind.mobFleches + MOB_DESIGNE_BASE,
@@ -1206,7 +1197,7 @@ impl Sapiens {
                                 }
                                 (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) =
                                     self.vq_mouse();
-                                self.jauge(pos as c_short, true);
+                                self.jauge(pos as i16, true);
                                 /* Quantite restante */
                                 self.jauge(5, true);
                                 self.aff_sour(
@@ -1250,7 +1241,7 @@ impl Sapiens {
 
                 self.affomb(
                     self.sapwind.mobFleches + MOB_DESIGNE_BASE,
-                    (pos as c_short * 2 + 6) * 7 + 1,
+                    (pos as i16 * 2 + 6) * 7 + 1,
                     100,
                     4,
                     4,
@@ -1279,7 +1270,7 @@ impl Sapiens {
                     );
                     cont = 0; /*esc*/
                 } else {
-                    pos = (self.sapglob.sposy > 53) as c_char;
+                    pos = (self.sapglob.sposy > 53) as i8;
                     self.sapglob.dsposy = self.sapglob.sposy;
                     self.sapglob.dsposx = self.sapglob.sposx;
                     if (self.sapglob.bouton & 1) != 0 {
@@ -1331,7 +1322,7 @@ impl Sapiens {
 Trace une jauge dans debecr
 => numero de la jauge, indeicateur de transfert sur le reel
 ***********************************************************************/
-const CAR_UTILE: c_short = 180;
+const CAR_UTILE: i16 = 180;
 
 const fn AIREJAUGE3d(i: i16) -> Rect {
     Rect::new(75, 7 + 14 * i, 75 + CAR_UTILE, 15 + 14 * i)
@@ -1342,22 +1333,22 @@ const fn AIREJAUGE3d(i: i16) -> Rect {
 Trace une jauge dans debecr
 => numero de la jauge, indeicateur de transfert sur le reel
 ***********************************************************************/
-const NB_JAUGES_3D: c_short = 5;
+const NB_JAUGES_3D: i16 = 5;
 
 impl Sapiens {
-    fn JAUGE3d(&self, i: c_short, val: f32) {
+    fn JAUGE3d(&self, i: i16, val: f32) {
         let r = AIREJAUGE3d(i);
         self.boxf(r.top - 1, r.left - 1, r.bottom + 1, r.right + 1, 16);
         self.boxf(
             r.top,
             r.left,
             r.bottom,
-            r.left + (CAR_UTILE as f32 * val) as c_short,
+            r.left + (CAR_UTILE as f32 * val) as i16,
             14,
         );
         self.boxf(
             r.top,
-            r.left + (CAR_UTILE as f32 * val) as c_short,
+            r.left + (CAR_UTILE as f32 * val) as i16,
             r.bottom,
             r.right,
             4,
@@ -1370,7 +1361,7 @@ impl Sapiens {
     => numero de la jauge, indeicateur de transfert sur le reel
     ***********************************************************************/
     fn JAUGES3D(&self) {
-        let mut i: c_short = 0;
+        let mut i: i16 = 0;
         let mut r;
         let _g = port::on(self.sapwind.debecr);
         self.boxf(0, 32, 101, 287, 5);
@@ -1419,7 +1410,7 @@ impl Sapiens {
 
         self.AfficheSuite();
 
-        let mut j: c_short = 0;
+        let mut j: i16 = 0;
         self.JAUGE3d(j, self.sap3d.nbNuages as f32 / (NB_NUAGES_MAX as f32));
         j += 1;
         self.JAUGE3d(j, self.sap3d.nbOiseaux as f32 / (NB_OISEAUX_MAX as f32));
@@ -1434,7 +1425,7 @@ impl Sapiens {
         );
         let r = Rect::new(0, 0, 600, 400);
         self.TfrEcr(Some(&r));
-        let r = Rect::new(0, 0, 320 * ECHELLE as c_short, 200 * ECHELLE as c_short);
+        let r = Rect::new(0, 0, 320 * ECHELLE as i16, 200 * ECHELLE as i16);
         CarboniseInvalRect(&raw const r);
         ValideUpdate();
     }
@@ -1444,19 +1435,19 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn DEF3D(&mut self) {
         self.sapglob.pal_chron = self.sapglob.palhaute;
-        self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut c_short;
+        self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut i16;
         /* Affichage sur Ecran */
-        let mut cont: c_char = 1;
-        let mut pos: c_char;
+        let mut cont: i8 = 1;
+        let mut pos: i8;
         self.sapglob.sposx = 160;
         self.sapglob.dsposx = 160;
         self.sapglob.sposy = 50;
         self.sapglob.dsposy = 50;
         let mut r = Rect::new(
-            16 * ECHELLE as c_short,
+            16 * ECHELLE as i16,
             0,
-            (320 - 16) * ECHELLE as c_short,
-            200 * ECHELLE as c_short,
+            (320 - 16) * ECHELLE as i16,
+            200 * ECHELLE as i16,
         );
         self.FixeAireNoMouse(r);
         while cont != 0 {
@@ -1476,40 +1467,40 @@ impl Sapiens {
                 cont = 0;
             } else {
                 let pt = Point::new(self.sapglob.sposx, self.sapglob.sposy);
-                let mut i: c_short = 0;
-                while i < NB_JAUGES_3D as c_short {
+                let mut i: i16 = 0;
+                while i < NB_JAUGES_3D as i16 {
                     r = AIREJAUGE3d(i);
                     if pt.v >= r.top && pt.v <= r.bottom {
-                        pos = i as c_char;
+                        pos = i as i8;
                         loop {
                             let val =
                                 (self.sapglob.sposx - r.left) as f32 / (r.right - r.left) as f32;
 
                             match pos {
-                                0 => self.sap3d.nbNuages = (val * NB_NUAGES_MAX as f32) as c_long,
-                                1 => self.sap3d.nbOiseaux = (val * NB_OISEAUX_MAX as f32) as c_long,
-                                2 => self.sap3d.nbRochers = (val * NB_ROCHERS_MAX as f32) as c_long,
-                                3 => self.sap3d.nbArbres = (val * NB_ARBRES_MAX as f32) as c_long,
+                                0 => self.sap3d.nbNuages = (val * NB_NUAGES_MAX as f32) as i64,
+                                1 => self.sap3d.nbOiseaux = (val * NB_OISEAUX_MAX as f32) as i64,
+                                2 => self.sap3d.nbRochers = (val * NB_ROCHERS_MAX as f32) as i64,
+                                3 => self.sap3d.nbArbres = (val * NB_ARBRES_MAX as f32) as i64,
                                 4 => {
                                     self.sapcomb.nbHerbes =
-                                        (val * NB_MAX_HERBE_AV_PLAN as f32) as c_long
+                                        (val * NB_MAX_HERBE_AV_PLAN as f32) as i64
                                 }
                                 _ => {}
                             }
-                            if self.sap3d.nbNuages > NB_NUAGES_MAX as c_long {
-                                self.sap3d.nbNuages = NB_NUAGES_MAX as c_long;
+                            if self.sap3d.nbNuages > NB_NUAGES_MAX as i64 {
+                                self.sap3d.nbNuages = NB_NUAGES_MAX as i64;
                             }
-                            if self.sap3d.nbOiseaux > NB_OISEAUX_MAX as c_long {
-                                self.sap3d.nbOiseaux = NB_OISEAUX_MAX as c_long;
+                            if self.sap3d.nbOiseaux > NB_OISEAUX_MAX as i64 {
+                                self.sap3d.nbOiseaux = NB_OISEAUX_MAX as i64;
                             }
-                            if self.sap3d.nbRochers > NB_ROCHERS_MAX as c_long {
-                                self.sap3d.nbRochers = NB_ROCHERS_MAX as c_long;
+                            if self.sap3d.nbRochers > NB_ROCHERS_MAX as i64 {
+                                self.sap3d.nbRochers = NB_ROCHERS_MAX as i64;
                             }
-                            if self.sap3d.nbArbres > NB_ARBRES_MAX as c_long {
-                                self.sap3d.nbArbres = NB_ARBRES_MAX as c_long;
+                            if self.sap3d.nbArbres > NB_ARBRES_MAX as i64 {
+                                self.sap3d.nbArbres = NB_ARBRES_MAX as i64;
                             }
-                            if self.sapcomb.nbHerbes > NB_MAX_HERBE_AV_PLAN as c_long {
-                                self.sapcomb.nbHerbes = NB_MAX_HERBE_AV_PLAN as c_long;
+                            if self.sapcomb.nbHerbes > NB_MAX_HERBE_AV_PLAN as i64 {
+                                self.sapcomb.nbHerbes = NB_MAX_HERBE_AV_PLAN as i64;
                             }
                             if self.sap3d.nbNuages < 0 {
                                 self.sap3d.nbNuages = 0;
@@ -1560,14 +1551,14 @@ Saisi un nom de fichier pour une lecture
 ---------------------------------------------------------------*/
 extern "C" fn vect_filtre_selon_extension_sapiens(
     info: *mut CInfoPBRec,
-    extension: *const c_char,
+    extension: *const i8,
 ) -> Boolean {
-    let mut nom = [0 as c_char; 80];
+    let mut nom = [0 as i8; 80];
     let mut i: usize = 0;
 
     unsafe {
         /* BlockMove((char *) info->hFileInfo.ioNamePtr, nom, 79) */
-        let src = (*info).hFileInfo.ioNamePtr as *const c_char;
+        let src = (*info).hFileInfo.ioNamePtr as *const i8;
         let mut j: usize = 0;
         while j < 79 {
             nom[j] = *src.add(j);
@@ -1575,7 +1566,7 @@ extern "C" fn vect_filtre_selon_extension_sapiens(
         }
         PtoCstr(nom.as_mut_ptr() as StringPtr);
         while nom[i] != 0 {
-            if nom[i] == b'.' as c_char {
+            if nom[i] == b'.' as i8 {
                 i += 1;
                 if stricmp(nom.as_mut_ptr().add(i), extension) == 0 {
                     return false;
@@ -1608,13 +1599,13 @@ impl Sapiens {
                    AJOUTE_EXTENSION
 => Nom du fichier, Extension du fichier
 *****************************************************************************/
-fn ajoute_extension(mut nom: *mut c_char, mut ext: *const c_char) {
+fn ajoute_extension(mut nom: *mut i8, mut ext: *const i8) {
     unsafe {
-        while *nom != 0 && *nom != b'.' as c_char {
+        while *nom != 0 && *nom != b'.' as i8 {
             nom = nom.add(1);
         }
 
-        *nom = b'.' as c_char;
+        *nom = b'.' as i8;
         nom = nom.add(1);
         *nom = *ext;
         ext = ext.add(1);
@@ -1635,18 +1626,18 @@ Saisi un nom de fichier pour une lecture
 <= VRAI si ok
 ***********************************************************************/
 impl Sapiens {
-    fn SaisieNomFichierLecture(&mut self, nom: *mut c_char, extension: *const c_char) -> Boolean {
+    fn SaisieNomFichierLecture(&mut self, nom: *mut i8, extension: *const i8) -> Boolean {
         let mut reply = SFReply {
             good: false,
             vRefNum: 0,
             fType: 0,
             fName: [0; 64],
         };
-        let mut chaine = [0 as c_char; 255];
+        let mut chaine = [0 as i8; 255];
 
         let point = Point::new(
-            ((qd.screenBits.bounds.right - 348) / 2) as c_short,
-            ((qd.screenBits.bounds.bottom - 200) / 2) as c_short,
+            ((qd.screenBits.bounds.right - 348) / 2) as i16,
+            ((qd.screenBits.bounds.bottom - 200) / 2) as i16,
         );
         unsafe {
             if strlen(extension) != 0 {
@@ -1699,20 +1690,20 @@ Saisi un nom de fichier pour une ecriture
    si protect == NULL aucune saisie n'est faite
 <= Format du fichier ou 0 si aucun
 ********************************************************************/
-fn SaisieNomFichierAventureEcriture(nom: *mut c_char) -> Boolean {
+fn SaisieNomFichierAventureEcriture(nom: *mut i8) -> Boolean {
     let mut reply = SFReply {
         good: false,
         vRefNum: 0,
         fType: 0,
         fName: [0; 64],
     };
-    let mut chaine = [0 as c_char; 255];
-    let mut titre = [0 as c_char; 255];
+    let mut chaine = [0 as i8; 255];
+    let mut titre = [0 as i8; 255];
 
     unsafe {
         let point = Point::new(
-            ((qd.screenBits.bounds.right - 304) / 2) as c_short,
-            ((qd.screenBits.bounds.bottom - 184) / 2) as c_short,
+            ((qd.screenBits.bounds.right - 304) / 2) as i16,
+            ((qd.screenBits.bounds.bottom - 184) / 2) as i16,
         );
         strcpy(chaine.as_mut_ptr(), nom);
         CtoPstr(chaine.as_mut_ptr());
@@ -1747,7 +1738,7 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) extern "C" fn sauve(&mut self) {
         unsafe {
-            let mut checksum: c_short = 111;
+            let mut checksum: i16 = 111;
             self.sapglob.flefba = 0;
             if self.sapglob.jour_act == self.sapglob.jour_dsk {
                 self.comment(113); /*Une seule aventure par jour*/
@@ -1755,23 +1746,20 @@ impl Sapiens {
             }
 
             PreservePath();
-            if strlen(&raw const self.sapgest.nom_sauve as *const c_char) == 0 {
+            if strlen(&raw const self.sapgest.nom_sauve as *const i8) == 0 {
                 strcpy(
-                    &raw mut self.sapgest.nom_sauve as *mut c_char,
-                    &raw const self.saptxt.nomjoueur as *const c_char,
+                    &raw mut self.sapgest.nom_sauve as *mut i8,
+                    &raw const self.saptxt.nomjoueur as *const i8,
                 );
             }
-            if !SaisieNomFichierAventureEcriture(&raw mut self.sapgest.nom_sauve as *mut c_char) {
+            if !SaisieNomFichierAventureEcriture(&raw mut self.sapgest.nom_sauve as *mut i8) {
                 RestorePath();
                 return;
             }
-            ajoute_extension(
-                &raw mut self.sapgest.nom_sauve as *mut c_char,
-                c"sap".as_ptr(),
-            );
-            remove(&raw const self.sapgest.nom_sauve as *const c_char);
+            ajoute_extension(&raw mut self.sapgest.nom_sauve as *mut i8, c"sap".as_ptr());
+            remove(&raw const self.sapgest.nom_sauve as *const i8);
             let mut fichier = fopen(
-                &raw const self.sapgest.nom_sauve as *const c_char,
+                &raw const self.sapgest.nom_sauve as *const i8,
                 c"wb".as_ptr(),
             );
             if fichier.is_null() {
@@ -1781,33 +1769,32 @@ impl Sapiens {
                 return;
             }
             let mut j: usize = 0;
-            let mut ptr = self.sapglob.soma[j].adresse as *mut c_uchar;
-            putc(b'G' as c_int, fichier);
-            putc(b'O' as c_int, fichier);
-            putc(b'D' as c_int, fichier);
-            self.random
-                .initrnd(b'S' as c_short, b'A' as c_short, b'P' as c_short);
+            let mut ptr = self.sapglob.soma[j].adresse as *mut u8;
+            putc(b'G' as i32, fichier);
+            putc(b'O' as i32, fichier);
+            putc(b'D' as i32, fichier);
+            self.random.initrnd(b'S' as i16, b'A' as i16, b'P' as i16);
             while !ptr.is_null() {
-                let mut i: c_ushort = 0;
-                while i < self.sapglob.soma[j].taille as c_ushort {
-                    let car = ((*ptr) as c_short) ^ self.random.rnd0();
+                let mut i: u16 = 0;
+                while i < self.sapglob.soma[j].taille as u16 {
+                    let car = ((*ptr) as i16) ^ self.random.rnd0();
                     checksum = checksum.wrapping_add(car);
-                    putc(car as c_int, fichier);
+                    putc(car as i32, fichier);
                     ptr = ptr.add(1);
                     i += 1;
                 }
                 j += 1;
-                ptr = self.sapglob.soma[j].adresse as *mut c_uchar;
+                ptr = self.sapglob.soma[j].adresse as *mut u8;
             }
             checksum &= 255;
-            putc(checksum as c_int, fichier);
+            putc(checksum as i32, fichier);
             self.sap3d.SauveEltsDecorsMobiles(fichier);
             fclose(fichier);
             fichier = fopen(
-                &raw const self.sapgest.nom_sauve as *const c_char,
+                &raw const self.sapgest.nom_sauve as *const i8,
                 c"rb".as_ptr(),
             );
-            if getc(fichier) != b'G' as c_int {
+            if getc(fichier) != b'G' as i32 {
                 self.sapglob.flefba = 0;
                 self.comment(92); /*erreur*/
                 RestorePath();
@@ -1825,10 +1812,10 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn charge(&mut self) {
         unsafe {
-            let mut nom = [0 as c_char; 255];
-            let mut ptr: *mut c_uchar;
+            let mut nom = [0 as i8; 255];
+            let mut ptr: *mut u8;
             let mut j: usize;
-            let mut checksum: c_short = 111;
+            let mut checksum: i16 = 111;
 
             self.sapglob.flefba = 0;
 
@@ -1847,17 +1834,16 @@ impl Sapiens {
             }
             self.primsap();
             j = 0;
-            ptr = self.sapglob.soma[j].adresse as *mut c_uchar;
-            self.random
-                .initrnd(b'S' as c_short, b'A' as c_short, b'P' as c_short);
-            if getc(fichier) == b'G' as c_int
-                && getc(fichier) == b'O' as c_int
-                && getc(fichier) == b'D' as c_int
+            ptr = self.sapglob.soma[j].adresse as *mut u8;
+            self.random.initrnd(b'S' as i16, b'A' as i16, b'P' as i16);
+            if getc(fichier) == b'G' as i32
+                && getc(fichier) == b'O' as i32
+                && getc(fichier) == b'D' as i32
             {
                 while !ptr.is_null() {
-                    let mut i: c_ushort = 0;
-                    while i < self.sapglob.soma[j].taille as c_ushort {
-                        let mut car = getc(fichier) as c_short;
+                    let mut i: u16 = 0;
+                    while i < self.sapglob.soma[j].taille as u16 {
+                        let mut car = getc(fichier) as i16;
                         if car < 0 {
                             self.sapglob.flefba = 0;
                             self.comment(92); /*erreur*/
@@ -1865,17 +1851,17 @@ impl Sapiens {
                             RestorePath();
                             return;
                         }
-                        checksum = checksum.wrapping_add(car as c_short);
+                        checksum = checksum.wrapping_add(car as i16);
                         car = car ^ self.random.rnd0();
-                        *ptr = car as c_uchar;
+                        *ptr = car as u8;
                         ptr = ptr.add(1);
                         i += 1;
                     }
                     j += 1;
-                    ptr = self.sapglob.soma[j].adresse as *mut c_uchar;
+                    ptr = self.sapglob.soma[j].adresse as *mut u8;
                 }
                 checksum &= 255;
-                if checksum != getc(fichier) as c_short {
+                if checksum != getc(fichier) as i16 {
                     self.sapglob.flefba = 0;
                     self.comment(92); /*erreur*/
                     self.primsap(); /*Nyak nyak !!!*/
@@ -1891,7 +1877,7 @@ impl Sapiens {
             self.sapglob.zj = 0;
             self.chrono(0); /*pour couleur*/
             self.sapglob.jour_dsk = self.sapglob.jour_act;
-            self.affich(self.sapglob.dzeta as c_ushort);
+            self.affich(self.sapglob.dzeta as u16);
             self.tfrima();
             self.generique(VRAI);
             if self.sapglob.scenar == 6 {
@@ -1910,14 +1896,14 @@ impl Sapiens {
             car = (self.litclav() & 223) as u8;
         }
         if car as char >= 'A' && car as char <= 'C' {
-            quel_synthe((car - ('A' as u8)) as c_short);
+            quel_synthe((car - ('A' as u8)) as i16);
         }
     }
 
     /***********************************************************************
                           BRAVO:Affiche resultat de la taille
     ***********************************************************************/
-    fn bravo(&mut self, quoi: c_ushort) {
+    fn bravo(&mut self, quoi: u16) {
         let _g = port::on(self.sapwind.Ecran1);
         self.eff_sour();
         /* Le fond est blanc */
@@ -1925,8 +1911,8 @@ impl Sapiens {
         let mut coeff: f32 = 0.0;
         while coeff < 1.0 {
             self.GereInterface();
-            let tab_index_palette = self.CalculePaletteAttenuee(quoi as c_short, coeff, 999);
-            self.Affmobbrt(quoi as c_short, 96, 1, 0, tab_index_palette);
+            let tab_index_palette = self.CalculePaletteAttenuee(quoi as i16, coeff, 999);
+            self.Affmobbrt(quoi as i16, 96, 1, 0, tab_index_palette);
             if !tab_index_palette.is_null() {
                 DisposPtr(tab_index_palette as *mut u8);
             }
@@ -1938,12 +1924,12 @@ impl Sapiens {
     /***********************************************************************
                                     TRFAB:Fabrique silex
     ***********************************************************************/
-    pub(crate) fn trfab(&mut self, regb: c_ushort) {
+    pub(crate) fn trfab(&mut self, regb: u16) {
         self.FixeMenusReduit();
         self.sapglob.flefba = 0;
         self.clrbadi();
         /*recherche si silex */
-        let mut i: c_char = self.sapglob.liste1.taille as c_char - 1;
+        let mut i: i8 = self.sapglob.liste1.taille as i8 - 1;
         while i >= 0 && self.sapglob.liste1.elements[i as usize] != 19 {
             i -= 1;
         }
@@ -1956,27 +1942,27 @@ impl Sapiens {
         let tfr = self.sapglob.ciel_degr;
         /* on taille le silex */
         self.bruit(10);
-        let trace_syl = self.cursil(regb as c_short);
-        self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut c_short;
+        let trace_syl = self.cursil(regb as i16);
+        self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut i16;
         self.sapglob.flefba = 0;
-        if (trace_syl as c_ushort) > PRECISION_SILEX as c_ushort {
+        if (trace_syl as u16) > PRECISION_SILEX as u16 {
             /* trace et incertitude du dit*/
             self.bruit(7); /* HELAS */
             /*affichage du silex casse*/
-            self.bravo((self.sapwind.mobSilex + MOB_SILEX_CASSE_BASE) as c_ushort);
+            self.bravo((self.sapwind.mobSilex + MOB_SILEX_CASSE_BASE) as u16);
             self.sapglob.liste1.elements[i as usize] = 20; /*un caillou !!!*/
             self.comment(86);
         } else {
             self.bruit(6); /* VICTOIRE*/
-            if (trace_syl as c_ushort) < 150 {
+            if (trace_syl as u16) < 150 {
                 self.comment(110);
             }
             if regb != 1 {
                 self.sapglob.liste1.elements[i as usize] = 23; /*sagaie*/
-                self.bravo((self.sapwind.mobSilex + MOB_SILEX_SAGAIE_BASE) as c_ushort);
+                self.bravo((self.sapwind.mobSilex + MOB_SILEX_SAGAIE_BASE) as u16);
             } else {
                 self.sapglob.liste1.elements[i as usize] = 21; /*hache*/
-                self.bravo((self.sapwind.mobSilex + MOB_SILEX_HACHE_BASE) as c_ushort);
+                self.bravo((self.sapwind.mobSilex + MOB_SILEX_HACHE_BASE) as u16);
             }
             self.comment(85); /*tu pssede une nll arme*/
         }

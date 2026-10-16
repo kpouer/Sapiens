@@ -7,7 +7,6 @@ use crate::cbridge::strlen;
 use crate::shared::Boolean;
 use log::warn;
 use std::ffi::CStr;
-use std::os::raw::c_ushort;
 
 const TabCvt1: &[u8; 16] = b"AEUTNZPFSRDGJKLM";
 const TabCvt2: &[u8; 16] = b"123456789-XWZTNH";
@@ -29,14 +28,14 @@ fn Code(base: u16) -> u16 {
     d0
 }
 
-pub(crate) extern "C" fn VerifNumSerie(str: *mut ::std::os::raw::c_char) -> Boolean {
+pub(crate) extern "C" fn VerifNumSerie(str: *mut i8) -> Boolean {
     let str = unsafe { CStr::from_ptr(str).to_bytes() };
     if str.len() < 9 {
         warn!("Invalid serial number length {}", str.len());
         return false;
     }
-    let mut clef: c_ushort = 0;
-    let mut base: c_ushort = 0;
+    let mut clef: u16 = 0;
+    let mut base: u16 = 0;
 
     for i in (0..8usize).step_by(2) {
         let n = str[i];
@@ -44,13 +43,13 @@ pub(crate) extern "C" fn VerifNumSerie(str: *mut ::std::os::raw::c_char) -> Bool
             None => return false,
             Some(j) => j,
         };
-        clef = (clef << 4) + j as c_ushort;
+        clef = (clef << 4) + j as u16;
         let n = str[i + 1];
         let j = match TabCvt2.iter().position(|x| *x == n) {
             None => return false,
             Some(j) => j,
         };
-        base = (base << 4) + j as c_ushort;
+        base = (base << 4) + j as u16;
     }
     let n = clef;
     clef = Code(base);

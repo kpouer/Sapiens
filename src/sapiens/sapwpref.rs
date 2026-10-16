@@ -24,38 +24,38 @@ use crate::stubs::{
     LocalToGlobal, ModalDialog, NewMenu, PopUpMenuSelect, PreservePath, RestorePath,
 };
 use crate::text::{TextFace, TextFont, TextSize};
-use std::os::raw::{c_char, c_float, c_long, c_short, c_uint, c_ulong, c_void};
+use std::os::raw::c_void;
 
 const VERSION_PREF: &[u8] = b"Sapiens Preferences 2.0.0\0";
 
-const ITEM_OK: c_short = 1;
-const ITEM_ANNULER: c_short = 2;
-const ITEM_LANGUE: c_short = 3;
-const ITEM_BRUITAGES: c_short = 4;
-const ITEM_MUSIQUES: c_short = 5;
-const ITEM_POLICES_LISSEES: c_short = 6;
-const ITEM_2_AUTO: c_short = 7;
-const ITEM_2_CLAVIER: c_short = 8;
-const ITEM_RECT1: c_short = 9;
+const ITEM_OK: i16 = 1;
+const ITEM_ANNULER: i16 = 2;
+const ITEM_LANGUE: i16 = 3;
+const ITEM_BRUITAGES: i16 = 4;
+const ITEM_MUSIQUES: i16 = 5;
+const ITEM_POLICES_LISSEES: i16 = 6;
+const ITEM_2_AUTO: i16 = 7;
+const ITEM_2_CLAVIER: i16 = 8;
+const ITEM_RECT1: i16 = 9;
 
-pub(crate) const JOUEUR2_AUTONOME: c_short = 0;
-const JOUEUR2_CLAVIER: c_short = 1;
-const SAP_NB_LANGUAGES: c_short = 3;
-const ID_MENU: c_short = 1;
+pub(crate) const JOUEUR2_AUTONOME: i16 = 0;
+const JOUEUR2_CLAVIER: i16 = 1;
+const SAP_NB_LANGUAGES: i16 = 3;
+const ID_MENU: i16 = 1;
 
 impl Sapiens {
     pub(crate) fn SauvePref(&mut self) {
         PreservePath();
         SetPathPreferences();
         unsafe {
-            let f = fopen(NOM_PREF.as_ptr() as *const c_char, c"wb".as_ptr());
+            let f = fopen(NOM_PREF.as_ptr() as *const i8, c"wb".as_ptr());
             RestorePath();
             if f.is_null() {
                 return;
             }
             if fwrite(
                 VERSION_PREF.as_ptr() as *const c_void,
-                std::mem::size_of::<c_char>() as c_ulong,
+                std::mem::size_of::<i8>() as u64,
                 strlen(VERSION_PREF.as_ptr() as _) + 1,
                 f,
             ) != strlen(VERSION_PREF.as_ptr() as _) + 1
@@ -64,35 +64,35 @@ impl Sapiens {
                 fclose(f);
                 return;
             }
-            let is_bruitages: c_short = if self.sapwmus.IsBruitages { 1 } else { 0 };
+            let is_bruitages: i16 = if self.sapwmus.IsBruitages { 1 } else { 0 };
             fwrite(
-                &is_bruitages as *const c_short as *const c_void,
-                size_of::<c_short>() as c_ulong,
+                &is_bruitages as *const i16 as *const c_void,
+                size_of::<i16>() as u64,
                 1,
                 f,
             );
             fwrite(
-                &raw const self.sapcomb.ModeJoueur2 as *const c_short as *const c_void,
-                size_of::<c_short>() as c_ulong,
+                &raw const self.sapcomb.ModeJoueur2 as *const i16 as *const c_void,
+                size_of::<i16>() as u64,
                 1,
                 f,
             );
             fwrite(
-                &raw const self.sapglob.okmuse as *const c_uint as *const c_void,
-                size_of::<c_short>() as c_ulong,
+                &raw const self.sapglob.okmuse as *const u32 as *const c_void,
+                size_of::<i16>() as u64,
                 1,
                 f,
             );
-            let l_pref: c_short = langue_i16();
+            let l_pref: i16 = langue_i16();
             fwrite(
-                &l_pref as *const c_short as *const c_void,
-                size_of::<c_short>() as c_ulong,
+                &l_pref as *const i16 as *const c_void,
+                size_of::<i16>() as u64,
                 1,
                 f,
             );
             fwrite(
-                &raw const self.sapwind.SapZoom as *const c_float as *const c_void,
-                size_of::<c_short>() as c_ulong,
+                &raw const self.sapwind.SapZoom as *const f32 as *const c_void,
+                size_of::<i16>() as u64,
                 1,
                 f,
             );
@@ -107,15 +107,15 @@ impl Sapiens {
 #[unsafe(no_mangle)]
 pub(crate) extern "C" fn SetPathPreferences() {
     let mut err: OSErr;
-    let mut result: c_long = 0;
-    let mut volRefNum: c_short = 0;
-    let mut dirId: c_long = 0;
+    let mut result: i64 = 0;
+    let mut volRefNum: i16 = 0;
+    let mut dirId: i64 = 0;
 
-    err = Gestalt(gestaltFindFolderAttr as c_long, &raw mut result);
+    err = Gestalt(gestaltFindFolderAttr as i64, &raw mut result);
     if err == 0 && (result & 1) != 0 {
         err = FindFolder(
-            crate::cbridge::kOnSystemDisk as c_short,
-            crate::cbridge::kPreferencesFolderType as c_long,
+            crate::cbridge::kOnSystemDisk as i16,
+            crate::cbridge::kPreferencesFolderType as i64,
             crate::cbridge::kCreateFolder != 0,
             &raw mut volRefNum,
             &raw mut dirId,
@@ -132,45 +132,35 @@ impl Sapiens {
     <= VRAi si first init
     ***********************************************************************/
     pub(crate) fn ChargePref(&mut self) -> Boolean {
-        let mut chaine = [0 as c_char; 255];
+        let mut chaine = [0 as i8; 255];
         PreservePath();
         unsafe {
             SetPathPreferences();
-            let f = fopen(NOM_PREF.as_ptr() as *const c_char, c"rb".as_ptr());
+            let f = fopen(NOM_PREF.as_ptr() as *const i8, c"rb".as_ptr());
             RestorePath();
             if !f.is_null() {
                 fread(
                     chaine.as_mut_ptr() as *mut c_void,
-                    std::mem::size_of::<c_char>() as c_ulong,
+                    std::mem::size_of::<i8>() as u64,
                     strlen(VERSION_PREF.as_ptr() as _) + 1,
                     f,
                 );
-                if strcmp(chaine.as_ptr(), VERSION_PREF.as_ptr() as *const c_char) == 0 {
-                    let mut tmp: c_short = 0;
-                    fread(
-                        &raw mut tmp as *mut c_void,
-                        size_of::<c_short>() as c_ulong,
-                        1,
-                        f,
-                    );
+                if strcmp(chaine.as_ptr(), VERSION_PREF.as_ptr() as *const i8) == 0 {
+                    let mut tmp: i16 = 0;
+                    fread(&raw mut tmp as *mut c_void, size_of::<i16>() as u64, 1, f);
                     self.sapwmus.IsBruitages = tmp != 0;
                     fread(
                         &raw mut self.sapcomb.ModeJoueur2 as *mut c_void,
-                        size_of::<c_short>() as c_ulong,
+                        size_of::<i16>() as u64,
                         1,
                         f,
                     );
-                    fread(
-                        &raw mut tmp as *mut c_void,
-                        size_of::<c_short>() as c_ulong,
-                        1,
-                        f,
-                    );
+                    fread(&raw mut tmp as *mut c_void, size_of::<i16>() as u64, 1, f);
                     self.sapglob.okmuse = tmp.into();
-                    let mut l_pref: c_short = 0;
+                    let mut l_pref: i16 = 0;
                     fread(
                         &raw mut l_pref as *mut c_void,
-                        size_of::<c_short>() as c_ulong,
+                        size_of::<i16>() as u64,
                         1,
                         f,
                     );
@@ -178,7 +168,7 @@ impl Sapiens {
                     let mut loi = [0u8; 2];
                     fread(
                         loi.as_mut_ptr() as *mut c_void,
-                        size_of::<c_short>() as c_ulong,
+                        size_of::<i16>() as u64,
                         1,
                         f,
                     );
@@ -195,7 +185,7 @@ impl Sapiens {
 /*********************************************************************
                         GetLibLangue
 ********************************************************************/
-fn GetLibLangue(n: c_short, str_: *mut c_char) {
+fn GetLibLangue(n: i16, str_: *mut i8) {
     GetIndString(str_ as *mut u8 as StringPtr, 128, n + 1);
     PtoCstr(str_ as *mut u8);
 }
@@ -203,24 +193,24 @@ fn GetLibLangue(n: c_short, str_: *mut c_char) {
 /*********************************************************************
                         VectAfficheMenuLangue
 ********************************************************************/
-unsafe extern "C" fn VectAfficheMenuLangue(window: DialogPtr, itemid: c_short) {
+unsafe extern "C" fn VectAfficheMenuLangue(window: DialogPtr, itemid: i16) {
     let mut r: Rect = Rect::default();
-    let mut chaine = [0 as c_char; 255];
+    let mut chaine = [0 as i8; 255];
 
     let _g = port::on(window);
     GetRectItem(window, itemid, &raw mut r);
     GetLibLangue(langue_i16(), chaine.as_mut_ptr());
-    BackColor(whiteColor as c_short);
+    BackColor(whiteColor as i16);
     r.right -= 14;
-    TextFont(times as c_short);
+    TextFont(times as i16);
     TextSize(16);
     TextFace(0);
     unsafe {
         DoTextBox(
             chaine.as_mut_ptr(),
-            strlen(chaine.as_ptr()) as c_short,
+            strlen(chaine.as_ptr()) as i16,
             &r,
-            crate::cbridge::teJustLeft as c_short,
+            crate::cbridge::teJustLeft as i16,
         );
     }
     r.right += 14;
@@ -234,7 +224,7 @@ unsafe extern "C" fn VectAfficheMenuLangue(window: DialogPtr, itemid: c_short) {
 => Menu a remplir
 ******************************************************************************************/
 fn CreeMenuLangue(menu: MenuHandle) {
-    let mut nom = [0 as c_char; 255];
+    let mut nom = [0 as i8; 255];
 
     for i in 0..SAP_NB_LANGUAGES {
         GetLibLangue(i, nom.as_mut_ptr());
@@ -247,7 +237,7 @@ fn CreeMenuLangue(menu: MenuHandle) {
                                 VectFrameBouton
 Le bouton est enncadre
 ******************************************************************************************/
-unsafe extern "C" fn VectFrameBouton(window: DialogPtr, item: c_short) {
+unsafe extern "C" fn VectFrameBouton(window: DialogPtr, item: i16) {
     let mut r: Rect = Rect::default();
 
     GetRectItem(window, item, &raw mut r);
@@ -259,8 +249,8 @@ impl Sapiens {
                             DoPreferences
     ***********************************************************************/
     pub(crate) fn DoPreferences(&mut self) {
-        let mut item: c_short = 0;
-        let mut result: c_long;
+        let mut item: i16 = 0;
+        let mut result: i64;
         let mut menuLangue: MenuHandle;
         unsafe {
             let dialog = OuvreDialogue(CvtDefaultLangRess(137));
@@ -312,7 +302,7 @@ impl Sapiens {
                         DeleteMenu(ID_MENU);
                         DisposeMenu(menuLangue);
                         if result != 0 {
-                            set_langue(((result - 1) as c_short).into());
+                            set_langue(((result - 1) as i16).into());
                             VectAfficheMenuLangue(dialog, ITEM_LANGUE);
                         }
                     }

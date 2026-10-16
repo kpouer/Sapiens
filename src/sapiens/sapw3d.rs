@@ -9,7 +9,6 @@
 // sol en lignes successives, pluie et éclairs, visualisation des montagnes.
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use std::os::raw::{c_char, c_long, c_short, c_uchar, c_ushort};
 use std::ptr::{addr_of_mut, null_mut};
 
 use crate::acam::{DisposPtr, NewPtrClear, Random, TickCount};
@@ -40,27 +39,27 @@ const HAUTEUR_MIN_BANDE: i32 = 5;
 #[derive(Debug, Copy, Clone, Default)]
 #[repr(C)]
 struct LigneSol {
-    y: c_short,
-    hauteur: c_short,
-    largeur: c_short,
-    offsetEnMob: c_short, /* Position X dans le Mob qui apparait au milieu de l'écran */
-    offsetEcran: c_short,
-    dist: c_short,
+    y: i16,
+    hauteur: i16,
+    largeur: i16,
+    offsetEnMob: i16, /* Position X dans le Mob qui apparait au milieu de l'écran */
+    offsetEcran: i16,
+    dist: i16,
 }
 
 pub(crate) struct Sapw3d {
-    TAB_PALETTE_DISTANCE: *mut *mut c_short,
+    TAB_PALETTE_DISTANCE: *mut *mut i16,
     TAB_COULEURS_CIEL: [IndexColor; NB_LIGNES_CIEL],
-    COULEUR_ORAGE_JOUR: c_short,
-    COULEUR_ORAGE_NUIT: c_short,
+    COULEUR_ORAGE_JOUR: i16,
+    COULEUR_ORAGE_NUIT: i16,
     IOTA_PALETTE_STD: f32,
     TAB_ETOILES: [Etoile; NB_ETOILES],
-    COUL_PULSE: c_short,
-    METEORE: c_short,
-    X_METEORE: c_short,
-    Y_METEORE: c_short,
-    LAST_DZETA: c_short,
-    SOL_RAND_SEED: c_long,
+    COUL_PULSE: i16,
+    METEORE: i16,
+    X_METEORE: i16,
+    Y_METEORE: i16,
+    LAST_DZETA: i16,
+    SOL_RAND_SEED: i64,
     TAB_LIGNE_SOL: [LigneSol; NB_INTERV],
 }
 
@@ -96,21 +95,21 @@ struct Etoile {
 /**************************************************************************
                         sinshort
 ***************************************************************************/
-pub(crate) fn sinshort(angle: c_short) -> c_short {
-    (255.0 * (angle as f32 as f64 * 3.1415925 / 512.0).sin()) as c_short
+pub(crate) fn sinshort(angle: i16) -> i16 {
+    (255.0 * (angle as f32 as f64 * 3.1415925 / 512.0).sin()) as i16
 }
 
 /**************************************************************************
                         cosshort
 ***************************************************************************/
-pub(crate) fn cosshort(angle: c_short) -> c_short {
-    (255.0 * (angle as f32 as f64 * 3.1415925 / 512.0).cos()) as c_short
+pub(crate) fn cosshort(angle: i16) -> i16 {
+    (255.0 * (angle as f32 as f64 * 3.1415925 / 512.0).cos()) as i16
 }
 
 /*****************************************************************************
                                         distance
 *****************************************************************************/
-pub(crate) const fn distance(dx: c_long, dy: c_long) -> c_short {
+pub(crate) const fn distance(dx: i64, dy: i64) -> i16 {
     let mut dx = dx.abs();
     let dy = dy.abs();
     if dx > dy {
@@ -121,7 +120,7 @@ pub(crate) const fn distance(dx: c_long, dy: c_long) -> c_short {
     if dx > 32700 {
         dx = 32700;
     }
-    dx as c_short
+    dx as i16
 }
 
 /*******************************************
@@ -131,40 +130,40 @@ pub(crate) const fn distance(dx: c_long, dy: c_long) -> c_short {
 <= VRAI si visible
 ********************************************/
 fn CalcPoint3D(
-    pxj: c_long,
-    pyj: c_long,
-    pzj: c_long,
+    pxj: i64,
+    pyj: i64,
+    pzj: i64,
     ca: f32,
     sa: f32,
-    mut xp: c_long,
-    mut yp: c_long,
-    mut zp: c_long,
+    mut xp: i64,
+    mut yp: i64,
+    mut zp: i64,
 ) -> Option<(i16, i16, i16)> {
-    let mut tmp: c_long;
+    let mut tmp: i64;
     /* --- Rabat les positions du point en fn du joueur  --- */
     xp -= pxj;
     yp -= pyj;
     zp -= pzj;
 
     /* --- Recalcule les positions 3d en fonction de l'angle de vue --- */
-    tmp = (xp as f32 * ca - yp as f32 * sa) as c_long;
-    yp = (xp as f32 * sa + yp as f32 * ca) as c_long;
+    tmp = (xp as f32 * ca - yp as f32 * sa) as i64;
+    yp = (xp as f32 * sa + yp as f32 * ca) as i64;
     xp = tmp;
 
     /* --- Visible ? --- */
     if xp <= 2 {
         return None;
     }
-    tmp = distance(xp, yp) as c_long;
+    tmp = distance(xp, yp) as i64;
     if tmp == 0 {
         return None;
     }
     let dist = tmp;
     /* --- Calcule x écran --- */
-    let xl = LARGEUR_ECRAN as c_long / 2 - (LARGEUR_ECRAN as c_long / 2) * yp / xp;
+    let xl = LARGEUR_ECRAN as i64 / 2 - (LARGEUR_ECRAN as i64 / 2) * yp / xp;
 
     /* --- Calcule Y ecran --- */
-    let yl = HAUTEUR_ECRAN as c_long / 2 - (HAUTEUR_ECRAN as c_long / 2) * zp / xp;
+    let yl = HAUTEUR_ECRAN as i64 / 2 - (HAUTEUR_ECRAN as i64 / 2) * zp / xp;
 
     let mut xl = xl;
     let mut yl = yl;
@@ -180,8 +179,8 @@ fn CalcPoint3D(
     if yl > 32760 {
         yl = 32760;
     }
-    let x = xl as c_short;
-    let y = yl as c_short;
+    let x = xl as i16;
+    let y = yl as i16;
 
     Some((x, y, dist as i16))
 }
@@ -194,25 +193,23 @@ impl Sapiens {
     ;
     ************************************************************************/
     #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn sapdep(&mut self, angle: c_short, vitesse: c_short) {
-        let mut tmp =
-            self.sapglob.xj as c_long + (((cosshort(angle) as c_long) * (vitesse as c_long)) >> 8);
+    pub(crate) unsafe extern "C" fn sapdep(&mut self, angle: i16, vitesse: i16) {
+        let mut tmp = self.sapglob.xj as i64 + (((cosshort(angle) as i64) * (vitesse as i64)) >> 8);
         if tmp < 0 {
             tmp = 0;
         }
         if tmp > 65535 {
             tmp = 65535;
         }
-        self.sapglob.xj = tmp as c_ushort;
-        tmp =
-            self.sapglob.yj as c_long + (((sinshort(angle) as c_long) * (vitesse as c_long)) >> 8);
+        self.sapglob.xj = tmp as u16;
+        tmp = self.sapglob.yj as i64 + (((sinshort(angle) as i64) * (vitesse as i64)) >> 8);
         if tmp < 0 {
             tmp = 0;
         }
         if tmp > 65535 {
             tmp = 65535;
         }
-        self.sapglob.yj = tmp as c_ushort;
+        self.sapglob.yj = tmp as u16;
         self.AvanceSol(vitesse);
     }
 }
@@ -221,14 +218,10 @@ impl Sapiens {
                     CalculeDegradeDuCiel
 Calcul des tableau de degrades du ciel
 *****************************************************************************/
-const TAB_LIGN: [c_short; 8] = [0, 41 * 2, 48 * 2, 53 * 2, 57 * 2, 59 * 2, 61 * 2, 64 * 2];
+const TAB_LIGN: [i16; 8] = [0, 41 * 2, 48 * 2, 53 * 2, 57 * 2, 59 * 2, 61 * 2, 64 * 2];
 
 impl Sapiens {
-    unsafe fn CalculeDegradeDuCiel(
-        &self,
-        palette: *mut c_short,
-        tab_couleurs_ciel: &mut [IndexColor],
-    ) {
+    unsafe fn CalculeDegradeDuCiel(&self, palette: *mut i16, tab_couleurs_ciel: &mut [IndexColor]) {
         let mut rgbDep = RGBColor::default();
         let mut rgbDest = RGBColor::default();
         let mut j: i32 = 0;
@@ -240,17 +233,17 @@ impl Sapiens {
         for i in 0..NB_LIGNES_CIEL as i32 {
             /* Changement de ligne */
             if i == TAB_LIGN[j as usize] as i32 {
-                Sapwcvt::CvtCouleurEnRgb(palette, j as c_short, &mut rgbDep);
+                Sapwcvt::CvtCouleurEnRgb(palette, j as i16, &mut rgbDep);
                 j += 1;
-                Sapwcvt::CvtCouleurEnRgb(palette, j as c_short, &mut rgbDest);
+                Sapwcvt::CvtCouleurEnRgb(palette, j as i16, &mut rgbDest);
                 let dist = TAB_LIGN[j as usize] as i32 - TAB_LIGN[(j - 1) as usize] as i32;
                 incRed = (rgbDest.red as i64 - rgbDep.red as i64) / dist as i64;
                 incGreen = (rgbDest.green as i64 - rgbDep.green as i64) / dist as i64;
                 incBlue = (rgbDest.blue as i64 - rgbDep.blue as i64) / dist as i64;
             }
-            rgbDep.red = (rgbDep.red as i64 + incRed) as c_ushort;
-            rgbDep.green = (rgbDep.green as i64 + incGreen) as c_ushort;
-            rgbDep.blue = (rgbDep.blue as i64 + incBlue) as c_ushort;
+            rgbDep.red = (rgbDep.red as i64 + incRed) as u16;
+            rgbDep.green = (rgbDep.green as i64 + incGreen) as u16;
+            rgbDep.blue = (rgbDep.blue as i64 + incBlue) as u16;
             let idx = &mut tab_couleurs_ciel[i as usize];
             idx.rgb = rgbDep;
             idx.index = SapColor2Index(&rgbDep);
@@ -262,7 +255,7 @@ impl Sapiens {
     Calcule le degrade des montagnes en fonction de la distance au joueur
     Le premier degrade est celui de premier plan, le dernier celui de l'horizon
     *****************************************************************************/
-    unsafe fn CalculeDegradeDistance(&self, h: c_short, tab_palette_distance: *mut *mut c_short) {
+    unsafe fn CalculeDegradeDistance(&self, h: i16, tab_palette_distance: *mut *mut i16) {
         let mut coeff: f32;
         let delta: f32;
         if h as i32 > 512 - 50 || (h as i32) < 50 {
@@ -313,9 +306,8 @@ impl Sapiens {
                     }
                     e.TabCouleursCiel = [IndexColor::default(); NB_LIGNES_CIEL];
                     e.TabPaletteDistance = NewPtrClear(
-                        (std::mem::size_of::<*mut c_short>() as c_long)
-                            * (NB_DEGRADE_DISTANCE as c_long),
-                    ) as *mut *mut c_short;
+                        (std::mem::size_of::<*mut i16>() as i64) * (NB_DEGRADE_DISTANCE as i64),
+                    ) as *mut *mut i16;
                     self.CalculeDegradeDuCiel(e.pal.as_mut_ptr(), &mut e.TabCouleursCiel);
                     self.CalculeDegradeDistance(e.h, e.TabPaletteDistance);
                 }
@@ -359,10 +351,10 @@ impl Sapiens {
         rgb.blue = 65535;
         self.sapw3d.COUL_PULSE = SapColor2Index(&rgb);
         for e in &mut self.sapw3d.TAB_ETOILES {
-            e.x = self.random.myRandom(0, AIRE_X_ETOILE as c_long) as c_short;
-            e.y = self.random.myRandom(0, AIRE_Y_ETOILE as c_long) as c_short;
-            e.magnitude = self.random.myRandom(0, MAX_MAGNITUDE as c_long) as c_short;
-            rgb.red = (55000 - e.y as c_long * (32768 / AIRE_Y_ETOILE as c_long)) as c_ushort;
+            e.x = self.random.myRandom(0, AIRE_X_ETOILE as i64) as i16;
+            e.y = self.random.myRandom(0, AIRE_Y_ETOILE as i64) as i16;
+            e.magnitude = self.random.myRandom(0, MAX_MAGNITUDE as i64) as i16;
+            rgb.red = (55000 - e.y as i64 * (32768 / AIRE_Y_ETOILE as i64)) as u16;
             rgb.green = rgb.red;
             rgb.blue = 0;
             e.couleur = SapColor2Index(&rgb);
@@ -382,12 +374,12 @@ impl Sapiens {
                 };
                 let data = info.pixels;
                 let tailleLigne = info.row_bytes;
-                let magnitude: c_short = if (self.sapglob.heure as i32) < MAX_MAGNITUDE {
-                    (MAX_MAGNITUDE - self.sapglob.heure as i32) as c_short
+                let magnitude: i16 = if (self.sapglob.heure as i32) < MAX_MAGNITUDE {
+                    (MAX_MAGNITUDE - self.sapglob.heure as i32) as i16
                 } else if (self.sapglob.heure as i32) < 480 + MAX_MAGNITUDE {
-                    (self.sapglob.heure as i32 - (480 + MAX_MAGNITUDE)) as c_short
+                    (self.sapglob.heure as i32 - (480 + MAX_MAGNITUDE)) as i16
                 } else {
-                    MAX_MAGNITUDE as c_short
+                    MAX_MAGNITUDE as i16
                 };
                 for p in &mut self.sapw3d.TAB_ETOILES {
                     if p.magnitude <= magnitude {
@@ -410,28 +402,26 @@ impl Sapiens {
                     let x = (((self.sapglob.dzeta as i32 * 2 - self.sapw3d.X_METEORE as i32 - 512)
                         & 2047)
                         - 512
-                        + 256) as c_short;
+                        + 256) as i16;
                     self.Affmobbrt(
                         self.sapwind.mob3D + 21,
-                        x / ECHELLE as c_short,
-                        self.sapw3d.Y_METEORE / ECHELLE as c_short,
+                        x / ECHELLE as i16,
+                        self.sapw3d.Y_METEORE / ECHELLE as i16,
                         0,
                         null_mut(),
                     );
-                    self.sapw3d.METEORE = (self.sapw3d.METEORE as i32 - 1) as c_short;
-                    self.sapw3d.X_METEORE = (self.sapw3d.X_METEORE as i32 + 5) as c_short;
-                    self.sapw3d.Y_METEORE = (self.sapw3d.Y_METEORE as i32 + 5) as c_short;
+                    self.sapw3d.METEORE = (self.sapw3d.METEORE as i32 - 1) as i16;
+                    self.sapw3d.X_METEORE = (self.sapw3d.X_METEORE as i32 + 5) as i16;
+                    self.sapw3d.Y_METEORE = (self.sapw3d.Y_METEORE as i32 + 5) as i16;
                 } else if self.random.myRandom(0, 1000) > 990 {
-                    self.sapw3d.X_METEORE =
-                        self.random.myRandom(0, AIRE_X_ETOILE as c_long) as c_short;
+                    self.sapw3d.X_METEORE = self.random.myRandom(0, AIRE_X_ETOILE as i64) as i16;
                     self.sapw3d.Y_METEORE =
-                        self.random.myRandom(0, (AIRE_Y_ETOILE / 2) as c_long) as c_short;
-                    self.sapw3d.METEORE = self.random.myRandom(3, 6) as c_short;
+                        self.random.myRandom(0, (AIRE_Y_ETOILE / 2) as i64) as i16;
+                    self.sapw3d.METEORE = self.random.myRandom(3, 6) as i16;
                 }
                 /* Etoile polaire */
-                let x = (((self.sapglob.dzeta as i32 * 2 + 512) % 2048) - 512 + 256) as c_short;
-                let num =
-                    (self.sapwind.mob3D as i32 + self.random.myRandom(22, 24) as i32) as c_short;
+                let x = (((self.sapglob.dzeta as i32 * 2 + 512) % 2048) - 512 + 256) as i16;
+                let num = (self.sapwind.mob3D as i32 + self.random.myRandom(22, 24) as i32) as i16;
                 self.Affmobbrt(num, x / 2, 20, 0, null_mut());
             }
         }
@@ -445,14 +435,13 @@ impl Sapiens {
         for i in 1..NB_INTERV {
             self.sapw3d.TAB_LIGNE_SOL[i].hauteur = (self.sapw3d.TAB_LIGNE_SOL[i].y as i32
                 - self.sapw3d.TAB_LIGNE_SOL[i - 1].y as i32)
-                as c_short;
-            self.sapw3d.TAB_LIGNE_SOL[i].largeur = (LARGEUR_MOB
-                * self.sapw3d.TAB_LIGNE_SOL[i].hauteur as i64
-                / HAUTEUR_MOB) as c_short;
+                as i16;
+            self.sapw3d.TAB_LIGNE_SOL[i].largeur =
+                (LARGEUR_MOB * self.sapw3d.TAB_LIGNE_SOL[i].hauteur as i64 / HAUTEUR_MOB) as i16;
         }
         self.sapw3d.TAB_LIGNE_SOL[0].hauteur = self.sapw3d.TAB_LIGNE_SOL[0].y;
         self.sapw3d.TAB_LIGNE_SOL[0].largeur =
-            (LARGEUR_MOB * self.sapw3d.TAB_LIGNE_SOL[0].hauteur as i64 / HAUTEUR_MOB) as c_short;
+            (LARGEUR_MOB * self.sapw3d.TAB_LIGNE_SOL[0].hauteur as i64 / HAUTEUR_MOB) as i16;
     }
 
     /*******************************************************************************
@@ -465,11 +454,11 @@ impl Sapiens {
             for i in 1..NB_INTERV {
                 if self.sapw3d.TAB_LIGNE_SOL[i].hauteur != 0 {
                     self.sapw3d.TAB_LIGNE_SOL[i].offsetEnMob =
-                        ((self.datum(delta, i)) % LARGEUR_MOB as i32) as c_short;
+                        ((self.datum(delta, i)) % LARGEUR_MOB as i32) as i16;
                     self.sapw3d.TAB_LIGNE_SOL[i].offsetEcran =
                         (-(self.sapw3d.TAB_LIGNE_SOL[i].offsetEnMob as i64)
                             * self.sapw3d.TAB_LIGNE_SOL[i].hauteur as i64
-                            / HAUTEUR_MOB) as c_short;
+                            / HAUTEUR_MOB) as i16;
                 }
             }
             self.sapw3d.LAST_DZETA = self.sapglob.dzeta;
@@ -487,34 +476,34 @@ impl Sapiens {
                                                             CalcY
             Calcule le Y ecran en fonction du delta d'altitude et de la distance
     *******************************************************************************/
-    const fn CalcY(&self, idx: c_short) -> c_short {
+    const fn CalcY(&self, idx: i16) -> i16 {
         let dist = self.sapw3d.TAB_LIGNE_SOL[idx as usize].dist as i64;
-        (256 * (38 + self.sapglob.zj as i64 / 20) / dist) as c_short
+        (256 * (38 + self.sapglob.zj as i64 / 20) / dist) as i16
     }
 
     /*******************************************************************************
                                                                     AvanceSol
                                     Le personnage avance, le tableau des lignes du sol bouge
     *********************************************************************************/
-    pub(crate) fn AvanceSol(&mut self, dist: c_short) {
+    pub(crate) fn AvanceSol(&mut self, dist: i16) {
         if dist != 0 {
             self.sapw3d.SOL_RAND_SEED =
-                TickCount() + self.sapglob.xj as c_long + self.sapglob.yj as c_long;
+                TickCount() + self.sapglob.xj as i64 + self.sapglob.yj as i64;
         }
         /* Est-ce l'init ? oui -> on calcule tout*/
         if self.sapw3d.TAB_LIGNE_SOL[0].dist == 0 {
             let mut d: i32 = 70;
             for i in 0..NB_INTERV {
-                self.sapw3d.TAB_LIGNE_SOL[NB_INTERV - 1 - i].dist = d as c_short;
+                self.sapw3d.TAB_LIGNE_SOL[NB_INTERV - 1 - i].dist = d as i16;
                 self.sapw3d.TAB_LIGNE_SOL[NB_INTERV - 1 - i].y =
-                    self.CalcY((NB_INTERV - 1 - i) as c_short);
+                    self.CalcY((NB_INTERV - 1 - i) as i16);
                 d += LARGEUR_BANDE_SOL;
             }
         } else {
             for i in 0..NB_INTERV {
                 self.sapw3d.TAB_LIGNE_SOL[i].dist =
-                    (self.sapw3d.TAB_LIGNE_SOL[i].dist as i32 - dist as i32) as c_short;
-                self.sapw3d.TAB_LIGNE_SOL[i].y = self.CalcY(i as c_short);
+                    (self.sapw3d.TAB_LIGNE_SOL[i].dist as i32 - dist as i32) as i16;
+                self.sapw3d.TAB_LIGNE_SOL[i].y = self.CalcY(i as i16);
             }
             /* La ligne la plus proche s'est-elle barrée ? */
             while self.sapw3d.TAB_LIGNE_SOL[NB_INTERV - 1].dist < 70 {
@@ -524,7 +513,7 @@ impl Sapiens {
                 }
                 /* On recalcule le dernier élément */
                 self.sapw3d.TAB_LIGNE_SOL[0].dist =
-                    (self.sapw3d.TAB_LIGNE_SOL[1].dist as i32 + LARGEUR_BANDE_SOL) as c_short;
+                    (self.sapw3d.TAB_LIGNE_SOL[1].dist as i32 + LARGEUR_BANDE_SOL) as i16;
                 self.sapw3d.TAB_LIGNE_SOL[0].y = self.CalcY(0);
             }
         }
@@ -539,10 +528,10 @@ impl Sapiens {
         let mut rdep: Rect;
         let mut i: i32;
         let mut numPalette: i32;
-        let numMob: c_short;
+        let numMob: i16;
         let ymax: i32;
         let largeur: i32;
-        let RandSeedBak: c_long;
+        let RandSeedBak: i64;
 
         self.AvanceSol(0);
         self.CalculeDimensionsLignes();
@@ -567,17 +556,17 @@ impl Sapiens {
         while j > NB_LIGNES_CIEL as i32 {
             /* des bandes de 4 */
             let offset = ((2048 - self.sapglob.dzeta as i32 * 2 + self.random.Rnd() as i32)
-                % largeur) as c_short;
+                % largeur) as i16;
             let top = if j < NB_LIGNES_CIEL as i32 + HAUTEUR_MIN_BANDE {
                 NB_LIGNES_CIEL as i32
             } else {
                 j - HAUTEUR_MIN_BANDE
             };
             r = Rect::new(
-                (256 - offset as i32) as c_short,
-                top as c_short,
-                (256 + largeur - offset as i32) as c_short,
-                j as c_short,
+                (256 - offset as i32) as i16,
+                top as i16,
+                (256 + largeur - offset as i32) as i16,
+                j as i16,
             );
             numPalette = if r.bottom > NB_LIGNES_CIEL as i16 {
                 (NB_LIGNES_CIEL as i32 + NB_LIGNES_TERRE as i32) - r.bottom as i32
@@ -599,13 +588,13 @@ impl Sapiens {
                     r,
                     *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
                 );
-                r.OffsetRect(largeur as c_short, 0);
+                r.OffsetRect(largeur as i16, 0);
                 k += largeur;
             }
             r = rdep;
             k = 256 - offset as i32;
             while k > 0 {
-                r.OffsetRect(-largeur as c_short, 0);
+                r.OffsetRect(-largeur as i16, 0);
                 self.Affmob3d(
                     self.sapwind.mob3D + 25,
                     r,
@@ -631,10 +620,10 @@ impl Sapiens {
                 };
                 let bottom = self.sapw3d.TAB_LIGNE_SOL[i as usize].y as i32 + NB_LIGNES_CIEL as i32;
                 r = Rect::new(
-                    (256 - offset) as c_short,
-                    top as c_short,
-                    (256 + largeur2 - offset) as c_short,
-                    bottom as c_short,
+                    (256 - offset) as i16,
+                    top as i16,
+                    (256 + largeur2 - offset) as i16,
+                    bottom as i16,
                 );
                 numPalette = if r.bottom > NB_LIGNES_CIEL as i16 {
                     (NB_LIGNES_CIEL as i32 + NB_LIGNES_TERRE as i32) - r.bottom as i32
@@ -656,13 +645,13 @@ impl Sapiens {
                         r,
                         *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
                     );
-                    r.OffsetRect(largeur2 as c_short, 0);
+                    r.OffsetRect(largeur2 as i16, 0);
                     kk += largeur2;
                 }
                 r = rdep;
                 kk = 256 - offset;
                 while kk > 0 {
-                    r.OffsetRect(-largeur2 as c_short, 0);
+                    r.OffsetRect(-largeur2 as i16, 0);
                     self.Affmob3d(
                         nmob,
                         r,
@@ -680,7 +669,7 @@ impl Sapiens {
 /******************************************************************
                     TrameCielOrage
 ******************************************************************/
-unsafe fn TrameCielOrage(index: c_short) {
+unsafe fn TrameCielOrage(index: i16) {
     /* Origine des données de l'ecran */
     let Some(info) = port::info(port::current()) else {
         return;
@@ -727,7 +716,7 @@ unsafe fn Flou() {
                     TracePluie
 => index de la couleur, nombre de gouttes
 ******************************************************************/
-unsafe fn TracePluie(random: &mut Random, index: c_short, n: c_short) {
+unsafe fn TracePluie(random: &mut Random, index: i16, n: i16) {
     if random.myRandom(0, 1000) > 500 {
         Flou();
     }
@@ -740,8 +729,8 @@ unsafe fn TracePluie(random: &mut Random, index: c_short, n: c_short) {
     let mut n = n as i32;
     while n > 0 {
         n -= 1;
-        let x = random.myRandom(0, tailleLigne as c_long) as c_short;
-        let y = random.myRandom(0, 150) as c_short;
+        let x = random.myRandom(0, tailleLigne as i64) as i16;
+        let y = random.myRandom(0, 150) as i16;
         let mut j = 50;
         let mut p = data.add((tailleLigne as i64 * y as i64 + x as i64) as usize);
         while j > 0 {
@@ -760,11 +749,11 @@ impl Sapiens {
     #[unsafe(no_mangle)]
     pub(crate) unsafe extern "C" fn eff3d(
         &mut self,
-        _ciel: c_uchar,  /* NU */
-        _terre: c_uchar, /* NU */
-        ymeteore: c_ushort,
-        xmeteore: c_ushort,
-        isLune: c_ushort,
+        _ciel: u8,  /* NU */
+        _terre: u8, /* NU */
+        ymeteore: u16,
+        xmeteore: u16,
+        isLune: u16,
     ) {
         let _g = port::on(self.sapwind.Ecran1);
 
@@ -774,9 +763,9 @@ impl Sapiens {
         self.AfficheEtoiles();
         /* Le meteore */
         self.Affmobbrt(
-            (crate::MOB_SOLEIL!(self.sapwind) as i32 + isLune as i32) as c_short,
-            xmeteore as c_short,
-            ymeteore as c_short,
+            (crate::MOB_SOLEIL!(self.sapwind) as i32 + isLune as i32) as i16,
+            xmeteore as i16,
+            ymeteore as i16,
             0,
             null_mut(),
         );
@@ -805,17 +794,9 @@ impl Sapiens {
                 self.sap3d.FreqEclair - 500
             };
             if self.sapglob.heure & 0x200 != 0 {
-                TracePluie(
-                    &mut self.random,
-                    self.sapw3d.COULEUR_ORAGE_NUIT,
-                    n as c_short,
-                );
+                TracePluie(&mut self.random, self.sapw3d.COULEUR_ORAGE_NUIT, n as i16);
             } else {
-                TracePluie(
-                    &mut self.random,
-                    self.sapw3d.COULEUR_ORAGE_JOUR,
-                    n as c_short,
-                );
+                TracePluie(&mut self.random, self.sapw3d.COULEUR_ORAGE_JOUR, n as i16);
             }
             /* Si pas deja de l'eau par terre on mets de l'eau a terre */
             if self.sapglob.liste4.taille > 0
@@ -823,7 +804,7 @@ impl Sapiens {
                 && self.sapglob.liste4.taille < self.sapglob.liste4.maxtaille
             {
                 self.sapglob.liste4.taille = self.sapglob.liste4.taille.wrapping_add(1);
-                self.sapglob.tlpos[4] = self.sapglob.liste4.taille as c_char;
+                self.sapglob.tlpos[4] = self.sapglob.liste4.taille as i8;
                 self.sapglob.liste4.elements[self.sapglob.liste4.taille as usize - 1] = 2; /*Eau */
             }
         }
@@ -842,7 +823,7 @@ impl Sapiens {
                 && self.sapglob.liste4.taille < self.sapglob.liste4.maxtaille
             {
                 self.sapglob.liste4.taille = self.sapglob.liste4.taille.wrapping_add(1);
-                self.sapglob.tlpos[4] = self.sapglob.liste4.taille as c_char;
+                self.sapglob.tlpos[4] = self.sapglob.liste4.taille as i8;
                 self.sapglob.liste4.elements[self.sapglob.liste4.taille as usize - 1] = 2; /*Eau */
             }
         }
@@ -852,15 +833,15 @@ impl Sapiens {
                                                     CalculeAltitude
                                     Calcule l'altitude d'un point du plan
     ***************************************************************************************/
-    fn CalculeAltitude(&self, _x: c_short, _y: c_short) -> c_short {
+    fn CalculeAltitude(&self, _x: i16, _y: i16) -> i16 {
         let mut z: i32 = 40;
 
         for mont in &self.sap3d.aigoual {
             if let Some(forme) = mont.forme.map(FormeId::forme) {
                 if forme.hauteur == 0 {
                     let d = distance(
-                        self.sapglob.xj as c_long - mont.posx as c_long,
-                        self.sapglob.yj as c_long - mont.posy as c_long,
+                        self.sapglob.xj as i64 - mont.posx as i64,
+                        self.sapglob.yj as i64 - mont.posy as i64,
                     );
                     let r = forme.rayon as i64;
                     if (d as i64) < r {
@@ -869,7 +850,7 @@ impl Sapiens {
                 }
             }
         }
-        z as c_short
+        z as i16
     }
 
     /*****************************************************************************************
@@ -878,12 +859,11 @@ impl Sapiens {
     L'affichage se fait sur ecran 1
     ******************************************************************************************/
     pub(crate) unsafe fn visu(&mut self) {
-        let mut rd: c_short;
+        let mut rd: i16;
 
         let _g = port::on(self.sapwind.Ecran1);
-        self.sapglob.zj = self
-            .CalculeAltitude(self.sapglob.xj as c_short, self.sapglob.yj as c_short)
-            as c_ushort;
+        self.sapglob.zj =
+            self.CalculeAltitude(self.sapglob.xj as i16, self.sapglob.yj as i16) as u16;
         let angle = ((self.sapglob.dzeta as f32) * (3.1415927 as f32)) as f64 / 512.0;
         let ca = (-angle).cos() as f32;
         let sa = (-angle).sin() as f32;
@@ -893,29 +873,29 @@ impl Sapiens {
                 continue;
             };
             if let Some((x, y, dist)) = CalcPoint3D(
-                self.sapglob.xj as c_long,
-                self.sapglob.yj as c_long,
-                self.sapglob.zj as c_long,
+                self.sapglob.xj as i64,
+                self.sapglob.yj as i64,
+                self.sapglob.zj as i64,
                 ca,
                 sa,
-                m.posx as c_long,
-                m.posy as c_long,
-                forme.hauteur as c_long,
+                m.posx as i64,
+                m.posy as i64,
+                forme.hauteur as i64,
             ) {
-                rd = (forme.rayon as c_long * 2 * 256 / dist as c_long) as c_short;
+                rd = (forme.rayon as i64 * 2 * 256 / dist as i64) as i16;
                 let hauteurDisque =
-                    (m.ign as c_long * forme.nbrdisk as c_long * 256 / dist as c_long) as c_short;
+                    (m.ign as i64 * forme.nbrdisk as i64 * 256 / dist as i64) as i16;
                 let r = Rect::new(
-                    (x as i32 - rd as i32 / 2) as c_short,
-                    (y as i32 - hauteurDisque as i32) as c_short,
-                    (x as i32 + rd as i32 / 2) as c_short,
+                    (x as i32 - rd as i32 / 2) as i16,
+                    (y as i32 - hauteurDisque as i32) as i16,
+                    (x as i32 + rd as i32 / 2) as i16,
                     y,
                 );
                 if !r.is_empty()
-                    && r.left < LARGEUR_ECRAN as c_short
+                    && r.left < LARGEUR_ECRAN as i16
                     && r.right > 0
                     && r.bottom > 0
-                    && r.top < HAUTEUR_ECRAN as c_short
+                    && r.top < HAUTEUR_ECRAN as i16
                 {
                     let numPalette = if r.bottom > NB_LIGNES_CIEL as i16 {
                         (NB_LIGNES_CIEL as i32 + NB_LIGNES_TERRE as i32) - r.bottom as i32
@@ -959,10 +939,10 @@ impl Sapiens {
             return false;
         };
         let dist = distance(
-            self.sap3d.aigoual[idx as usize].posx as c_long - self.sapglob.xj as c_long,
-            self.sap3d.aigoual[idx as usize].posy as c_long - self.sapglob.yj as c_long,
+            self.sap3d.aigoual[idx as usize].posx as i64 - self.sapglob.xj as i64,
+            self.sap3d.aigoual[idx as usize].posy as i64 - self.sapglob.yj as i64,
         );
-        self.sap3d.aigoual[idx as usize].distance = dist as c_ushort;
+        self.sap3d.aigoual[idx as usize].distance = dist as u16;
         if dist as i64
             > 256 * forme.nbrdisk as i64 * self.sap3d.aigoual[idx as usize].ign as i64 / 4
         {
@@ -1004,7 +984,7 @@ impl Sapiens {
         /* Premier element de la chaine */
         balaye = self.sap3d.aigoual[0].chaine;
         while let Some(b) = balaye {
-            if self.sap3d.aigoual[b as usize].distance > dist as c_ushort {
+            if self.sap3d.aigoual[b as usize].distance > dist as u16 {
                 poschaine = Some(b);
                 balaye = self.sap3d.aigoual[b as usize].chaine;
             } else {

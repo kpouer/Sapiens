@@ -3,12 +3,11 @@ use crate::Sapiens;
 use crate::acam::Index2Color;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::shared::RGBColor;
-use std::os::raw::{c_short, c_uchar};
 use std::ptr::addr_of_mut;
 
 pub(crate) struct Sapwcvt {
-    pub(crate) TabCvtCoul: [c_uchar; 0x778],
-    pub(crate) TabCvtCoulOmbre: [c_uchar; 256],
+    pub(crate) TabCvtCoul: [u8; 0x778],
+    pub(crate) TabCvtCoulOmbre: [u8; 256],
 }
 
 impl Default for Sapwcvt {
@@ -52,7 +51,7 @@ impl Sapwcvt {
     /*************************************************************************
                     CvtCouleurStEnRgb
     *************************************************************************/
-    const fn CvtCouleurStEnRgb(val: c_short, rgb: &mut RGBColor) {
+    const fn CvtCouleurStEnRgb(val: i16, rgb: &mut RGBColor) {
         rgb.red = (((val & 0x700) >> 8) as u16) * 9362;
         rgb.green = (((val & 0x070) >> 4) as u16) * 9362;
         rgb.blue = ((val & 0x007) as u16) * 9362;
@@ -61,7 +60,7 @@ impl Sapwcvt {
     /*************************************************************************
                     CvtCouleurEnRgb
     *************************************************************************/
-    pub(crate) fn CvtCouleurEnRgb(palette: *mut c_short, index: c_short, rgb: &mut RGBColor) {
+    pub(crate) fn CvtCouleurEnRgb(palette: *mut i16, index: i16, rgb: &mut RGBColor) {
         unsafe {
             Self::CvtCouleurStEnRgb(*palette.add(index as usize), rgb);
         }
@@ -73,11 +72,8 @@ impl Sapwcvt {
     la plus proche en rvb
     *************************************************************************/
     #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn CvtRgbEnCouleur(
-        palette: *mut c_short,
-        rgb: *mut RGBColor,
-    ) -> c_short {
-        let mut imin: c_short = 0;
+    pub(crate) unsafe extern "C" fn CvtRgbEnCouleur(palette: *mut i16, rgb: *mut RGBColor) -> i16 {
+        let mut imin: i16 = 0;
         let mut delmin: u32 = u32::MAX;
         for i in 0..16i16 {
             let mut refx = RGBColor::default();
@@ -104,11 +100,7 @@ impl Sapiens {
     en utilisant la deuxieme section de la palette
     *************************************************************************/
     #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn CvtIndexEnCouleur(
-        &self,
-        palette: *mut c_short,
-        index: c_short,
-    ) -> c_short {
+    pub(crate) unsafe extern "C" fn CvtIndexEnCouleur(&self, palette: *mut i16, index: i16) -> i16 {
         for i in 0..16i16 {
             if *palette.add(i as usize + 16) == index {
                 return i;

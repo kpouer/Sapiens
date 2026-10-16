@@ -10,11 +10,10 @@ use crate::stubs::{
     ArreteMusique, CarboniseSetCursorArrow, GetResource, IsFinDeMusique, JoueMusiqueHarmony,
     PopPath, PushPath, SetCursor, SndNewChannel, SndPlay,
 };
-use std::os::raw::{c_char, c_short};
 
 pub(crate) struct Sapwmus {
     /*************** Variables globales exposees au C (SAPWMUS.C) ***************/
-    pub(crate) quelle_musique: c_short,
+    pub(crate) quelle_musique: i16,
     pub(crate) IsBruitages: Boolean,
     MusiqueEnCours: Boolean,
     TabSons: [Handle; 25],
@@ -34,7 +33,7 @@ impl Default for Sapwmus {
 }
 
 impl Sapiens {
-    pub(crate) fn bruit(&mut self, num: c_short) {
+    pub(crate) fn bruit(&mut self, num: i16) {
         if self.sapwmus.IsBruitages {
             if self.sapwmus.canalSnd.is_null() {
                 SndNewChannel(
@@ -83,7 +82,7 @@ pub(crate) extern "C" fn attends_bruit() {}
                 quel_synthe
 ***************************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn quel_synthe(_n: c_short) {}
+pub(crate) extern "C" fn quel_synthe(_n: i16) {}
 
 /*************************************************************************
                 reset_synthe
@@ -96,7 +95,7 @@ impl Sapiens {
                     MusicInit
     Lance la musique désirée : 1 musique 1, 2 musique 2
     ***************************************************************************/
-    pub(crate) fn MusicInit(&mut self, quelle: c_short) {
+    pub(crate) fn MusicInit(&mut self, quelle: i16) {
         if self.sapglob.okmuse == TypeMuse::NO_MUSIQUE {
             ArreteMusique(true);
             self.sapwmus.MusiqueEnCours = FAUX;
@@ -106,20 +105,20 @@ impl Sapiens {
         // S300 l'arret de la musique se fait dans SapiensExit
         //if(!IsExitMuse) atexit(ExitMuse);
         //IsExitMuse=VRAI;
-        self.sapwmus.quelle_musique = quelle as c_short;
+        self.sapwmus.quelle_musique = quelle as i16;
         PushPath();
-        SetPathInData(&self.sapgest, c"musics".as_ptr() as *mut c_char);
+        SetPathInData(&self.sapgest, c"musics".as_ptr() as *mut i8);
         let nom = if quelle == 1 {
-            c"Sapiens1.mux".as_ptr() as *mut c_char
+            c"Sapiens1.mux".as_ptr() as *mut i8
         } else {
-            c"Sapiens2.mux".as_ptr() as *mut c_char
+            c"Sapiens2.mux".as_ptr() as *mut i8
         };
         JoueMusiqueHarmony(
             nom,
             std::ptr::null_mut(),
-            c"".as_ptr() as *mut c_char,
+            c"".as_ptr() as *mut i8,
             0,
-            c"DIGIT_QUALITE".as_ptr() as *mut c_char,
+            c"DIGIT_QUALITE".as_ptr() as *mut i8,
             -1,
             0,
             0,

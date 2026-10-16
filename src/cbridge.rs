@@ -4,12 +4,11 @@
 
 use crate::shared::Rect;
 use std::ffi::CString;
-use std::os::raw::c_char;
 pub(crate) type __int64_t = ::std::os::raw::c_longlong;
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct TPrStatus {
-    pub(crate) dummy: ::std::os::raw::c_char,
+    pub(crate) dummy: i8,
 }
 pub(crate) const gestaltFindFolderAttr: u32 = 1718578276;
 pub(crate) const times: u32 = 0;
@@ -44,7 +43,7 @@ pub(crate) struct TEText {
     pub(crate) lineHeight: i16,
     pub(crate) fontAscent: i16,
     pub(crate) fontDescent: i16,
-    pub(crate) nLines: ::std::os::raw::c_long,
+    pub(crate) nLines: i64,
 }
 
 #[repr(C)]
@@ -53,9 +52,9 @@ pub(crate) struct TMTask {
     pub(crate) qLink: *mut ::std::os::raw::c_void,
     pub(crate) qType: i16,
     pub(crate) tmAddr: *mut ::std::os::raw::c_void,
-    pub(crate) tmCount: ::std::os::raw::c_long,
-    pub(crate) tmWakeUp: ::std::os::raw::c_long,
-    pub(crate) tmReserved: ::std::os::raw::c_long,
+    pub(crate) tmCount: i64,
+    pub(crate) tmWakeUp: i64,
+    pub(crate) tmReserved: i64,
 }
 impl Default for TMTask {
     fn default() -> Self {
@@ -107,7 +106,7 @@ pub(crate) struct __sFILEX {
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct __sbuf {
     pub(crate) _base: *mut u8,
-    pub(crate) _size: ::std::os::raw::c_int,
+    pub(crate) _size: i32,
 }
 impl Default for __sbuf {
     fn default() -> Self {
@@ -140,36 +139,23 @@ pub(crate) type fpos_t = __darwin_off_t;
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct __sFILE {
     pub(crate) _p: *mut u8,
-    pub(crate) _r: ::std::os::raw::c_int,
-    pub(crate) _w: ::std::os::raw::c_int,
+    pub(crate) _r: i32,
+    pub(crate) _w: i32,
     pub(crate) _flags: i16,
     pub(crate) _file: i16,
     pub(crate) _bf: __sbuf,
-    pub(crate) _lbfsize: ::std::os::raw::c_int,
+    pub(crate) _lbfsize: i32,
     pub(crate) _cookie: *mut ::std::os::raw::c_void,
-    pub(crate) _close: ::std::option::Option<
-        unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> ::std::os::raw::c_int,
-    >,
+    pub(crate) _close:
+        ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> i32>,
     pub(crate) _read: ::std::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut ::std::os::raw::c_void,
-            arg2: *mut ::std::os::raw::c_char,
-            __n: ::std::os::raw::c_int,
-        ) -> ::std::os::raw::c_int,
+        unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, arg2: *mut i8, __n: i32) -> i32,
     >,
     pub(crate) _seek: ::std::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut ::std::os::raw::c_void,
-            arg2: fpos_t,
-            arg3: ::std::os::raw::c_int,
-        ) -> fpos_t,
+        unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, arg2: fpos_t, arg3: i32) -> fpos_t,
     >,
     pub(crate) _write: ::std::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut ::std::os::raw::c_void,
-            arg2: *const ::std::os::raw::c_char,
-            __n: ::std::os::raw::c_int,
-        ) -> ::std::os::raw::c_int,
+        unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void, arg2: *const i8, __n: i32) -> i32,
     >,
 }
 impl Default for __sFILE {
@@ -221,66 +207,39 @@ pub(crate) type GDHandle = *mut *mut GDevice;
 pub(crate) type DialogPtr = *mut ::std::os::raw::c_void;
 
 unsafe extern "C" {
-    pub(crate) fn putc(arg1: ::std::os::raw::c_int, arg2: *mut FILE) -> ::std::os::raw::c_int;
+    pub(crate) fn putc(arg1: i32, arg2: *mut FILE) -> i32;
 
     pub(crate) fn RetraceRect(d: DialogPtr, r: *mut Rect);
-    pub(crate) fn strlen(__s: *const ::std::os::raw::c_char) -> ::std::os::raw::c_ulong;
-    pub(crate) fn strcmp(
-        __s1: *const ::std::os::raw::c_char,
-        __s2: *const ::std::os::raw::c_char,
-    ) -> ::std::os::raw::c_int;
-    pub(crate) fn strcat(
-        __s1: *mut ::std::os::raw::c_char,
-        __s2: *const ::std::os::raw::c_char,
-    ) -> *mut ::std::os::raw::c_char;
-    pub(crate) fn strcpy(
-        __dst: *mut ::std::os::raw::c_char,
-        __src: *const ::std::os::raw::c_char,
-    ) -> *mut ::std::os::raw::c_char;
-    pub(crate) fn sprintf(
-        arg1: *mut ::std::os::raw::c_char,
-        arg2: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-    pub(crate) fn stricmp(
-        c1: *const ::std::os::raw::c_char,
-        c2: *const ::std::os::raw::c_char,
-    ) -> ::std::os::raw::c_int;
-    pub(crate) fn printf(arg1: *const ::std::os::raw::c_char, ...) -> ::std::os::raw::c_int;
+    pub(crate) fn strlen(__s: *const i8) -> u64;
+    pub(crate) fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
+    pub(crate) fn strcat(__s1: *mut i8, __s2: *const i8) -> *mut i8;
+    pub(crate) fn strcpy(__dst: *mut i8, __src: *const i8) -> *mut i8;
+    pub(crate) fn sprintf(arg1: *mut i8, arg2: *const i8, ...) -> i32;
+    pub(crate) fn stricmp(c1: *const i8, c2: *const i8) -> i32;
+    pub(crate) fn printf(arg1: *const i8, ...) -> i32;
     pub(crate) fn fread(
         __ptr: *mut ::std::os::raw::c_void,
-        __size: ::std::os::raw::c_ulong,
-        __nitems: ::std::os::raw::c_ulong,
+        __size: u64,
+        __nitems: u64,
         __stream: *mut FILE,
-    ) -> ::std::os::raw::c_ulong;
+    ) -> u64;
 
-    pub(crate) fn fopen(
-        __filename: *const ::std::os::raw::c_char,
-        __mode: *const ::std::os::raw::c_char,
-    ) -> *mut FILE;
-    pub(crate) fn fprintf(
-        arg1: *mut FILE,
-        arg2: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-    pub(crate) fn fscanf(
-        arg1: *mut FILE,
-        arg2: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-    pub(crate) fn feof(arg1: *mut FILE) -> ::std::os::raw::c_int;
-    pub(crate) fn fclose(arg1: *mut FILE) -> ::std::os::raw::c_int;
-    pub(crate) fn getc(arg1: *mut FILE) -> ::std::os::raw::c_int;
+    pub(crate) fn fopen(__filename: *const i8, __mode: *const i8) -> *mut FILE;
+    pub(crate) fn fprintf(arg1: *mut FILE, arg2: *const i8, ...) -> i32;
+    pub(crate) fn fscanf(arg1: *mut FILE, arg2: *const i8, ...) -> i32;
+    pub(crate) fn feof(arg1: *mut FILE) -> i32;
+    pub(crate) fn fclose(arg1: *mut FILE) -> i32;
+    pub(crate) fn getc(arg1: *mut FILE) -> i32;
     pub(crate) fn fwrite(
         __ptr: *const ::std::os::raw::c_void,
-        __size: ::std::os::raw::c_ulong,
-        __nitems: ::std::os::raw::c_ulong,
+        __size: u64,
+        __nitems: u64,
         __stream: *mut FILE,
-    ) -> ::std::os::raw::c_ulong;
-    pub(crate) fn remove(arg1: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
+    ) -> u64;
+    pub(crate) fn remove(arg1: *const i8) -> i32;
 }
 
-pub fn convert_to_c_char_ptr(s: &str) -> *mut c_char {
+pub fn convert_to_c_char_ptr(s: &str) -> *mut i8 {
     let c_string = CString::new(s).unwrap();
     c_string.into_raw()
 }

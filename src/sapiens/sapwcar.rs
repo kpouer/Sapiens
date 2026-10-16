@@ -12,7 +12,6 @@ use crate::shared::{Boolean, CGrafPtr, FontInfo, Point, RGBColor, Rect, RgnHandl
 use crate::stubs::CarboniseSetPatBlack;
 use crate::text::{CharWidth, DrawChar, GetFontInfo, TextFace, TextFont, TextSize};
 use crate::{Sapiens, port};
-use std::os::raw::{c_char, c_short};
 use std::ptr::addr_of;
 
 const ECHELLE: i16 = 2;
@@ -23,13 +22,13 @@ pub(crate) struct Sapwcar {
     /* ex-`LissagePolice` */
     pub(crate) lissage_police: Boolean,
     /* ex-`indexWhite` */
-    index_white: c_short,
+    index_white: i16,
     /* ex-`indexBlack` */
-    index_black: c_short,
+    index_black: i16,
     /* ex-`indexBrown` */
-    index_brown: c_short,
+    index_brown: i16,
     /* ex-`indexGray` */
-    index_gray: c_short,
+    index_gray: i16,
     /* ex-`ptEcrCar` */
     pt_ecr_car: Point,
 }
@@ -75,10 +74,10 @@ impl Sapiens {
     #[unsafe(no_mangle)]
     pub(crate) unsafe extern "C" fn InitCouleurFontes(&mut self) {
         let _g = port::on(self.sapwind.Ecran1);
-        self.sapwcar.index_white = SapColor2Index(&rgbWhite) as c_short;
-        self.sapwcar.index_black = SapColor2Index(&rgbBlack) as c_short;
-        self.sapwcar.index_brown = SapColor2Index(&rgbBrown) as c_short;
-        self.sapwcar.index_gray = SapColor2Index(&rgbGray) as c_short;
+        self.sapwcar.index_white = SapColor2Index(&rgbWhite) as i16;
+        self.sapwcar.index_black = SapColor2Index(&rgbBlack) as i16;
+        self.sapwcar.index_brown = SapColor2Index(&rgbBrown) as i16;
+        self.sapwcar.index_gray = SapColor2Index(&rgbGray) as i16;
     }
 
     /*************************************************************************
@@ -86,7 +85,7 @@ impl Sapiens {
     Positionne l'ecriture des caracteres en y et x
     => position en colonne et ligne caracteres
     **************************************************************************/
-    pub(crate) fn Gotoxy(&mut self, x: c_short, y: c_short) {
+    pub(crate) fn Gotoxy(&mut self, x: i16, y: i16) {
         self.sapwcar.pt_ecr_car = Point::new((x * ECHELLE) * 6, (y * ECHELLE) * 7 - 1);
         self.sapglob.colaff = x;
         self.sapglob.linaff = y;
@@ -108,7 +107,7 @@ impl Sapiens {
     /*************************************************************************
                         TailleCar
     **************************************************************************/
-    pub(crate) fn TailleCar(&self, car: c_short, taille: c_short) -> c_short {
+    pub(crate) fn TailleCar(&self, car: i16, taille: i16) -> i16 {
         if self.sapwcar.lissage_police || langue() == ES {
             /* ES Pour les caracteres speciaux */
             let car = CvtCarLissage(car);
@@ -132,7 +131,7 @@ impl Sapiens {
 /*************************************************************************
                     SetColorFont
 **************************************************************************/
-fn SetColorFont(sapiens: &Sapiens, id: c_short) {
+fn SetColorFont(sapiens: &Sapiens, id: i16) {
     if id == sapiens.sapwcar.index_white {
         RGBForeColor(&rgbWhite);
     } else if id == sapiens.sapwcar.index_black {
@@ -152,24 +151,18 @@ impl Sapiens {
     Affiche un caractere brut à la position courante
     => Caractere à afficher
     **************************************************************************/
-    fn AffCarBrt(
-        &mut self,
-        car: c_short,
-        couleur: c_short,
-        couleurOmbre: c_short,
-        taille: c_short,
-    ) {
+    fn AffCarBrt(&mut self, car: i16, couleur: i16, couleurOmbre: i16, taille: i16) {
         if self.sapwcar.lissage_police || langue() == Langue::ES {
             /* ES Pour les caracteres speciaux */
             let mut info = FontInfo::default();
-            let mut dx: c_short = 0;
-            let dy: c_short = 0;
+            let mut dx: i16 = 0;
+            let dy: i16 = 0;
             let mut car = CvtCarLissage(car);
-            if car == '<' as c_short {
+            if car == '<' as i16 {
                 car = 0xC9;
                 dx -= 1;
             }
-            if car == '>' as c_short {
+            if car == '>' as i16 {
                 car = 0xC9;
                 dx -= 1;
             }
@@ -192,7 +185,7 @@ impl Sapiens {
             self.sapwcar.pt_ecr_car.h += CharWidth(car as i8);
         } else {
             let car = CvtCar(car);
-            let num: c_short;
+            let num: i16;
             if taille == 10 {
                 num = self.sapwind.Fonte10 + car - 31;
                 self.AffmobCar(
@@ -238,27 +231,27 @@ impl Sapiens {
                     GetStrBkMot
 **************************************************************************/
 impl Sapiens {
-    pub(crate) fn GetStrBkMot(&self, car: c_short) -> *mut c_char {
-        let vide: *mut c_char = c"".as_ptr() as *mut c_char;
+    pub(crate) fn GetStrBkMot(&self, car: i16) -> *mut i8 {
+        let vide: *mut i8 = c"".as_ptr() as *mut i8;
         let bkmots = self.sap_lang.GetBkMot();
-        let mut p: *mut c_char = vide;
+        let mut p: *mut i8 = vide;
         let car = car - 129;
         unsafe {
-            if car < NB_MOTS_BKMOTS as c_short {
+            if car < NB_MOTS_BKMOTS as i16 {
                 p = *bkmots.add(car as usize);
-                if *p == b'$' as c_char {
+                if *p == b'$' as i8 {
                     /* Substitution */
                     let c = *p.add(1);
-                    if c == b'0' as c_char {
-                        p = addr_of!(self.saptxt.nomsecondaire) as *mut c_char;
-                    } else if c == b'1' as c_char {
-                        p = addr_of!(self.saptxt.nomjoueur) as *mut c_char;
-                    } else if c == b'2' as c_char {
-                        p = addr_of!(self.saptxt.nomadversaire) as *mut c_char;
-                    } else if c == b'3' as c_char {
-                        p = addr_of!(self.saptxt.nomtribu) as *mut c_char;
-                    } else if c == b'4' as c_char {
-                        p = addr_of!(self.saptxt.nomcopain) as *mut c_char;
+                    if c == b'0' as i8 {
+                        p = addr_of!(self.saptxt.nomsecondaire) as *mut i8;
+                    } else if c == b'1' as i8 {
+                        p = addr_of!(self.saptxt.nomjoueur) as *mut i8;
+                    } else if c == b'2' as i8 {
+                        p = addr_of!(self.saptxt.nomadversaire) as *mut i8;
+                    } else if c == b'3' as i8 {
+                        p = addr_of!(self.saptxt.nomtribu) as *mut i8;
+                    } else if c == b'4' as i8 {
+                        p = addr_of!(self.saptxt.nomcopain) as *mut i8;
                     }
                 }
             } else {
@@ -272,20 +265,13 @@ impl Sapiens {
                         AffCarBank
     Affiche un caractere sur le port en entrée
     **************************************************************************/
-    fn AffCarBank(
-        &mut self,
-        port: CGrafPtr,
-        car: c_short,
-        couleur1: c_short,
-        couleur2: c_short,
-        taille: c_short,
-    ) {
+    fn AffCarBank(&mut self, port: CGrafPtr, car: i16, couleur1: i16, couleur2: i16, taille: i16) {
         let _g = port::on(port);
         unsafe {
             if car > 128 {
                 let mut p = self.GetStrBkMot(car);
                 while *p != 0 {
-                    self.AffCarBank(port, *p as u8 as c_short, couleur1, couleur2, taille);
+                    self.AffCarBank(port, *p as u8 as i16, couleur1, couleur2, taille);
                     p = p.add(1);
                 }
             } else {
@@ -300,7 +286,7 @@ impl Sapiens {
     Affiche le caractere demandé à la position courante
     Les caracteres >128 sont des macros substitions
     **************************************************************************/
-    pub(crate) fn affcar(&mut self, car: c_short) {
+    pub(crate) fn affcar(&mut self, car: i16) {
         self.AffCarBank(
             self.sapwind.debecr,
             car,
@@ -315,7 +301,7 @@ impl Sapiens {
     Affiche le caractere demandé à la position courante
     Les caracteres >128 sont des macros substitions
     **************************************************************************/
-    pub(crate) fn affcar10(&mut self, car: c_short) {
+    pub(crate) fn affcar10(&mut self, car: i16) {
         self.AffCarBank(
             self.sapwind.debecr,
             car,
@@ -330,7 +316,7 @@ impl Sapiens {
     Affiche un caractere blanc sur une ombre noire
     Le caractere est affiché sur debecr et n'est pas transféré
     **************************************************************************/
-    pub(crate) fn car2(&mut self, car: c_short) {
+    pub(crate) fn car2(&mut self, car: i16) {
         self.AffCarBank(
             self.sapwind.debecr,
             car,
@@ -346,7 +332,7 @@ impl Sapiens {
     Les caracteres >128 sont des macros substitions
     Le caractere est affiche sur debecr
     **************************************************************************/
-    pub(crate) fn affcarmess(&mut self, car: c_short) {
+    pub(crate) fn affcarmess(&mut self, car: i16) {
         let _g = port::on(self.sapwind.debecr);
         let rgn: RgnHandle = NewRgn();
         GetClip(rgn);
@@ -388,7 +374,7 @@ impl Sapiens {
         let mut p = debut as *mut u8;
         unsafe {
             while *p != 0 {
-                self.car2(*p as c_short);
+                self.car2(*p as i16);
                 p = p.add(1);
             }
         }

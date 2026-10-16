@@ -14,7 +14,6 @@ use crate::sapiens::sapwbrt::CopyOffscreen;
 use crate::sapiens::sapwind::SapWind;
 use crate::shared::{Boolean, KeyMap, Rect};
 use crate::stubs::{Button, CarboniseSetCursorArrow, GetKeys, GetMouse, InsXTime, PrimeTime};
-use std::os::raw::{c_short, c_ulong, c_ushort};
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 
@@ -28,8 +27,8 @@ pub(crate) struct Sapwclav {
     /* Aire ou la souris systeme est masquee (ex-`rNoMouse`) */
     r_no_mouse: Rect,
     /* Derniere position tracee de la souris (ex-`lastposx/lastposy`) */
-    last_posx: c_short,
-    last_posy: c_short,
+    last_posx: i16,
+    last_posy: i16,
     /* Tache du timer 11 ms (ex-`timerTask`) */
     timer_task: TMTask,
     /* ex-`isScrollMouse` */
@@ -66,7 +65,7 @@ impl Sapiens {
     /*************************************************************************
                         litclav
     **************************************************************************/
-    pub(crate) fn litclav(&mut self) -> c_short {
+    pub(crate) fn litclav(&mut self) -> i16 {
         self.GereInterface();
         let n = self.sapwind.toucheClav;
         self.sapwind.toucheClav = 0;
@@ -154,8 +153,8 @@ impl Sapiens {
                         KeyPressed
 Dit si une touche d'ascii donnee est appuyee sur le keymap en entree
 ********************************************************************/
-pub(crate) fn KeyPressed(km: *mut KeyMap, ascii: c_short) -> Boolean {
-    let p = km as *mut c_ulong;
+pub(crate) fn KeyPressed(km: *mut KeyMap, ascii: i16) -> Boolean {
+    let p = km as *mut u64;
     unsafe { ((*p.add((ascii >> 5) as usize) >> (((ascii ^ 24) & 31) as u32)) & 1) != 0 }
 }
 
@@ -204,7 +203,7 @@ pub(crate) fn GetKeyMap(bitmap: *mut i16) -> i16 {
   Dit si une touche d'ascii donnee est appuyee sur le keymap en entree
 ********************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn IsKey(ascii: c_short) -> Boolean {
+pub(crate) extern "C" fn IsKey(ascii: i16) -> Boolean {
     let mut theKeys = KeyMap::default();
 
     GetKeys(theKeys);
@@ -248,8 +247,8 @@ impl Sapiens {
                         GETKEY3D
     Donne un deplacement / a la position 160,100 de la souris
     ***************************************************************/
-    pub(crate) fn getkey3d(&mut self) -> c_short {
-        let mut bitmap: c_short = 0;
+    pub(crate) fn getkey3d(&mut self) -> i16 {
+        let mut bitmap: i16 = 0;
 
         if GetKeyMap(&raw mut bitmap) == 0 {
             (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
@@ -284,7 +283,7 @@ impl Sapiens {
     **************************************************************
     => 0 joeur principal, 1 secondaire
     */
-    pub(crate) fn getkey(&mut self, quoi: c_ushort) -> c_short {
+    pub(crate) fn getkey(&mut self, quoi: u16) -> i16 {
         let mut bitmap = 0;
 
         if quoi != 0 {

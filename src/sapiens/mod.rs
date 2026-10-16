@@ -13,7 +13,6 @@
 
 use crate::sapiens::sapglob::SapId;
 use crate::shared::{Ptr, RGBColor};
-use std::os::raw::c_short;
 
 pub(crate) mod muse;
 pub(crate) mod sap3d;
@@ -113,8 +112,8 @@ pub(crate) enum TypeMuse {
     NB_TYPE_MUSIQUE,
 }
 
-impl From<c_short> for TypeMuse {
-    fn from(value: c_short) -> Self {
+impl From<i16> for TypeMuse {
+    fn from(value: i16) -> Self {
         match value {
             0 => TypeMuse::NO_MUSIQUE,
             1 => TypeMuse::MUSIQUE_HARMONY_QUALITE,
@@ -178,7 +177,7 @@ pub(crate) struct sap {
     pub(crate) flg_mort: i16,
     pub(crate) poslcoeur: i16,
     pub(crate) posccoeur: i16,
-    pub(crate) sapanim: [*mut ::std::os::raw::c_char; 15usize],
+    pub(crate) sapanim: [*mut i8; 15usize],
     pub(crate) cross: [u8; 8usize],
     pub(crate) adversaire: Option<SapId>,
     pub(crate) possession: *mut liste,
@@ -477,7 +476,7 @@ pub(crate) struct Forme {
     pub(crate) hauteur: u16,
     pub(crate) rayon: u16,
     pub(crate) dskrayon: [u16; 16usize],
-    pub(crate) dskdelta: [::std::os::raw::c_char; 32usize],
+    pub(crate) dskdelta: [i8; 32usize],
     pub(crate) num_mob: i16,
     pub(crate) numMob3d: i16,
 }
@@ -562,4 +561,4 @@ pub(crate) const NB_DEGRADE_DISTANCE: u32 = 72;
 pub(crate) const NBREVTDESTINE: u32 = 40;
 pub(crate) const gemnbrecad: u32 = 4;
 pub(crate) const geminterv: u32 = 4;
-pub(crate) const BASEMOB: c_short = 0;
+pub(crate) const BASEMOB: i16 = 0;

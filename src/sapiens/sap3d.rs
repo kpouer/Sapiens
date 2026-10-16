@@ -7,7 +7,6 @@
 // Le moteur 3D : formes, objets 3D (ObjetsRef), décor (nuages, éclairs,
 // oiseaux, arbres, rochers) et animation finale.
 // Consommé par les autres modules du port (SAPGEST.C → sapgest.rs, etc.).
-use std::os::raw::{c_char, c_long, c_short, c_ulong, c_ushort};
 use std::sync::atomic::{AtomicI16, Ordering};
 
 use crate::Sapiens;
@@ -27,20 +26,20 @@ use crate::shared::{Boolean, RGBColor, StringPtr};
 use crate::stubs::{CarboniseSetCursorArrow, SetCursor};
 use crate::text::{DrawString, StringWidth, TextFont};
 
-const VITESSE_DEPLACEMENT_OISEAUX: c_ushort = 10;
-const MONT1: c_short = 1;
-const MONT2: c_short = 2;
-const MONT3: c_short = 3;
-const MONT4: c_short = 4;
-const MONT5: c_short = 5;
-const TOTEM: c_short = 6;
-const NUAGE: c_short = 7;
-const FUMEE: c_short = 18;
-const FOYER: c_short = 33;
-const MOB_OISEAU: c_short = 28;
-const MOB_HOMME: c_short = 35;
-const ECLAIR: c_short = 36;
-const MOB_FOUDROYE: c_short = 38;
+const VITESSE_DEPLACEMENT_OISEAUX: u16 = 10;
+const MONT1: i16 = 1;
+const MONT2: i16 = 2;
+const MONT3: i16 = 3;
+const MONT4: i16 = 4;
+const MONT5: i16 = 5;
+const TOTEM: i16 = 6;
+const NUAGE: i16 = 7;
+const FUMEE: i16 = 18;
+const FOYER: i16 = 33;
+const MOB_OISEAU: i16 = 28;
+const MOB_HOMME: i16 = 35;
+const ECLAIR: i16 = 36;
+const MOB_FOUDROYE: i16 = 38;
 
 /// Une forme animée : seule l'image courante `numMob3d` varie. Elle est
 /// pilotée par une atomique pour éviter un `static mut` (fidèle à l'ancien
@@ -67,12 +66,12 @@ impl FormeAnimee {
     }
 
     /// Fixe l'image courante (fumée : valeur aléatoire).
-    fn set_image(&self, image: c_short) {
+    fn set_image(&self, image: i16) {
         self.image.store(image, Ordering::Relaxed);
     }
 
     /// Image suivante, en bouclant sur `[debut, fin[`.
-    fn avance(&self, debut: c_short, fin: c_short) {
+    fn avance(&self, debut: i16, fin: i16) {
         let image = self.image.load(Ordering::Relaxed);
         let suivante = if image + 1 == fin { debut } else { image + 1 };
         self.image.store(suivante, Ordering::Relaxed);
@@ -145,12 +144,12 @@ static FORMES: Formes = Formes {
             1,
             0,
             0,
-            200u8 as c_char,
+            200u8 as i8,
             0,
-            200u8 as c_char,
+            200u8 as i8,
             0,
-            200u8 as c_char,
-            200u8 as c_char,
+            200u8 as i8,
+            200u8 as i8,
             0,
             0,
             0,
@@ -183,8 +182,8 @@ static FORMES: Formes = Formes {
             4100, 3700, 3250, 2900, 2500, 2000, 1500, 1000, 250, 0, 0, 0, 0, 0, 0, 0,
         ],
         dskdelta: [
-            240u8 as c_char,
-            240u8 as c_char,
+            240u8 as i8,
+            240u8 as i8,
             80,
             80,
             0,
@@ -278,9 +277,9 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             9,
-            128u8 as c_char,
+            128u8 as i8,
             8,
             0,
             0,
@@ -310,20 +309,20 @@ static FORMES: Formes = Formes {
         dskdelta: [
             0,
             0,
-            192u8 as c_char,
-            192u8 as c_char,
-            244u8 as c_char,
-            244u8 as c_char,
+            192u8 as i8,
+            192u8 as i8,
+            244u8 as i8,
+            244u8 as i8,
             0,
             0,
-            192u8 as c_char,
-            192u8 as c_char,
-            244u8 as c_char,
-            244u8 as c_char,
+            192u8 as i8,
+            192u8 as i8,
+            244u8 as i8,
+            244u8 as i8,
             0,
             0,
-            192u8 as c_char,
-            192u8 as c_char,
+            192u8 as i8,
+            192u8 as i8,
             0,
             0,
             0,
@@ -356,16 +355,16 @@ static FORMES: Formes = Formes {
         dskdelta: [
             -1,
             0,
-            192u8 as c_char,
-            192u8 as c_char,
-            244u8 as c_char,
-            244u8 as c_char,
+            192u8 as i8,
+            192u8 as i8,
+            244u8 as i8,
+            244u8 as i8,
             0,
             0,
             15,
             0,
-            244u8 as c_char,
-            244u8 as c_char,
+            244u8 as i8,
+            244u8 as i8,
             0,
             0,
             -1,
@@ -400,14 +399,14 @@ static FORMES: Formes = Formes {
         dskdelta: [
             -1,
             0,
-            192u8 as c_char,
-            192u8 as c_char,
+            192u8 as i8,
+            192u8 as i8,
             0,
             4,
             0,
-            208u8 as c_char,
-            192u8 as c_char,
-            192u8 as c_char,
+            208u8 as i8,
+            192u8 as i8,
+            192u8 as i8,
             0,
             0,
             0,
@@ -444,14 +443,14 @@ static FORMES: Formes = Formes {
         dskdelta: [
             -1,
             0,
-            192u8 as c_char,
-            192u8 as c_char,
+            192u8 as i8,
+            192u8 as i8,
             0,
             4,
             0,
-            208u8 as c_char,
-            192u8 as c_char,
-            192u8 as c_char,
+            208u8 as i8,
+            192u8 as i8,
+            192u8 as i8,
             0,
             0,
             0,
@@ -492,7 +491,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             6,
             0,
             0,
@@ -536,7 +535,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             6,
             0,
             0,
@@ -580,7 +579,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             6,
             0,
             0,
@@ -626,7 +625,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             5,
             0,
             0,
@@ -668,7 +667,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             7,
             0,
             0,
@@ -712,7 +711,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             7,
             0,
             0,
@@ -756,7 +755,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             7,
             0,
             0,
@@ -800,7 +799,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             7,
             0,
             0,
@@ -844,7 +843,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             7,
             0,
             0,
@@ -888,7 +887,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             5,
             0,
             0,
@@ -936,7 +935,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             5,
             0,
             0,
@@ -1034,7 +1033,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             7,
             0,
             0,
@@ -1078,7 +1077,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             7,
             0,
             0,
@@ -1134,9 +1133,9 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             9,
-            128u8 as c_char,
+            128u8 as i8,
             8,
             0,
             0,
@@ -1172,7 +1171,7 @@ static FORMES: Formes = Formes {
             0,
             0,
             0,
-            128u8 as c_char,
+            128u8 as i8,
             7,
             0,
             0,
@@ -3037,21 +3036,21 @@ static OBJETS_REF: [Mont; NB_OBJ_REF] = [
 pub(crate) struct Sap3d {
     /* Liste des objets présents */
     pub(crate) aigoual: Vec<Mont>,
-    pub(crate) nbNuages: c_long,
-    pub(crate) nbOiseaux: c_long,
-    pub(crate) nbRochers: c_long,
-    pub(crate) nbHommes: c_long,
-    pub(crate) nbArbres: c_long,
-    pub(crate) FreqOrage: c_long,
-    pub(crate) DistMinFoudroie: c_long,
-    pub(crate) VitesseDeplacementNuages: c_long,
-    PremEclair: c_long,
-    PremArbre: c_long,
-    PremRocher: c_long,
+    pub(crate) nbNuages: i64,
+    pub(crate) nbOiseaux: i64,
+    pub(crate) nbRochers: i64,
+    pub(crate) nbHommes: i64,
+    pub(crate) nbArbres: i64,
+    pub(crate) FreqOrage: i64,
+    pub(crate) DistMinFoudroie: i64,
+    pub(crate) VitesseDeplacementNuages: i64,
+    PremEclair: i64,
+    PremArbre: i64,
+    PremRocher: i64,
     ArbreFoudroye: Option<MontId>,
-    nbEclairs: c_long,
-    pub(crate) FreqEclair: c_long,
-    okcarte: c_short,
+    nbEclairs: i64,
+    pub(crate) FreqEclair: i64,
+    okcarte: i16,
 }
 
 impl Default for Sap3d {
@@ -3111,13 +3110,13 @@ impl Sap3d {
     Dit si une position est dans une montagne
     ***********************************************************************/
 
-    fn EstDansMontagne(&self, x: c_ushort, y: c_ushort) -> Boolean {
+    fn EstDansMontagne(&self, x: u16, y: u16) -> Boolean {
         for p in &self.aigoual {
             if let Some(forme) = p.forme.map(FormeId::forme) {
                 if forme.hauteur == 0 {
-                    let dx = (p.posx as c_long - x as c_long).abs();
-                    let dy = (p.posy as c_long - y as c_long).abs();
-                    let dist = distance(dx as c_long, dy as c_long);
+                    let dx = (p.posx as i64 - x as i64).abs();
+                    let dy = (p.posy as i64 - y as i64).abs();
+                    let dist = distance(dx as i64, dy as i64);
                     if dist < forme.rayon as i16 {
                         return VRAI;
                     }
@@ -3134,14 +3133,14 @@ impl Sapiens {
     3D au demarrage du jeu
     **********************************************************************/
     pub(crate) fn DefautDecor3d(&mut self) {
-        self.sap3d.FreqOrage = FREQ_ORAGE as c_long; //9990
-        self.sap3d.DistMinFoudroie = DIST_MIN_FOUDROIE as c_long; //250
-        self.sap3d.nbNuages = NB_NUAGES as c_long; //100
-        self.sap3d.nbOiseaux = NB_OISEAUX as c_long; //20
-        self.sap3d.nbRochers = NB_ROCHERS as c_long; //300
-        self.sap3d.nbHommes = NB_HOMMES as c_long; //0
-        self.sap3d.nbArbres = NB_ARBRES as c_long; //800
-        self.sapcomb.nbHerbes = NB_HERBE_AV_PLAN as c_long;
+        self.sap3d.FreqOrage = FREQ_ORAGE as i64; //9990
+        self.sap3d.DistMinFoudroie = DIST_MIN_FOUDROIE as i64; //250
+        self.sap3d.nbNuages = NB_NUAGES as i64; //100
+        self.sap3d.nbOiseaux = NB_OISEAUX as i64; //20
+        self.sap3d.nbRochers = NB_ROCHERS as i64; //300
+        self.sap3d.nbHommes = NB_HOMMES as i64; //0
+        self.sap3d.nbArbres = NB_ARBRES as i64; //800
+        self.sapcomb.nbHerbes = NB_HERBE_AV_PLAN as i64;
         self.sap3d.FreqEclair = 1000; //1000
         self.sap3d.VitesseDeplacementNuages = 20;
     }
@@ -3153,21 +3152,17 @@ impl Sapiens {
     pub(crate) fn InitDecor3d(&mut self) {
         self.sap3d.FreqOrage = self.random.myRandom(9900, 10000);
         self.sap3d.DistMinFoudroie = self.random.myRandom(20, 500);
-        self.sap3d.nbNuages = self
-            .random
-            .myRandom(NB_NUAGES as c_long, NB_NUAGES_MAX as c_long);
+        self.sap3d.nbNuages = self.random.myRandom(NB_NUAGES as i64, NB_NUAGES_MAX as i64);
         self.sap3d.nbOiseaux = self
             .random
-            .myRandom(NB_OISEAUX as c_long, NB_OISEAUX_MAX as c_long);
+            .myRandom(NB_OISEAUX as i64, NB_OISEAUX_MAX as i64);
         self.sap3d.nbRochers = self
             .random
-            .myRandom(NB_ROCHERS as c_long, NB_ROCHERS_MAX as c_long);
-        self.sap3d.nbArbres = self
-            .random
-            .myRandom(NB_ARBRES as c_long, NB_ARBRES_MAX as c_long); //800
+            .myRandom(NB_ROCHERS as i64, NB_ROCHERS_MAX as i64);
+        self.sap3d.nbArbres = self.random.myRandom(NB_ARBRES as i64, NB_ARBRES_MAX as i64); //800
         self.sapcomb.nbHerbes = self
             .random
-            .myRandom(NB_HERBE_AV_PLAN as c_long, NB_MAX_HERBE_AV_PLAN as c_long);
+            .myRandom(NB_HERBE_AV_PLAN as i64, NB_MAX_HERBE_AV_PLAN as i64);
         self.sap3d.nbHommes = 0; //0
         self.sap3d.FreqEclair = 1000;
         self.sap3d.VitesseDeplacementNuages = self.random.myRandom(1, 120);
@@ -3185,8 +3180,7 @@ impl Sapiens {
             self.comment(137); /*Je crée le monde*/
             ValideUpdate();
         }
-        self.random
-            .initrnd(b'M' as c_short, b'Y' as c_short, b'R' as c_short);
+        self.random.initrnd(b'M' as i16, b'Y' as i16, b'R' as i16);
 
         #[cfg(debug_assertions)]
         {
@@ -3209,9 +3203,9 @@ impl Sapiens {
         self.sap3d.PremRocher = 0;
         self.sap3d.ArbreFoudroye = None;
         for _ in 0..self.sap3d.nbNuages {
-            mont.posx = (self.random.myRandom(0, 32767) * 2) as c_ushort;
-            mont.posy = (self.random.myRandom(0, 32767) * 2) as c_ushort;
-            mont.ign = self.random.myRandom(100, 200) as c_ushort;
+            mont.posx = (self.random.myRandom(0, 32767) * 2) as u16;
+            mont.posy = (self.random.myRandom(0, 32767) * 2) as u16;
+            mont.ign = self.random.myRandom(100, 200) as u16;
             match self.random.myRandom(0, 3) {
                 0 => mont.forme = Some(FormeId::Nuage1),
                 1 => mont.forme = Some(FormeId::Nuage2),
@@ -3227,16 +3221,16 @@ impl Sapiens {
             mont.forme = Some(FormeId::Eclair);
             // L'éclair est placé au centre de son nuage
             let rayon = nuage.forme.expect("nuage").forme().rayon;
-            mont.posx = (mont.posx as c_long + rayon as c_long / 2) as c_ushort;
-            mont.posy = (mont.posy as c_long + rayon as c_long / 2) as c_ushort;
+            mont.posx = (mont.posx as i64 + rayon as i64 / 2) as u16;
+            mont.posy = (mont.posy as i64 + rayon as i64 / 2) as u16;
             self.sap3d.aigoual.push(mont);
             if self.sap3d.PremEclair == 0 {
-                self.sap3d.PremEclair = self.sap3d.aigoual.len() as c_long - 1;
+                self.sap3d.PremEclair = self.sap3d.aigoual.len() as i64 - 1;
             }
         }
         for _ in 0..self.sap3d.nbOiseaux {
-            mont.posx = (self.random.myRandom(0, 32767) * 2) as c_ushort;
-            mont.posy = (self.random.myRandom(0, 32767) * 2) as c_ushort;
+            mont.posx = (self.random.myRandom(0, 32767) * 2) as u16;
+            mont.posy = (self.random.myRandom(0, 32767) * 2) as u16;
             mont.ign = 10;
             mont.forme = Some(FormeId::Oiseau);
             self.sap3d.aigoual.push(mont);
@@ -3246,13 +3240,13 @@ impl Sapiens {
         // les arbres
         for _ in 0..self.sap3d.nbArbres {
             loop {
-                mont.posx = (self.random.myRandom(0, 32767) * 2) as c_ushort;
-                mont.posy = (self.random.myRandom(0, 32767) * 2) as c_ushort;
+                mont.posx = (self.random.myRandom(0, 32767) * 2) as u16;
+                mont.posy = (self.random.myRandom(0, 32767) * 2) as u16;
                 if !self.sap3d.EstDansMontagne(mont.posx, mont.posy) {
                     break;
                 }
             }
-            mont.ign = self.random.myRandom(5, 20) as c_ushort;
+            mont.ign = self.random.myRandom(5, 20) as u16;
             match self.random.myRandom(0, 3) {
                 0 => mont.forme = Some(FormeId::Genevr),
                 1 => mont.forme = Some(FormeId::Chene),
@@ -3260,23 +3254,23 @@ impl Sapiens {
             }
             self.sap3d.aigoual.push(mont);
             if self.sap3d.PremArbre == 0 {
-                self.sap3d.PremArbre = self.sap3d.aigoual.len() as c_long - 1;
+                self.sap3d.PremArbre = self.sap3d.aigoual.len() as i64 - 1;
             }
         }
         // Les rochers
         for _ in 0..self.sap3d.nbRochers {
             loop {
-                mont.posx = (self.random.myRandom(0, 32767) * 2) as c_ushort;
-                mont.posy = (self.random.myRandom(0, 32767) * 2) as c_ushort;
+                mont.posx = (self.random.myRandom(0, 32767) * 2) as u16;
+                mont.posy = (self.random.myRandom(0, 32767) * 2) as u16;
                 if !self.sap3d.EstDansMontagne(mont.posx, mont.posy) {
                     break;
                 }
             }
-            mont.ign = self.random.myRandom(15, 60) as c_ushort;
+            mont.ign = self.random.myRandom(15, 60) as u16;
             mont.forme = Some(FormeId::Rocher);
             self.sap3d.aigoual.push(mont);
             if self.sap3d.PremRocher == 0 {
-                self.sap3d.PremRocher = self.sap3d.aigoual.len() as c_long - 1;
+                self.sap3d.PremRocher = self.sap3d.aigoual.len() as i64 - 1;
             }
         }
         #[cfg(debug_assertions)]
@@ -3292,9 +3286,9 @@ impl Sapiens {
                          WaitTick
 => nombre de tickcount à attendre
 ***********************************************************************/
-fn WaitTick(nb: c_short) {
+fn WaitTick(nb: i16) {
     let t = TickCount();
-    while TickCount() < t + nb as c_long { /* Attente active */ }
+    while TickCount() < t + nb as i64 { /* Attente active */ }
 }
 
 impl Sapiens {
@@ -3304,17 +3298,17 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn Final(&mut self) {
         unsafe {
-            let mut n: c_long = 0;
-            let mut dx: c_long;
-            let mut dy: c_long;
-            let mut dist: c_short;
+            let mut n: i64 = 0;
+            let mut dx: i64;
+            let mut dy: i64;
+            let mut dist: i16;
             let mut mont: Mont = Mont::default();
             let mut rgb: RGBColor = RGBColor {
                 red: 0,
                 green: 0,
                 blue: 0,
             };
-            let mut chaine: [c_char; 255] = [0; 255];
+            let mut chaine: [i8; 255] = [0; 255];
 
             SetCursor(GetCursor(watchCursor as i16));
             self.DefautDecor3d();
@@ -3334,26 +3328,26 @@ impl Sapiens {
                 for _ in 0..15 {
                     for e in 0..self.sap3d.nbNuages {
                         let mont = &mut self.sap3d.aigoual[e as usize];
-                        mont.posx = (self.sapglob.xj as c_long + self.random.myRandom(-5000, 5000))
-                            as c_ushort;
-                        mont.posy = (self.sapglob.yj as c_long + self.random.myRandom(-5000, 5000))
-                            as c_ushort;
+                        mont.posx =
+                            (self.sapglob.xj as i64 + self.random.myRandom(-5000, 5000)) as u16;
+                        mont.posy =
+                            (self.sapglob.yj as i64 + self.random.myRandom(-5000, 5000)) as u16;
                     }
                     self.GereInterface();
                     for i in self.sap3d.PremArbre..self.sap3d.PremArbre + self.sap3d.nbArbres {
                         let mut p = self.sap3d.aigoual[i as usize];
-                        dx = (p.posx as c_long - self.sapglob.xj as c_long).abs();
-                        dy = (p.posy as c_long - self.sapglob.yj as c_long).abs();
+                        dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
+                        dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
                         dist = distance(dx, dy);
                         /* L'arbre est éloigné de plus de 2000 m */
                         if dist > 2000 && self.random.myRandom(0, 1000) > 900 {
                             /* On le rapproche */
-                            p.posx = (self.sapglob.xj as c_long + self.random.myRandom(-750, 750))
-                                as c_ushort;
-                            p.posy = (self.sapglob.yj as c_long + self.random.myRandom(-5000, -500))
-                                as c_ushort;
-                            dx = (p.posx as c_long - self.sapglob.xj as c_long).abs();
-                            dy = (p.posy as c_long - self.sapglob.yj as c_long).abs();
+                            p.posx =
+                                (self.sapglob.xj as i64 + self.random.myRandom(-750, 750)) as u16;
+                            p.posy =
+                                (self.sapglob.yj as i64 + self.random.myRandom(-5000, -500)) as u16;
+                            dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
+                            dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
                             dist = distance(dx, dy);
                             if dist < 50 {
                                 p.posx = 65000;
@@ -3363,8 +3357,8 @@ impl Sapiens {
                         self.sap3d.aigoual[i as usize] = p;
                     }
                     self.AvanceSol(1);
-                    self.sapglob.heure = self.random.myRandom(0, 90) as c_ushort;
-                    self.affich(self.sapglob.dzeta as c_ushort);
+                    self.sapglob.heure = self.random.myRandom(0, 90) as u16;
+                    self.affich(self.sapglob.dzeta as u16);
                     self.tfrima();
                     self.delai(0);
                     WaitTick(5);
@@ -3382,16 +3376,16 @@ impl Sapiens {
                 /* Déplacement des rochers */
                 for i in self.sap3d.PremRocher..self.sap3d.PremRocher + self.sap3d.nbRochers {
                     let mut p = self.sap3d.aigoual[i as usize];
-                    dx = (p.posx as c_long - self.sapglob.xj as c_long).abs();
-                    dy = (p.posy as c_long - self.sapglob.yj as c_long).abs();
+                    dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
+                    dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
                     dist = distance(dx, dy);
                     if dist > 2000 && self.random.myRandom(0, 1000) > 900 {
-                        p.posx = (self.sapglob.xj as c_long + self.random.myRandom(-1000, 1000))
-                            as c_ushort;
-                        p.posy = (self.sapglob.yj as c_long + self.random.myRandom(-1000, -100))
-                            as c_ushort;
-                        dx = (p.posx as c_long - self.sapglob.xj as c_long).abs();
-                        dy = (p.posy as c_long - self.sapglob.yj as c_long).abs();
+                        p.posx =
+                            (self.sapglob.xj as i64 + self.random.myRandom(-1000, 1000)) as u16;
+                        p.posy =
+                            (self.sapglob.yj as i64 + self.random.myRandom(-1000, -100)) as u16;
+                        dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
+                        dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
                         dist = distance(dx, dy);
                         if dist < 50 {
                             p.posx = 65000;
@@ -3404,16 +3398,16 @@ impl Sapiens {
                 for _ in 0..15 {
                     for e in 0..self.sap3d.nbNuages {
                         let mont = &mut self.sap3d.aigoual[e as usize];
-                        mont.posx = (self.sapglob.xj as c_long + self.random.myRandom(-5000, 5000))
-                            as c_ushort;
-                        mont.posy = (self.sapglob.yj as c_long + self.random.myRandom(-5000, 5000))
-                            as c_ushort;
+                        mont.posx =
+                            (self.sapglob.xj as i64 + self.random.myRandom(-5000, 5000)) as u16;
+                        mont.posy =
+                            (self.sapglob.yj as i64 + self.random.myRandom(-5000, 5000)) as u16;
                     }
                     self.GereInterface();
                     for i in self.sap3d.PremArbre..self.sap3d.PremArbre + self.sap3d.nbArbres {
                         let mut p = self.sap3d.aigoual[i as usize];
-                        dx = (p.posx as c_long - self.sapglob.xj as c_long).abs();
-                        dy = (p.posy as c_long - self.sapglob.yj as c_long).abs();
+                        dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
+                        dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
                         dist = distance(dx, dy);
                         if dist < 3000 && self.random.myRandom(0, 1000) > 900 {
                             p.posx = 65000;
@@ -3421,9 +3415,9 @@ impl Sapiens {
                         }
                         self.sap3d.aigoual[i as usize] = p;
                     }
-                    self.sapglob.heure = self.random.myRandom(0, 90) as c_ushort;
+                    self.sapglob.heure = self.random.myRandom(0, 90) as u16;
                     self.AvanceSol(1);
-                    self.affich(self.sapglob.dzeta as c_ushort);
+                    self.affich(self.sapglob.dzeta as u16);
                     self.tfrima();
                     self.delai(0);
                     WaitTick(5);
@@ -3431,10 +3425,8 @@ impl Sapiens {
             }
             for e in 0..self.sap3d.nbNuages {
                 let mont = &mut self.sap3d.aigoual[e as usize];
-                mont.posx =
-                    (self.sapglob.xj as c_long + self.random.myRandom(-2000, 2000)) as c_ushort;
-                mont.posy =
-                    (self.sapglob.yj as c_long + self.random.myRandom(-2000, 2000)) as c_ushort;
+                mont.posx = (self.sapglob.xj as i64 + self.random.myRandom(-2000, 2000)) as u16;
+                mont.posy = (self.sapglob.yj as i64 + self.random.myRandom(-2000, 2000)) as u16;
             }
             for _ in 0..100 {
                 self.sap3d.FreqEclair = 900;
@@ -3452,15 +3444,13 @@ impl Sapiens {
                         self.sap3d.aigoual[i as usize].posy = 65000;
                     }
                 }
-                mont.ign = self.random.myRandom(15, 60) as c_ushort;
+                mont.ign = self.random.myRandom(15, 60) as u16;
                 mont.forme = Some(FormeId::Building);
-                mont.posx =
-                    (self.sapglob.xj as c_long + self.random.myRandom(-750, 750)) as c_ushort;
-                mont.posy =
-                    (self.sapglob.yj as c_long + self.random.myRandom(-10000, -500)) as c_ushort;
+                mont.posx = (self.sapglob.xj as i64 + self.random.myRandom(-750, 750)) as u16;
+                mont.posy = (self.sapglob.yj as i64 + self.random.myRandom(-10000, -500)) as u16;
                 self.sap3d.aigoual.push(mont);
-                self.sapglob.heure = self.random.myRandom(0, 90) as c_ushort;
-                self.affich(self.sapglob.dzeta as c_ushort);
+                self.sapglob.heure = self.random.myRandom(0, 90) as u16;
+                self.affich(self.sapglob.dzeta as u16);
                 self.tfrima();
                 self.delai(0);
                 self.chrono(1);
@@ -3469,7 +3459,7 @@ impl Sapiens {
             self.sapglob.heure = 512;
             for _ in 0..400 {
                 self.sapglob.yj = self.sapglob.yj.wrapping_sub(30);
-                self.affich(self.sapglob.dzeta as c_ushort);
+                self.affich(self.sapglob.dzeta as u16);
                 self.tfrima();
                 self.delai(0);
                 self.chrono(1);
@@ -3480,17 +3470,17 @@ impl Sapiens {
             DoTextSize(64);
             strcpy(chaine.as_mut_ptr(), c"THE END".as_ptr());
             CtoPstr(chaine.as_mut_ptr());
-            dx = (512 - StringWidth(chaine.as_mut_ptr() as StringPtr) as c_long) / 2;
+            dx = (512 - StringWidth(chaine.as_mut_ptr() as StringPtr) as i64) / 2;
             for _ in 0..256 {
                 n += 256;
                 self.chrono(1);
                 self.chrono(1);
-                rgb.red = n as c_ushort;
-                rgb.green = n as c_ushort;
-                rgb.blue = n as c_ushort;
+                rgb.red = n as u16;
+                rgb.green = n as u16;
+                rgb.blue = n as u16;
                 RGBForeColor(&rgb);
-                DoMoveTo(dx as c_short, 64);
-                self.affich(self.sapglob.dzeta as c_ushort);
+                DoMoveTo(dx as i16, 64);
+                self.affich(self.sapglob.dzeta as u16);
                 self.delai(0);
                 DrawString(chaine.as_mut_ptr() as StringPtr);
                 self.tfrima();
@@ -3507,12 +3497,12 @@ impl Sapiens {
                              FoudroieJoueur
     Applique un éclair sur le plan à la position donnée
     **********************************************************************/
-    fn FoudroieJoueur(&mut self, x: c_ushort, y: c_ushort) {
+    fn FoudroieJoueur(&mut self, x: u16, y: u16) {
         /* Le joueur est foudroyé par l'éclair latéral */
         if distance(
-            self.sapglob.xj as c_long - x as c_long,
-            self.sapglob.yj as c_long - y as c_long,
-        ) < self.sap3d.DistMinFoudroie as c_short
+            self.sapglob.xj as i64 - x as i64,
+            self.sapglob.yj as i64 - y as i64,
+        ) < self.sap3d.DistMinFoudroie as i16
         {
             self.clrbadi();
             self.comment(134);
@@ -3531,16 +3521,14 @@ impl Sapiens {
                              FoudroieArbre
     Applique un éclair sur le plan à la position donnée
     **********************************************************************/
-    fn FoudroieArbre(&mut self, x: c_ushort, y: c_ushort) -> Option<MontId> {
+    fn FoudroieArbre(&mut self, x: u16, y: u16) -> Option<MontId> {
         self.FoudroieJoueur(x, y);
         for i in 0..self.sap3d.aigoual.len() {
             let mont = self.sap3d.aigoual[i];
             /* C'est un arbre et même coordonnée */
             if mont.forme.is_some_and(|id| id.forme().hauteur == 1)
-                && distance(
-                    mont.posx as c_long - x as c_long,
-                    mont.posy as c_long - y as c_long,
-                ) < self.sap3d.DistMinFoudroie as c_short
+                && distance(mont.posx as i64 - x as i64, mont.posy as i64 - y as i64)
+                    < self.sap3d.DistMinFoudroie as i16
             {
                 self.sap3d.aigoual[i].forme = Some(FormeId::ToucheEclair);
                 self.FoudroieJoueur(mont.posx, mont.posy);
@@ -3557,9 +3545,9 @@ impl Sap3d {
     ***********************************************************************/
     pub(crate) unsafe extern "C" fn ChargeEltsDecorsMobiles(&mut self, f: *mut FILE) {
         unsafe {
-            let mut chaine: [c_char; 255] = [0; 255];
-            let mut x: c_long = 0;
-            let mut y: c_long = 0;
+            let mut chaine: [i8; 255] = [0; 255];
+            let mut x: i64 = 0;
+            let mut y: i64 = 0;
 
             fscanf(f, c" %s".as_ptr(), chaine.as_mut_ptr());
             if strcmp(chaine.as_ptr(), c"MAGIC".as_ptr()) != 0 {
@@ -3572,8 +3560,8 @@ impl Sap3d {
                     fscanf(f, c" %ld %ld".as_ptr(), &mut x, &mut y);
                     for mont in self.aigoual.iter_mut() {
                         if mont.forme.is_some_and(|id| id.forme().hauteur == 1)
-                            && mont.posx == x as c_ushort
-                            && mont.posy == y as c_ushort
+                            && mont.posx == x as u16
+                            && mont.posy == y as u16
                         {
                             mont.forme = Some(FormeId::Foudroye);
                         }
@@ -3597,8 +3585,8 @@ impl Sap3d {
                     fprintf(
                         f,
                         c"Foudroye %ld %ld\n".as_ptr(),
-                        mont.posx as c_long,
-                        mont.posy as c_long,
+                        mont.posx as i64,
+                        mont.posy as i64,
                     );
                 }
             }
@@ -3611,20 +3599,20 @@ impl Sapiens {
                              AFFICH : Affiche 3 d
     L'affichage se fait sur l'écran1
     **********************************************************************/
-    pub(crate) fn affich(&mut self, tfr: c_ushort) {
+    pub(crate) fn affich(&mut self, tfr: u16) {
         unsafe {
-            let dzetabak: c_short;
-            let vitesse = self.sap3d.VitesseDeplacementNuages as c_ushort;
+            let dzetabak: i16;
+            let vitesse = self.sap3d.VitesseDeplacementNuages as u16;
 
             dzetabak = self.sapglob.dzeta;
-            self.sapglob.dzeta = tfr as c_short;
+            self.sapglob.dzeta = tfr as i16;
 
             /* On efface le fond */
             self.eff3d(
                 self.sapglob.ciel,
                 self.sapglob.terre,
                 self.sapglob.metpos,
-                (tfr as c_long + 128 - self.sapglob.angsol as c_long) as c_ushort,
+                (tfr as i64 + 128 - self.sapglob.angsol as i64) as u16,
                 if (self.sapglob.heure & 0x200) == 0x200 {
                     1
                 } else {
@@ -3632,9 +3620,7 @@ impl Sapiens {
                 },
             );
             /*met la fumée en place*/
-            FORMES
-                .fumee
-                .set_image(self.random.myRandom(18, 20) as c_short);
+            FORMES.fumee.set_image(self.random.myRandom(18, 20) as i16);
             FORMES.forme8.avance(30, 32);
             FORMES.oiseau.avance(MOB_OISEAU, MOB_OISEAU + 2);
             FORMES.homme.avance(MOB_HOMME, MOB_HOMME + 2);
@@ -3715,11 +3701,11 @@ impl Sapiens {
 impl Sapiens {
     pub(crate) unsafe extern "C" fn clav3d(&mut self) {
         unsafe {
-            let mut car: c_short;
-            let mut cptemps: c_short = 1;
-            let mut cpt_cart: c_short = 0;
+            let mut car: i16;
+            let mut cptemps: i16 = 1;
+            let mut cpt_cart: i16 = 0;
             let mut cont: Boolean = VRAI;
-            let mut posTimer: c_ulong;
+            let mut posTimer: u64;
 
             self.sapglob.dismin = 0;
             //reset_mouse();
@@ -3734,7 +3720,7 @@ impl Sapiens {
             loop {
                 posTimer = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
                 //bouge_souris();
-                self.affich(self.sapglob.dzeta as c_ushort);
+                self.affich(self.sapglob.dzeta as u16);
                 self.tfrima();
                 if self.sap3d.okcarte != 0 {
                     if cpt_cart == 0 {
@@ -3744,7 +3730,7 @@ impl Sapiens {
                         cpt_cart -= 1;
                     }
                 }
-                self.sapdep(self.sapglob.dzeta, self.sapglob.sapvit as c_short);
+                self.sapdep(self.sapglob.dzeta, self.sapglob.sapvit as i16);
                 if cptemps == 1 {
                     cptemps = 5;
                     self.chrono(0);

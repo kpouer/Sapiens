@@ -9,12 +9,11 @@ use crate::sapiens::{
     IndexColor, NB_LIGNES_CIEL, TypeMuse, TypeReference, Vue, cellule, liste, sap,
 };
 use crate::sapiens::{evt, gemcadre, gemnbrecad, h_chron};
-use std::os::raw::{c_char, c_short, c_uchar, c_ushort};
 use std::ptr::{addr_of_mut, null_mut};
 use strum::EnumIter;
 
-pub(crate) static tabprf: [c_uchar; 4] = [25, 33, 34, 35]; /*objet prefere*/
-pub(crate) static tobje: [[c_uchar; 4]; 4] = [
+pub(crate) static tabprf: [u8; 4] = [25, 33, 34, 35]; /*objet prefere*/
+pub(crate) static tobje: [[u8; 4]; 4] = [
     /*objets de la tribu*/
     [23, 26, 28, 38],
     [21, 25, 29, 39],
@@ -22,13 +21,13 @@ pub(crate) static tobje: [[c_uchar; 4]; 4] = [
     [25, 24, 26, 23],
 ];
 
-pub(crate) static tenerv: [c_ushort; 4] = [256, 4864, 25600, 40960]; /*enervement tribu -etranger*/
+pub(crate) static tenerv: [u16; 4] = [256, 4864, 25600, 40960]; /*enervement tribu -etranger*/
 
 /* HOMME/FEMME/OUI sont des champs de Sapglob (voir plus bas). */
 
 /*liste initialisee par init_glob*/
-const fn elems<const N: usize>(v: [c_uchar; N]) -> [c_uchar; 30] {
-    let mut out = [0 as c_uchar; 30];
+const fn elems<const N: usize>(v: [u8; N]) -> [u8; 30] {
+    let mut out = [0 as u8; 30];
     let mut i = 0;
     while i < N {
         out[i] = v[i];
@@ -39,34 +38,24 @@ const fn elems<const N: usize>(v: [c_uchar; N]) -> [c_uchar; 30] {
 
 /***=======================================================================*/
 /*              Inits des tableaux des menus                               */
-pub(crate) static tclin: [c_char; 9] = [18, 19, 18, 18, 19, 18, 19, 20, 18];
-pub(crate) static tccol: [c_char; 9] = [4, 22, 23, 28, 26, 31, 33, 23, 26];
-pub(crate) static tcolcdr: [c_char; 9] = [11, 17, 17, 18, 12, 12, 12, 17, 13];
-pub(crate) static tcnlin: [c_char; 9] = [7, 7, 8, 6, 6, 3, 2, 5, 6];
-pub(crate) static tcncol: [c_char; 9] = [13, 16, 28, 12, 16, 16, 9, 26, 17];
-pub(crate) static tposcur: [c_short; 9] = [6082, 5787, 6121, 5795, 6432, 6118, 6441, 6445, 5792];
+pub(crate) static tclin: [i8; 9] = [18, 19, 18, 18, 19, 18, 19, 20, 18];
+pub(crate) static tccol: [i8; 9] = [4, 22, 23, 28, 26, 31, 33, 23, 26];
+pub(crate) static tcolcdr: [i8; 9] = [11, 17, 17, 18, 12, 12, 12, 17, 13];
+pub(crate) static tcnlin: [i8; 9] = [7, 7, 8, 6, 6, 3, 2, 5, 6];
+pub(crate) static tcncol: [i8; 9] = [13, 16, 28, 12, 16, 16, 9, 26, 17];
+pub(crate) static tposcur: [i16; 9] = [6082, 5787, 6121, 5795, 6432, 6118, 6441, 6445, 5792];
 
 /*tableaux*/
-pub(crate) static hautlin: [c_char; 4] = [10, 15, 25, 30];
-pub(crate) static tabinp: [c_char; 4] = [3, 5, 20, 30];
-pub(crate) static hautou: [c_char; 4] = [10, 20, 27, 35];
-pub(crate) static tribforce: [c_char; 4] = [15, 15, 25, 20];
-pub(crate) static tribvie: [c_char; 4] = [
-    160u8 as c_char,
-    150u8 as c_char,
-    200u8 as c_char,
-    180u8 as c_char,
-];
-pub(crate) static bestlin: [c_char; 4] = [2, 0xDDu8 as c_char, 2, 2];
-pub(crate) static bestvie: [c_char; 4] = [70, 200u8 as c_char, 1, 1];
-pub(crate) static bestagress: [c_char; 4] = [
-    200u8 as c_char,
-    180u8 as c_char,
-    200u8 as c_char,
-    180u8 as c_char,
-];
-pub(crate) static besthaut: [c_char; 4] = [2, 1, 3, 3];
-pub(crate) static qtviande: [c_char; 4] = [1, 2, 4, 8];
+pub(crate) static hautlin: [i8; 4] = [10, 15, 25, 30];
+pub(crate) static tabinp: [i8; 4] = [3, 5, 20, 30];
+pub(crate) static hautou: [i8; 4] = [10, 20, 27, 35];
+pub(crate) static tribforce: [i8; 4] = [15, 15, 25, 20];
+pub(crate) static tribvie: [i8; 4] = [160u8 as i8, 150u8 as i8, 200u8 as i8, 180u8 as i8];
+pub(crate) static bestlin: [i8; 4] = [2, 0xDDu8 as i8, 2, 2];
+pub(crate) static bestvie: [i8; 4] = [70, 200u8 as i8, 1, 1];
+pub(crate) static bestagress: [i8; 4] = [200u8 as i8, 180u8 as i8, 200u8 as i8, 180u8 as i8];
+pub(crate) static besthaut: [i8; 4] = [2, 1, 3, 3];
+pub(crate) static qtviande: [i8; 4] = [1, 2, 4, 8];
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, EnumIter)]
 pub(crate) enum ListeId {
@@ -94,43 +83,43 @@ pub(crate) enum SapId {
 
 pub(crate) struct Sapglob {
     /*définitions des variables globales*/
-    pub(crate) lpos: c_uchar,
-    pub(crate) stock1: c_uchar,
-    pub(crate) stock2: c_uchar,
-    pub(crate) criter: c_uchar,
-    pub(crate) lastmen: c_uchar,
-    pub(crate) rega: c_uchar,
+    pub(crate) lpos: u8,
+    pub(crate) stock1: u8,
+    pub(crate) stock2: u8,
+    pub(crate) criter: u8,
+    pub(crate) lastmen: u8,
+    pub(crate) rega: u8,
 
-    pub(crate) who: c_char,
+    pub(crate) who: i8,
 
     /* touches « homme », « femme », « oui » selon la langue (InitAndCheckTexts) */
-    pub(crate) homme: c_uchar,
-    pub(crate) femme: c_uchar,
-    pub(crate) oui: c_uchar,
+    pub(crate) homme: u8,
+    pub(crate) femme: u8,
+    pub(crate) oui: u8,
 
-    pub(crate) dzeta: c_short,
-    pub(crate) ldzeta: c_short,
-    pub(crate) colaff: c_short,
-    pub(crate) linaff: c_short,
-    pub(crate) profond: [c_uchar; 5], /*objet prefere ?*/
-    pub(crate) enetoi: [c_ushort; 4], /*enerv contre toi*/
+    pub(crate) dzeta: i16,
+    pub(crate) ldzeta: i16,
+    pub(crate) colaff: i16,
+    pub(crate) linaff: i16,
+    pub(crate) profond: [u8; 5], /*objet prefere ?*/
+    pub(crate) enetoi: [u16; 4], /*enerv contre toi*/
     pub(crate) okmuse: TypeMuse,
 
-    pub(crate) listdep: [c_uchar; 9],
-    pub(crate) maxparam: [[c_uchar; 6]; 2],
-    pub(crate) agrdep: [c_uchar; 4],
-    pub(crate) tagress: [c_uchar; 4], /*agressivite*/
+    pub(crate) listdep: [u8; 9],
+    pub(crate) maxparam: [[u8; 6]; 2],
+    pub(crate) agrdep: [u8; 4],
+    pub(crate) tagress: [u8; 4], /*agressivite*/
 
     /*donnees du menu en cours*/
     /**************************/
-    pub(crate) menu: c_ushort,   /*menu en cours*/
-    pub(crate) clin: c_ushort,   /*debut du cadre en ligne64*/
-    pub(crate) ccol: c_ushort,   /*debut du cadre en colonne 64*/
-    pub(crate) colcdr: c_ushort, /*nbre de colonnes40 du cadre*/
-    pub(crate) cnlin: c_ushort,  /*nbre de lignes du cadre*/
-    pub(crate) cncol: c_ushort,  /*nbre de colonnes du cadre*/
+    pub(crate) menu: u16,   /*menu en cours*/
+    pub(crate) clin: u16,   /*debut du cadre en ligne64*/
+    pub(crate) ccol: u16,   /*debut du cadre en colonne 64*/
+    pub(crate) colcdr: u16, /*nbre de colonnes40 du cadre*/
+    pub(crate) cnlin: u16,  /*nbre de lignes du cadre*/
+    pub(crate) cncol: u16,  /*nbre de colonnes du cadre*/
 
-    pub(crate) poscur: c_short,  /*position curseur*/
+    pub(crate) poscur: i16,      /*position curseur*/
     pub(crate) stdlist: ListeId, /*liste std pour ce cadre*/
     /*------- definition pour les gestions de cadre ------*/
     pub(crate) gemzoom: [gemcadre; gemnbrecad as usize],
@@ -149,134 +138,134 @@ pub(crate) struct Sapglob {
     pub(crate) listbidon: liste,
     pub(crate) zoneu: liste, /*liste de travail pour critere*/
     pub(crate) cross: liste,
-    pub(crate) tlpos: [c_char; 9],
+    pub(crate) tlpos: [i8; 9],
     pub(crate) tstdlist: [ListeId; 9], /* &liste0..&liste8, initialise par init_glob */
     /*Variables Globales*/
-    pub(crate) distsp: c_short,
-    pub(crate) presence: c_short,
-    pub(crate) fin: c_uchar,
-    pub(crate) sensmob: c_uchar,
-    pub(crate) ptranim: *mut c_char,
-    pub(crate) present: [c_char; 4],
-    anjm1: [c_char; 48],
-    anjm2: [c_char; 6],
-    anjm3: [c_char; 4],
-    anacr1: [c_char; 6],
-    anacr2: [c_char; 4],
-    angen1: [c_char; 6],
-    angen2: [c_char; 4],
-    anaga1: [c_char; 26],
-    anaga2: [c_char; 14],
-    anrga1: [c_char; 26],
-    anrga2: [c_char; 14],
-    anbras: [c_char; 31],
-    anbra1: [c_char; 4],
-    anbra2: [c_char; 4],
-    anhac1: [c_char; 4],
-    ansag1: [c_char; 4],
-    anpoin: [c_char; 14],
-    anhach: [c_char; 18],
-    ansag: [c_char; 10],
-    anbust: [c_char; 4],
-    anbst1: [c_char; 16],
-    antete: [c_char; 13],
-    antet1: [c_char; 7],
-    antet2: [c_char; 4],
-    anarm1: [c_char; 20],
-    anarm3: [c_char; 4],
-    anarm4: [c_char; 4],
-    pub(crate) aneutr: [c_char; 2],
-    pub(crate) anlou1: [c_char; 4],
-    pub(crate) anlou2: [c_char; 19],
-    pub(crate) anlap1: [c_char; 7],
-    pub(crate) anlap2: [c_char; 12],
-    pub(crate) anlap3: [c_char; 13],
+    pub(crate) distsp: i16,
+    pub(crate) presence: i16,
+    pub(crate) fin: u8,
+    pub(crate) sensmob: u8,
+    pub(crate) ptranim: *mut i8,
+    pub(crate) present: [i8; 4],
+    anjm1: [i8; 48],
+    anjm2: [i8; 6],
+    anjm3: [i8; 4],
+    anacr1: [i8; 6],
+    anacr2: [i8; 4],
+    angen1: [i8; 6],
+    angen2: [i8; 4],
+    anaga1: [i8; 26],
+    anaga2: [i8; 14],
+    anrga1: [i8; 26],
+    anrga2: [i8; 14],
+    anbras: [i8; 31],
+    anbra1: [i8; 4],
+    anbra2: [i8; 4],
+    anhac1: [i8; 4],
+    ansag1: [i8; 4],
+    anpoin: [i8; 14],
+    anhach: [i8; 18],
+    ansag: [i8; 10],
+    anbust: [i8; 4],
+    anbst1: [i8; 16],
+    antete: [i8; 13],
+    antet1: [i8; 7],
+    antet2: [i8; 4],
+    anarm1: [i8; 20],
+    anarm3: [i8; 4],
+    anarm4: [i8; 4],
+    pub(crate) aneutr: [i8; 2],
+    pub(crate) anlou1: [i8; 4],
+    pub(crate) anlou2: [i8; 19],
+    pub(crate) anlap1: [i8; 7],
+    pub(crate) anlap2: [i8; 12],
+    pub(crate) anlap3: [i8; 13],
     /*blocks animation -- initialise par init_glob*/
-    pub(crate) debban: [[*mut c_char; 14]; 13],
+    pub(crate) debban: [[*mut i8; 14]; 13],
     pub(crate) sap1: sap,
     pub(crate) sap2: sap,
     pub(crate) sap3: sap,
     pub(crate) sap4: sap,
     /*--------------------------- EVENEMENTS ----------------------------*/
     pub(crate) destine: [evt; 40],
-    pub(crate) posxf: c_short,
-    pub(crate) posyf: c_short,
+    pub(crate) posxf: i16,
+    pub(crate) posyf: i16,
 
-    pub(crate) soif: c_uchar,
-    pub(crate) fatig: c_uchar,
-    pub(crate) faim: c_uchar,
-    pub(crate) mort: c_uchar,
-    pub(crate) bless: c_uchar,
-    pub(crate) echan: c_uchar,
-    pub(crate) vlchan: c_uchar,
-    pub(crate) flefba: c_uchar,
-    pub(crate) predil: c_uchar,
-    pub(crate) fdialo: c_uchar,
-    pub(crate) fpress: c_uchar,
-    pub(crate) chef: c_uchar,
-    pub(crate) tribu: c_uchar,
-    pub(crate) scenar: c_uchar,
-    pub(crate) flcomb: c_uchar,
-    pub(crate) agress: c_uchar,
-    pub(crate) entvie: c_uchar,
-    pub(crate) sexe: c_uchar,
-    pub(crate) dquest: c_uchar,
+    pub(crate) soif: u8,
+    pub(crate) fatig: u8,
+    pub(crate) faim: u8,
+    pub(crate) mort: u8,
+    pub(crate) bless: u8,
+    pub(crate) echan: u8,
+    pub(crate) vlchan: u8,
+    pub(crate) flefba: u8,
+    pub(crate) predil: u8,
+    pub(crate) fdialo: u8,
+    pub(crate) fpress: u8,
+    pub(crate) chef: u8,
+    pub(crate) tribu: u8,
+    pub(crate) scenar: u8,
+    pub(crate) flcomb: u8,
+    pub(crate) agress: u8,
+    pub(crate) entvie: u8,
+    pub(crate) sexe: u8,
+    pub(crate) dquest: u8,
     pub(crate) dervue: Vue,
-    pub(crate) source: c_uchar,
-    pub(crate) minute: c_uchar,
-    pub(crate) sapvit: c_uchar,
-    pub(crate) viecopain: c_uchar,
-    pub(crate) sap3clav: c_uchar,
-    pub(crate) cptagil: c_uchar,
-    pub(crate) finjou: c_uchar,
-    pub(crate) agilite: c_uchar,
-    pub(crate) force: c_uchar,
-    pub(crate) resistance: c_uchar,
-    pub(crate) charisme: c_uchar,
-    pub(crate) vie: c_uchar,
-    pub(crate) flagbadi: c_uchar,
-    pub(crate) ciel: c_uchar,
-    pub(crate) terre: c_uchar,
-    pub(crate) flgcharism: c_uchar,
-    pub(crate) scenpr: c_char,
+    pub(crate) source: u8,
+    pub(crate) minute: u8,
+    pub(crate) sapvit: u8,
+    pub(crate) viecopain: u8,
+    pub(crate) sap3clav: u8,
+    pub(crate) cptagil: u8,
+    pub(crate) finjou: u8,
+    pub(crate) agilite: u8,
+    pub(crate) force: u8,
+    pub(crate) resistance: u8,
+    pub(crate) charisme: u8,
+    pub(crate) vie: u8,
+    pub(crate) flagbadi: u8,
+    pub(crate) ciel: u8,
+    pub(crate) terre: u8,
+    pub(crate) flgcharism: u8,
+    pub(crate) scenpr: i8,
 
-    pub(crate) enerv: c_ushort,
-    pub(crate) xj: c_ushort,
-    pub(crate) yj: c_ushort,
-    pub(crate) zj: c_ushort,
-    pub(crate) derxj: c_ushort,
-    pub(crate) deryj: c_ushort,
-    bidon: c_ushort,
-    pub(crate) dismin: c_ushort,
-    pub(crate) heure: c_ushort,
-    pub(crate) metpos: c_ushort,
-    pub(crate) angsol: c_ushort,
-    pub(crate) jour_act: c_ushort,
-    pub(crate) jour_dsk: c_ushort,
+    pub(crate) enerv: u16,
+    pub(crate) xj: u16,
+    pub(crate) yj: u16,
+    pub(crate) zj: u16,
+    pub(crate) derxj: u16,
+    pub(crate) deryj: u16,
+    bidon: u16,
+    pub(crate) dismin: u16,
+    pub(crate) heure: u16,
+    pub(crate) metpos: u16,
+    pub(crate) angsol: u16,
+    pub(crate) jour_act: u16,
+    pub(crate) jour_dsk: u16,
 
-    pub(crate) zoom: c_uchar,
-    tabclav1: [c_uchar; 7],
-    tabclav2: [c_uchar; 7],
-    pub(crate) param: [c_uchar; 6],
+    pub(crate) zoom: u8,
+    tabclav1: [u8; 7],
+    tabclav2: [u8; 7],
+    pub(crate) param: [u8; 6],
 
     pub(crate) soma: [cellule; 54], /* rempli dans init_glob */
-    pub(crate) palhaute: *mut c_short,
-    pub(crate) palbasse: *mut c_short,
-    pub(crate) pal_chron: *mut c_short,
-    pub(crate) ciel_degr: *mut c_short,
-    pub(crate) pos_evt: c_short,
+    pub(crate) palhaute: *mut i16,
+    pub(crate) palbasse: *mut i16,
+    pub(crate) pal_chron: *mut i16,
+    pub(crate) ciel_degr: *mut i16,
+    pub(crate) pos_evt: i16,
 
     pub(crate) tabheur: [h_chron; 37],
-    pub(crate) sposx: c_short,
-    pub(crate) sposy: c_short,
-    pub(crate) dsposx: c_short,
-    pub(crate) dsposy: c_short,
-    pub(crate) dicone: c_short,
-    pub(crate) s_menu: c_short,
-    pub(crate) icone: c_short,
-    pub(crate) bouton: c_short,
-    pub(crate) s_action: c_short,
-    pub(crate) smenu: [c_char; 2],
+    pub(crate) sposx: i16,
+    pub(crate) sposy: i16,
+    pub(crate) dsposx: i16,
+    pub(crate) dsposy: i16,
+    pub(crate) dicone: i16,
+    pub(crate) s_menu: i16,
+    pub(crate) icone: i16,
+    pub(crate) bouton: i16,
+    pub(crate) s_action: i16,
+    pub(crate) smenu: [i8; 2],
 }
 
 impl Default for Sapglob {
@@ -443,89 +432,89 @@ impl Default for Sapglob {
             ptranim: null_mut(),
             present: [0; 4],
             anjm1: [
-                0x82u8 as c_char,
-                0x81u8 as c_char,
+                0x82u8 as i8,
+                0x81u8 as i8,
                 0,
                 26,
                 0,
-                0x80u8 as c_char,
+                0x80u8 as i8,
                 -2,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 1,
                 26,
                 0,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 2,
                 26,
                 0,
-                0x80u8 as c_char,
+                0x80u8 as i8,
                 -1,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 3,
                 26,
                 0,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 4,
                 26,
                 0,
-                0x80u8 as c_char,
+                0x80u8 as i8,
                 0,
                 /*anjm1b =anjm1+27*/
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 5,
                 26,
                 0,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 6,
                 26,
                 0,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 7,
                 26,
                 0,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 8,
                 26,
                 0,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 9,
                 26,
                 0,
-                0xFFu8 as c_char,
+                0xFFu8 as i8,
             ],
-            anjm2: [0x80u8 as c_char, 0, 0, 26, 0, 0xFFu8 as c_char],
-            anjm3: [4, 26, 0, 0xFFu8 as c_char],
-            anacr1: [0x80u8 as c_char, 2, 15, 27, 1, 0xFFu8 as c_char],
-            anacr2: [16, 27, 2, 0xFFu8 as c_char],
-            angen1: [0x80u8 as c_char, 13, 17, 19, 0, 0xFFu8 as c_char],
-            angen2: [18, 24, 0, 0xFFu8 as c_char],
+            anjm2: [0x80u8 as i8, 0, 0, 26, 0, 0xFFu8 as i8],
+            anjm3: [4, 26, 0, 0xFFu8 as i8],
+            anacr1: [0x80u8 as i8, 2, 15, 27, 1, 0xFFu8 as i8],
+            anacr2: [16, 27, 2, 0xFFu8 as i8],
+            angen1: [0x80u8 as i8, 13, 17, 19, 0, 0xFFu8 as i8],
+            angen2: [18, 24, 0, 0xFFu8 as i8],
             anaga1: [
                 15,
                 27,
                 1,
-                0x80u8 as c_char,
+                0x80u8 as i8,
                 -1,
                 8,
                 26,
                 0,
-                0x81u8 as c_char,
-                0x80u8 as c_char,
+                0x81u8 as i8,
+                0x80u8 as i8,
                 -2,
                 9,
                 26,
                 0,
-                0x81u8 as c_char,
-                0x80u8 as c_char,
+                0x81u8 as i8,
+                0x80u8 as i8,
                 -1,
                 0,
                 26,
                 0,
-                0x80u8 as c_char,
+                0x80u8 as i8,
                 0,
-                0x82u8 as c_char,
-                0x86u8 as c_char,
+                0x82u8 as i8,
+                0x86u8 as i8,
                 127,
-                0xFFu8 as c_char,
+                0xFFu8 as i8,
             ],
             anaga2: [
                 16,
@@ -540,36 +529,36 @@ impl Default for Sapglob {
                 6,
                 26,
                 0,
-                0x82u8 as c_char,
-                0xFFu8 as c_char,
+                0x82u8 as i8,
+                0xFFu8 as i8,
             ],
             anrga1: [
                 15,
                 27,
                 1,
-                0x80u8 as c_char,
+                0x80u8 as i8,
                 -1,
                 0,
                 26,
                 0,
-                0x85u8 as c_char,
-                0x80u8 as c_char,
+                0x85u8 as i8,
+                0x80u8 as i8,
                 -2,
                 9,
                 26,
                 0,
-                0x80u8 as c_char,
+                0x80u8 as i8,
                 -1,
-                0x85u8 as c_char,
+                0x85u8 as i8,
                 8,
                 26,
                 0,
-                0x80u8 as c_char,
+                0x80u8 as i8,
                 0,
-                0x82u8 as c_char,
-                0x86u8 as c_char,
+                0x82u8 as i8,
+                0x86u8 as i8,
                 127,
-                0xFFu8 as c_char,
+                0xFFu8 as i8,
             ],
             anrga2: [
                 16,
@@ -584,8 +573,8 @@ impl Default for Sapglob {
                 5,
                 26,
                 0,
-                0x82u8 as c_char,
-                0xFFu8 as c_char,
+                0x82u8 as i8,
+                0xFFu8 as i8,
             ],
             anbras: [
                 31,
@@ -619,12 +608,12 @@ impl Default for Sapglob {
                 31,
                 12,
                 0,
-                0xFFu8 as c_char,
+                0xFFu8 as i8,
             ],
-            anbra1: [34, 12, 0, 0xFFu8 as c_char],
-            anbra2: [33, 12, 0, 0xFFu8 as c_char],
-            anhac1: [38, 12, 0, 0xFFu8 as c_char],
-            ansag1: [36, 9, 2, 0xFFu8 as c_char],
+            anbra1: [34, 12, 0, 0xFFu8 as i8],
+            anbra2: [33, 12, 0, 0xFFu8 as i8],
+            anhac1: [38, 12, 0, 0xFFu8 as i8],
+            ansag1: [36, 9, 2, 0xFFu8 as i8],
             anpoin: [
                 34,
                 12,
@@ -632,14 +621,14 @@ impl Default for Sapglob {
                 107,
                 12,
                 -1,
-                0x87u8 as c_char,
+                0x87u8 as i8,
                 3,
                 37,
                 12,
                 1,
-                0x86u8 as c_char,
-                252u8 as c_char,
-                0xFFu8 as c_char,
+                0x86u8 as i8,
+                252u8 as i8,
+                0xFFu8 as i8,
             ],
             anhach: [
                 38,
@@ -657,9 +646,9 @@ impl Default for Sapglob {
                 39,
                 12,
                 -1,
-                0x86u8 as c_char,
-                252u8 as c_char,
-                0xFFu8 as c_char,
+                0x86u8 as i8,
+                252u8 as i8,
+                0xFFu8 as i8,
             ],
             ansag: [
                 36,
@@ -668,14 +657,14 @@ impl Default for Sapglob {
                 37,
                 9,
                 1,
-                0x86u8 as c_char,
-                252u8 as c_char,
-                0x88u8 as c_char,
-                0xFFu8 as c_char,
+                0x86u8 as i8,
+                252u8 as i8,
+                0x88u8 as i8,
+                0xFFu8 as i8,
             ],
-            anbust: [120, 12, 1, 0xFFu8 as c_char],
+            anbust: [120, 12, 1, 0xFFu8 as i8],
             anbst1: [
-                0x80u8 as c_char,
+                0x80u8 as i8,
                 18,
                 121,
                 12,
@@ -689,12 +678,12 @@ impl Default for Sapglob {
                 121,
                 12,
                 1,
-                0x84u8 as c_char,
-                0xFFu8 as c_char,
+                0x84u8 as i8,
+                0xFFu8 as i8,
             ],
-            antete: [53, 0, 2, 53, 0, 2, 54, 0, 2, 54, 0, 2, 0xFFu8 as c_char],
-            antet1: [53, 0, 2, 54, 0, 2, 0xFFu8 as c_char],
-            antet2: [53, 0, 2, 0xFFu8 as c_char],
+            antete: [53, 0, 2, 53, 0, 2, 54, 0, 2, 54, 0, 2, 0xFFu8 as i8],
+            antet1: [53, 0, 2, 54, 0, 2, 0xFFu8 as i8],
+            antet2: [53, 0, 2, 0xFFu8 as i8],
             anarm1: [
                 45,
                 7,
@@ -702,7 +691,7 @@ impl Default for Sapglob {
                 47,
                 8,
                 -3,
-                0x87u8 as c_char,
+                0x87u8 as i8,
                 3,
                 49,
                 6,
@@ -713,51 +702,51 @@ impl Default for Sapglob {
                 45,
                 8,
                 -2,
-                0x86u8 as c_char,
-                252u8 as c_char,
-                0xFFu8 as c_char,
+                0x86u8 as i8,
+                252u8 as i8,
+                0xFFu8 as i8,
             ],
-            anarm3: [45, 7, -2, 0xFFu8 as c_char],
-            anarm4: [43, 11, -1, 0xFFu8 as c_char],
-            aneutr: [0x83u8 as c_char, 0xFFu8 as c_char],
-            anlou1: [96, 26, 0, 0xFFu8 as c_char],
+            anarm3: [45, 7, -2, 0xFFu8 as i8],
+            anarm4: [43, 11, -1, 0xFFu8 as i8],
+            aneutr: [0x83u8 as i8, 0xFFu8 as i8],
+            anlou1: [96, 26, 0, 0xFFu8 as i8],
             anlou2: [
                 95,
                 26,
                 0,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 96,
                 26,
                 0,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 97,
                 26,
                 0,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 98,
                 26,
                 0,
-                0x81u8 as c_char,
-                0x87u8 as c_char,
+                0x81u8 as i8,
+                0x87u8 as i8,
                 1,
-                0xFFu8 as c_char,
+                0xFFu8 as i8,
             ],
-            anlap1: [87, 35, 0, 87, 35, 0, 0xFFu8 as c_char],
+            anlap1: [87, 35, 0, 87, 35, 0, 0xFFu8 as i8],
             anlap2: [
                 87,
                 35,
                 0,
-                0x81u8 as c_char,
+                0x81u8 as i8,
                 88,
                 35,
                 0,
                 89,
                 35,
                 0,
-                0x81u8 as c_char,
-                0xFFu8 as c_char,
+                0x81u8 as i8,
+                0xFFu8 as i8,
             ],
-            anlap3: [90, 28, 2, 90, 28, 2, 90, 28, 2, 90, 28, 2, 0xFFu8 as c_char],
+            anlap3: [90, 28, 2, 90, 28, 2, 90, 28, 2, 90, 28, 2, 0xFFu8 as i8],
             debban: [[null_mut(); 14]; 13],
             sap1: sap {
                 colonne: 2,
@@ -1647,8 +1636,8 @@ impl<'a> Iterator for PeupleIter<'a> {
 }
 
 /* Heure,ciel,terre */
-const fn pal_s<const N: usize>(v: [c_short; N]) -> [c_short; 32] {
-    let mut out = [0 as c_short; 32];
+const fn pal_s<const N: usize>(v: [i16; N]) -> [i16; 32] {
+    let mut out = [0 as i16; 32];
     let mut i = 0;
     while i < N {
         out[i] = v[i];
@@ -1657,7 +1646,7 @@ const fn pal_s<const N: usize>(v: [c_short; N]) -> [c_short; 32] {
     out
 }
 
-fn hc(h: c_short, q: c_short, pal: [c_short; 32]) -> h_chron {
+fn hc(h: i16, q: i16, pal: [i16; 32]) -> h_chron {
     h_chron {
         h,
         q,
@@ -1678,7 +1667,7 @@ impl Sapiens {
             // macro prête à l'emploi
             macro_rules! ccp {
                 ($x:expr) => {
-                    ($x) as *mut c_char
+                    ($x) as *mut i8
                 };
             }
 

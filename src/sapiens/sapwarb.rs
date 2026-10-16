@@ -5,20 +5,19 @@ use crate::acam::DisposPtr;
 use crate::sapiens::sapw3d::{cosshort, sinshort};
 use crate::shared::Ptr;
 use crate::{Sapiens, port};
-use std::os::raw::c_short;
 
 pub(crate) struct Sapwarb {
-    niveau: c_short,    /*niveau de recusrsivite*/
-    largtronc: c_short, /* Largeur du tronc*/
-    numfeu: c_short,    /*type de la feuille*/
-    amini: c_short,
-    qutlgn: c_short,
-    densif: c_short,
-    fortou: [c_short; 4],
-    TabIndexFeuilleNuit: *mut c_short,
+    niveau: i16,    /*niveau de recusrsivite*/
+    largtronc: i16, /* Largeur du tronc*/
+    numfeu: i16,    /*type de la feuille*/
+    amini: i16,
+    qutlgn: i16,
+    densif: i16,
+    fortou: [i16; 4],
+    TabIndexFeuilleNuit: *mut i16,
 
     /* 9 valeurs initiales + 1 slot: SAPWBRT lit tabcoul[9], SAPW3D l'écrit */
-    pub(crate) tabcoul: [c_short; 10],
+    pub(crate) tabcoul: [i16; 10],
 }
 
 impl Default for Sapwarb {
@@ -39,14 +38,14 @@ impl Default for Sapwarb {
     }
 }
 
-const tabrnd: [c_short; 10] = [20, 30, 8, 1, 6, 12, 20, 6, 10, 4]; /* Rnd , base */
-const tram_arbre: [c_short; 9] = [1, 3, 4, 5, 6, 5, 4, 3, 1];
+const tabrnd: [i16; 10] = [20, 30, 8, 1, 6, 12, 20, 6, 10, 4]; /* Rnd , base */
+const tram_arbre: [i16; 9] = [1, 3, 4, 5, 6, 5, 4, 3, 1];
 
 impl Sapiens {
     /**************************************************************************
                             calpar
     ***************************************************************************/
-    fn calpar(&mut self, largeur: c_short, ang: *mut c_short, lr: *mut c_short, lo: *mut c_short) {
+    fn calpar(&mut self, largeur: i16, ang: *mut i16, lr: *mut i16, lo: *mut i16) {
         let mut n = self.sapwarb.largtronc as i32
             - ((self.random.rnd0() as i32
                 * self.sapwarb.qutlgn as i32
@@ -57,7 +56,7 @@ impl Sapiens {
         }
         n += 1;
         unsafe {
-            *lo = n as c_short;
+            *lo = n as i16;
         }
         let mut largeur =
             ((self.random.rnd0() as i32 * (largeur >> 1) as i32) >> 8) + (largeur >> 2) as i32 + 1;
@@ -65,8 +64,8 @@ impl Sapiens {
             largeur += 1;
         }
         unsafe {
-            *ang = (((self.random.rnd0() as i32 * 70) >> 8) + self.sapwarb.amini as i32) as c_short;
-            *lr = largeur as c_short;
+            *ang = (((self.random.rnd0() as i32 * 70) >> 8) + self.sapwarb.amini as i32) as i16;
+            *lr = largeur as i16;
         }
     }
 
@@ -77,9 +76,9 @@ impl Sapiens {
     ;   Densif,Fortou,Numfeu
     ; <- oh que c'est joli !
     ***************************************************************************/
-    fn touffe(&mut self, colonne: c_short, ligne: c_short) {
-        let mut angle: c_short = 0; /* D5*/
-        let mut forme: c_short = 0;
+    fn touffe(&mut self, colonne: i16, ligne: i16) {
+        let mut angle: i16 = 0; /* D5*/
+        let mut forme: i16 = 0;
 
         for _ in 0..self.sapwarb.densif {
             let r = self.random.rnd0();
@@ -102,8 +101,8 @@ impl Sapiens {
                 let sens = self.random.rnd0() & 1;
                 self.Affmobbrt(
                     crate::MOB_FEUILLE!(self.sapwind) + self.sapwarb.numfeu + forme,
-                    x as c_short,
-                    y as c_short,
+                    x as i16,
+                    y as i16,
                     sens,
                     self.sapwarb.TabIndexFeuilleNuit,
                 );
@@ -112,7 +111,7 @@ impl Sapiens {
             if forme > 3 {
                 forme = 0;
             }
-            angle = ((angle as i32 + (self.random.rnd0() as i32 + 256)) & 1023) as c_short;
+            angle = ((angle as i32 + (self.random.rnd0() as i32 + 256)) & 1023) as i16;
         }
     }
 
@@ -121,11 +120,11 @@ impl Sapiens {
     ***************************************************************************/
     fn tracebranche(
         &mut self,
-        angle: c_short,    /*D1*/
-        colonne: c_short,  /*D2*/
-        ligne: c_short,    /*D3*/
-        longueur: c_short, /*D4*/
-        largeur: c_short,  /*D5*/
+        angle: i16,    /*D1*/
+        colonne: i16,  /*D2*/
+        ligne: i16,    /*D3*/
+        longueur: i16, /*D4*/
+        largeur: i16,  /*D5*/
     ) {
         self.sapwarb.niveau += 1;
         if self.sapwarb.niveau < 15 {
@@ -156,18 +155,18 @@ impl Sapiens {
                 &mut AncXG,
                 &mut AncXD,
                 &mut Ancy,
-                posg as c_short,
-                posd as c_short,
-                epaisseur as c_short,
+                posg as i16,
+                posd as i16,
+                epaisseur as i16,
             );
             if largeur < 2 {
                 self.touffe((AncXG + AncXD) / 2, Ancy);
             } else if Ancy > 0 {
                 /* Branche gauche */
-                let mut ang: c_short = 0;
-                let mut lr: c_short = 0;
-                let mut lo: c_short = 0;
-                let mut bidon: c_short = 0;
+                let mut ang: i16 = 0;
+                let mut lr: i16 = 0;
+                let mut lo: i16 = 0;
+                let mut bidon: i16 = 0;
                 self.calpar(largeur, &mut ang, &mut lr, &mut lo); /*Largeur longueur deltangle */
                 ang = ang + angle;
                 if ang > 450 {
@@ -194,7 +193,7 @@ impl Sapiens {
                                 arbre
     ***************************************************************************/
     #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn arbre(&mut self, ligne: c_short, colonne: c_short) {
+    pub(crate) extern "C" fn arbre(&mut self, ligne: i16, colonne: i16) {
         let _g = port::on(self.sapwind.Ecran1);
         /* La position du meteore varie de 74 a 0 puis de 0 a 74 */
         if self.sapglob.heure > 512 {
@@ -209,20 +208,20 @@ impl Sapiens {
         self.sapwarb.niveau = 0;
         self.sapwarb.tabcoul[..tram_arbre.len()].copy_from_slice(&tram_arbre);
         /* On tire au hasard le numero de la feuille */
-        self.sapwarb.numfeu = (((self.random.rnd0() as i32 * 9) >> 8) * 4) as c_short;
+        self.sapwarb.numfeu = (((self.random.rnd0() as i32 * 9) >> 8) * 4) as i16;
         /* On tire les autres parametres au hasard (5 parametres)*/
         self.sapwarb.amini =
-            (((self.random.rnd0() as i32 * tabrnd[0] as i32) >> 8) + tabrnd[1] as i32) as c_short;
+            (((self.random.rnd0() as i32 * tabrnd[0] as i32) >> 8) + tabrnd[1] as i32) as i16;
         self.sapwarb.qutlgn =
-            (((self.random.rnd0() as i32 * tabrnd[2] as i32) >> 8) + tabrnd[3] as i32) as c_short;
+            (((self.random.rnd0() as i32 * tabrnd[2] as i32) >> 8) + tabrnd[3] as i32) as i16;
         self.sapwarb.densif =
-            (((self.random.rnd0() as i32 * tabrnd[4] as i32) >> 8) + tabrnd[5] as i32) as c_short;
+            (((self.random.rnd0() as i32 * tabrnd[4] as i32) >> 8) + tabrnd[5] as i32) as i16;
         self.sapwarb.fortou[0] =
-            (((self.random.rnd0() as i32 * tabrnd[6] as i32) >> 8) + tabrnd[7] as i32) as c_short;
+            (((self.random.rnd0() as i32 * tabrnd[6] as i32) >> 8) + tabrnd[7] as i32) as i16;
         self.sapwarb.fortou[1] =
-            (((self.random.rnd0() as i32 * tabrnd[8] as i32) >> 8) + tabrnd[9] as i32) as c_short;
-        let longueur = (((self.random.rnd0() as i32 * 6) >> 8) + 10) as c_short;
-        let largeur = (((self.random.rnd0() as i32 * 10) >> 8) + 10) as c_short;
+            (((self.random.rnd0() as i32 * tabrnd[8] as i32) >> 8) + tabrnd[9] as i32) as i16;
+        let longueur = (((self.random.rnd0() as i32 * 6) >> 8) + 10) as i16;
+        let largeur = (((self.random.rnd0() as i32 * 10) >> 8) + 10) as i16;
         self.sapwarb.largtronc = largeur;
         self.tracebranche(256, colonne, ligne, longueur, largeur);
         if !self.sapwarb.TabIndexFeuilleNuit.is_null() {

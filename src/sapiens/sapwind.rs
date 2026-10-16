@@ -5,7 +5,6 @@
 ;-----------------------------------------------------------------------
 */
 use std::ffi::c_void;
-use std::os::raw::{c_char, c_long, c_short, c_ushort};
 use std::process::exit;
 
 use crate::Sapiens;
@@ -48,29 +47,29 @@ use crate::stubs::{
 use crate::text::{DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize};
 
 /******************** Constantes (SAPIENS.H / acam.h) *******************/
-const VERS: c_long = 0x76657273; /* 'vers' */
-const ALRT_VERSION: c_short = 133;
-const noGrowDocProc: c_short = 0;
+const VERS: i64 = 0x76657273; /* 'vers' */
+const ALRT_VERSION: i16 = 133;
+const noGrowDocProc: i16 = 0;
 
 /******************* Constantes menus (SAPWIND.C) *******************/
-const itemInformation: c_short = 1;
-const itemAide: c_short = 2;
+const itemInformation: i16 = 1;
+const itemAide: i16 = 2;
 
-const itemNouveau: c_short = 1;
-const itemCharger: c_short = 2;
-const itemSauver: c_short = 3;
-const itemPreferences: c_short = 5;
-const itemQuitter: c_short = 7;
+const itemNouveau: i16 = 1;
+const itemCharger: i16 = 2;
+const itemSauver: i16 = 3;
+const itemPreferences: i16 = 5;
+const itemQuitter: i16 = 7;
 
-const iPaysage: c_short = 1;
-const iLaterale: c_short = 2;
-const iPanorama: c_short = 3;
-const iCarte: c_short = 4;
+const iPaysage: i16 = 1;
+const iLaterale: i16 = 2;
+const iPanorama: i16 = 3;
+const iCarte: i16 = 4;
 
-const iEchelle100: c_short = 1;
-const iEchelle200: c_short = 2;
-const iEchelle300: c_short = 3;
-const iEchelle400: c_short = 4;
+const iEchelle100: i16 = 1;
+const iEchelle200: i16 = 2;
+const iEchelle300: i16 = 3;
+const iEchelle400: i16 = 4;
 
 /*************** Variables globales exposees au C (SAPWIND.C) ***************/
 
@@ -84,19 +83,19 @@ pub(crate) struct SapWind {
     pub(crate) debecr: CGrafPtr,
     pub(crate) BuffMouse: CGrafPtr,
 
-    pub(crate) toucheClav: c_short,
-    pub(crate) mobBambou: c_short,
-    pub(crate) mobFace: c_short,
-    pub(crate) mobFeuille: c_short,
-    pub(crate) mobFleches: c_short,
-    pub(crate) mobSapmob: c_short,
-    pub(crate) mobAvplan: c_short,
-    pub(crate) mobAvplanSpec: c_short,
-    pub(crate) mobSilex: c_short,
-    pub(crate) mob3D: c_short,
-    pub(crate) Fonte14: c_short,
-    pub(crate) Fonte10: c_short,
-    OneString: [c_char; 200],
+    pub(crate) toucheClav: i16,
+    pub(crate) mobBambou: i16,
+    pub(crate) mobFace: i16,
+    pub(crate) mobFeuille: i16,
+    pub(crate) mobFleches: i16,
+    pub(crate) mobSapmob: i16,
+    pub(crate) mobAvplan: i16,
+    pub(crate) mobAvplanSpec: i16,
+    pub(crate) mobSilex: i16,
+    pub(crate) mob3D: i16,
+    pub(crate) Fonte14: i16,
+    pub(crate) Fonte10: i16,
+    OneString: [i8; 200],
 }
 
 impl Default for SapWind {
@@ -148,8 +147,8 @@ impl SapWind {
         Rect::new(
             0,
             0,
-            (320.0 * ECHELLE as f32 * self.SapZoom) as c_short,
-            (200.0 * ECHELLE as f32 * self.SapZoom) as c_short,
+            (320.0 * ECHELLE as f32 * self.SapZoom) as i16,
+            (200.0 * ECHELLE as f32 * self.SapZoom) as i16,
         )
     }
 }
@@ -164,7 +163,7 @@ Structure des 'vers'
 taille de la chaine courte suivi de la chaine courte
 taille de la chaine longue suivi de la chaine longue
 ******************************************************************************************/
-pub(crate) fn GetVersionSapiens(chaine: *mut c_char) -> Boolean {
+pub(crate) fn GetVersionSapiens(chaine: *mut i8) -> Boolean {
     unsafe {
         chaine.write(0);
         let ress: Handle = GetResource(VERS, 1);
@@ -184,10 +183,10 @@ pub(crate) fn GetVersionSapiens(chaine: *mut c_char) -> Boolean {
 }
 
 /** Remplace `vsprintf` (sans varargs) : copie `s` dans le tampon C. */
-fn copie_chaine(buf: &mut [c_char], s: &str) {
+fn copie_chaine(buf: &mut [i8], s: &str) {
     let n = s.len().min(buf.len() - 1);
     for (i, b) in s.as_bytes()[..n].iter().enumerate() {
-        buf[i] = *b as c_char;
+        buf[i] = *b as i8;
     }
     buf[n] = 0;
 }
@@ -206,7 +205,7 @@ impl Sapiens {
         }
 
         /* On fixe la zone à la zone de secours de l'interface */
-        let mut chaine: [c_char; TAILLE_STR_MESS_FORMATE as usize] = [0; 512];
+        let mut chaine: [i8; TAILLE_STR_MESS_FORMATE as usize] = [0; 512];
         copie_chaine(&mut chaine, message);
         CarboniseSetCursorArrow();
         CtoPstr(chaine.as_mut_ptr());
@@ -224,20 +223,20 @@ impl Sapiens {
                         MessInit
 Affichage d'un message durant l'initialisation
 ***********************************************************************************/
-pub(crate) fn MessInit(_format: *mut c_char) {}
+pub(crate) fn MessInit(_format: *mut i8) {}
 
 /**********************************************************************************
                                 SetValItem
 => Fixe une valeur type chainedans un item
 <= VRAI si la valeur est bonne, FAUX si la valeur a été tronquée
 **********************************************************************************/
-pub(crate) fn SetValItem(dialog: DialogPtr, itemHit: c_short, c: *mut c_char) -> c_short {
-    let mut itemType: c_short = 0;
+pub(crate) fn SetValItem(dialog: DialogPtr, itemHit: i16, c: *mut i8) -> i16 {
+    let mut itemType: i16 = 0;
     let mut control: Handle = core::ptr::null_mut();
     let mut box_: Rect = Rect::default();
-    let mut chaine: [c_char; 255] = [0; 255];
+    let mut chaine: [i8; 255] = [0; 255];
     unsafe {
-        strcpy(&raw mut chaine as *mut c_char, c);
+        strcpy(&raw mut chaine as *mut i8, c);
     }
     /* C'est un texte ??? */
     GetDItem(
@@ -249,21 +248,21 @@ pub(crate) fn SetValItem(dialog: DialogPtr, itemHit: c_short, c: *mut c_char) ->
     );
     /* On fixe la chaine */
     CtoPstr(chaine.as_mut_ptr());
-    if (itemType & editText as c_short) != 0 || (itemType & statText as c_short) != 0 {
+    if (itemType & editText as i16) != 0 || (itemType & statText as i16) != 0 {
         SetIText(control, &raw mut chaine as *mut u8);
     }
-    if (itemType & ctrlItem as c_short) != 0 {
+    if (itemType & ctrlItem as i16) != 0 {
         SetCTitle(control, &raw mut chaine as *mut u8);
     }
-    VRAI as c_short
+    VRAI as i16
 }
 
 /***********************************************************************************
                                 SetValBouton
 => Fixe une valeur VRAI ou FAUX dans un bouton
 **********************************************************************************/
-pub(crate) fn SetValBouton(dialog: DialogPtr, itemHit: c_short, value: Boolean) -> c_short {
-    let mut itemType: c_short = 0;
+pub(crate) fn SetValBouton(dialog: DialogPtr, itemHit: i16, value: Boolean) -> i16 {
+    let mut itemType: i16 = 0;
     let mut control: Handle = core::ptr::null_mut();
     let mut box_: Rect = Rect::default();
 
@@ -275,7 +274,7 @@ pub(crate) fn SetValBouton(dialog: DialogPtr, itemHit: c_short, value: Boolean) 
         &raw mut control,
         &raw mut box_,
     );
-    if (itemType & ctrlItem as c_short) != 0 || (itemType & radCtrl as c_short) != 0 {
+    if (itemType & ctrlItem as i16) != 0 || (itemType & radCtrl as i16) != 0 {
         GetDItem(
             dialog,
             itemHit,
@@ -284,9 +283,9 @@ pub(crate) fn SetValBouton(dialog: DialogPtr, itemHit: c_short, value: Boolean) 
             &raw mut box_,
         );
         SetCtlValue(control as ControlHandle, if value { 1 } else { 0 });
-        VRAI as c_short
+        VRAI as i16
     } else {
-        FAUX as c_short
+        FAUX as i16
     }
 }
 
@@ -294,11 +293,11 @@ pub(crate) fn SetValBouton(dialog: DialogPtr, itemHit: c_short, value: Boolean) 
                                 GetValBouton
 =>lit une valeur VRAI ou FAUX dans un bouton
 **********************************************************************************/
-pub(crate) fn GetValBouton(dialog: DialogPtr, itemHit: c_short) -> c_short {
-    let mut itemType: c_short = 0;
+pub(crate) fn GetValBouton(dialog: DialogPtr, itemHit: i16) -> i16 {
+    let mut itemType: i16 = 0;
     let mut control: Handle = core::ptr::null_mut();
     let mut box_: Rect = Rect::default();
-    let value: c_short;
+    let value: i16;
 
     /* C'est un bouton ??? */
     GetDItem(
@@ -308,7 +307,7 @@ pub(crate) fn GetValBouton(dialog: DialogPtr, itemHit: c_short) -> c_short {
         &raw mut control,
         &raw mut box_,
     );
-    if (itemType & ctrlItem as c_short) != 0 || (itemType & radCtrl as c_short) != 0 {
+    if (itemType & ctrlItem as i16) != 0 || (itemType & radCtrl as i16) != 0 {
         GetDItem(
             dialog,
             itemHit,
@@ -319,15 +318,15 @@ pub(crate) fn GetValBouton(dialog: DialogPtr, itemHit: c_short) -> c_short {
         value = GetCtlValue(control as ControlHandle);
         return value;
     }
-    FAUX as c_short
+    FAUX as i16
 }
 
 /***********************************************************************************
                                 GetValItem
 Lit  une valeur type chaine dans un item texte editable
 **********************************************************************************/
-pub(crate) fn GetValItem(dialog: DialogPtr, itemHit: c_short, chaine: *mut c_char) -> c_short {
-    let mut itemType: c_short = 0;
+pub(crate) fn GetValItem(dialog: DialogPtr, itemHit: i16, chaine: *mut i8) -> i16 {
+    let mut itemType: i16 = 0;
     let mut handle: Handle = core::ptr::null_mut();
     let mut box_: Rect = Rect::default();
 
@@ -339,12 +338,12 @@ pub(crate) fn GetValItem(dialog: DialogPtr, itemHit: c_short, chaine: *mut c_cha
         &raw mut handle,
         &raw mut box_,
     );
-    if (itemType & editText as c_short) != 0 || (itemType & statText as c_short) != 0 {
+    if (itemType & editText as i16) != 0 || (itemType & statText as i16) != 0 {
         GetIText(handle, chaine as *mut u8);
         PtoCstr(chaine as *mut u8);
-        VRAI as c_short
+        VRAI as i16
     } else {
-        FAUX as c_short
+        FAUX as i16
     }
 }
 
@@ -355,12 +354,12 @@ pub(crate) fn GetValItem(dialog: DialogPtr, itemHit: c_short, chaine: *mut c_cha
 ******************************************************************************************/
 pub(crate) fn DefAfficheItem(
     dialog: DialogPtr,
-    item: c_short,
-    vect_affiche: Option<unsafe extern "C" fn(window: DialogPtr, itemid: c_short)>,
+    item: i16,
+    vect_affiche: Option<unsafe extern "C" fn(window: DialogPtr, itemid: i16)>,
 ) {
     let mut handle: Handle = core::ptr::null_mut();
     let mut rect: Rect = Rect::default();
-    let mut itemType: c_short = 0;
+    let mut itemType: i16 = 0;
 
     GetDialogItem(
         dialog,
@@ -369,7 +368,7 @@ pub(crate) fn DefAfficheItem(
         &raw mut handle,
         &raw mut rect,
     );
-    if (itemType & 127) == userItem as c_short {
+    if (itemType & 127) == userItem as i16 {
         /* Deja un vecteur pour cet item ? */
         if !handle.is_null() {
             DisposeRoutineDescriptor(handle as *mut c_void);
@@ -392,7 +391,7 @@ impl Sapiens {
     /******************************************************************************************
                                         DoAlertSapiens
     ******************************************************************************************/
-    pub(crate) fn DoAlertSapiens(&self, num: c_short) -> c_short {
+    pub(crate) fn DoAlertSapiens(&self, num: i16) -> i16 {
         let n = Alert(num, core::ptr::null_mut());
         self.tfrvirt();
         self.TfrEcr(None);
@@ -404,8 +403,8 @@ impl Sapiens {
                                     GetRectItem
 => Recupere le cadre d'un item donné
 ******************************************************************************************/
-pub(crate) fn GetRectItem(dialog: DialogPtr, item: c_short, box_: *mut Rect) {
-    let mut itemType: c_short = 0;
+pub(crate) fn GetRectItem(dialog: DialogPtr, item: i16, box_: *mut Rect) {
+    let mut itemType: i16 = 0;
     let mut handle: Handle = core::ptr::null_mut();
 
     /* On récupère l'item coorespondant à l'aire (seule l'aire nous intéresse) */
@@ -416,7 +415,7 @@ pub(crate) fn GetRectItem(dialog: DialogPtr, item: c_short, box_: *mut Rect) {
                        DrawArrowPopUp
 ****************************************************************************/
 pub(crate) fn DrawArrowPopUp(r: *mut Rect) {
-    let mut i: c_short = 0;
+    let mut i: i16 = 0;
     unsafe {
         let y = ((*r).bottom + (*r).top) / 2 + 3;
         let box_ = Rect::new(
@@ -440,11 +439,11 @@ impl SapWind {
     Recupere une chaine indexée dans une locale et la passe au format C
     <= Ptr sur la locale
     ******************************************************************************************/
-    pub(crate) fn GetStr(&mut self, index: c_short) -> *mut c_char {
-        let s = &raw mut self.OneString as *mut c_char;
+    pub(crate) fn GetStr(&mut self, index: i16) -> *mut i8 {
+        let s = &raw mut self.OneString as *mut i8;
         GetIndString(
             s as *mut c_void as StringPtr,
-            CvtDefaultLangRess(STR_VRAC as c_short),
+            CvtDefaultLangRess(STR_VRAC as i16),
             index,
         );
         PtoCstr(s as *mut u8);
@@ -456,35 +455,33 @@ impl Random {
     /**********************************************************************
                         initrnd
     ***********************************************************************/
-    pub(crate) fn initrnd(&mut self, sem1: c_short, sem2: c_short, sem3: c_short) {
-        self.CarboniseSetRandSeed(
-            ((sem1 as c_long) << 16) + ((sem2 as c_long) << 8) + sem3 as c_long,
-        );
+    pub(crate) fn initrnd(&mut self, sem1: i16, sem2: i16, sem3: i16) {
+        self.CarboniseSetRandSeed(((sem1 as i64) << 16) + ((sem2 as i64) << 8) + sem3 as i64);
     }
 
     /**********************************************************************
                         rnd0
     ***********************************************************************/
-    pub(crate) fn rnd0(&mut self) -> c_short {
-        (self.Random() & 0xFF) as c_short
+    pub(crate) fn rnd0(&mut self) -> i16 {
+        (self.Random() & 0xFF) as i16
     }
 
     /**********************************************************************
                         Rnd
     ***********************************************************************/
-    pub(crate) fn Rnd(&mut self) -> c_short {
-        (self.Random() & 0xFF) as c_short
+    pub(crate) fn Rnd(&mut self) -> i16 {
+        (self.Random() & 0xFF) as i16
     }
 
     /**********************************************************************
                         myRandom
     Sort une valeur entre deux bornes
     ***********************************************************************/
-    pub(crate) fn myRandom(&mut self, min: c_long, max: c_long) -> c_long {
-        let mut rdm = (self.Rnd() as c_long) as u16;
-        rdm = rdm.wrapping_add(((self.Rnd() as c_long) * 256) as u16);
+    pub(crate) fn myRandom(&mut self, min: i64, max: i64) -> i64 {
+        let mut rdm = (self.Rnd() as i64) as u16;
+        rdm = rdm.wrapping_add(((self.Rnd() as i64) * 256) as u16);
         let range = max - min;
-        let t = ((rdm as c_long) * range) / 65536;
+        let t = ((rdm as i64) * range) / 65536;
         min + t
     }
 }
@@ -493,7 +490,7 @@ impl Random {
 Affiche une bande sur les cotés
 ***********************************************************************/
 /*;********* BANDE_: 0= bande jeu, 1= bande silex *******************/
-pub(crate) fn bande(_quelle: c_short) {}
+pub(crate) fn bande(_quelle: i16) {}
 
 impl Sapiens {
     /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -504,19 +501,12 @@ impl Sapiens {
     Les  coordonnées sont données en ecran ST 320x200
     (C) Ligne dep,Col dep,Ligne fin,col.fin,index couleur ST
     ***************************************************************************/
-    pub(crate) fn boxf(
-        &self,
-        lignedep: c_short,
-        coldep: c_short,
-        lignefin: c_short,
-        colfin: c_short,
-        index: c_short,
-    ) {
+    pub(crate) fn boxf(&self, lignedep: i16, coldep: i16, lignefin: i16, colfin: i16, index: i16) {
         let mut aire = Rect::new(
-            coldep * ECHELLE as c_short,
-            lignedep * ECHELLE as c_short,
-            colfin * ECHELLE as c_short,
-            lignefin * ECHELLE as c_short,
+            coldep * ECHELLE as i16,
+            lignedep * ECHELLE as i16,
+            colfin * ECHELLE as i16,
+            lignefin * ECHELLE as i16,
         );
         unsafe {
             self.BoxFill(
@@ -537,7 +527,7 @@ impl Sapiens {
 ;=> numero ligne pixel deut *2,col octet,n ligne/2,n col
 ;<= sur ecran cadre xor
 */
-pub(crate) fn cadreg(_ligne: c_short, _col: c_short, _nligne: c_short, _ncol: c_short) {}
+pub(crate) fn cadreg(_ligne: i16, _col: i16, _nligne: i16, _ncol: i16) {}
 
 impl Sapiens {
     /******************************************************************************************
@@ -563,10 +553,10 @@ impl Sapiens {
             EnableItem(menu, 0);
         }
         menu = GetMHandle(CvtDefaultLangRess(131)); /* menuFenetre */
-        CheckItem(menu, iEchelle100 as c_short, self.sapwind.SapZoom == 1.0);
-        CheckItem(menu, iEchelle200 as c_short, self.sapwind.SapZoom == 2.0);
-        CheckItem(menu, iEchelle300 as c_short, self.sapwind.SapZoom == 3.0);
-        CheckItem(menu, iEchelle400 as c_short, self.sapwind.SapZoom == 4.0);
+        CheckItem(menu, iEchelle100 as i16, self.sapwind.SapZoom == 1.0);
+        CheckItem(menu, iEchelle200 as i16, self.sapwind.SapZoom == 2.0);
+        CheckItem(menu, iEchelle300 as i16, self.sapwind.SapZoom == 3.0);
+        CheckItem(menu, iEchelle400 as i16, self.sapwind.SapZoom == 4.0);
         DrawMenuBar();
     }
 
@@ -604,9 +594,9 @@ impl Sapiens {
     ******************************************************************************************/
     #[unsafe(no_mangle)]
     pub(crate) unsafe extern "C" fn DoInfo(&self) {
-        let mut str_: [c_char; 255] = [0; 255];
+        let mut str_: [i8; 255] = [0; 255];
         unsafe {
-            GetVersionSapiens(&raw mut str_ as *mut c_char);
+            GetVersionSapiens(&raw mut str_ as *mut i8);
         }
         CtoPstr(str_.as_mut_ptr());
         ParamText(
@@ -623,14 +613,14 @@ impl Sapiens {
     *******************************************************************************************/
 
     pub(crate) fn DoMenuCommand(&mut self, menuResult: i32) {
-        let menuID: c_short;
-        let menuItem: c_short;
+        let menuID: i16;
+        let menuItem: i16;
         let mut daName: [u8; 256] = [0; 256];
 
         self.AdjustMenus();
         self.souris.MontreSouris();
-        menuID = ((menuResult >> 16) & 0xFFFF) as c_short; /* HiWord */
-        menuItem = (menuResult & 0xFFFF) as c_short; /* LoWord */
+        menuID = ((menuResult >> 16) & 0xFFFF) as i16; /* HiWord */
+        menuItem = (menuResult & 0xFFFF) as i16; /* LoWord */
         unsafe {
             if menuID == CvtDefaultLangRess(128) {
                 /* menuPomme */
@@ -705,15 +695,15 @@ impl Sapiens {
     pub(crate) fn DoEvtClavier(&mut self, event: *const EventRecord) {
         unsafe {
             let ev = &*event;
-            let mut t: c_long;
+            let mut t: i64;
 
-            if ev.modifiers & cmdKey as c_short != 0 {
-                let _car = (ev.message & 0xFF) as c_short;
+            if ev.modifiers & cmdKey as i16 != 0 {
+                let _car = (ev.message & 0xFF) as i16;
                 self.AdjustMenus();
-                self.DoMenuCommand(MenuKey((ev.message & charCodeMask as i64) as c_short) as i32);
-            } else if ev.modifiers & optionKey as c_short != 0 {
-                let mut i: c_short;
-                let car: c_short = ((ev.message & 0xFF00) >> 8) as c_short;
+                self.DoMenuCommand(MenuKey((ev.message & charCodeMask as i64) as i16) as i32);
+            } else if ev.modifiers & optionKey as i16 != 0 {
+                let mut i: i16;
+                let car: i16 = ((ev.message & 0xFF00) >> 8) as i16;
                 if car == 0x11
                 /*T*/
                 {
@@ -736,7 +726,7 @@ impl Sapiens {
                     t = TickCount();
                     i = 0;
                     while i < 50 {
-                        self.affich(self.sapglob.dzeta as c_ushort);
+                        self.affich(self.sapglob.dzeta as u16);
                         i += 1;
                     }
                     self.Collapse(&format!("{i} images 3d : {} ticks", TickCount() - t));
@@ -776,7 +766,7 @@ impl Sapiens {
                     MaxMem(&raw mut t);
                 }
             } else {
-                let car: c_short = (ev.message & charCodeMask as i64) as c_short;
+                let car: i16 = (ev.message & charCodeMask as i64) as i16;
                 /* Touches de fonction */
                 if car == 0x10 {
                     self.DoAide();
@@ -791,11 +781,11 @@ impl Sapiens {
 Calcule la deuxieme section de la palette ST en entrée :
 index de la couleur dans la palette systeme
 ********************************************************************/
-unsafe fn CalcIndexPalette(palette: *mut c_short) {
+unsafe fn CalcIndexPalette(palette: *mut i16) {
     unsafe {
         let mut rgb: RGBColor = RGBColor::default();
 
-        let mut i: c_short = 0;
+        let mut i: i16 = 0;
         while i < 16 {
             Sapwcvt::CvtCouleurEnRgb(palette, i, &mut rgb);
             *palette.offset((16 + i) as isize) = SapColor2Index(&rgb);
@@ -808,7 +798,7 @@ unsafe fn CalcIndexPalette(palette: *mut c_short) {
                         FixeMenu
 => Numero de la menu Bar à installer, Numero du menu Pomme de cette menuBar
 ********************************************************************/
-pub(crate) fn FixeMenu(n: c_short) -> Boolean {
+pub(crate) fn FixeMenu(n: i16) -> Boolean {
     let menuBar: Handle = GetNewMBar(n); /* read menus into menu bar */
     if menuBar.is_null() {
         return FAUX;
@@ -817,7 +807,7 @@ pub(crate) fn FixeMenu(n: c_short) -> Boolean {
     DisposHandle(menuBar);
     let menu: MenuHandle = GetMHandle(CvtDefaultLangRess(128)); /* menuPomme */
     if !menu.is_null() {
-        AddResMenu(menu, DRVR as c_long); /* add DA names to Apple menu */
+        AddResMenu(menu, DRVR as i64); /* add DA names to Apple menu */
     }
     DrawMenuBar();
     VRAI
@@ -829,13 +819,13 @@ impl Sapiens {
     Charge ou recharge les mobs
     ******************************************************************/
     pub(crate) fn InitMobs(&mut self) -> Boolean {
-        let mut nb: c_short;
+        let mut nb: i16;
 
         let _g = port::on(self.sapwind.Ecran1);
 
         self.LibereDataMobs();
         PushPath();
-        SetPathInData(&self.sapgest, c"Mobs".as_ptr() as *mut c_char);
+        SetPathInData(&self.sapgest, c"Mobs".as_ptr() as *mut i8);
         self.sapwind.mobBambou = 0;
         nb = self.ChargeFichierBrt("WBAMBOU.BRT", self.sapwind.mobBambou + 1, 26, 0); /*0, 21 Mobs */
         if nb < 0 {
@@ -907,12 +897,12 @@ unsafe fn AfficheFond(gfx: CGrafPtr) {
     let portRect = port::bounds(gfx);
     /* Le fond au dessus de l'awale */
     let picMotif: PicHandle = GetPicture(128) as PicHandle;
-    let mut y: c_short = 0;
+    let mut y: i16 = 0;
     while y < portRect.bottom {
-        let mut x: c_short = 0;
+        let mut x: i16 = 0;
         while x < portRect.right + 16 {
-            BackColor(whiteColor as c_short);
-            ForeColor(blackColor as c_short);
+            BackColor(whiteColor as i16);
+            ForeColor(blackColor as i16);
             let r = Rect::new(x, y, x + 64, y + 64);
             DrawPicture(picMotif, &r);
             x += 64;
@@ -928,18 +918,15 @@ impl Sapiens {
     ***********************************************************************************/
     pub(crate) fn FixeTitreMainWindow(&self) {
         unsafe {
-            let mut chaine: [c_char; 255] = [0; 255];
-            let mut str_: [c_char; 255] = [0; 255];
+            let mut chaine: [i8; 255] = [0; 255];
+            let mut str_: [i8; 255] = [0; 255];
 
             strcpy(
-                &raw mut chaine as *mut c_char,
-                c"Sapiens ".as_ptr() as *const c_char,
+                &raw mut chaine as *mut i8,
+                c"Sapiens ".as_ptr() as *const i8,
             );
-            GetVersionSapiens(&raw mut str_ as *mut c_char);
-            strcat(
-                &raw mut chaine as *mut c_char,
-                &raw const str_ as *const c_char,
-            );
+            GetVersionSapiens(&raw mut str_ as *mut i8);
+            strcat(&raw mut chaine as *mut i8, &raw const str_ as *const i8);
             CtoPstr(chaine.as_mut_ptr());
             port::set(self.sapwind.mainWindow);
             SetWTitle(self.sapwind.mainWindow, &raw mut chaine as *mut u8);
@@ -950,28 +937,28 @@ impl Sapiens {
                 Encadre l'aire 3d
     => etat 1 actif
     *****************************************************************************/
-    pub(crate) fn Frame3d(&self, etat: c_short) {
+    pub(crate) fn Frame3d(&self, etat: i16) {
         let _g = port::on(self.sapwind.debecr);
         let r = Rect::new(62, 0, 640 - 64, 204);
         if etat != 0 {
-            ForeColor(blackColor as c_short);
+            ForeColor(blackColor as i16);
         } else {
-            ForeColor(whiteColor as c_short);
+            ForeColor(whiteColor as i16);
         }
         DoPenSize(2, 2);
         DoFrameRect(&r);
-        ForeColor(blackColor as c_short);
+        ForeColor(blackColor as i16);
         PenNormal();
         port::set(self.sapwind.mainWindow);
         if etat != 0 {
-            ForeColor(blackColor as c_short);
+            ForeColor(blackColor as i16);
         } else {
-            ForeColor(whiteColor as c_short);
+            ForeColor(whiteColor as i16);
         }
         DoPenSize(2, 2);
         DoFrameRect(&r);
         PenNormal();
-        ForeColor(blackColor as c_short);
+        ForeColor(blackColor as i16);
     }
 
     /**********************************************************************************
@@ -979,7 +966,7 @@ impl Sapiens {
     Entre ou sort du menu fenetre actif
     => etat =1 si actif
     ***********************************************************************************/
-    pub(crate) fn MenuFenetres(&mut self, etat: c_short) {
+    pub(crate) fn MenuFenetres(&mut self, etat: i16) {
         self.Frame3d(etat);
         self.tfrmenufenetre(etat);
         if etat != 0 {
@@ -1002,16 +989,8 @@ impl SapWind {
     /**********************************************************************************************
                                                                     AffStr
     ***********************************************************************************************/
-    unsafe fn AffStr(
-        &self,
-        chaine: *mut c_char,
-        fonte: c_short,
-        size: c_short,
-        face: c_short,
-        x_in: c_short,
-        y: c_short,
-    ) {
-        let mut x: c_short = x_in;
+    unsafe fn AffStr(&self, chaine: *mut i8, fonte: i16, size: i16, face: i16, x_in: i16, y: i16) {
+        let mut x: i16 = x_in;
 
         CtoPstr(chaine);
         TextFont(fonte);
@@ -1020,16 +999,16 @@ impl SapWind {
         if x < 0 {
             x = (640 - StringWidth(chaine as *mut u8)) / 2;
         }
-        ForeColor(blackColor as c_short);
+        ForeColor(blackColor as i16);
         DoTextSize(size);
         DoMoveTo(x + 1, y + 1);
         DrawString(chaine as *mut u8);
-        ForeColor(whiteColor as c_short);
+        ForeColor(whiteColor as i16);
         DoMoveTo(x, y);
         DrawString(chaine as *mut u8);
         DoMoveTo(x - 1, y);
         DrawString(chaine as *mut u8);
-        ForeColor(blackColor as c_short);
+        ForeColor(blackColor as i16);
         PtoCstr(chaine as *mut u8);
     }
 }
@@ -1038,7 +1017,7 @@ impl SapWind {
                                 SetFontDialog
 Fixe la fonte du dialogue en entrée
 ******************************************************************************************/
-unsafe fn SetFontDialog(dialog: DialogPtr, font: c_short, taille: c_short) {
+unsafe fn SetFontDialog(dialog: DialogPtr, font: i16, taille: i16) {
     unsafe {
         let mut info: crate::shared::FontInfo = crate::shared::FontInfo::default();
 
@@ -1060,11 +1039,11 @@ unsafe fn SetFontDialog(dialog: DialogPtr, font: c_short, taille: c_short) {
                         OuvreDialogue
 ********************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn OuvreDialogue(numDitl: c_short) -> DialogPtr {
+pub(crate) unsafe extern "C" fn OuvreDialogue(numDitl: i16) -> DialogPtr {
     unsafe {
         let dialog: DialogPtr = GetNewDialog(numDitl, core::ptr::null_mut(), -1isize as WindowPtr);
         if !dialog.is_null() {
-            SetFontDialog(dialog, geneva as c_short, 9);
+            SetFontDialog(dialog, geneva as i16, 9);
             CarboniseAdapteStaticText(dialog, numDitl, GetStdFont(), 9);
             SetDialogDefaultItem(dialog, 1);
         }
@@ -1077,8 +1056,8 @@ impl SapWind {
                             InitMainWindow
     ********************************************************************/
     pub(crate) fn InitMainWindow(&mut self) {
-        let largeur = (320.0 * ECHELLE as f32 * self.SapZoom) as c_long;
-        let hauteur = (200.0 * ECHELLE as f32 * self.SapZoom) as c_long;
+        let largeur = (320.0 * ECHELLE as f32 * self.SapZoom) as i64;
+        let hauteur = (200.0 * ECHELLE as f32 * self.SapZoom) as i64;
 
         let aireDevice = port::SCREEN;
         /* Creation de la fenetre principale */
@@ -1086,18 +1065,18 @@ impl SapWind {
         let mut rect = Rect::new(
             0,
             0,
-            (320.0 * ECHELLE as f32 * self.SapZoom) as c_short,
-            (200.0 * ECHELLE as f32 * self.SapZoom) as c_short,
+            (320.0 * ECHELLE as f32 * self.SapZoom) as i16,
+            (200.0 * ECHELLE as f32 * self.SapZoom) as i16,
         );
         /* On la centre sur l'aire generale de l'ecran */
         rect.OffsetRect(
-            aireDevice.left + (aireDevice.right - aireDevice.left - largeur as c_short) / 2,
+            aireDevice.left + (aireDevice.right - aireDevice.left - largeur as i16) / 2,
             aireDevice.top
                 + (CarboniseGetMenuBarHeight() + 8)
                 + (aireDevice.bottom
                     - aireDevice.top
                     - CarboniseGetMenuBarHeight()
-                    - hauteur as c_short)
+                    - hauteur as i16)
                     / 2,
         );
         /* On crée la fenetre principale */
@@ -1121,14 +1100,14 @@ impl Sapiens {
                             init_graph
     ********************************************************************/
     pub(crate) fn init_graph(&mut self) -> Boolean {
-        let mut i: c_short;
-        let mut y: c_short;
+        let mut i: i16;
+        let mut y: i16;
         let mut r: Rect = Rect::default();
-        let mut chaine: [c_char; 255] = [0; 255];
+        let mut chaine: [i8; 255] = [0; 255];
 
         /* Init des chemins standards */
         self.InitCheminsSapiens();
-        SetCursor(GetCursor(watchCursor as c_short));
+        SetCursor(GetCursor(watchCursor as i16));
         self.FixeAireNoMouseAireBasse();
         /* On charge les preferences */
         let firstInit = self.ChargePref();
@@ -1138,7 +1117,7 @@ impl Sapiens {
         if langue_i16() == -1 {
             CarboniseSetCursorArrow();
             set_langue((Alert(ALRT_VERSION, core::ptr::null_mut()) - 1).into());
-            SetCursor(GetCursor(watchCursor as c_short));
+            SetCursor(GetCursor(watchCursor as i16));
         }
         unsafe {
             self.sapglob.init_and_check_texts();
@@ -1151,8 +1130,7 @@ impl Sapiens {
             if !pict.is_null() {
                 r = (**pict).picFrame;
                 r.OffsetRect(
-                    ((320 * ECHELLE as c_short as c_long - (r.right - r.left) as c_long) / 2)
-                        as c_short,
+                    ((320 * ECHELLE as i16 as i64 - (r.right - r.left) as i64) / 2) as i16,
                     60,
                 );
                 let rdest = DoZoomRect(&r);
@@ -1160,26 +1138,25 @@ impl Sapiens {
                 ReleaseResource(pict as Handle);
             }
             /* Affichage de la version de sapiens */
-            GetVersionSapiens(&raw mut chaine as *mut c_char);
+            GetVersionSapiens(&raw mut chaine as *mut i8);
             self.sapwind.AffStr(
-                &raw mut chaine as *mut c_char,
-                helvetica as c_short,
+                &raw mut chaine as *mut i8,
+                helvetica as i16,
                 14,
-                bold as c_short,
+                bold as i16,
                 -1,
                 r.bottom + 16,
             );
             /* Affichage des autres commentaires */
             strcpy(
-                &raw mut chaine as *mut c_char,
-                c"Copyright Didier & Olivier Guillion, 1986,1996,2005,2017".as_ptr()
-                    as *const c_char,
+                &raw mut chaine as *mut i8,
+                c"Copyright Didier & Olivier Guillion, 1986,1996,2005,2017".as_ptr() as *const i8,
             );
             self.sapwind.AffStr(
-                &raw mut chaine as *mut c_char,
-                helvetica as c_short,
+                &raw mut chaine as *mut i8,
+                helvetica as i16,
                 16,
-                bold as c_short,
+                bold as i16,
                 -1,
                 r.bottom + 32,
             );
@@ -1194,18 +1171,18 @@ impl Sapiens {
                 );
                 i += 1;
                 PtoCstr(&raw mut chaine as *mut u8);
-                if strlen(&raw const chaine as *const c_char) != 0 {
+                if strlen(&raw const chaine as *const i8) != 0 {
                     self.sapwind.AffStr(
-                        &raw mut chaine as *mut c_char,
-                        helvetica as c_short,
+                        &raw mut chaine as *mut i8,
+                        helvetica as i16,
                         16,
-                        bold as c_short,
+                        bold as i16,
                         -1,
                         y,
                     );
                 }
                 y += 18;
-                if strlen(&raw const chaine as *const c_char) == 0 {
+                if strlen(&raw const chaine as *const i8) == 0 {
                     break;
                 }
             }
@@ -1225,27 +1202,23 @@ impl Sapiens {
             self.FixeMenusReduit();
             port::set(self.sapwind.mainWindow);
             MessInit(self.sapwind.GetStr(20)); /* Initialsations des ecrans */
-            CalcIndexPalette(&raw mut self.saplist.pal1 as *mut c_short);
-            CalcIndexPalette(&raw mut self.saplist.pal2 as *mut c_short);
-            self.sapwind.Ecran1 =
-                SapiensCreeOffscreen(256 * ECHELLE as c_short, 100 * ECHELLE as c_short);
+            CalcIndexPalette(&raw mut self.saplist.pal1 as *mut i16);
+            CalcIndexPalette(&raw mut self.saplist.pal2 as *mut i16);
+            self.sapwind.Ecran1 = SapiensCreeOffscreen(256 * ECHELLE as i16, 100 * ECHELLE as i16);
             if self.sapwind.Ecran1.is_null() {
                 self.Collapse("[SapWind.init_graph.1] Unable to create offscreen");
                 SapiensExit(-2);
             }
-            self.sapwind.Ecran2 =
-                SapiensCreeOffscreen(256 * ECHELLE as c_short, 100 * ECHELLE as c_short);
+            self.sapwind.Ecran2 = SapiensCreeOffscreen(256 * ECHELLE as i16, 100 * ECHELLE as i16);
             port::set(self.sapwind.Ecran1);
             MessInit(self.sapwind.GetStr(21)); /* Initialsations des palettes */
             /* Fabrique les luts */
             self.sapwcvt.FabriqueLuts();
-            self.sapwind.debecr =
-                SapiensCreeOffscreen(320 * ECHELLE as c_short, 200 * ECHELLE as c_short);
+            self.sapwind.debecr = SapiensCreeOffscreen(320 * ECHELLE as i16, 200 * ECHELLE as i16);
             port::set(self.sapwind.debecr);
             AfficheFond(self.sapwind.debecr);
             /* Buffer de la souris*/
-            self.sapwind.BuffMouse =
-                SapiensCreeOffscreen(64 * ECHELLE as c_short, 64 * ECHELLE as c_short);
+            self.sapwind.BuffMouse = SapiensCreeOffscreen(64 * ECHELLE as i16, 64 * ECHELLE as i16);
             MessInit(self.sapwind.GetStr(22)); /*Chargement des graphismes */
             /* On charge les mobs */
             if !self.InitMobs() {
@@ -1294,8 +1267,7 @@ impl Sapiens {
         while GetNextEvent(everyEvent as i16, &mut event) {
             match event.what as u32 {
                 _keyDown => {
-                    self.sapwind.toucheClav =
-                        (event.message as c_short & charCodeMask as c_short) as c_short;
+                    self.sapwind.toucheClav = (event.message as i16 & charCodeMask as i16) as i16;
                     self.DoEvtClavier(&raw const event as *const _);
                 }
                 _mouseDown => {
@@ -1377,7 +1349,7 @@ impl Sapiens {
                             delai
     => Nbre de 60eme de seocndes a atteindre
     ********************************************************************/
-    pub(crate) fn delai(&mut self, duree: c_long) {
+    pub(crate) fn delai(&mut self, duree: i64) {
         let t = TickCount() + duree;
 
         loop {

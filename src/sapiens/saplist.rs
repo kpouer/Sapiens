@@ -19,16 +19,14 @@ use crate::shared::{Ptr, Rect};
 use crate::stubs::{GetMouse, GetNomCheminCourant, OpenDocument, PopPath, PushPath};
 use crate::{DOWN, INCONNU, MOB_CADRE, SELECT, Sapiens, UP};
 use log::warn;
-use std::ffi::c_char;
-use std::os::raw::{c_short, c_uchar, c_ushort};
 use std::ptr::addr_of_mut;
 /***********************************************************************
                 InverseOption
 ***********************************************************************/
 
 pub(crate) struct InverseOption {
-    LastMenuInvers: c_short,
-    Lastn: c_short,
+    LastMenuInvers: i16,
+    Lastn: i16,
     rInvert: Rect,
 }
 
@@ -49,46 +47,44 @@ impl Default for InverseOption {
 
 impl Sapiens {
     #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn InverseOption(&mut self, menusel: c_short, n: c_short) {
+    pub(crate) extern "C" fn InverseOption(&mut self, menusel: i16, n: i16) {
         unsafe {
             self.eff_sour();
             if self.saplist.inverse_option.LastMenuInvers >= 0 {
                 SwapCouleur(
                     self.sapwind.debecr,
                     &self.saplist.inverse_option.rInvert,
-                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(4)) as usize] as c_short,
-                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(1)) as usize] as c_short,
+                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(4)) as usize] as i16,
+                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(1)) as usize] as i16,
                 );
                 self.TfrEcr(Some(&self.saplist.inverse_option.rInvert));
                 self.saplist.inverse_option.LastMenuInvers = -1;
             }
             if menusel >= 0 {
                 self.saplist.inverse_option.rInvert = Rect::new(
-                    (tccol[menusel as usize] as c_short) * 6 * ECHELLE as c_short,
-                    (tclin[menusel as usize] as c_short
-                        - self.sapglob.tlpos[menusel as usize] as c_short
+                    (tccol[menusel as usize] as i16) * 6 * ECHELLE as i16,
+                    (tclin[menusel as usize] as i16 - self.sapglob.tlpos[menusel as usize] as i16
                         + 1
                         + n)
                         * 7
-                        * ECHELLE as c_short
+                        * ECHELLE as i16
                         - 1,
-                    (tccol[menusel as usize] as c_short + tcncol[menusel as usize] as c_short)
+                    (tccol[menusel as usize] as i16 + tcncol[menusel as usize] as i16)
                         * 6
-                        * ECHELLE as c_short,
-                    (tclin[menusel as usize] as c_short
-                        - self.sapglob.tlpos[menusel as usize] as c_short
+                        * ECHELLE as i16,
+                    (tclin[menusel as usize] as i16 - self.sapglob.tlpos[menusel as usize] as i16
                         + 1
                         + n
                         + 1)
                         * 7
-                        * ECHELLE as c_short
+                        * ECHELLE as i16
                         - 1,
                 );
                 SwapCouleur(
                     self.sapwind.debecr,
                     &self.saplist.inverse_option.rInvert,
-                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(1)) as usize] as c_short,
-                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(4)) as usize] as c_short,
+                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(1)) as usize] as i16,
+                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(4)) as usize] as i16,
                 );
                 self.TfrEcr(Some(&self.saplist.inverse_option.rInvert));
             }
@@ -98,16 +94,16 @@ impl Sapiens {
     }
 }
 
-const EAU: c_uchar = 2;
-const OUTREVIDE: c_uchar = 26;
-const OUTREPLEINE: c_uchar = 27;
+const EAU: u8 = 2;
+const OUTREVIDE: u8 = 26;
+const OUTREPLEINE: u8 = 27;
 
 pub(crate) struct Saplist {
     inverse_option: InverseOption,
     sliste: [ListeId; 2],
-    pub(crate) pal1: [c_short; 32],
-    pub(crate) pal2: [c_short; 32],
-    pal_zero: [c_short; 32],
+    pub(crate) pal1: [i16; 32],
+    pub(crate) pal2: [i16; 32],
+    pal_zero: [i16; 32],
 }
 
 impl Default for Saplist {
@@ -135,16 +131,14 @@ impl Sapiens {
     =>(rega)et (menu)
     */
     pub(crate) fn trpose(&mut self) {
-        let erreur = self.sapglob.enlevl(
-            ListeId::Liste1,
-            ListeId::Liste4,
-            self.sapglob.rega as c_ushort,
-        ); /*on transfere*/
+        let erreur =
+            self.sapglob
+                .enlevl(ListeId::Liste1, ListeId::Liste4, self.sapglob.rega as u16); /*on transfere*/
         if erreur == 1 && self.sapglob.lpos > 1 {
             self.sapglob.lpos -= 1;
         }
         /*elt de rang rega est en fin de liste*/
-        self.inimen(self.sapglob.s_menu as c_ushort);
+        self.inimen(self.sapglob.s_menu as u16);
     }
 
     /************************************************************************
@@ -156,10 +150,10 @@ impl Sapiens {
         self.sapglob.dsposy = 0;
         self.sapglob.sposy = 160;
         /* toute Palettes a zéro*/
-        self.sapglob.palhaute = addr_of_mut!(self.saplist.pal_zero) as *mut std::os::raw::c_short;
-        self.sapglob.pal_chron = addr_of_mut!(self.saplist.pal_zero) as *mut std::os::raw::c_short;
-        self.sapglob.palbasse = addr_of_mut!(self.saplist.pal_zero) as *mut std::os::raw::c_short;
-        self.sapglob.ciel_degr = addr_of_mut!(self.saplist.pal_zero) as *mut std::os::raw::c_short;
+        self.sapglob.palhaute = addr_of_mut!(self.saplist.pal_zero) as *mut i16;
+        self.sapglob.pal_chron = addr_of_mut!(self.saplist.pal_zero) as *mut i16;
+        self.sapglob.palbasse = addr_of_mut!(self.saplist.pal_zero) as *mut i16;
+        self.sapglob.ciel_degr = addr_of_mut!(self.saplist.pal_zero) as *mut i16;
         let _first_init = self.init_graph();
         hires();
         self.sapglob.xj = 0x5800;
@@ -177,9 +171,9 @@ impl Sapiens {
         self.prm(SapId::Sap3, 0);
         self.prm(SapId::Sap4, 0);
         self.framebadass();
-        self.sapglob.palhaute = addr_of_mut!(self.saplist.pal2) as *mut std::os::raw::c_short;
-        self.sapglob.pal_chron = addr_of_mut!(self.saplist.pal2) as *mut std::os::raw::c_short;
-        self.sapglob.palbasse = addr_of_mut!(self.saplist.pal1) as *mut std::os::raw::c_short;
+        self.sapglob.palhaute = addr_of_mut!(self.saplist.pal2) as *mut i16;
+        self.sapglob.pal_chron = addr_of_mut!(self.saplist.pal2) as *mut i16;
+        self.sapglob.palbasse = addr_of_mut!(self.saplist.pal1) as *mut i16;
         /* Mise en place version */
         self.DebutAventure(true);
         self.afstat();
@@ -202,20 +196,20 @@ impl Sapiens {
     /* le nombre de cadre 'GEMNBRECAD' doit etre pair*/
     pub(crate) fn gemouvre(
         &mut self,
-        ligncad1: c_ushort,
-        colcad1: c_ushort,
-        hautcad1: c_ushort,
-        largcad1: c_ushort,
-        ligncad2: c_ushort,
-        colcad2: c_ushort,
-        hautcad2: c_ushort,
-        largcad2: c_ushort,
+        ligncad1: u16,
+        colcad1: u16,
+        hautcad1: u16,
+        largcad1: u16,
+        ligncad2: u16,
+        colcad2: u16,
+        hautcad2: u16,
+        largcad2: u16,
     ) {
         /*calcul des parametres de depart*/
-        let mut ligne: c_short = (ligncad1 * 7 / 2) as c_short;
-        let mut colon: c_short = (colcad1 * 3 / 2) as c_short;
-        let mut haut: c_short = (hautcad1 * 7 / 2) as c_short;
-        let mut larg: c_short = (largcad1 * 3 / 2) as c_short;
+        let mut ligne: i16 = (ligncad1 * 7 / 2) as i16;
+        let mut colon: i16 = (colcad1 * 3 / 2) as i16;
+        let mut haut: i16 = (hautcad1 * 7 / 2) as i16;
+        let mut larg: i16 = (largcad1 * 3 / 2) as i16;
         /* on l'injecte ds les N cadres*/
 
         for i in 0..gemnbrecad as usize {
@@ -225,10 +219,10 @@ impl Sapiens {
             self.sapglob.gemzoom[i].larg = larg;
         }
         /* on calcule les coordonn�es d'arriv�e*/
-        ligne = (ligncad2 * 7 / 2) as c_short;
-        colon = (colcad2 * 3 / 2) as c_short;
-        haut = (hautcad2 * 7 / 2) as c_short;
-        larg = (largcad2 * 3 / 2) as c_short;
+        ligne = (ligncad2 * 7 / 2) as i16;
+        colon = (colcad2 * 3 / 2) as i16;
+        haut = (hautcad2 * 7 / 2) as i16;
+        larg = (largcad2 * 3 / 2) as i16;
         /* on y va*/
         let mut balai = 0;
         loop {
@@ -303,7 +297,7 @@ impl Sapiens {
                     CLAVM:Gestion des menus au clavier
     ***********************************************************************/
     pub(crate) fn clavm(&mut self) {
-        let mut y: c_short;
+        let mut y: i16;
         let mut r;
 
         /* gestion souris pour clavm */
@@ -322,7 +316,7 @@ impl Sapiens {
                         {
                             self.eff_sour();
                             self.sapglob.tlpos[self.sapglob.s_menu as usize] -= 1;
-                            self.inimen(self.sapglob.s_menu as c_ushort);
+                            self.inimen(self.sapglob.s_menu as u16);
                             self.aff_sour(
                                 self.sapglob.icone,
                                 self.sapglob.sposy,
@@ -337,7 +331,7 @@ impl Sapiens {
                         {
                             self.eff_sour();
                             self.sapglob.tlpos[self.sapglob.s_menu as usize] += 1;
-                            self.inimen(self.sapglob.s_menu as c_ushort);
+                            self.inimen(self.sapglob.s_menu as u16);
                             self.aff_sour(
                                 self.sapglob.icone,
                                 self.sapglob.sposy,
@@ -353,9 +347,9 @@ impl Sapiens {
                             /* calcul position 53 du centre de la souris */
                             y = self.sapglob.sposy / 7;
                             /* calcul de l'option choisie*/
-                            self.sapglob.rega = (y - tclin[self.sapglob.s_menu as usize] as c_short
-                                + self.sapglob.tlpos[self.sapglob.s_menu as usize] as c_short
-                                - 1) as c_uchar;
+                            self.sapglob.rega = (y - tclin[self.sapglob.s_menu as usize] as i16
+                                + self.sapglob.tlpos[self.sapglob.s_menu as usize] as i16
+                                - 1) as u8;
                             if self.sapglob.rega < self.sapglob.liste(self.sapglob.stdlist).taille {
                                 let refer = self
                                     .sap_lang
@@ -371,20 +365,17 @@ impl Sapiens {
                                 /*on affiche l'option choisie*/
                                 self.efbadi();
                                 if self.sapglob.s_menu <= 0 {
-                                    self.sapglob.s_action = (self.sapglob.rega + 1) as c_short;
+                                    self.sapglob.s_action = (self.sapglob.rega + 1) as i16;
                                 }
-                                self.comment((120 + self.sapglob.s_action) as c_ushort);
-                                self.InverseOption(
-                                    self.sapglob.s_menu,
-                                    self.sapglob.rega as c_short,
-                                );
+                                self.comment((120 + self.sapglob.s_action) as u16);
+                                self.InverseOption(self.sapglob.s_menu, self.sapglob.rega as i16);
                                 /* si sous menu affichage et sortie*/
                                 if self.sapglob.s_menu > 0 {
                                     let refer = self.sap_lang.GetRefer(
                                         self.sapglob.liste(self.saplist.sliste[1]).typeRef,
                                     );
 
-                                    self.affcar(' ' as u8 as c_short);
+                                    self.affcar(' ' as u8 as i16);
                                     let ref_ = refer.wrapping_add(
                                         (self.sapglob.liste(self.saplist.sliste[1]).elements
                                             [self.sapglob.rega as usize]
@@ -411,7 +402,7 @@ impl Sapiens {
                                         }
                                         self.afstat();
                                     } else {
-                                        self.inimen(self.sapglob.stock1 as c_ushort);
+                                        self.inimen(self.sapglob.stock1 as u16);
                                     }
                                 }
                                 self.sapglob.sposx += 1; /* pour affichage */
@@ -459,17 +450,17 @@ impl Sapglob {
     /***********************************************************************
                   AJOUTL:ajoute un element a une liste
     ***********************************************************************/
-    pub(crate) fn ajoutl(&mut self, debliste_id: ListeId, element: c_ushort) -> c_ushort {
+    pub(crate) fn ajoutl(&mut self, debliste_id: ListeId, element: u16) -> u16 {
         let debliste = self.liste_mut(debliste_id);
         if debliste_id == ListeId::Listbidon {
             /*le premier element le recoit*/
-            debliste.elements[0] = element as c_uchar;
+            debliste.elements[0] = element as u8;
         } else {
             /*liste est elle pleine*/
             if debliste.taille == debliste.maxtaille {
                 return 1; /*deja pleine*/
             }
-            debliste.elements[debliste.taille as usize] = element as c_uchar;
+            debliste.elements[debliste.taille as usize] = element as u8;
             debliste.taille += 1;
         }
         0 /*ok*/
@@ -482,15 +473,15 @@ impl Sapglob {
         &mut self,
         orgliste_id: ListeId,
         receptliste_id: ListeId,
-        rang: c_ushort,
-    ) -> c_ushort {
+        rang: u16,
+    ) -> u16 {
         let taille = self.liste_mut(orgliste_id).taille;
-        if rang < taille as c_ushort {
+        if rang < taille as u16 {
             /*rang contenu dans liste de depart*/
             let element = {
                 let orgliste = self.liste_mut(orgliste_id);
                 orgliste.taille = orgliste.taille.wrapping_sub(1);
-                orgliste.elements[rang as usize] as c_ushort
+                orgliste.elements[rang as usize] as u16
             };
             let erreur = self.ajoutl(receptliste_id, element);
             if erreur != 0 {
@@ -500,13 +491,13 @@ impl Sapglob {
                 1 /*erreur*/
             } else {
                 /*on recompacte la liste d'origine*/
-                let mut i: c_uchar = rang as c_uchar;
+                let mut i: u8 = rang as u8;
                 let orgliste = self.liste_mut(orgliste_id);
                 while i != orgliste.taille {
                     orgliste.elements[i as usize] = orgliste.elements[i as usize + 1];
                     i = i.wrapping_add(1);
                 }
-                if i as c_ushort == rang {
+                if i as u16 == rang {
                     1 /*fin de liste*/
                 } else {
                     0
@@ -522,11 +513,11 @@ impl Sapiens {
     /***********************************************************************
                   MOT:Affiche un mot selon la reference std
     ***********************************************************************/
-    pub(crate) fn mot(&mut self, refer: *mut c_char) {
+    pub(crate) fn mot(&mut self, refer: *mut i8) {
         unsafe {
-            let mut p = refer as *mut c_uchar;
+            let mut p = refer as *mut u8;
             while *p != 0 {
-                self.affcar(*p as c_short);
+                self.affcar(*p as i16);
                 p = p.add(1);
             }
         }
@@ -535,15 +526,15 @@ impl Sapiens {
     /***********************************************************************
                   AFFMOT:affiche le mot ou des blancs
     ***********************************************************************/
-    fn affmot(&mut self, debliste_id: ListeId, rang: c_ushort) {
+    fn affmot(&mut self, debliste_id: ListeId, rang: u16) {
         let debliste = self.sapglob.liste(debliste_id);
         unsafe {
-            if (rang as c_uchar) < (*debliste).taille {
+            if (rang as u8) < (*debliste).taille {
                 /*rang a afficher existe*/
                 let refer = self.sap_lang.GetRefer((*debliste).typeRef);
                 self.mot(
                     refer.add(((*debliste).elements[rang as usize].wrapping_sub(1)) as usize)
-                        as *mut c_char,
+                        as *mut i8,
                 );
             }
         }
@@ -553,7 +544,7 @@ impl Sapiens {
                   AFLIST:Affiche liste en entr�e
     ***********************************************************************/
     fn aflist(&mut self, debliste_id: ListeId) {
-        let _j: c_short = 0;
+        let _j: i16 = 0;
         let mut r;
 
         let _g = port::on(self.sapwind.debecr);
@@ -561,62 +552,55 @@ impl Sapiens {
             self.saplist.inverse_option.LastMenuInvers = -1;
         }
         /*ligne et colonne au debut du cadre*/
-        self.Gotoxy(self.sapglob.ccol as c_short, self.sapglob.clin as c_short);
-        let mut i = self.sapglob.cnlin as c_uchar; /*i recoit le nombre de ligne du cadre*/
+        self.Gotoxy(self.sapglob.ccol as i16, self.sapglob.clin as i16);
+        let mut i = self.sapglob.cnlin as u8; /*i recoit le nombre de ligne du cadre*/
         if self.sapglob.lpos == 0 {
             self.sapglob.lpos = 1;
         }
 
         let taille = self.sapglob.liste(debliste_id).taille;
-        if (self.sapglob.lpos as c_uchar) > taille {
+        if (self.sapglob.lpos as u8) > taille {
             self.sapglob.lpos = taille;
         }
         let mut travl2 = self.sapglob.lpos.wrapping_sub(1); /*debut d'affichage*/
         /* On efface le fond de la liste */
         r = Rect::new(
-            (self.sapglob.colaff as c_short) * 6 * ECHELLE as c_short,
-            (self.sapglob.linaff as c_short) * 7 * ECHELLE as c_short - 1,
-            (self.sapglob.colaff as c_short + self.sapglob.cncol as c_short)
-                * 6
-                * ECHELLE as c_short,
-            (self.sapglob.linaff as c_short + self.sapglob.cnlin as c_short)
-                * 7
-                * ECHELLE as c_short,
+            (self.sapglob.colaff as i16) * 6 * ECHELLE as i16,
+            (self.sapglob.linaff as i16) * 7 * ECHELLE as i16 - 1,
+            (self.sapglob.colaff as i16 + self.sapglob.cncol as i16) * 6 * ECHELLE as i16,
+            (self.sapglob.linaff as i16 + self.sapglob.cnlin as i16) * 7 * ECHELLE as i16,
         );
-        self.BoxFill(self.sapwind.debecr, &mut r, 0x542 as c_short);
+        self.BoxFill(self.sapwind.debecr, &mut r, 0x542 as i16);
         /* On affiche tous les mots */
         let taille = self.sapglob.liste(debliste_id).taille;
         if taille != 0 {
             /* On n'est pas en haut de la liste, fleche vers le haut */
             if travl2 > 1 {
                 self.Gotoxy(
-                    (self.sapglob.ccol as c_short + self.sapglob.cncol as c_short) - 1,
-                    self.sapglob.linaff as c_short,
+                    (self.sapglob.ccol as i16 + self.sapglob.cncol as i16) - 1,
+                    self.sapglob.linaff as i16,
                 );
-                self.affcar('<' as c_short);
-                self.Gotoxy(self.sapglob.ccol as c_short, self.sapglob.clin as c_short);
+                self.affcar('<' as i16);
+                self.Gotoxy(self.sapglob.ccol as i16, self.sapglob.clin as i16);
             }
             while i != 0 {
                 i = i.wrapping_sub(1);
-                self.affmot(debliste_id, travl2 as c_ushort); /*on affiche le mot*/
+                self.affmot(debliste_id, travl2 as u16); /*on affiche le mot*/
                 travl2 = travl2.wrapping_add(1);
-                self.Gotoxy(
-                    self.sapglob.ccol as c_short,
-                    (self.sapglob.linaff + 1) as c_short,
-                );
+                self.Gotoxy(self.sapglob.ccol as i16, (self.sapglob.linaff + 1) as i16);
             }
             /* On n'est pas en bas de la liste, fleche vers le bas */
             let taille = self.sapglob.liste(debliste_id).taille;
             if travl2 < taille {
                 self.Gotoxy(
-                    (self.sapglob.ccol as c_short + self.sapglob.cncol as c_short) - 1,
-                    (self.sapglob.linaff - 1) as c_short,
+                    (self.sapglob.ccol as i16 + self.sapglob.cncol as i16) - 1,
+                    (self.sapglob.linaff - 1) as i16,
                 );
-                self.affcar('>' as c_short);
+                self.affcar('>' as i16);
             }
         } else {
             /* Liste vide */
-            self.mot(c"...".as_ptr() as *mut c_char);
+            self.mot(c"...".as_ptr() as *mut i8);
         }
         /* Transfert de la liste sur l'ecran */
         r.InsetRect(-48, -48);
@@ -626,12 +610,12 @@ impl Sapiens {
     /***********************************************************************
                             ENCADRE:dessine le cadre
     ***********************************************************************/
-    pub(crate) fn encadre(&self, ligne: c_ushort, colon: c_ushort, haut: c_ushort, larg: c_ushort) {
+    pub(crate) fn encadre(&self, ligne: u16, colon: u16, haut: u16, larg: u16) {
         /* passage au pixel */
-        let mut ligne = (ligne * 7) as c_short;
-        let mut colon = (colon * 6) as c_short;
-        let mut haut = ligne + 7 * haut as c_short;
-        let mut larg = colon + 6 * larg as c_short;
+        let mut ligne = (ligne * 7) as i16;
+        let mut colon = (colon * 6) as i16;
+        let mut haut = ligne + 7 * haut as i16;
+        let mut larg = colon + 6 * larg as i16;
         /* petit delta pour polymorphisme*/
         ligne -= colon & 3;
         colon = colon - 2 - (haut & 3);
@@ -809,25 +793,25 @@ impl Sapiens {
                             INIMEN:Initialise Menu
     ***********************************************************************/
     #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn inimen(&mut self, entmenu: c_ushort) {
+    pub(crate) extern "C" fn inimen(&mut self, entmenu: u16) {
         unsafe {
-            let mut j: c_short = 0;
+            let mut j: i16 = 0;
             let t = TickCount();
             let refer1 = self.sap_lang.GetRefer1();
 
             self.sapglob.menu = entmenu; /*force variable globale*/
-            self.sapglob.clin = tclin[self.sapglob.menu as usize] as c_ushort;
-            self.sapglob.ccol = tccol[self.sapglob.menu as usize] as c_ushort;
-            self.sapglob.colcdr = tcolcdr[self.sapglob.menu as usize] as c_ushort;
-            self.sapglob.cnlin = tcnlin[self.sapglob.menu as usize] as c_ushort;
-            self.sapglob.cncol = tcncol[self.sapglob.menu as usize] as c_ushort;
+            self.sapglob.clin = tclin[self.sapglob.menu as usize] as u16;
+            self.sapglob.ccol = tccol[self.sapglob.menu as usize] as u16;
+            self.sapglob.colcdr = tcolcdr[self.sapglob.menu as usize] as u16;
+            self.sapglob.cnlin = tcnlin[self.sapglob.menu as usize] as u16;
+            self.sapglob.cncol = tcncol[self.sapglob.menu as usize] as u16;
             self.sapglob.poscur = tposcur[self.sapglob.menu as usize];
             self.sapglob.stdlist = self.sapglob.tstdlist[self.sapglob.menu as usize];
             self.eff_sour();
             if self.sapglob.menu != 0 {
                 /*pas menu 0*/
-                (*addr_of_mut!(self.sapglob.smenu))[1] = self.sapglob.menu as c_char;
-                if self.sapglob.menu != self.sapglob.lastmen as c_ushort {
+                (*addr_of_mut!(self.sapglob.smenu))[1] = self.sapglob.menu as i8;
+                if self.sapglob.menu != self.sapglob.lastmen as u16 {
                     /*deja affiche ?*/
                     self.gemouvre(
                         19,
@@ -845,7 +829,7 @@ impl Sapiens {
                         self.sapglob.cnlin,
                         self.sapglob.cncol,
                     );
-                    self.sapglob.lastmen = self.sapglob.menu as c_uchar;
+                    self.sapglob.lastmen = self.sapglob.menu as u8;
                 }
             } else {
                 self.sapglob.criter = 0; /*menu principal : critere=0*/
@@ -862,28 +846,25 @@ impl Sapiens {
                     self.comment(136); /* La partie est fini */
                 }
             }
-            self.sapglob.lpos = self.sapglob.tlpos[self.sapglob.menu as usize] as c_uchar;
+            self.sapglob.lpos = self.sapglob.tlpos[self.sapglob.menu as usize] as u8;
             /*reduction du nbre d'elements*/
             if self.sapglob.criter != 0 {
                 /*critere retenu*/
                 let mut i = 0;
                 self.sapglob.lpos = 111;
-                while (i as c_ushort) != self.sapglob.liste(self.sapglob.stdlist).taille as c_ushort
-                {
-                    let rang: c_uchar =
-                        self.sapglob.liste(self.sapglob.stdlist).elements[i as usize]; /*rang de l'objet*/
-                    let valeur: c_uchar =
-                        (*refer1.add(rang.wrapping_sub(1) as usize)).param1 & 0xF0;
+                while (i as u16) != self.sapglob.liste(self.sapglob.stdlist).taille as u16 {
+                    let rang: u8 = self.sapglob.liste(self.sapglob.stdlist).elements[i as usize]; /*rang de l'objet*/
+                    let valeur: u8 = (*refer1.add(rang.wrapping_sub(1) as usize)).param1 & 0xF0;
                     if ((self.sapglob.criter == 1) && (valeur == 0x20))
                         || ((self.sapglob.criter == 2) && (valeur == 0x40))
                     {
                         self.sapglob.zoneu.elements[j as usize] = rang;
-                        self.sapglob.cross.elements[j as usize] = i as c_uchar;
+                        self.sapglob.cross.elements[j as usize] = i as u8;
                         j += 1;
-                        if (i as c_char) >= self.sapglob.tlpos[self.sapglob.menu as usize]
+                        if (i as i8) >= self.sapglob.tlpos[self.sapglob.menu as usize]
                             && self.sapglob.lpos == 111
                         {
-                            self.sapglob.lpos = j as c_uchar;
+                            self.sapglob.lpos = j as u8;
                         }
                     }
                     i += 1;
@@ -891,17 +872,17 @@ impl Sapiens {
                 if self.sapglob.lpos == 111 {
                     self.sapglob.lpos = 1;
                 }
-                self.sapglob.zoneu.taille = j as c_uchar;
+                self.sapglob.zoneu.taille = j as u8;
                 self.sapglob.stdlist = ListeId::Zoneu;
                 /* nlle position ds menu*/
-                self.sapglob.lpos = self.sapglob.tlpos[self.sapglob.menu as usize] as c_uchar;
+                self.sapglob.lpos = self.sapglob.tlpos[self.sapglob.menu as usize] as u8;
             }
             /*affichage de la liste*/
             if self.sapglob.menu != 0 {
                 self.saplist.sliste[1] = self.sapglob.stdlist;
-                self.sapglob.smenu[1] = self.sapglob.menu as c_char;
+                self.sapglob.smenu[1] = self.sapglob.menu as i8;
             }
-            self.sapglob.s_menu = self.sapglob.menu as c_short;
+            self.sapglob.s_menu = self.sapglob.menu as i16;
             self.aflist(self.sapglob.stdlist);
             while TickCount() < t + 6 {}
         }
@@ -926,27 +907,25 @@ impl Sapiens {
                 self.eff_sour();
             } else {
                 /* calcul position 53 du centre de la souris */
-                let x: c_short = (self.sapglob.sposx + 8) / 6;
-                let y: c_short = (self.sapglob.sposy + 8) / 7;
+                let x: i16 = (self.sapglob.sposx + 8) / 6;
+                let y: i16 = (self.sapglob.sposy + 8) / 7;
                 /* calcul de l'icone (par defaut rien) */
                 self.sapglob.icone = INCONNU!(self.sapwind);
                 self.sapglob.s_menu = -1;
                 /* on balaye les menus */
                 for i in 0..2 {
-                    let men: c_short = (*addr_of_mut!(self.sapglob.smenu))[i] as c_short;
+                    let men: i16 = (*addr_of_mut!(self.sapglob.smenu))[i] as i16;
                     /*on teste les verticales : men 111 implique pas de sousmenu*/
                     if (men != 111)
-                        && (x >= tccol[men as usize] as c_short)
-                        && (x <= tccol[men as usize] as c_short + tcncol[men as usize] as c_short)
+                        && (x >= tccol[men as usize] as i16)
+                        && (x <= tccol[men as usize] as i16 + tcncol[men as usize] as i16)
                     {
                         self.sapglob.s_menu = men;
                         self.sapglob.stdlist = self.saplist.sliste[i];
                         /* on teste les horizontales */
-                        if y < tclin[men as usize] as c_short {
+                        if y < tclin[men as usize] as i16 {
                             self.sapglob.icone = UP!(self.sapwind);
-                        } else if y > tclin[men as usize] as c_short
-                            + tcnlin[men as usize] as c_short
-                        {
+                        } else if y > tclin[men as usize] as i16 + tcnlin[men as usize] as i16 {
                             self.sapglob.icone = DOWN!(self.sapwind);
                         } else {
                             self.sapglob.icone = SELECT!(self.sapwind);
@@ -962,7 +941,7 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn trpren(&mut self) {
         if self.sapglob.liste4.elements[self.sapglob.rega as usize] == EAU {
-            let mut quoi: c_uchar = 0;
+            let mut quoi: u8 = 0;
             self.sapglob.flefba = 0;
             if self.sapglob.soif == 255 {
                 self.comment(98); /*tu n'as pas soif*/
@@ -983,19 +962,16 @@ impl Sapiens {
             self.sapglob.flefba = 0;
             return;
         }
-        let old_taille: c_short = self.sapglob.liste1.taille as c_short;
-        self.sapglob.enlevl(
-            ListeId::Liste4,
-            ListeId::Liste1,
-            self.sapglob.rega as c_ushort,
-        );
-        if self.sapglob.liste1.taille as c_short == old_taille {
+        let old_taille: i16 = self.sapglob.liste1.taille as i16;
+        self.sapglob
+            .enlevl(ListeId::Liste4, ListeId::Liste1, self.sapglob.rega as u16);
+        if self.sapglob.liste1.taille as i16 == old_taille {
             self.sapglob.flefba = 0;
             self.comment(101);
         } else if self.sapglob.liste4.elements[self.sapglob.rega as usize] == 44 {
             self.sapglob.scenpr = 1; /*hache sacree*/
         }
-        self.inimen(self.sapglob.s_menu as c_ushort);
+        self.inimen(self.sapglob.s_menu as u16);
     }
 
     /***********************************************************************
@@ -1008,7 +984,7 @@ impl Sapiens {
             return;
         }
 
-        let mut calcul: c_uchar = self
+        let mut calcul: u8 = self
             .sapglob
             .faim
             .wrapping_add((self.sapglob.stock2 & 0xF0) / 4);
@@ -1027,14 +1003,14 @@ impl Sapiens {
             255
         };
 
-        let objet: c_uchar = self.sapglob.liste1.elements[self.sapglob.rega as usize];
+        let objet: u8 = self.sapglob.liste1.elements[self.sapglob.rega as usize];
         if objet == OUTREPLEINE {
             self.sapglob.liste1.elements[self.sapglob.rega as usize] = OUTREVIDE;
         } else {
             self.sapglob.enlevl(
                 ListeId::Liste1,
                 ListeId::Listbidon,
-                self.sapglob.rega as c_ushort,
+                self.sapglob.rega as u16,
             );
         }
         self.inimen(1);
@@ -1049,7 +1025,7 @@ impl Sapiens {
             self.comment(109);
             return;
         }
-        let calcul: c_uchar = self
+        let calcul: u8 = self
             .sapglob
             .bless
             .wrapping_add((self.sapglob.stock2 & 0x0F) * 10);
@@ -1061,7 +1037,7 @@ impl Sapiens {
         self.sapglob.enlevl(
             ListeId::Liste1,
             ListeId::Listbidon,
-            self.sapglob.rega as c_ushort,
+            self.sapglob.rega as u16,
         );
         self.inimen(1);
     }
@@ -1070,9 +1046,9 @@ impl Sapiens {
                             D032AYDE
     ***********************************************************************/
     pub(crate) fn DoAide(&self) {
-        let mut chaine: [c_char; 255] = [0; 255];
+        let mut chaine: [i8; 255] = [0; 255];
         PushPath();
-        SetPathInData(&self.sapgest, c"docs".as_ptr() as *mut c_char);
+        SetPathInData(&self.sapgest, c"docs".as_ptr() as *mut i8);
         GetNomCheminCourant(chaine.as_mut_ptr());
         unsafe {
             if langue() == FR {
@@ -1093,7 +1069,7 @@ impl Sapiens {
                    AffichePictAide
     => 0 vue laterale, 1 paysage
     ***********************************************************************/
-    pub(crate) fn AffichePictAide(&self, mode: c_short) {
+    pub(crate) fn AffichePictAide(&self, mode: i16) {
         let _g = port::on(self.sapwind.mainWindow);
         let (num, r) = if mode == 0 {
             (131, Rect::new(320 - 125, 230, 320 + 125, 230 + 160))
@@ -1107,7 +1083,7 @@ impl Sapiens {
                    TraiteVueLaterale
     ***********************************************************************/
     pub(crate) fn TraiteVueLaterale(&mut self) {
-        self.MenuFenetres(FAUX as c_short);
+        self.MenuFenetres(FAUX as i16);
         self.efbadass();
         self.TfrBadAss();
         self.bruit(9);
@@ -1116,7 +1092,7 @@ impl Sapiens {
         self.effaceBulles();
         self.combat();
         self.pos0_mouse();
-        self.MenuFenetres(VRAI as c_short);
+        self.MenuFenetres(VRAI as i16);
     }
 
     /***********************************************************************
@@ -1126,7 +1102,7 @@ impl Sapiens {
         let current_action = self.sapglob.s_action;
         match current_action {
             1 => {
-                self.trgest(self.sapglob.rega as c_ushort);
+                self.trgest(self.sapglob.rega as u16);
                 self.inimen(0);
             }
             8 => {
@@ -1158,9 +1134,7 @@ impl Sapiens {
                         - 1;
                     let ptr = &(refer.wrapping_add(index as usize)) as *const _ as Ptr;
                     self.bulle(ptr, 0);
-                    self.trdire(
-                        self.sapglob.liste2.elements[self.sapglob.rega as usize] as c_ushort,
-                    ); /*on envoie la phrase*/
+                    self.trdire(self.sapglob.liste2.elements[self.sapglob.rega as usize] as u16); /*on envoie la phrase*/
                     self.ListAttendsFinBouton();
                 } else {
                     /* Tu parles tou seul ... */
@@ -1169,21 +1143,21 @@ impl Sapiens {
                 }
             }
             6 => {
-                self.trdonn(self.sapglob.rega as c_ushort); /*on envoit le rang de l'objet*/
+                self.trdonn(self.sapglob.rega as u16); /*on envoit le rang de l'objet*/
                 self.ListAttendsFinBouton();
             }
             7 => {
-                self.trobsv(self.sapglob.rega as c_ushort);
+                self.trobsv(self.sapglob.rega as u16);
             }
             10 => {
-                self.MenuFenetres(FAUX as c_short);
+                self.MenuFenetres(FAUX as i16);
                 self.trdors();
-                self.MenuFenetres(VRAI as c_short);
+                self.MenuFenetres(VRAI as i16);
             }
             11 => {
-                self.MenuFenetres(FAUX as c_short);
-                self.trfab(self.sapglob.rega as c_ushort);
-                self.MenuFenetres(VRAI as c_short);
+                self.MenuFenetres(FAUX as i16);
+                self.trfab(self.sapglob.rega as u16);
+                self.MenuFenetres(VRAI as i16);
             }
             _ => {
                 warn!("Unexpected action {}", current_action);

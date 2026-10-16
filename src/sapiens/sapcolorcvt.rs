@@ -7,8 +7,7 @@ Repasse en comparaison simple precedente sur le delta rvb
 *****************************************************************/
 use crate::acam::Color2Index;
 use crate::shared::RGBColor;
-use std::os::raw::c_short;
 
-pub(crate) fn SapColor2Index(rgb: &RGBColor) -> c_short {
+pub(crate) fn SapColor2Index(rgb: &RGBColor) -> i16 {
     Color2Index(rgb)
 }

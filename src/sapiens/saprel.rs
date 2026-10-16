@@ -3,7 +3,7 @@
                 SAPREL : Module relationnel (SAPREL.C porté en Rust)
                     (c) god Le 7 Novembre 1986
 ***********************************************************************/
-use std::os::raw::{c_char, c_short, c_uchar, c_ulong, c_ushort, c_void};
+use std::os::raw::c_void;
 use std::ptr::{addr_of, addr_of_mut};
 use std::sync::atomic::Ordering;
 
@@ -21,10 +21,10 @@ use crate::sapiens::sapwmus::attends_bruit;
 use crate::sapiens::{NBREVTDESTINE, NBREVTHEURE, Vue, evt};
 use crate::shared::{Ptr, Rect, RgnHandle};
 
-const ECHELLE: c_short = 2;
+const ECHELLE: i16 = 2;
 
 pub(crate) struct Saprel {
-    LastObsv: c_short,
+    LastObsv: i16,
     rBulleJoueur: Rect,
     rBulleAdversaire: Rect,
 }
@@ -49,10 +49,10 @@ impl Default for Saprel {
     }
 }
 
-const X_BULLE_DROITE: c_short = 640 - 64 - 16;
-const X_BULLE_GAUCHE: c_short = 80;
-const Y_BULLE: c_short = 58;
-const TAILLE_QUEUE: c_short = 20;
+const X_BULLE_DROITE: i16 = 640 - 64 - 16;
+const X_BULLE_GAUCHE: i16 = 80;
+const Y_BULLE: i16 = 58;
+const TAILLE_QUEUE: i16 = 20;
 
 impl Sapiens {
     /***********************************************************************
@@ -71,11 +71,11 @@ impl Sapiens {
     pub(crate) fn afstat(&mut self) {
         let refer3 = self.sap_lang.GetRefer3();
         unsafe {
-            (*refer3.wrapping_add(7)).nomref[0] = ((self.sapglob.faim / 64) + 0x91) as c_char;
-            (*refer3.wrapping_add(8)).nomref[0] = ((self.sapglob.soif / 64) + 0x91) as c_char;
-            (*refer3.wrapping_add(9)).nomref[1] = ((self.sapglob.fatig / 64) + 0x95) as c_char;
-            (*refer3.wrapping_add(10)).nomref[1] = ((self.sapglob.bless / 64) + 0x9A) as c_char;
-            (*refer3.wrapping_add(11)).nomref[1] = (self.sapglob.mort + 0xA7) as c_char;
+            (*refer3.wrapping_add(7)).nomref[0] = ((self.sapglob.faim / 64) + 0x91) as i8;
+            (*refer3.wrapping_add(8)).nomref[0] = ((self.sapglob.soif / 64) + 0x91) as i8;
+            (*refer3.wrapping_add(9)).nomref[1] = ((self.sapglob.fatig / 64) + 0x95) as i8;
+            (*refer3.wrapping_add(10)).nomref[1] = ((self.sapglob.bless / 64) + 0x9A) as i8;
+            (*refer3.wrapping_add(11)).nomref[1] = (self.sapglob.mort + 0xA7) as i8;
             self.inimen(7);
             self.sapglob.s_action = 2;
         }
@@ -87,7 +87,7 @@ impl Sapiens {
     => Chaine a traiter
     @= taille maximale en colonne x, nbre de lignes t
     **************************************************************************/
-    fn TailleChaine(&self, mut debut: *mut c_char) -> (i16, i16) {
+    fn TailleChaine(&self, mut debut: *mut i8) -> (i16, i16) {
         let mut x = 0;
         let mut taillex = 0;
         let mut y = 0;
@@ -95,7 +95,7 @@ impl Sapiens {
         let mut ty = 0;
         unsafe {
             while *debut != 0 {
-                if *debut == b'\r' as c_char {
+                if *debut == b'\r' as i8 {
                     ty += 1;
                     x = 0;
                     debut = debut.add(1);
@@ -111,15 +111,10 @@ impl Sapiens {
         (taillex, ty)
     }
 
-    fn TailleCarMess(
-        &self,
-        debut: *mut *mut c_char,
-        mut taillex: i16,
-        mut tailley: i16,
-    ) -> (i16, i16) {
+    fn TailleCarMess(&self, debut: *mut *mut i8, mut taillex: i16, mut tailley: i16) -> (i16, i16) {
         unsafe {
             let p = *debut;
-            let car = *p as u8 as c_short;
+            let car = *p as u8 as i16;
             *debut = p.add(1);
             if car > 128 {
                 let chaine = self.GetStrBkMot(car);
@@ -154,7 +149,7 @@ impl Sapiens {
     Affiche le message correspondant à la phase du scenario
     Le message s'affiche sur l'aire 3d
     ***********************************************************************/
-    pub(crate) fn sceveu(&mut self, quoi: c_ushort) {
+    pub(crate) fn sceveu(&mut self, quoi: u16) {
         unsafe {
             let mut rsourc;
             let mut rdest;
@@ -175,7 +170,7 @@ impl Sapiens {
             p = p.add(1);
             /* On affiche sur debecr */
             while car != 0 {
-                self.car2(car as c_short);
+                self.car2(car as i16);
                 loop {
                     car = *p as u8;
                     p = p.add(1);
@@ -198,12 +193,12 @@ impl Sapiens {
             if quoi == 6
             /* Bravo tu as gagné */
             {
-                rdest = Rect::new(0, 0, (255 * ECHELLE) as c_short, (100 * ECHELLE) as c_short);
+                rdest = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
                 rsourc = Rect::new(
-                    (32 * ECHELLE) as c_short,
-                    ECHELLE as c_short,
-                    ((32 + 255) * ECHELLE) as c_short,
-                    ((1 + 100) * ECHELLE) as c_short,
+                    (32 * ECHELLE) as i16,
+                    ECHELLE as i16,
+                    ((32 + 255) * ECHELLE) as i16,
+                    ((1 + 100) * ECHELLE) as i16,
                 );
 
                 CopyOffscreen(
@@ -223,7 +218,7 @@ impl Sapiens {
     Affiche le message correspondant à la phase du scenario
     Le message s'affiche sur l'aire 3d
     ***********************************************************************/
-    pub(crate) fn SceveuBulle(&mut self, quoi: c_ushort) {
+    pub(crate) fn SceveuBulle(&mut self, quoi: u16) {
         let scenme = self.sap_lang.GetScenme();
         self.effaceBulles();
         unsafe {
@@ -238,7 +233,7 @@ impl Sapiens {
         self.sapglob.bless = self
             .sapglob
             .bless
-            .wrapping_sub((6 - 6 * self.sapglob.resistance as c_short / 256) as c_uchar);
+            .wrapping_sub((6 - 6 * self.sapglob.resistance as i16 / 256) as u8);
         if self.sapglob.bless > 251 {
             if self.sapglob.mort != 0 {
                 /*pas mort encore*/
@@ -288,8 +283,8 @@ impl Sapiens {
     *************************************************************************
     => rang du commentaire
     */
-    pub(crate) fn comment(&mut self, rang: c_ushort) {
-        let mut p: *mut c_uchar;
+    pub(crate) fn comment(&mut self, rang: u16) {
+        let mut p: *mut u8;
 
         if self.sapglob.flefba == 0 {
             self.sapglob.flefba += 1;
@@ -297,10 +292,10 @@ impl Sapiens {
         }
         self.sapglob.flagbadi = 1;
         let mescon = self.sap_lang.GetMesCon();
-        p = mescon[(rang - 1) as usize] as *mut c_uchar;
+        p = mescon[(rang - 1) as usize] as *mut u8;
         unsafe {
             while *p != 0 {
-                self.affcarmess(*p as c_short);
+                self.affcarmess(*p as i16);
                 p = p.add(1);
             }
         }
@@ -336,23 +331,23 @@ impl Sapiens {
                     Bulle:affiche une bulle avec un texte
     => message a afficher, qui le dit (0)== joueur (1)== adversaire
     *************************************************************************/
-    pub(crate) fn bulle(&mut self, debut: Ptr, qui: c_short) {
+    pub(crate) fn bulle(&mut self, debut: Ptr, qui: i16) {
         unsafe {
             let mut rbase: Rect;
             let rgnclip: RgnHandle;
             let rgn: RgnHandle;
-            let mut x: c_short;
-            let mut y: c_short;
+            let mut x: i16;
+            let mut y: i16;
             let mut p: Ptr = debut;
 
             let _g = port::on(self.sapwind.debecr);
             /* Calcul de la taille de la chaine en pixel */
-            let (mut tx, ty) = self.TailleChaine(p as *mut c_char);
+            let (mut tx, ty) = self.TailleChaine(p as *mut i8);
             if tx < 64 {
                 tx = 64;
             }
             let sap1 = &self.sapglob.sap1;
-            let mut r = if (qui ^ sap1.sens as c_short) != 0 {
+            let mut r = if (qui ^ sap1.sens as i16) != 0 {
                 Rect::new(
                     X_BULLE_GAUCHE,
                     Y_BULLE - (ty + 2) * 12,
@@ -398,7 +393,7 @@ impl Sapiens {
             FrameRoundRect(&r, 16, 16);
             /* Bulle a gauche */
             let sap1 = &self.sapglob.sap1;
-            if (qui ^ sap1.sens as c_short) != 0 {
+            if (qui ^ sap1.sens as i16) != 0 {
                 x = r.left + 48;
                 y = r.bottom;
                 DoMoveTo(x, y);
@@ -414,7 +409,7 @@ impl Sapiens {
                 LineTo(x, y);
             }
             CloseRgn(rgn);
-            BackColor(whiteColor as c_short);
+            BackColor(whiteColor as i16);
             EraseRgn(rgn);
             DoPenSize(1, 1);
             FrameRgn(rgn);
@@ -437,7 +432,7 @@ impl Sapiens {
                         }
                     }
                 } else {
-                    self.affcar10(*p as c_short);
+                    self.affcar10(*p as i16);
                     p = p.add(1);
                 }
             }
@@ -461,8 +456,8 @@ impl Sapiens {
     ***********************************************************************/
     /*duree du jour 4*90=360 heures*/
     /*quoi 0:normal,1:ni param en baisse ni message,2 baisse mais pas mess*/
-    pub(crate) fn chrono(&mut self, quoi: c_short) {
-        let mut avemess: c_uchar;
+    pub(crate) fn chrono(&mut self, quoi: i16) {
+        let mut avemess: u8;
 
         if self.sapglob.minute != 0 {
             self.sapglob.minute -= 1;
@@ -478,9 +473,7 @@ impl Sapiens {
             self.pastmp();
         }
         /*mise en place des evts couleurs*/
-        while self.sapglob.heure
-            >= self.sapglob.tabheur[self.sapglob.pos_evt as usize].h as c_ushort
-        {
+        while self.sapglob.heure >= self.sapglob.tabheur[self.sapglob.pos_evt as usize].h as u16 {
             /* dois t'on modifier le degrad couleur */
             if self.sapglob.tabheur[self.sapglob.pos_evt as usize].q != 0 {
                 /* Changement du degrade du ciel avec les huits couleurs ST en entrée*/
@@ -497,7 +490,7 @@ impl Sapiens {
                     .as_mut_ptr();
             }
             self.sapglob.pos_evt += 1;
-            if self.sapglob.pos_evt >= NBREVTHEURE as c_short {
+            if self.sapglob.pos_evt >= NBREVTHEURE as i16 {
                 self.sapglob.pos_evt = 0;
                 self.sapglob.heure = 0;
             }
@@ -540,7 +533,7 @@ impl Sapiens {
         }
         if avemess != 0 && quoi == 0 {
             self.efbadi();
-            self.comment(avemess as c_ushort);
+            self.comment(avemess as u16);
         }
     }
 
@@ -550,13 +543,13 @@ impl Sapiens {
     *************************************************************************
     => Contexte de 1 à ....
     */
-    unsafe fn cause(&mut self, context: c_ushort, mess_add: *const c_char) {
-        let mut chaine = [0 as c_char; 255];
+    unsafe fn cause(&mut self, context: u16, mess_add: *const i8) {
+        let mut chaine = [0 as i8; 255];
         unsafe {
             /*y cause ti ?*/
             if self.sapglob.fdialo != 0 {
                 /*y cause */
-                let rang = ((context - 1) * 4 + (self.random.Rnd() & 3) as c_ushort) as c_short;
+                let rang = ((context - 1) * 4 + (self.random.Rnd() & 3) as u16) as i16;
                 let mescon = self.sap_lang.GetMesCon();
                 strcpy(chaine.as_mut_ptr(), mescon[rang as usize]);
                 if !mess_add.is_null() {
@@ -585,14 +578,14 @@ impl Sapiens {
     => Objet a rechercher.La recherche se fait sur refer1
     <= valeur de l'objet f(presilection)
     */
-    pub(crate) fn intrsq(&self, objet: c_ushort) -> c_ushort {
+    pub(crate) fn intrsq(&self, objet: u16) -> u16 {
         let refer1 = self.sap_lang.GetRefer1();
         unsafe {
             let mut valeur = (*refer1.add((objet - 1) as usize)).param1 & 0xF;
-            if objet == self.sapglob.predil as c_ushort {
+            if objet == self.sapglob.predil as u16 {
                 valeur *= 2;
             }
-            valeur as c_ushort
+            valeur as u16
         }
     }
 
@@ -602,26 +595,25 @@ impl Sapiens {
     =>tribu
     <= valeur et rang de la valeur
     */
-    pub(crate) fn rapias(&self) -> c_ushort {
-        let mut max: c_uchar = 0;
-        let mut objet: c_uchar = 0;
-        let mut i: c_short = 0;
-        while (i as c_uchar) < self.sapglob.liste1.taille {
-            let valeur =
-                self.intrsq(self.sapglob.liste1.elements[i as usize] as c_ushort) as c_uchar;
+    pub(crate) fn rapias(&self) -> u16 {
+        let mut max: u8 = 0;
+        let mut objet: u8 = 0;
+        let mut i: i16 = 0;
+        while (i as u8) < self.sapglob.liste1.taille {
+            let valeur = self.intrsq(self.sapglob.liste1.elements[i as usize] as u16) as u8;
             if valeur > max {
                 max = valeur;
                 objet = self.sapglob.liste1.elements[i as usize];
             }
             i += 1;
         }
-        objet as c_ushort
+        objet as u16
     }
 
     /***********************************************************************
                     EXCITE:Augmente self.sapglob.enervement
     ************************************************************************/
-    pub(crate) fn excite(&mut self, valeur: c_ushort) {
+    pub(crate) fn excite(&mut self, valeur: u16) {
         unsafe {
             let tfr = self.sapglob.enerv.wrapping_add(valeur);
             if self.sapglob.enerv <= tfr {
@@ -650,7 +642,7 @@ impl Sapiens {
                 self.cause(8, core::ptr::null());
                 return;
             }
-            if (self.random.Rnd() as c_ushort) < self.sapglob.enerv / 512
+            if (self.random.Rnd() as u16) < self.sapglob.enerv / 512
             /*assez self.sapglob.enerve*/
             {
                 self.inimen(0);
@@ -675,25 +667,23 @@ impl Sapiens {
                           dans la liste 10
     ***********************************************************************/
     pub(crate) fn prends(&mut self) {
-        let erreur = self.sapglob.enlevl(
-            ListeId::Liste1,
-            ListeId::Liste10,
-            self.sapglob.rega as c_ushort,
-        );
+        let erreur =
+            self.sapglob
+                .enlevl(ListeId::Liste1, ListeId::Liste10, self.sapglob.rega as u16);
         if erreur == 1 && self.sapglob.lpos > 1 {
             self.sapglob.lpos -= 1; /*elt est le dernier*/
         }
-        self.inimen(self.sapglob.s_menu as c_ushort);
+        self.inimen(self.sapglob.s_menu as u16);
     }
 
     /**************************************************************************
                     TRDONN:donne
     unsigned short rangb;simule registre B [0,eltmax[
     **************************************************************************/
-    pub(crate) fn trdonn(&mut self, rangb: c_ushort) {
-        let objet: c_uchar;
-        let tfr: c_uchar;
-        let mut valeur: c_ushort;
+    pub(crate) fn trdonn(&mut self, rangb: u16) {
+        let objet: u8;
+        let tfr: u8;
+        let mut valeur: u16;
 
         if self.sapglob.fdialo == 0 {
             return; /*pas de dialogue alors rien*/
@@ -706,20 +696,20 @@ impl Sapiens {
                 if self.sapglob.scenar != 1 {
                     /* on compare l'objet
                     l'objet desiré*/
-                    if objet != (self.sapglob.scenar as c_uchar) + 40
+                    if objet != (self.sapglob.scenar as u8) + 40
                     /*objet du scenario*/
                     {
-                        self.SceveuBulle((self.sapglob.scenar - 1) as c_ushort); /*on raffiche l'objet desire*/
+                        self.SceveuBulle((self.sapglob.scenar - 1) as u16); /*on raffiche l'objet desire*/
                         return;
                     }
                 } else {
                     /*scenario = viande*/
                     if objet < 35 || objet > 39 {
                         /*viande pourrie ou autre*/
-                        self.SceveuBulle((self.sapglob.scenar - 1) as c_ushort);
+                        self.SceveuBulle((self.sapglob.scenar - 1) as u16);
                         return;
                     }
-                    self.sapglob.scenpr = ((40 - objet) as i32 - 1) as c_char; /*on enleve au total*/
+                    self.sapglob.scenpr = ((40 - objet) as i32 - 1) as i8; /*on enleve au total*/
                     if self.sapglob.scenpr > 0 {
                         /* pas fini !!!*/
                         self.prends(); /* enleve viande*/
@@ -748,7 +738,7 @@ impl Sapiens {
                 if self.sapglob.scenar == 5 {
                     /*combat ultime*/
                     self.sapglob.flcomb = 1;
-                    self.SceveuBulle((self.sapglob.scenar - 1) as c_ushort);
+                    self.SceveuBulle((self.sapglob.scenar - 1) as u16);
                     /* Delay de 5 seconde */
                     self.delai(5 * 60);
                     return;
@@ -768,8 +758,7 @@ impl Sapiens {
             /*cherche valeur de l'objet*/
             self.effaceBulles();
             valeur = self.sapglob.enerv.wrapping_sub(
-                512 * self
-                    .intrsq(self.sapglob.liste1.elements[self.sapglob.rega as usize] as c_ushort),
+                512 * self.intrsq(self.sapglob.liste1.elements[self.sapglob.rega as usize] as u16),
             );
             /*compense l'enervement*/
             if valeur > self.sapglob.enerv {
@@ -798,10 +787,9 @@ impl Sapiens {
             /* self.sapglob.echange */
             /*---------*/
             if self.sapglob.enerv < 102 * 256 {
-                valeur = self
-                    .intrsq(self.sapglob.liste1.elements[self.sapglob.rega as usize] as c_ushort);
-                if self.sapglob.chef != 0
-                    && self.sapglob.scenar as c_ushort == self.sapglob.tribu as c_ushort
+                valeur =
+                    self.intrsq(self.sapglob.liste1.elements[self.sapglob.rega as usize] as u16);
+                if self.sapglob.chef != 0 && self.sapglob.scenar as u16 == self.sapglob.tribu as u16
                 {
                     if self.sapglob.liste1.elements[self.sapglob.rega as usize]
                         != self.sapglob.predil
@@ -811,11 +799,11 @@ impl Sapiens {
                         valeur = 200;
                     }
                 }
-                if valeur > self.sapglob.vlchan as c_ushort
+                if valeur > self.sapglob.vlchan as u16
                 /*valeur superieure*/
                 {
                     /*ok il prends*/
-                    self.sapglob.vlchan = valeur as c_uchar;
+                    self.sapglob.vlchan = valeur as u8;
                     self.cause(4, core::ptr::null()); /*marché conclu*/
                     if self.sapglob.echan == 1 {
                         /*protection*/
@@ -826,7 +814,7 @@ impl Sapiens {
                         tfr = self.sapglob.liste1.elements[rangb as usize];
                         self.sapglob.liste1.elements[rangb as usize] = self.sapglob.echan;
                         self.sapglob.echan = tfr;
-                        self.inimen(self.sapglob.s_menu as c_ushort);
+                        self.inimen(self.sapglob.s_menu as u16);
                     }
                 } else {
                     /*insuffisant*/
@@ -853,8 +841,8 @@ impl Sapiens {
                     IDIALO:Initialise l'adversaire en fn de la presence
     ***********************************************************************/
     pub(crate) fn idialo(&mut self) {
-        let mut i: c_short;
-        let mut pos: c_uchar;
+        let mut i: i16;
+        let mut pos: u8;
         self.sapglob.fdialo = 0;
         self.sapglob.flcomb = 0;
         self.sapglob.fpress = 0;
@@ -886,13 +874,13 @@ impl Sapiens {
         self.sapglob.list10.taille = 2;
         /*bkmots[3][1]=(self.sapglob.tribu+0x85);*/
         /*tribu*/
-        self.saptxt.nomtribu[1] = (self.sapglob.tribu + 0x85) as c_char;
+        self.saptxt.nomtribu[1] = (self.sapglob.tribu + 0x85) as i8;
         self.saptxt.nomtribu[2] = 0;
 
         if self.sapglob.chef != 0 {
             /*c'est un self.sapglob.chef*/
-            self.saptxt.nomtribu[0] = 0x85u8 as c_char; /*Chef*/
-            self.saptxt.nomadversaire[0] = (self.sapglob.tribu + 0x89) as c_char;
+            self.saptxt.nomtribu[0] = 0x85u8 as i8; /*Chef*/
+            self.saptxt.nomadversaire[0] = (self.sapglob.tribu + 0x89) as i8;
             self.saptxt.nomadversaire[1] = 0;
             /*   bkmots[2][0]=(self.sapglob.tribu+0x89);*/
             /*nom du self.sapglob.chef*/
@@ -915,7 +903,7 @@ impl Sapiens {
             i = 0;
             while i < 6 {
                 /*determine le nom*/
-                pos = (48 * self.random.Rnd() as c_short / 256) as c_uchar;
+                pos = (48 * self.random.Rnd() as i16 / 256) as u8;
                 self.saptxt.nomadversaire[i as usize] = self.saptxt.maced[pos as usize];
                 i += 1;
                 pos += 1;
@@ -931,7 +919,7 @@ impl Sapiens {
         i = 0;
         while i < 6 {
             /*determine le nom*/
-            pos = (48 * self.random.Rnd() as c_short / 256) as c_uchar;
+            pos = (48 * self.random.Rnd() as i16 / 256) as u8;
             self.saptxt.nomsecondaire[i as usize] = self.saptxt.maced[pos as usize];
             i += 1;
             pos += 1;
@@ -943,7 +931,7 @@ impl Sapiens {
         }
 
         self.saptxt.nomsecondaire[i as usize] = 0;
-        self.sapglob.vlchan = self.intrsq(self.sapglob.echan as c_ushort) as c_uchar;
+        self.sapglob.vlchan = self.intrsq(self.sapglob.echan as u16) as u8;
         self.sapglob.smenu[1] = 111; /* idee d'yves */
 
         self.inimen(0);
@@ -978,7 +966,7 @@ impl Sapiens {
                             CREECOP:Crée un copain
     ***********************************************************************/
     #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn creecop(&mut self, qui: c_ushort) {
+    pub(crate) extern "C" fn creecop(&mut self, qui: u16) {
         /*c'est ds la poche*/
         /*on recopie sap2 sur sap3*/
         BlockMove(
@@ -989,14 +977,14 @@ impl Sapiens {
         unsafe {
             if self.sapglob.presence < 5 {
                 strcpy(
-                    addr_of!(self.saptxt.nomcopain) as *mut c_char,
-                    addr_of!(self.saptxt.nomadversaire) as *const c_char,
+                    addr_of!(self.saptxt.nomcopain) as *mut i8,
+                    addr_of!(self.saptxt.nomadversaire) as *const i8,
                 ); /*nom*/
             } else {
-                self.saptxt.nomcopain[0] = (128 + 45) as c_char; /*Ton ami*/
+                self.saptxt.nomcopain[0] = (128 + 45) as i8; /*Ton ami*/
                 self.saptxt.nomcopain[1] = 0;
             }
-            self.prm(SapId::Sap3, qui as c_short);
+            self.prm(SapId::Sap3, qui as i16);
             let sap2 = &self.sapglob.sap2;
             let sap3 = &mut self.sapglob.sap3;
             sap3.colonne = sap2.colonne;
@@ -1081,7 +1069,7 @@ impl Sapiens {
                             TUVEUQUOI
     ***********************************************************************/
     pub(crate) fn tuveuquoi(&mut self) {
-        let valeur: c_uchar;
+        let valeur: u8;
         let refer1 = self.sap_lang.GetRefer1();
         let mescon = self.sap_lang.GetMesCon();
         let scenme = self.sap_lang.GetScenme();
@@ -1103,7 +1091,7 @@ impl Sapiens {
                         );
                         return;
                     }
-                    valeur = self.intrsq(self.rapias()) as c_uchar;
+                    valeur = self.intrsq(self.rapias()) as u8;
                     if valeur > self.sapglob.vlchan {
                         self.cause(
                             14,
@@ -1134,20 +1122,20 @@ impl Sapiens {
     ***********************************************************************
     => DIQuoi : Le numéro de la phrase ds la liste des phrases
     */
-    pub(crate) fn trdire(&mut self, diquoi: c_ushort) {
-        let tfr: c_short;
-        let mut enerv2: c_ushort;
+    pub(crate) fn trdire(&mut self, diquoi: u16) {
+        let tfr: i16;
+        let mut enerv2: u16;
         let refer1 = self.sap_lang.GetRefer1();
         if self.sapglob.fdialo == 0 {
             return; /*si pas de dialogue alors rien*/
         }
         self.sapglob.flefba = 1; /* pas d'effacement au prochain*/
         unsafe {
-            if diquoi == self.sapglob.dquest as c_ushort {
+            if diquoi == self.sapglob.dquest as u16 {
                 self.excite(1000);
                 return;
             }
-            self.sapglob.dquest = diquoi as c_uchar; /*derniere question*/
+            self.sapglob.dquest = diquoi as u8; /*derniere question*/
 
             if diquoi == 5
             /*je suis tedehur*/
@@ -1159,9 +1147,9 @@ impl Sapiens {
                     /*calcul de la reponse en fn de l'enervement*/
                     tfr = (self.sapglob.enerv as i32
                         - tenerv[self.sapglob.tribu as usize - 1] as i32)
-                        as c_short;
+                        as i16;
                     self.sapglob.enerv = self.sapglob.enetoi[self.sapglob.tribu as usize - 1];
-                    enerv2 = (self.sapglob.enerv as i32).wrapping_add(tfr as i32) as c_ushort;
+                    enerv2 = (self.sapglob.enerv as i32).wrapping_add(tfr as i32) as u16;
                     if tfr > 0 && enerv2 < self.sapglob.enerv {
                         enerv2 = 65535;
                     }
@@ -1229,9 +1217,9 @@ impl Sapiens {
                         /*rien...*/
                         let mescon = self.sap_lang.GetMesCon();
                         self.bulle(mescon[65] as Ptr, 1);
-                        tfr = (self.sapglob.enerv as i32).wrapping_add(200) as c_short;
+                        tfr = (self.sapglob.enerv as i32).wrapping_add(200) as i16;
                         if (self.sapglob.enerv as i32) < (tfr as i32) {
-                            self.sapglob.enerv = tfr as c_ushort;
+                            self.sapglob.enerv = tfr as u16;
                         }
                     } else {
                         if self.sapglob.fpress == 0 {
@@ -1256,9 +1244,9 @@ impl Sapiens {
                 } else {
                     if self.sapglob.enerv > 51 * 256 {
                         self.cause(16, core::ptr::null()); /*je dirais rien*/
-                        tfr = (self.sapglob.enerv as i32).wrapping_add(256) as c_short;
+                        tfr = (self.sapglob.enerv as i32).wrapping_add(256) as i16;
                         if (self.sapglob.enerv as i32) < (tfr as i32) {
-                            self.sapglob.enerv = tfr as c_ushort;
+                            self.sapglob.enerv = tfr as u16;
                         }
                     } else {
                         if self.sapglob.fpress == 0 {
@@ -1268,30 +1256,26 @@ impl Sapiens {
                             self.saptxt.poschef[2] = 32;
                             /*determination de la position du self.sapglob.chef*/
                             if self.sapglob.xj / 256
-                                < self.sapglob.destine[self.sapglob.tribu as usize - 1].posx
-                                    as c_ushort
+                                < self.sapglob.destine[self.sapglob.tribu as usize - 1].posx as u16
                             {
-                                self.saptxt.poschef[0] = (128 + 31) as c_char;
+                                self.saptxt.poschef[0] = (128 + 31) as i8;
                             }
                             if self.sapglob.xj / 256
-                                > self.sapglob.destine[self.sapglob.tribu as usize - 1].posx
-                                    as c_ushort
+                                > self.sapglob.destine[self.sapglob.tribu as usize - 1].posx as u16
                             {
-                                self.saptxt.poschef[0] = (128 + 32) as c_char;
+                                self.saptxt.poschef[0] = (128 + 32) as i8;
                             }
                             if self.sapglob.yj / 256
-                                > self.sapglob.destine[self.sapglob.tribu as usize - 1].posy
-                                    as c_ushort
+                                > self.sapglob.destine[self.sapglob.tribu as usize - 1].posy as u16
                             {
-                                self.saptxt.poschef[2] = (128 + 33) as c_char;
+                                self.saptxt.poschef[2] = (128 + 33) as i8;
                             }
                             if self.sapglob.yj / 256
-                                < self.sapglob.destine[self.sapglob.tribu as usize - 1].posy
-                                    as c_ushort
+                                < self.sapglob.destine[self.sapglob.tribu as usize - 1].posy as u16
                             {
-                                self.saptxt.poschef[2] = (128 + 34) as c_char;
+                                self.saptxt.poschef[2] = (128 + 34) as i8;
                             }
-                            self.bulle(addr_of!(self.saptxt.poschef) as *mut c_char as Ptr, 1); /*affiche le commentaire*/
+                            self.bulle(addr_of!(self.saptxt.poschef) as *mut i8 as Ptr, 1); /*affiche le commentaire*/
                         }
                     }
                 }
@@ -1301,7 +1285,7 @@ impl Sapiens {
                 match self.sapglob.stock1 {
                     1 => {
                         /*insulte*/
-                        self.excite((200 * self.sapglob.stock2) as c_ushort);
+                        self.excite((200 * self.sapglob.stock2) as u16);
                     }
                     2 => {
                         /*flagornerie*/
@@ -1309,9 +1293,9 @@ impl Sapiens {
                             self.sapglob.agress += 1;
                             /*enervement diminue*/
                             tfr = (self.sapglob.enerv as i32 - 100 * self.sapglob.stock2 as i32)
-                                as c_short;
+                                as i16;
                             if (tfr as i32) < (self.sapglob.enerv as i32) {
-                                self.sapglob.enerv = tfr as c_ushort;
+                                self.sapglob.enerv = tfr as u16;
                             }
                             self.excite(0);
                         } else {
@@ -1320,21 +1304,21 @@ impl Sapiens {
                             /*si trop self.sapglob.agressif ça marche pas*/
                             {
                                 self.sapglob.agress += 1;
-                                if self.random.Rnd() > (self.sapglob.enerv / 200) as c_short {
+                                if self.random.Rnd() > (self.sapglob.enerv / 200) as i16 {
                                     self.fuite();
                                 } else {
                                     /*enervement diminue*/
                                     tfr = (self.sapglob.enerv as i32
                                         - 100 * self.sapglob.stock2 as i32)
-                                        as c_short;
+                                        as i16;
                                     if (tfr as i32) < (self.sapglob.enerv as i32) {
-                                        self.sapglob.enerv = tfr as c_ushort;
+                                        self.sapglob.enerv = tfr as u16;
                                     }
                                     self.excite(0);
                                 }
                             } else {
                                 /*il le prend pour une insulte*/
-                                self.excite((200 * self.sapglob.stock2) as c_ushort);
+                                self.excite((200 * self.sapglob.stock2) as u16);
                             }
                         }
                     }
@@ -1344,20 +1328,20 @@ impl Sapiens {
                         /*si trop self.sapglob.agressif ça marche pas*/
                         {
                             self.sapglob.agress += 1;
-                            if self.random.Rnd() > (self.sapglob.enerv / 200) as c_short {
+                            if self.random.Rnd() > (self.sapglob.enerv / 200) as i16 {
                                 self.fuite();
                             } else {
                                 /*enervement diminue*/
                                 tfr = (self.sapglob.enerv as i32 - 100 * self.sapglob.stock2 as i32)
-                                    as c_short;
+                                    as i16;
                                 if (tfr as i32) < (self.sapglob.enerv as i32) {
-                                    self.sapglob.enerv = tfr as c_ushort;
+                                    self.sapglob.enerv = tfr as u16;
                                 }
                                 self.excite(0);
                             }
                         } else {
                             /*il le prend pour une insulte*/
-                            self.excite((200 * self.sapglob.stock2) as c_ushort);
+                            self.excite((200 * self.sapglob.stock2) as u16);
                         }
                     }
                 } /*fin du switch*/
@@ -1370,20 +1354,20 @@ impl Sapiens {
                             VOLE:On a perdu: il nous pique tout
     ***********************************************************************/
     pub(crate) fn vole(&mut self) {
-        let mut i: c_short;
+        let mut i: i16;
         self.sapglob.liste4.taille = 0; /*plus rien à terre*/
-        i = self.sapglob.liste1.taille as c_short;
+        i = self.sapglob.liste1.taille as i16;
         while i != 0 {
             i -= 1;
             /* si la valeur est suffisante que ce n'est pas un objet scenario
             et avec un leger Rnd
              */
-            if self.intrsq(self.sapglob.liste1.elements[i as usize] as c_ushort) > 5
+            if self.intrsq(self.sapglob.liste1.elements[i as usize] as u16) > 5
                 && self.sapglob.liste1.elements[i as usize] < 40
                 && self.random.Rnd() > 128
             {
                 self.sapglob
-                    .enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
+                    .enlevl(ListeId::Liste1, ListeId::Listbidon, i as u16);
             }
         }
         self.sapglob.tlpos[1] = 1;
@@ -1394,7 +1378,7 @@ impl Sapiens {
                             OUTARM :Armes en sorties
     ***********************************************************************/
     pub(crate) fn outarm(&mut self) {
-        let tfr: c_uchar;
+        let tfr: u8;
 
         self.sapglob.tlpos[1] = 1;
         self.sapglob.tlpos[4] = 1;
@@ -1412,7 +1396,7 @@ impl Sapiens {
                     sap1.nbresag -= 1;
                 } else {
                     self.sapglob
-                        .enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
+                        .enlevl(ListeId::Liste1, ListeId::Listbidon, i as u16);
                 }
             }
         }
@@ -1427,7 +1411,7 @@ impl Sapiens {
                     || self.sapglob.liste1.elements[i as usize] == 22
                 {
                     self.sapglob
-                        .enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
+                        .enlevl(ListeId::Liste1, ListeId::Listbidon, i as u16);
                     i = 0;
                 }
             }
@@ -1447,7 +1431,7 @@ impl Sapiens {
                             TRDORS:
     ***********************************************************************/
     pub(crate) fn trdors(&mut self) {
-        let mut tfr: c_uchar;
+        let mut tfr: u8;
         if self.sapglob.fatig > 192 {
             self.sapglob.flefba = 0;
             self.comment(108);
@@ -1474,7 +1458,7 @@ impl Sapiens {
             }
             let t = TickCount();
             while TickCount() < t + 10 { /* vide */ }
-            self.affich(self.sapglob.dzeta as c_ushort);
+            self.affich(self.sapglob.dzeta as u16);
             self.tfrima();
             self.sapglob.minute = 0;
             self.chrono(2);
@@ -1494,16 +1478,16 @@ impl Sapiens {
         if self.sapglob.dervue != Vue::LATERALE {
             self.sapglob.ldzeta = self.sapglob.dzeta;
         }
-        self.prm(SapId::Sap2, self.sapglob.present[1] as c_short);
-        self.prm(SapId::Sap4, self.sapglob.present[3] as c_short);
+        self.prm(SapId::Sap2, self.sapglob.present[1] as i16);
+        self.prm(SapId::Sap4, self.sapglob.present[3] as i16);
         self.sapglob.flcomb = 1;
         if self.sapglob.presence != 0 {
             if self.sapglob.presence < 5 {
                 self.sapglob.flcomb = 0;
             }
             self.sapglob.presence &= 127; /*elimine bit 7 pour bestiole amie*/
-            self.prm(SapId::Sap1, self.sapglob.present[0] as c_short);
-            self.prm(SapId::Sap3, self.sapglob.present[2] as c_short);
+            self.prm(SapId::Sap1, self.sapglob.present[0] as i16);
+            self.prm(SapId::Sap3, self.sapglob.present[2] as i16);
             if self.sapglob.dervue != Vue::LATERALE {
                 self.latera(); /* un affichage et dialogue*/
             }
@@ -1520,10 +1504,10 @@ impl Sapiens {
        3 carte
     ***********************************************************************/
     #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn trobsv(&mut self, regb: c_ushort) {
-        let dzetdep: c_ushort;
+    pub(crate) extern "C" fn trobsv(&mut self, regb: u16) {
+        let dzetdep: u16;
         let mut regb = regb;
-        let mut posTimer: c_ulong;
+        let mut posTimer: u64;
 
         if self.sapglob.presence != 0 {
             return; /* si il ya quelun alors on est poli*/
@@ -1537,10 +1521,10 @@ impl Sapiens {
                 self.clrbadi();
                 self.sapglob.dervue = Vue::PAYSAGE;
                 /* gestion de la vue 3d */
-                self.MenuFenetres(FAUX as c_short);
+                self.MenuFenetres(FAUX as i16);
                 self.AffichePictAide(1);
                 self.clav3d();
-                self.MenuFenetres(VRAI as c_short);
+                self.MenuFenetres(VRAI as i16);
                 self.pos0_mouse();
                 /* Une presence a ete rencontrée : on initialise la
                 vue laterale */
@@ -1559,12 +1543,12 @@ impl Sapiens {
                 /*panaroma*/
                 while self.getkey(0) != 0 { /* vide */ }
                 self.sapglob.dervue = Vue::PAYSAGE;
-                dzetdep = self.sapglob.dzeta as c_ushort;
+                dzetdep = self.sapglob.dzeta as u16;
                 loop {
                     posTimer = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
-                    self.affich(self.sapglob.dzeta as c_ushort);
+                    self.affich(self.sapglob.dzeta as u16);
                     self.tfrima();
-                    self.sapglob.dzeta = ((self.sapglob.dzeta as i32 + 16) & 0x3FF) as c_short;
+                    self.sapglob.dzeta = ((self.sapglob.dzeta as i32 + 16) & 0x3FF) as i16;
                     while posTimer
                         > self
                             .sapwclav
@@ -1606,14 +1590,14 @@ impl Sapiens {
     /***********************************************************************
             ZONEVT:Determine un evt en fonction de la position
     ***********************************************************************/
-    pub(crate) fn zonevt(&mut self, okmess: c_ushort) -> c_short {
+    pub(crate) fn zonevt(&mut self, okmess: u16) -> i16 {
         let mut dieu: *mut evt;
         let mut nuit: bool;
-        let mut qui: c_uchar;
-        let mut dist: c_short;
+        let mut qui: u8;
+        let mut dist: i16;
         unsafe {
             /*on balaye tout les evts*/
-            for i in 0..NBREVTDESTINE as c_short {
+            for i in 0..NBREVTDESTINE as i16 {
                 dieu = &raw mut self.sapglob.destine[i as usize];
                 dist = distance(
                     (*dieu).posx as i64 * 256 - self.sapglob.xj as i64,
@@ -1621,7 +1605,7 @@ impl Sapiens {
                 );
                 dist /= 256;
                 /*dist est mis a jour*/
-                if dist > (*dieu).distmax as c_short
+                if dist > (*dieu).distmax as i16
                 /*dans la zone d'influence*/
                 {
                     (*dieu).type_ &= 127; /*on revalide la zone en clearant le bit 128*/
@@ -1630,16 +1614,16 @@ impl Sapiens {
                 {
                     /*la zone est-elle valide ??,sommes mous assez central*/
                     if (*dieu).type_ & 128 == 0
-                        && (dist as i32 * 12 + 10) < (self.random.Rnd() as c_ushort) as i32
+                        && (dist as i32 * 12 + 10) < (self.random.Rnd() as u16) as i32
                     {
                         /*on compare
                         la densité probabiliste de la zone*/
-                        if self.random.Rnd() >= (*dieu).rnd as c_short {
+                        if self.random.Rnd() >= (*dieu).rnd as i16 {
                             /* on affiche un message (l'evt n'a???*/
                             if self.random.Rnd() > 240 {
                                 if okmess != 0 {
                                     self.efbadi();
-                                    self.comment((*dieu).message as c_ushort);
+                                    self.comment((*dieu).message as u16);
                                     return 0;
                                 }
                             }
@@ -1670,7 +1654,7 @@ impl Sapiens {
                                     || (nuit && qui == 5)
                                     || (!nuit && qui != 5)
                                 {
-                                    return qui as c_short;
+                                    return qui as i16;
                                 }
                             } /*evt =eau ou vivant*/
                         } /*Rnd correct*/
@@ -1689,8 +1673,8 @@ impl Sapiens {
     en sortie 0 aucune presence generee sinon type de la presence de 1 à 8
      */
     pub(crate) fn zoninf(&mut self) {
-        let tfr: c_uchar;
-        let mut i: c_uchar;
+        let tfr: u8;
+        let mut i: u8;
 
         /*si dej
         present alors fin*/
@@ -1709,14 +1693,14 @@ impl Sapiens {
         self.sapglob.chef = 0;
         self.sapglob.flcomb = 0;
         self.sapglob.source = 0;
-        self.sapglob.present[1] = self.zonevt(1) as c_char; /*avec message possible*/
+        self.sapglob.present[1] = self.zonevt(1) as i8; /*avec message possible*/
         if self.sapglob.present[1] != 0
         /*il ya un evt vivant*/
         {
             /* s'il ya un self.sapglob.chef alors il est automatiquement accompagné*/
             /*sinon on retire un evt pour le deuxieme*/
             if self.sapglob.chef == 0 {
-                self.sapglob.present[3] = self.zonevt(0) as c_char; /*sans message possible*/
+                self.sapglob.present[3] = self.zonevt(0) as i8; /*sans message possible*/
             } else {
                 self.sapglob.present[3] = self.sapglob.present[1];
             }
@@ -1726,31 +1710,31 @@ impl Sapiens {
                 && self.sapglob.present[3] != 0
             {
                 /*on swape*/
-                tfr = self.sapglob.present[1] as c_uchar;
+                tfr = self.sapglob.present[1] as u8;
                 self.sapglob.present[1] = self.sapglob.present[3];
-                self.sapglob.present[3] = tfr as c_char;
+                self.sapglob.present[3] = tfr as i8;
             }
             /*ds tout les cas la presence est fixée a celle du prioritaire*/
-            self.sapglob.presence = self.sapglob.present[1] as c_short;
-            self.sapglob.tribu = self.sapglob.presence as c_uchar;
+            self.sapglob.presence = self.sapglob.present[1] as i16;
+            self.sapglob.tribu = self.sapglob.presence as u8;
             if self.sapglob.dervue != Vue::LATERALE {
                 let sap1 = &mut self.sapglob.sap1;
                 sap1.colonne = 3;
             }
             /* On calcule les positions des adversaires */
-            self.prm(SapId::Sap2, self.sapglob.present[1] as c_short);
-            self.prm(SapId::Sap4, self.sapglob.present[3] as c_short);
+            self.prm(SapId::Sap2, self.sapglob.present[1] as i16);
+            self.prm(SapId::Sap4, self.sapglob.present[3] as i16);
             self.idialo();
             /* on teste  le charisme immediat sur animal*/
             /* si on est seduisant,qu'il y a une seule bestiole et avec un peu de chance*/
             if self.sapglob.presence > 4
-                && (self.sapglob.charisme as c_short) > self.random.Rnd()
+                && (self.sapglob.charisme as i16) > self.random.Rnd()
                 && self.random.Rnd() < 40
                 && self.sapglob.present[2] == 0
             {
                 self.sapglob.flefba = 0;
-                self.comment((97 + self.sapglob.presence) as c_ushort); /*premier mess 102*/
-                self.creecop(self.sapglob.presence as c_ushort);
+                self.comment((97 + self.sapglob.presence) as u16); /*premier mess 102*/
+                self.creecop(self.sapglob.presence as u16);
                 self.sapglob.viecopain = 1; /*pour les bestioles*/
                 self.sapglob.flefba = 0;
                 if self.sapglob.dervue == Vue::LATERALE {
@@ -1781,14 +1765,14 @@ impl Sapiens {
                     return;
                 }
             }
-            self.sapglob.liste4.taille = self.random.Rnd() as c_uchar & 7; /*jusqu'a 7 elements à terre*/
+            self.sapglob.liste4.taille = self.random.Rnd() as u8 & 7; /*jusqu'a 7 elements à terre*/
             i = self.sapglob.liste4.taille;
             self.sapglob.tlpos[4] = 1; /* debut de liste */
             /*on génère les objets a terre*/
             while i != 0 {
                 i -= 1;
                 self.sapglob.liste4.elements[i as usize] =
-                    (3 + (17 * self.random.Rnd()) / 256) as c_uchar;
+                    (3 + (17 * self.random.Rnd()) / 256) as u8;
             }
         }
     }

@@ -24,7 +24,7 @@ use crate::stubs::{
 use crate::text::{TextBox, TextSize};
 use crate::{Sapiens, cbridge, port};
 use std::mem::size_of;
-use std::os::raw::{c_char, c_int, c_long, c_short, c_void};
+use std::os::raw::c_void;
 
 const TAILLE_TFR: u32 = 66;
 
@@ -33,7 +33,7 @@ const TAILLE_TFR: u32 = 66;
 Retrace instanatanemen,t l'item demandé
 ********************************************************************/
 pub(crate) fn RetraceItem(dialog: DialogPtr, item: i16) {
-    let mut itemType: c_short = 0;
+    let mut itemType: i16 = 0;
     let mut handle = Handle::default();
     let mut box_ = Rect::default();
 
@@ -46,14 +46,14 @@ pub(crate) fn RetraceItem(dialog: DialogPtr, item: i16) {
                SetPathInData
 => id de la picture,aire
 ***********************************************************************/
-pub(crate) fn SetPathInData(sapgest: &Sapgest, name: *mut ::std::os::raw::c_char) {
-    let mut vol: c_short = 0;
-    let mut path: c_long = 0;
+pub(crate) fn SetPathInData(sapgest: &Sapgest, name: *mut i8) {
+    let mut vol: i16 = 0;
+    let mut path: i64 = 0;
 
     FixeCheminRelatif(
         sapgest.volumeApplication,
         sapgest.PathApplication,
-        c"data".as_ptr() as *mut c_char,
+        c"data".as_ptr() as *mut i8,
     );
     SaisitChemin(&mut vol, std::ptr::null_mut(), &mut path);
     FixeCheminRelatif(vol, path, name);
@@ -143,14 +143,14 @@ pub(crate) fn DoPaintRect(aire: &Rect) {
 /****************************************************************************
             DoPenSize
 *****************************************************************************/
-pub(crate) fn DoPenSize(x: c_short, y: c_short) {
+pub(crate) fn DoPenSize(x: i16, y: i16) {
     let z = port::zoom();
     PenSize((x as f32 * z) as i16, (y as f32 * z) as i16);
 }
 /****************************************************************************
             DoMoveTo
 *****************************************************************************/
-pub(crate) fn DoMoveTo(x: c_short, y: c_short) {
+pub(crate) fn DoMoveTo(x: i16, y: i16) {
     let z = port::zoom();
     MoveTo((x as f32 * z) as i16, (y as f32 * z) as i16);
 }
@@ -158,28 +158,28 @@ pub(crate) fn DoMoveTo(x: c_short, y: c_short) {
 /****************************************************************************
             DoLine
 *****************************************************************************/
-pub(crate) fn DoLine(x: c_short, y: c_short) {
+pub(crate) fn DoLine(x: i16, y: i16) {
     let z = port::zoom();
     Line((x as f32 * z) as i16, (y as f32 * z) as i16);
 }
 /****************************************************************************
             DoTextSize
 *****************************************************************************/
-pub(crate) fn DoTextSize(x: c_short) {
+pub(crate) fn DoTextSize(x: i16) {
     let z = port::zoom();
     TextSize((x as f32 * z) as i16);
 }
 /****************************************************************************
             DoTextBox
 *****************************************************************************/
-pub(crate) fn DoTextBox(text: *mut c_char, length: c_short, box_: &Rect, just: c_short) {
+pub(crate) fn DoTextBox(text: *mut i8, length: i16, box_: &Rect, just: i16) {
     let dest = DoZoomRect(box_);
     TextBox(text as *const c_void, length as i64, &dest, just);
 }
 /****************************************************************************
             DoScrollRect
 *****************************************************************************/
-pub(crate) fn DoScrollRect(r: &Rect, dh: c_short, dv: c_short, updateRgn: RgnHandle) {
+pub(crate) fn DoScrollRect(r: &Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
     let z = port::zoom();
     let dest = DoZoomRect(r);
     let bdh = (dh as f32 * z) as i16;
@@ -208,9 +208,9 @@ fn Read(f: *mut FILE, mut p: Ptr, taille: i64) -> bool {
 Les fichiers .BRT stockent les entiers sur 2 octets en big-endian
 (Mac) : swap octets sur petit-boutiste (identite sur gros-boutiste)
 ******************************************************************/
-fn wintel2moto(x: c_short) -> c_short {
+fn wintel2moto(x: i16) -> i16 {
     let u = x as u16;
-    (((u << 8) & 0xFF00) | ((u >> 8) & 0x00FF)) as c_short
+    (((u << 8) & 0xFF00) | ((u >> 8) & 0x00FF)) as i16
 }
 
 impl Sapiens {
@@ -238,10 +238,10 @@ impl Sapiens {
                 self.Collapse(&format!("Charge fichier Brt : Fichier '{nom}' non trouve"));
                 return -1;
             }
-            if getc(f) != b'B' as c_int
-                || getc(f) != b'R' as c_int
-                || getc(f) != b'U' as c_int
-                || getc(f) != b'T' as c_int
+            if getc(f) != b'B' as i32
+                || getc(f) != b'R' as i32
+                || getc(f) != b'U' as i32
+                || getc(f) != b'T' as i32
             {
                 self.Collapse("Charge fichier Brt : Mauvaise en tete");
                 fclose(f);
@@ -256,13 +256,13 @@ impl Sapiens {
             if !Read(f, &mut r as *mut u8 as Ptr, 1) {
                 return -1;
             }
-            n = (r as c_short) + 1;
+            n = (r as i16) + 1;
             self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].nbEntrees = n;
             let taille = (n as i64) * (size_of::<BRGBColor>() as i64);
             let mut rgb = NewPtr(taille) as *mut BRGBColor;
             self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabRgb = rgb;
             self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabIndex =
-                NewPtr((n as i64) * (size_of::<c_short>() as i64)) as *mut c_short;
+                NewPtr((n as i64) * (size_of::<i16>() as i64)) as *mut i16;
             /* On memorise le nombre d'entrees de la PalCoul */
             for i in 0..n as usize {
                 if !Read(f, &mut r as *mut u8 as Ptr, 1) {
@@ -283,7 +283,7 @@ impl Sapiens {
                 rgb = rgb.add(1);
             }
             /* On charge les donnees de configuration */
-            if !Read(f, &mut nb_objets as *mut c_short as Ptr, 2) {
+            if !Read(f, &mut nb_objets as *mut i16 as Ptr, 2) {
                 return -1;
             }
             /* wintel2moto : swap octets sur petit-boutiste */
@@ -297,10 +297,10 @@ impl Sapiens {
             let mut curid = id;
             while i > 0 {
                 i -= 1;
-                if !Read(f, &mut nbcol as *mut c_short as Ptr, 2) {
+                if !Read(f, &mut nbcol as *mut i16 as Ptr, 2) {
                     return -1;
                 }
-                if !Read(f, &mut nbligne as *mut c_short as Ptr, 2) {
+                if !Read(f, &mut nbligne as *mut i16 as Ptr, 2) {
                     return -1;
                 }
                 /* wintel2moto : swap octets sur petit-boutiste */
@@ -340,19 +340,14 @@ impl Sapiens {
     a traiter
     <- ptr sur le tableau des index sur la palette (short *)
     ******************************************************************/
-    pub(crate) fn CalculePaletteAttenuee(
-        &self,
-        num: c_short,
-        coeff: f32,
-        nbCoul: c_short,
-    ) -> *mut c_short {
+    pub(crate) fn CalculePaletteAttenuee(&self, num: i16, coeff: f32, nbCoul: i16) -> *mut i16 {
         let coeffl = (256.0f32 * coeff) as i64;
         let mob = &self.sapwbrt.TabMob[num as usize];
         /* Palette associee a ce mob */
         let palette = &self.sapwbrt.TabPalette[mob.indexPalette as usize];
         /* On alloue un tableau d'index de taille identique */
-        let tabIndex = NewPtr((size_of::<c_short>() as i64) * (palette.nbEntrees.max(0) as i64))
-            as *mut c_short;
+        let tabIndex =
+            NewPtr((size_of::<i16>() as i64) * (palette.nbEntrees.max(0) as i64)) as *mut i16;
         unsafe {
             if !tabIndex.is_null() {
                 for i in 0..palette.nbEntrees.max(0) as usize {
@@ -420,15 +415,15 @@ impl Sapiens {
                     Affmob3d
     Affiche un mob sur le port en cours
     *************************************************************************/
-    pub(crate) fn Affmob3d(&self, num: c_short, mut mon_aire: Rect, tabIndex: *mut c_short) {
+    pub(crate) fn Affmob3d(&self, num: i16, mut mon_aire: Rect, tabIndex: *mut i16) {
         let mob = &self.sapwbrt.TabMob[num as usize];
         unsafe {
-            let tx: c_short = mob.nbcol;
-            let ty: c_short = mob.nbligne;
+            let tx: i16 = mob.nbcol;
+            let ty: i16 = mob.nbligne;
             let vide: u8 = mob.vide as u8;
             let mut p: *mut u8 = mob.datas;
             /* Palette associee a ce mob */
-            let mut tab_i: *mut c_short = tabIndex;
+            let mut tab_i: *mut i16 = tabIndex;
             if tab_i.is_null() {
                 tab_i = self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex;
             }
@@ -510,20 +505,20 @@ impl Sapiens {
     #[unsafe(no_mangle)]
     pub(crate) extern "C" fn Affmobbrt(
         &self,
-        num: c_short,
-        x: c_short,
-        y: c_short,
-        sens: c_short,
-        tabIndex: *mut c_short,
+        num: i16,
+        x: i16,
+        y: i16,
+        sens: i16,
+        tabIndex: *mut i16,
     ) {
         let mob = &self.sapwbrt.TabMob[num as usize];
         let mut x = ((x as i32) * (ECHELLE as i32)) as i16;
         let mut y = ((y as i32) * (ECHELLE as i32)) as i16;
-        let mut tx: c_short = mob.nbcol;
-        let mut ty: c_short = mob.nbligne;
+        let mut tx: i16 = mob.nbcol;
+        let mut ty: i16 = mob.nbligne;
         let mut p: *mut u8 = mob.datas;
         /* Palette associee a ce mob */
-        let mut tab_i: *mut c_short = tabIndex;
+        let mut tab_i: *mut i16 = tabIndex;
         if tab_i.is_null() {
             tab_i = self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex;
         }
@@ -634,8 +629,8 @@ impl Sapiens {
     ******************************************************************/
     pub(crate) fn AffmobCar(&self, num: i16, x: i16, y: i16, couleur: i16) {
         let mob = &self.sapwbrt.TabMob[num as usize];
-        let mut tx: c_short = mob.nbcol;
-        let mut ty: c_short = mob.nbligne;
+        let mut tx: i16 = mob.nbcol;
+        let mut ty: i16 = mob.nbligne;
         let mut p: *mut u8 = mob.datas;
         let mut x = x;
         let mut y = y;
@@ -724,16 +719,16 @@ impl Sapiens {
     ******************************************************************/
     pub(crate) fn Affmobbrtomb(
         &self,
-        num: c_short,
-        x: c_short,
-        y: c_short,
-        deltah: c_short,
-        deltav: c_short,
+        num: i16,
+        x: i16,
+        y: i16,
+        deltah: i16,
+        deltav: i16,
         r: *mut Rect,
     ) {
         let mob = &self.sapwbrt.TabMob[num as usize];
-        let tx: c_short = mob.nbcol;
-        let ty: c_short = mob.nbligne;
+        let tx: i16 = mob.nbcol;
+        let ty: i16 = mob.nbligne;
         /* Conversion des coordonnees */
         let deltah = ((deltah as i32) * (ECHELLE as i32)) as i16;
         let deltav = ((deltav as i32) * (ECHELLE as i32)) as i16;
@@ -748,7 +743,7 @@ impl Sapiens {
         );
         let mut p: *mut u8 = mob.datas;
         /* Palette associee a ce mob */
-        let tab_i: *mut c_short = self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex;
+        let tab_i: *mut i16 = self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex;
         /* Origine des donnees de l'ecran */
         let Some(info) = port::info(port::current()) else {
             return;
@@ -804,7 +799,7 @@ Ecrit le pixel en coordonnée x, y de couleur systeme coul
 => x (0-640) ,y(0-200), index de la couleur systeme
 ******************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn PlotIndexPixBrt(gfx: CGrafPtr, x: c_short, y: c_short, coul: c_short) {
+pub(crate) extern "C" fn PlotIndexPixBrt(gfx: CGrafPtr, x: i16, y: i16, coul: i16) {
     let Some(info) = port::info(gfx) else {
         return;
     };
@@ -824,7 +819,7 @@ correspondant a un point dans le port courrant
 <= couleur
 ******************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetIndexPixBrt(gfx: CGrafPtr, x: c_short, y: c_short) -> c_short {
+pub(crate) extern "C" fn GetIndexPixBrt(gfx: CGrafPtr, x: i16, y: i16) -> i16 {
     let Some(info) = port::info(gfx) else {
         return -1;
     };
@@ -833,7 +828,7 @@ pub(crate) extern "C" fn GetIndexPixBrt(gfx: CGrafPtr, x: c_short, y: c_short) -
     /* Position d'affichage sur l'ecran */
     unsafe {
         let p = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
-        *p as c_short
+        *p as i16
     }
 }
 /******************************************************************
@@ -905,7 +900,7 @@ Remplit la zone comprise entre deux lignes avec la couleur donnee
 => ligne debut, ligne fin ,couleur
 ******************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn RemplitLigneBrut(y1: c_short, y2: c_short, index: c_short) {
+pub(crate) extern "C" fn RemplitLigneBrut(y1: i16, y2: i16, index: i16) {
     let Some(info) = port::info(port::current()) else {
         return;
     };
@@ -924,7 +919,7 @@ pub(crate) extern "C" fn RemplitLigneBrut(y1: c_short, y2: c_short, index: c_sho
 Remplit la zone  avec le tableau de couleur  donne
 => ligne debut (pixel ecran reel), nbre de lignes, Tableau de couleurs
 ******************************************************************/
-pub(crate) fn RemplitZoneLignes(y: c_short, tab_couleur: &[IndexColor]) {
+pub(crate) fn RemplitZoneLignes(y: i16, tab_couleur: &[IndexColor]) {
     let Some(info) = port::info(port::current()) else {
         return;
     };
@@ -990,12 +985,12 @@ impl Sapiens {
     #[unsafe(no_mangle)]
     pub(crate) extern "C" fn TraceDisque(
         &self,
-        dg: *mut c_short,
-        dd: *mut c_short,
-        dy: *mut c_short,
-        fg: c_short,
-        fd: c_short,
-        epaisseur: c_short,
+        dg: *mut i16,
+        dd: *mut i16,
+        dy: *mut i16,
+        fg: i16,
+        fd: i16,
+        epaisseur: i16,
     ) {
         unsafe {
             {
@@ -1019,7 +1014,7 @@ impl Sapiens {
                         if fy < 200 {
                             let delta = (x2 - x1) >> 16;
                             let mut sx1: i16 = (x1 >> 16) as i16;
-                            let tcole = std::ptr::addr_of!(self.sapwarb.tabcoul) as *const c_short;
+                            let tcole = std::ptr::addr_of!(self.sapwarb.tabcoul) as *const i16;
                             for i in 0..8 {
                                 let index1 = self.sapwcvt.TabCvtCoul
                                     [(*self.sapglob.palhaute.add(*tcole.add(i) as usize)) as usize];
@@ -1074,7 +1069,7 @@ impl Sapiens {
                 if fy <= 0 {
                     *dy = 0;
                 } else {
-                    *dy = (fy / (ECHELLE as i32)) as c_short;
+                    *dy = (fy / (ECHELLE as i32)) as i16;
                 }
             }
         }
@@ -1087,7 +1082,7 @@ Cree un offscreen de taille donnee, compatible avec le MaxDevice
 <= pointeur sur CGrafPort ou NULL si erreur
 **************************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn SapiensCreeOffscreen(taillex: c_short, tailley: c_short) -> CGrafPtr {
+pub(crate) extern "C" fn SapiensCreeOffscreen(taillex: i16, tailley: i16) -> CGrafPtr {
     port::create(
         Rect {
             top: 0,
@@ -1210,7 +1205,7 @@ impl Sapiens {
     Efface l'ecran virtuel Ecran en entier
     => couleur ST d'effacement
     *************************************************************************/
-    pub(crate) fn effima(&self, couleur: c_short) {
+    pub(crate) fn effima(&self, couleur: i16) {
         let mut r = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
         self.BoxFill(self.sapwind.Ecran1, &mut r, couleur);
     }
@@ -1220,7 +1215,7 @@ impl Sapiens {
     Efface la zone de la vue 3d sur debecr
     => Couleur RVB St
     *************************************************************************/
-    pub(crate) fn effvirt(&self, couleur: c_short) {
+    pub(crate) fn effvirt(&self, couleur: i16) {
         let mut r = Rect::new(
             (32 * ECHELLE) as i16,
             ECHELLE as i16,
@@ -1251,7 +1246,7 @@ impl Sapiens {
                     tfrmenufenetre
     => actif, inactif
     *************************************************************************/
-    pub(crate) fn tfrmenufenetre(&self, etat: c_short) {
+    pub(crate) fn tfrmenufenetre(&self, etat: i16) {
         let r = Rect::new(
             0,
             (113 * ECHELLE) as i16,
@@ -1307,7 +1302,7 @@ impl Sapiens {
     => Numero du mob, position y (0-200) ,position x (0-320), sens
     *************************************************************************/
     #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn Affmob(&self, mob: c_short, y: c_short, x: c_short, inverse: c_short) {
+    pub(crate) extern "C" fn Affmob(&self, mob: i16, y: i16, x: i16, inverse: i16) {
         let _g = port::on(self.sapwind.Ecran1);
         self.Affmobbrt(mob, x, y, inverse, std::ptr::null_mut());
     }
@@ -1317,13 +1312,7 @@ impl Sapiens {
     => Numero du mob, position y (0-200) ,position x (0-320), sens
     *************************************************************************/
     #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn AffmobConst(
-        &self,
-        mob: c_short,
-        y: c_short,
-        x: c_short,
-        inverse: c_short,
-    ) {
+    pub(crate) extern "C" fn AffmobConst(&self, mob: i16, y: i16, x: i16, inverse: i16) {
         let _g = port::on(self.sapwind.Ecran1);
         self.Affmobbrt(mob, x, y, inverse, std::ptr::null_mut());
         port::set(self.sapwind.Ecran2);
@@ -1412,7 +1401,7 @@ impl Sapiens {
                AffichePictDansAire
 => id de la picture,aire
 ***********************************************************************/
-pub(crate) fn AffichePictDansAire(sapgest: &Sapgest, num: c_short, r: &Rect) {
+pub(crate) fn AffichePictDansAire(sapgest: &Sapgest, num: i16, r: &Rect) {
     let mut nom = [0i8; 255];
 
     let rDest = DoZoomRect(r);
@@ -1422,9 +1411,9 @@ pub(crate) fn AffichePictDansAire(sapgest: &Sapgest, num: c_short, r: &Rect) {
         sprintf(
             nom.as_mut_ptr(),
             c"image_%d.png".as_ptr(),
-            CvtDefaultLangRess(num) as c_int,
+            CvtDefaultLangRess(num) as i32,
         );
-        SetPathInData(sapgest, c"images".as_ptr() as *mut c_char);
+        SetPathInData(sapgest, c"images".as_ptr() as *mut i8);
         let mut rpng = Rect::default();
         if GetRectFilePng(nom.as_mut_ptr(), &mut rpng) {
             let offscreen = ConvertPNGFileToOffscreen(nom.as_mut_ptr());
@@ -1444,7 +1433,7 @@ pub(crate) fn AffichePictDansAire(sapgest: &Sapgest, num: c_short, r: &Rect) {
         } else {
             let mut pict = GetPicture(CvtDefaultLangRess(num));
             if pict.is_null() {
-                pict = GetPicture(CvtLangRess(GB as c_short, num));
+                pict = GetPicture(CvtLangRess(GB as i16, num));
             }
             if !pict.is_null() {
                 DrawPicture(pict, &rDest);

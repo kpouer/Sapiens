@@ -14,17 +14,16 @@
 // par CvtCarLissage (saptxt.rs). Ne pas convertir en UTF-8.
 use super::saptxt::{nomref, sc};
 use crate::sapiens::{NB_MOTS_BKMOTS, reference};
-use std::os::raw::c_char;
 
 pub(crate) struct Saptxt_gb {
     pub(crate) refer0: [reference; 12],
     pub(crate) refer1: [reference; 47],
     pub(crate) refer2: [reference; 29],
     pub(crate) refer3: [reference; 27],
-    pub(crate) mescon: [*mut c_char; 138],
-    pub(crate) bkmots: [*mut c_char; NB_MOTS_BKMOTS as usize],
-    pub(crate) scenme: [*mut c_char; 14],
-    pub(crate) app: [*mut c_char; 23],
+    pub(crate) mescon: [*mut i8; 138],
+    pub(crate) bkmots: [*mut i8; NB_MOTS_BKMOTS as usize],
+    pub(crate) scenme: [*mut i8; 14],
+    pub(crate) app: [*mut i8; 23],
 }
 
 impl Default for Saptxt_gb {

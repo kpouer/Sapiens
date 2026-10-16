@@ -11,7 +11,6 @@
 // dans `main.rs`) ; à défaut elle est relue du fichier `lang` persisté, puis
 // retombe sur `Auto`. Le menu egui persiste le choix via `save_lang_mode`.
 
-use std::os::raw::c_short;
 use std::sync::atomic::{AtomicI16, Ordering};
 use sys_locale::get_locale;
 
@@ -98,7 +97,7 @@ impl From<i16> for Langue {
 static LANGUE: AtomicI16 = AtomicI16::new(-1);
 
 #[inline]
-pub(crate) fn langue_i16() -> c_short {
+pub(crate) fn langue_i16() -> i16 {
     LANGUE.load(Ordering::Relaxed)
 }
 

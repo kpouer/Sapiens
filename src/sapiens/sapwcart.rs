@@ -9,19 +9,18 @@ use crate::sapiens::sapwbrt::{CopyOffscreen, DoFrameRect, SapiensCreeOffscreen};
 use crate::sapiens::sapwclav::GetKeyMap;
 use crate::sapiens::{FormeId, Mont};
 use crate::shared::{CGrafPtr, Rect};
-use std::os::raw::{c_long, c_short, c_uchar};
 use std::ptr::{addr_of, addr_of_mut, null_mut};
 
-const TAILLE_X_CARTE: c_long = 144;
-const TAILLE_Y_CARTE: c_long = 80;
-const NB_OBJETS_MAX: c_long = 200;
-const ECHELLE: c_long = 2;
+const TAILLE_X_CARTE: i64 = 144;
+const TAILLE_Y_CARTE: i64 = 80;
+const NB_OBJETS_MAX: i64 = 200;
+const ECHELLE: i64 = 2;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
 struct EltCart {
     aire: Rect,
-    mob: c_short,
+    mob: i16,
 }
 
 /* Etat mutable de SAPWCART.C, ex-`static mut`, regroupe dans cette
@@ -50,10 +49,10 @@ impl Sapiens {
      */
     fn tfrcar(&mut self) {
         let rdest = Rect::new(
-            (160 * ECHELLE) as c_short,
-            (117 * ECHELLE) as c_short,
-            ((160 + TAILLE_X_CARTE) * ECHELLE) as c_short,
-            ((117 + TAILLE_Y_CARTE) * ECHELLE) as c_short,
+            (160 * ECHELLE) as i16,
+            (117 * ECHELLE) as i16,
+            ((160 + TAILLE_X_CARTE) * ECHELLE) as i16,
+            ((117 + TAILLE_Y_CARTE) * ECHELLE) as i16,
         );
         CopyOffscreen(
             self.sapwcart.ecr_carte,
@@ -88,10 +87,10 @@ impl Sapiens {
             if forme.num_mob == 8 {
                 /* (num_mob==BASEMOB+8) Fumee -> BASEMOB=0 */
                 (*eltCart).aire = Rect::new(
-                    (x - 8) as c_short,
-                    (y - 32) as c_short,
-                    (x + 8) as c_short,
-                    (y + 32) as c_short,
+                    (x - 8) as i16,
+                    (y - 32) as i16,
+                    (x + 8) as i16,
+                    (y + 32) as i16,
                 );
             } else if r < 16 {
                 (*eltCart).aire = Rect::new(
@@ -127,10 +126,10 @@ impl Sapiens {
 => Nombre d'objets a afficher
 ***************************************************************************/
 impl Sapiens {
-    fn aff_mont(&self, nb: c_short) {
+    fn aff_mont(&self, nb: i16) {
         loop {
             let mut minyc;
-            let mut jmin: c_short = 0;
+            let mut jmin: i16 = 0;
             minyc = 32767;
             unsafe {
                 for j in 0..nb {
@@ -163,8 +162,8 @@ impl Sapiens {
         let mut r = Rect::new(
             0,
             0,
-            (TAILLE_X_CARTE * ECHELLE) as c_short,
-            (TAILLE_Y_CARTE * ECHELLE) as c_short,
+            (TAILLE_X_CARTE * ECHELLE) as i16,
+            (TAILLE_Y_CARTE * ECHELLE) as i16,
         );
         self.BoxFill(self.sapwcart.ecr_carte, &mut r, 0x050); /* palhaute[3]*/
     }
@@ -173,29 +172,29 @@ impl Sapiens {
                              CARTE:
     ***********************************************************************/
     pub(crate) fn carte(&mut self) {
-        let mut j: c_long;
-        let angle: c_short;
+        let mut j: i64;
+        let angle: i16;
         let mut r = Rect::default();
 
         /* deconnecte sous menu */
         if self.sapwcart.ecr_carte.is_null() {
             self.sapwcart.ecr_carte = SapiensCreeOffscreen(
-                (TAILLE_X_CARTE * ECHELLE) as c_short,
-                (TAILLE_Y_CARTE * ECHELLE) as c_short,
+                (TAILLE_X_CARTE * ECHELLE) as i16,
+                (TAILLE_Y_CARTE * ECHELLE) as i16,
             );
             if self.sapwcart.ecr_carte.is_null() {
                 return;
             }
             self.sapwcart.tab_elt_car =
-                NewPtr(NB_OBJETS_MAX * size_of::<EltCart>() as c_long) as *mut EltCart;
+                NewPtr(NB_OBJETS_MAX * size_of::<EltCart>() as i64) as *mut EltCart;
             if self.sapwcart.tab_elt_car.is_null() {
                 return;
             }
             self.sapwcart.aire_carte = Rect::new(
                 0,
                 0,
-                (TAILLE_X_CARTE * ECHELLE) as c_short,
-                (TAILLE_Y_CARTE * ECHELLE) as c_short,
+                (TAILLE_X_CARTE * ECHELLE) as i16,
+                (TAILLE_Y_CARTE * ECHELLE) as i16,
             );
         }
         let _g = port::on(self.sapwcart.ecr_carte);
@@ -217,13 +216,13 @@ impl Sapiens {
             }
         }
         /* affichage */
-        self.aff_mont(j as c_short);
+        self.aff_mont(j as i16);
         /* on affiche la fleche */
         angle = ((self.sapglob.dzeta + 32) / 64) & 15;
         self.Affmobbrtomb(
             self.sapwind.mobFleches + 1 + angle,
-            (TAILLE_X_CARTE / 2 - 8) as c_short,
-            (TAILLE_Y_CARTE / 2 - 8) as c_short,
+            (TAILLE_X_CARTE / 2 - 8) as i16,
+            (TAILLE_Y_CARTE / 2 - 8) as i16,
             5,
             5,
             &mut r,
@@ -235,15 +234,15 @@ impl Sapiens {
     /***********************************************************************
                            ChangeZoomCarte
     ***********************************************************************/
-    pub(crate) fn ChangeZoomCarte(&mut self, delta: c_short) {
-        let mut z = self.sapglob.zoom as c_short + delta;
+    pub(crate) fn ChangeZoomCarte(&mut self, delta: i16) {
+        let mut z = self.sapglob.zoom as i16 + delta;
         if z > 160 {
             z = 160;
         }
         if z < 16 {
             z = 16;
         }
-        self.sapglob.zoom = z as c_uchar;
+        self.sapglob.zoom = z as u8;
         self.carte();
     }
 
@@ -252,7 +251,7 @@ impl Sapiens {
     ***********************************************************************/
     #[unsafe(no_mangle)]
     pub(crate) unsafe extern "C" fn zoocar(&mut self) {
-        let mut bitmap: c_short = 0;
+        let mut bitmap: i16 = 0;
 
         let _g = port::on(self.sapwind.mainWindow);
 
@@ -263,10 +262,10 @@ impl Sapiens {
             }
         }
         let mut r = Rect::new(
-            (160 * ECHELLE) as c_short,
-            (117 * ECHELLE) as c_short,
-            ((160 + TAILLE_X_CARTE) * ECHELLE) as c_short,
-            ((117 + TAILLE_Y_CARTE) * ECHELLE) as c_short,
+            (160 * ECHELLE) as i16,
+            (117 * ECHELLE) as i16,
+            ((160 + TAILLE_X_CARTE) * ECHELLE) as i16,
+            ((117 + TAILLE_Y_CARTE) * ECHELLE) as i16,
         );
         r.InsetRect(-1, -1);
         ForeColor(whiteColor as i16);
@@ -289,7 +288,7 @@ impl Sapiens {
                 (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
                 let s = *addr_of!(self.sapglob.sposy);
                 if s != *addr_of!(self.sapglob.dsposy) {
-                    self.sapglob.zoom = (s / 2 + 30) as c_uchar;
+                    self.sapglob.zoom = (s / 2 + 30) as u8;
                     if self.sapglob.zoom < 16 {
                         self.sapglob.zoom = 16;
                     }
