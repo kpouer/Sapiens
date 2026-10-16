@@ -5,8 +5,8 @@ use crate::acam::{
     NewPtr, PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect, SetRect,
 };
 use crate::cbridge::{
-    DialogPtr, FILE, RetraceRect, blackColor, fclose, fopen, getc, patOr, printf, sprintf, srcCopy,
-    strcpy, whiteColor,
+    DialogPtr, FILE, RetraceRect, blackColor, fclose, fopen, getc, patOr, sprintf, srcCopy,
+    whiteColor,
 };
 use crate::langue::Langue::GB;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
@@ -22,7 +22,7 @@ use crate::stubs::{
     PushPath, SaisitChemin,
 };
 use crate::text::{TextBox, TextSize};
-use crate::{Sapiens, port};
+use crate::{Sapiens, cbridge, port};
 use std::mem::size_of;
 use std::os::raw::{c_char, c_int, c_long, c_short, c_void};
 
@@ -220,32 +220,22 @@ impl Sapiens {
     => nom du fichier, premier mob
     <= Nombre de mobs charges ou -1 si erreur
     ******************************************************************/
-    pub(crate) fn ChargeFichierBrt(
-        &mut self,
-        nom: *mut c_char,
-        id: c_short,
-        nbMobs: c_short,
-        vide: c_short,
-    ) -> c_short {
+    pub(crate) fn ChargeFichierBrt(&mut self, nom: &str, id: i16, nbMobs: i16, vide: i16) -> i16 {
         let f: *mut FILE;
-        let n: c_short;
-        let mut nbcol: c_short = 0;
-        let mut nbligne: c_short = 0;
-        let mut nb_objets: c_short = 0;
+        let n: i16;
+        let mut nbcol: i16 = 0;
+        let mut nbligne: i16 = 0;
+        let mut nb_objets: i16 = 0;
         let mut r: u8 = 0;
         let mut g: u8 = 0;
         let mut b: u8 = 0;
-        let mut rgb: *mut BRGBColor;
-        let mut chaine = [0i8; 255];
+        let mut chaine;
         unsafe {
-            strcpy(chaine.as_mut_ptr(), nom);
+            chaine = cbridge::convert_to_c_char_ptr(nom);
             /* On ouvre le fichier en lecture */
-            f = fopen(chaine.as_mut_ptr(), c"rb".as_ptr());
+            f = fopen(chaine, c"rb".as_ptr());
             if f.is_null() {
-                self.Collapse(&format!(
-                    "Charge fichier Brt : Fichier '{}' non trouve",
-                    std::ffi::CStr::from_ptr(nom).to_string_lossy()
-                ));
+                self.Collapse(&format!("Charge fichier Brt : Fichier '{nom}' non trouve"));
                 return -1;
             }
             if getc(f) != b'B' as c_int
@@ -269,7 +259,7 @@ impl Sapiens {
             n = (r as c_short) + 1;
             self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].nbEntrees = n;
             let taille = (n as i64) * (size_of::<BRGBColor>() as i64);
-            rgb = NewPtr(taille) as *mut BRGBColor;
+            let mut rgb = NewPtr(taille) as *mut BRGBColor;
             self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabRgb = rgb;
             self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabIndex =
                 NewPtr((n as i64) * (size_of::<c_short>() as i64)) as *mut c_short;
@@ -299,12 +289,7 @@ impl Sapiens {
             /* wintel2moto : swap octets sur petit-boutiste */
             nb_objets = wintel2moto(nb_objets);
             if nb_objets != nbMobs {
-                printf(
-                    c"ChargeFichierBrt err : %s nb_objets=%d nbMobs=%d\n".as_ptr(),
-                    nom,
-                    nb_objets as c_int,
-                    nbMobs as c_int,
-                );
+                println!("ChargeFichierBrt err : {nom} nb_objets={nb_objets} nbMobs={nbMobs}");
                 SapiensExit(-1);
             }
             /* On charge les mobs */
@@ -342,9 +327,9 @@ impl Sapiens {
             }
             /* On ferme le fichier */
             fclose(f);
-            self.sapwbrt.nbPalettes = (self.sapwbrt.nbPalettes as i32 + 1) as i16;
-            nb_objets
         }
+        self.sapwbrt.nbPalettes = (self.sapwbrt.nbPalettes as i32 + 1) as i16;
+        nb_objets
     }
 
     /******************************************************************

@@ -3,6 +3,8 @@
 #![allow(non_camel_case_types)]
 
 use crate::shared::Rect;
+use std::ffi::CString;
+use std::os::raw::c_char;
 pub(crate) type __int64_t = ::std::os::raw::c_longlong;
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
@@ -276,4 +278,9 @@ unsafe extern "C" {
         __stream: *mut FILE,
     ) -> ::std::os::raw::c_ulong;
     pub(crate) fn remove(arg1: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
+}
+
+pub fn convert_to_c_char_ptr(s: &str) -> *mut c_char {
+    let c_string = CString::new(s).unwrap();
+    c_string.into_raw()
 }

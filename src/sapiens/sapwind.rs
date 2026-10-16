@@ -837,114 +837,59 @@ impl Sapiens {
         PushPath();
         SetPathInData(&self.sapgest, c"Mobs".as_ptr() as *mut c_char);
         self.sapwind.mobBambou = 0;
-        nb = self.ChargeFichierBrt(
-            c"WBAMBOU.BRT".as_ptr() as *mut c_char,
-            self.sapwind.mobBambou + 1,
-            26,
-            0,
-        ); /*0, 21 Mobs */
+        nb = self.ChargeFichierBrt("WBAMBOU.BRT", self.sapwind.mobBambou + 1, 26, 0); /*0, 21 Mobs */
         if nb < 0 {
             return FAUX;
         }
         self.sapwind.mobFace = self.sapwind.mobBambou + nb;
-        nb = self.ChargeFichierBrt(
-            c"WFACE.BRT".as_ptr() as *mut c_char,
-            self.sapwind.mobFace + 1,
-            31,
-            0,
-        ); /* Base 21,29 mobs */
+        nb = self.ChargeFichierBrt("WFACE.BRT", self.sapwind.mobFace + 1, 31, 0); /* Base 21,29 mobs */
         if nb < 0 {
             return FAUX;
         }
         self.sapwind.mobFeuille = self.sapwind.mobFace + nb;
-        nb = self.ChargeFichierBrt(
-            c"WFEUILLE.BRT".as_ptr() as *mut c_char,
-            self.sapwind.mobFeuille + 1,
-            36,
-            11,
-        ); /* Base 50 36 mobs */
+        nb = self.ChargeFichierBrt("WFEUILLE.BRT", self.sapwind.mobFeuille + 1, 36, 11); /* Base 50 36 mobs */
         if nb < 0 {
             return FAUX;
         }
         self.sapwind.mobFleches = self.sapwind.mobFeuille + nb;
-        nb = self.ChargeFichierBrt(
-            c"WFLECHES.BRT".as_ptr() as *mut c_char,
-            self.sapwind.mobFleches + 1,
-            20,
-            0,
-        ); /* Base 8618 mobs */
+        nb = self.ChargeFichierBrt("WFLECHES.BRT", self.sapwind.mobFleches + 1, 20, 0); /* Base 8618 mobs */
         if nb < 0 {
             return FAUX;
         }
         self.sapwind.mobSapmob = self.sapwind.mobFleches + nb;
-        nb = self.ChargeFichierBrt(
-            c"WSAPMOB.BRT".as_ptr() as *mut c_char,
-            self.sapwind.mobSapmob + 1,
-            141,
-            0,
-        ); /*Base 120+1,151 mobs */
+        nb = self.ChargeFichierBrt("WSAPMOB.BRT", self.sapwind.mobSapmob + 1, 141, 0); /*Base 120+1,151 mobs */
         if nb < 0 {
             return FAUX;
         }
         self.sapwind.mobAvplan = self.sapwind.mobSapmob + nb;
-        nb = self.ChargeFichierBrt(
-            c"WAVPLAN.BRT".as_ptr() as *mut c_char,
-            self.sapwind.mobAvplan + 1,
-            9,
-            13,
-        );
+        nb = self.ChargeFichierBrt("WAVPLAN.BRT", self.sapwind.mobAvplan + 1, 9, 13);
         self.sapcomb.nbMobHerbes = nb;
         if nb < 0 {
             return FAUX;
         }
         self.sapwind.mobAvplanSpec = self.sapwind.mobAvplan + nb;
-        nb = self.ChargeFichierBrt(
-            c"WAVSPEC.BRT".as_ptr() as *mut c_char,
-            self.sapwind.mobAvplanSpec + 1,
-            4,
-            0,
-        );
+        nb = self.ChargeFichierBrt("WAVSPEC.BRT", self.sapwind.mobAvplanSpec + 1, 4, 0);
         self.sapcomb.nbAvplanSpec = nb;
         if nb < 0 {
             return FAUX;
         }
         self.sapwind.mobSilex = self.sapwind.mobAvplanSpec + nb;
-        nb = self.ChargeFichierBrt(
-            c"WSILEX.BRT".as_ptr() as *mut c_char,
-            self.sapwind.mobSilex + 1,
-            15,
-            0,
-        );
+        nb = self.ChargeFichierBrt("WSILEX.BRT", self.sapwind.mobSilex + 1, 15, 0);
         if nb < 0 {
             return FAUX;
         }
         self.sapwind.mob3D = self.sapwind.mobSilex + nb;
-        nb = self.ChargeFichierBrt(
-            c"W3D.BRT".as_ptr() as *mut c_char,
-            self.sapwind.mob3D + 1,
-            38,
-            0,
-        );
+        nb = self.ChargeFichierBrt("W3D.BRT", self.sapwind.mob3D + 1, 38, 0);
         if nb < 0 {
             return FAUX;
         }
         self.sapwind.Fonte14 = self.sapwind.mob3D + nb;
-        nb = self.ChargeFichierBrt(
-            c"Geneva14.BRT".as_ptr() as *mut c_char,
-            self.sapwind.Fonte14 + 1,
-            120,
-            0,
-        );
+        nb = self.ChargeFichierBrt("Geneva14.BRT", self.sapwind.Fonte14 + 1, 120, 0);
         if nb < 0 {
             return FAUX;
         }
         self.sapwind.Fonte10 = self.sapwind.Fonte14 + nb;
-        nb = self.ChargeFichierBrt(
-            c"Geneva10.BRT".as_ptr() as *mut c_char,
-            self.sapwind.Fonte10 + 1,
-            120,
-            0,
-        );
+        nb = self.ChargeFichierBrt("Geneva10.BRT", self.sapwind.Fonte10 + 1, 120, 0);
         if nb < 0 {
             return FAUX;
         }
