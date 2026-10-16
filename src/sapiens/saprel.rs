@@ -675,7 +675,7 @@ impl Sapiens {
                           dans la liste 10
     ***********************************************************************/
     pub(crate) fn prends(&mut self) {
-        let erreur = self.enlevl(
+        let erreur = self.sapglob.enlevl(
             ListeId::Liste1,
             ListeId::Liste10,
             self.sapglob.rega as c_ushort,
@@ -1382,7 +1382,8 @@ impl Sapiens {
                 && self.sapglob.liste1.elements[i as usize] < 40
                 && self.random.Rnd() > 128
             {
-                self.enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
+                self.sapglob
+                    .enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
             }
         }
         self.sapglob.tlpos[1] = 1;
@@ -1393,13 +1394,12 @@ impl Sapiens {
                             OUTARM :Armes en sorties
     ***********************************************************************/
     pub(crate) fn outarm(&mut self) {
-        let mut i: c_uchar;
         let tfr: c_uchar;
 
         self.sapglob.tlpos[1] = 1;
         self.sapglob.tlpos[4] = 1;
 
-        i = self.sapglob.liste1.taille;
+        let mut i = self.sapglob.liste1.taille;
         /*on enleve les sagaies de la liste en fonction de ce qui reste en sortie
         bien sur comme la taille va bouger on remet les positions ds les listes
 
@@ -1411,7 +1411,8 @@ impl Sapiens {
                 if sap1.nbresag != 0 {
                     sap1.nbresag -= 1;
                 } else {
-                    self.enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
+                    self.sapglob
+                        .enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
                 }
             }
         }
@@ -1425,7 +1426,8 @@ impl Sapiens {
                 if self.sapglob.liste1.elements[i as usize] == 21
                     || self.sapglob.liste1.elements[i as usize] == 22
                 {
-                    self.enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
+                    self.sapglob
+                        .enlevl(ListeId::Liste1, ListeId::Listbidon, i as c_ushort);
                     i = 0;
                 }
             }

@@ -135,7 +135,7 @@ impl Sapiens {
     =>(rega)et (menu)
     */
     pub(crate) fn trpose(&mut self) {
-        let erreur = self.enlevl(
+        let erreur = self.sapglob.enlevl(
             ListeId::Liste1,
             ListeId::Liste4,
             self.sapglob.rega as c_ushort,
@@ -474,9 +474,7 @@ impl Sapglob {
         }
         0 /*ok*/
     }
-}
 
-impl Sapiens {
     /***********************************************************************
                     ENLEVL:transfere un element d'une liste sur une autre
     ***********************************************************************/
@@ -486,24 +484,24 @@ impl Sapiens {
         receptliste_id: ListeId,
         rang: c_ushort,
     ) -> c_ushort {
-        let taille = self.sapglob.liste_mut(orgliste_id).taille;
+        let taille = self.liste_mut(orgliste_id).taille;
         if rang < taille as c_ushort {
             /*rang contenu dans liste de depart*/
             let element = {
-                let orgliste = self.sapglob.liste_mut(orgliste_id);
+                let orgliste = self.liste_mut(orgliste_id);
                 orgliste.taille = orgliste.taille.wrapping_sub(1);
                 orgliste.elements[rang as usize] as c_ushort
             };
-            let erreur = self.sapglob.ajoutl(receptliste_id, element);
+            let erreur = self.ajoutl(receptliste_id, element);
             if erreur != 0 {
                 /*pas de place en reception*/
-                let orgliste = self.sapglob.liste_mut(orgliste_id);
+                let orgliste = self.liste_mut(orgliste_id);
                 (*orgliste).taille = (*orgliste).taille.wrapping_add(1);
                 1 /*erreur*/
             } else {
                 /*on recompacte la liste d'origine*/
                 let mut i: c_uchar = rang as c_uchar;
-                let orgliste = self.sapglob.liste_mut(orgliste_id);
+                let orgliste = self.liste_mut(orgliste_id);
                 while i != orgliste.taille {
                     orgliste.elements[i as usize] = orgliste.elements[i as usize + 1];
                     i = i.wrapping_add(1);
@@ -518,7 +516,9 @@ impl Sapiens {
             255 /*erreur de logique rang pas ds la liste de depart*/
         }
     }
+}
 
+impl Sapiens {
     /***********************************************************************
                   MOT:Affiche un mot selon la reference std
     ***********************************************************************/
@@ -984,7 +984,7 @@ impl Sapiens {
             return;
         }
         let old_taille: c_short = self.sapglob.liste1.taille as c_short;
-        self.enlevl(
+        self.sapglob.enlevl(
             ListeId::Liste4,
             ListeId::Liste1,
             self.sapglob.rega as c_ushort,
@@ -1031,7 +1031,7 @@ impl Sapiens {
         if objet == OUTREPLEINE {
             self.sapglob.liste1.elements[self.sapglob.rega as usize] = OUTREVIDE;
         } else {
-            self.enlevl(
+            self.sapglob.enlevl(
                 ListeId::Liste1,
                 ListeId::Listbidon,
                 self.sapglob.rega as c_ushort,
@@ -1058,7 +1058,7 @@ impl Sapiens {
         } else {
             self.sapglob.bless = 255;
         }
-        self.enlevl(
+        self.sapglob.enlevl(
             ListeId::Liste1,
             ListeId::Listbidon,
             self.sapglob.rega as c_ushort,
