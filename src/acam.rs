@@ -745,8 +745,7 @@ unsafe fn draw_line(port: *mut SapPort, x0: i16, y0: i16, x1: i16, y1: i16) {
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn MoveTo(h: i16, v: i16) {
+pub(crate) fn MoveTo(h: i16, v: i16) {
     let p = cur();
     if p.is_null() {
         return;
@@ -756,8 +755,7 @@ pub(crate) extern "C" fn MoveTo(h: i16, v: i16) {
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn LineTo(h: i16, v: i16) {
+pub(crate) fn LineTo(h: i16, v: i16) {
     let p = cur();
     if p.is_null() {
         return;

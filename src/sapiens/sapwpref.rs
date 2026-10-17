@@ -215,7 +215,7 @@ unsafe extern "C" fn VectAfficheMenuLangue(window: DialogPtr, itemid: i16) {
     }
     r.right += 14;
     r.InsetRect(-1, -1);
-    DrawArrowPopUp(&raw mut r);
+    DrawArrowPopUp(&mut r);
     FrameRect(&r);
 }
 

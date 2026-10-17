@@ -414,22 +414,13 @@ pub(crate) fn GetRectItem(dialog: DialogPtr, item: i16, box_: *mut Rect) {
 /*****************************************************************************
                        DrawArrowPopUp
 ****************************************************************************/
-pub(crate) fn DrawArrowPopUp(r: *mut Rect) {
-    let mut i: i16 = 0;
-    unsafe {
-        let y = ((*r).bottom + (*r).top) / 2 + 3;
-        let box_ = Rect::new(
-            (*r).right - 15,
-            (*r).top + 1,
-            (*r).right - 1,
-            (*r).bottom - 1,
-        );
-        DoEraseRect(&box_);
-        while i < 6 {
-            DoMoveTo((*r).right - 10 - i, y - i);
-            DoLine(i * 2, 0);
-            i += 1;
-        }
+pub(crate) fn DrawArrowPopUp(r: &mut Rect) {
+    let y = (r.bottom + r.top) / 2 + 3;
+    let box_ = Rect::new(r.right - 15, r.top + 1, r.right - 1, r.bottom - 1);
+    DoEraseRect(&box_);
+    for i in 0..6 {
+        DoMoveTo(r.right - 10 - i, y - i);
+        DoLine(i * 2, 0);
     }
 }
 

@@ -487,7 +487,7 @@ impl Sapglob {
             if erreur != 0 {
                 /*pas de place en reception*/
                 let orgliste = self.liste_mut(orgliste_id);
-                (*orgliste).taille = (*orgliste).taille.wrapping_add(1);
+                orgliste.taille = orgliste.taille.wrapping_add(1);
                 1 /*erreur*/
             } else {
                 /*on recompacte la liste d'origine*/
@@ -529,7 +529,7 @@ impl Sapiens {
     fn affmot(&mut self, debliste_id: ListeId, rang: u16) {
         let debliste = self.sapglob.liste(debliste_id);
         unsafe {
-            if (rang as u8) < (*debliste).taille {
+            if (rang as u8) < debliste.taille {
                 /*rang a afficher existe*/
                 let refer = self.sap_lang.GetRefer((*debliste).typeRef);
                 self.mot(
@@ -810,7 +810,7 @@ impl Sapiens {
             self.eff_sour();
             if self.sapglob.menu != 0 {
                 /*pas menu 0*/
-                (*addr_of_mut!(self.sapglob.smenu))[1] = self.sapglob.menu as i8;
+                self.sapglob.smenu[1] = self.sapglob.menu as i8;
                 if self.sapglob.menu != self.sapglob.lastmen as u16 {
                     /*deja affiche ?*/
                     self.gemouvre(
@@ -914,7 +914,7 @@ impl Sapiens {
                 self.sapglob.s_menu = -1;
                 /* on balaye les menus */
                 for i in 0..2 {
-                    let men: i16 = (*addr_of_mut!(self.sapglob.smenu))[i] as i16;
+                    let men = self.sapglob.smenu[i] as i16;
                     /*on teste les verticales : men 111 implique pas de sousmenu*/
                     if (men != 111)
                         && (x >= tccol[men as usize] as i16)

@@ -999,7 +999,7 @@ impl Sapiens {
                 self.trobsv(1);
             }
             self.sapglob.echan = 0;
-            (*(*self.sapglob.peuple_mut(SapId::Sap3)).possession).taille = 0;
+            (*self.sapglob.peuple_mut(SapId::Sap3).possession).taille = 0;
         }
         self.generique(true);
     }

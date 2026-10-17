@@ -383,16 +383,15 @@ impl Sapiens {
                 };
                 for p in &mut self.sapw3d.TAB_ETOILES {
                     if p.magnitude <= magnitude {
-                        let x = (((self.sapglob.dzeta as i32 * 2 - (*p).x as i32 - 512) & 2047)
-                            - 512
+                        let x = (((self.sapglob.dzeta as i32 * 2 - p.x as i32 - 512) & 2047) - 512
                             + 256) as i16;
                         if x >= 0 && x < 512 {
-                            let y = (*p).y as i32;
+                            let y = p.y as i32;
                             let off = (y as i64 * tailleLigne as i64 + x as i64) as isize;
                             let coul = if self.random.Rnd() > 127 {
                                 self.sapw3d.COUL_PULSE
                             } else {
-                                (*p).couleur
+                                p.couleur
                             };
                             *data.offset(off) = coul as u8;
                         }
