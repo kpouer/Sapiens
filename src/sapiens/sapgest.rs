@@ -9,7 +9,7 @@ use crate::acam::{
     CtoPstr, DisposPtr, FAUX, ForeColor, Line, MoveTo, PtoCstr, RGBForeColor, TickCount, VRAI,
 };
 use crate::cbridge::{
-    CInfoPBRec, blackColor, fclose, fopen, getc, putc, remove, sprintf, strcpy, stricmp, strlen,
+    CInfoPBRec, blackColor, fclose, fopen, getc, putc, remove, strcpy, stricmp, strlen,
 };
 use crate::langue::Langue::{ES, FR};
 use crate::langue::langue;
@@ -62,7 +62,7 @@ pub(crate) struct Sapgest {
     /* Nom du dernier fichier d'aventure propose a la sauvegarde */
     nom_sauve: [i8; 255],
     /* Extension courante du filtre de selection de fichiers (ex-`ExtensionCmp`) */
-    extension_cmp: [i8; 10],
+    extension_cmp: Option<&'static str>,
     /* Volume et repertoire de l'application (ex-globals SAPIENS.H) */
     pub(crate) PathApplication: i64,
     pub(crate) volumeApplication: i16,
@@ -74,7 +74,7 @@ impl Default for Sapgest {
             forsyl: forsy1.as_ptr(),
             palSilex: [0; 8],
             nom_sauve: [0; 255],
-            extension_cmp: [0; 10],
+            extension_cmp: None,
             PathApplication: 0,
             volumeApplication: 0,
         }
@@ -1626,32 +1626,26 @@ Saisi un nom de fichier pour une lecture
 <= VRAI si ok
 ***********************************************************************/
 impl Sapiens {
-    fn SaisieNomFichierLecture(&mut self, nom: *mut i8, extension: *const i8) -> Boolean {
+    fn SaisieNomFichierLecture(&mut self, nom: *mut i8, extension: &'static str) -> Boolean {
         let mut reply = SFReply {
             good: false,
             vRefNum: 0,
             fType: 0,
             fName: [0; 64],
         };
-        let mut chaine = [0 as i8; 255];
 
         let point = Point::new(
-            ((qd.screenBits.bounds.right - 348) / 2) as i16,
-            ((qd.screenBits.bounds.bottom - 200) / 2) as i16,
+            (qd.screenBits.bounds.bottom - 200) / 2,
+            (qd.screenBits.bounds.right - 348) / 2,
         );
         unsafe {
-            if strlen(extension) != 0 {
-                strcpy(self.sapgest.extension_cmp.as_mut_ptr(), extension);
-                sprintf(
-                    chaine.as_mut_ptr(),
-                    c"Chargement du fichier :|*.%s|*.%s".as_ptr(),
-                    extension,
-                    extension,
-                );
+            if !extension.is_empty() {
+                self.sapgest.extension_cmp = Some(extension);
+                let chaine = format!("Chargement du fichier :|*.{extension}|*.{extension}");
                 let vect_filtre = vect_filtre_selon_extension_sapiens as *mut c_void;
                 SFGetFile(
                     point,
-                    chaine.as_mut_ptr() as StringPtr,
+                    Some(&chaine),
                     vect_filtre,
                     -1,
                     null_mut(),
@@ -1660,10 +1654,9 @@ impl Sapiens {
                 );
                 DisposeRoutineDescriptor(vect_filtre);
             } else {
-                let mut vide: u8 = 0;
                 SFGetFile(
                     point,
-                    &raw mut vide as StringPtr,
+                    None,
                     null_mut(),
                     -1,
                     null_mut(),
@@ -1820,7 +1813,7 @@ impl Sapiens {
             self.sapglob.flefba = 0;
 
             PreservePath();
-            if !self.SaisieNomFichierLecture(nom.as_mut_ptr(), c"sap".as_ptr()) {
+            if !self.SaisieNomFichierLecture(nom.as_mut_ptr(), "sap") {
                 RestorePath();
                 return;
             }

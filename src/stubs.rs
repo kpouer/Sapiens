@@ -480,10 +480,9 @@ pub(crate) extern "C" fn GetNomCheminCourant(_path: *mut i8) {}
 // Boites de dialogue fichiers
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SFGetFile(
+pub(crate) fn SFGetFile(
     _where: Point,
-    _prompt: StringPtr,
+    _prompt: Option<&str>,
     _fileFilter: *mut c_void,
     _numTypes: i16,
     _typeList: *mut c_void,
