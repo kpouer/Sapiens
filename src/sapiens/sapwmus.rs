@@ -1,14 +1,14 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 use crate::Sapiens;
-use crate::acam::{FAUX, GetCursor};
+use crate::acam::{CarboniseSetCursorArrow, FAUX, GetCursor, SetCursor};
 use crate::cbridge::{SndChannelPtr, initMono, sampledSynth, watchCursor};
 use crate::sapiens::TypeMuse;
 use crate::sapiens::sapwbrt::SetPathInData;
 use crate::shared::{Boolean, Handle, SndListHandle};
 use crate::stubs::{
-    ArreteMusique, CarboniseSetCursorArrow, GetResource, IsFinDeMusique, JoueMusiqueHarmony,
-    PopPath, PushPath, SetCursor, SndNewChannel, SndPlay,
+    ArreteMusique, GetResource, IsFinDeMusique, JoueMusiqueHarmony, PopPath, PushPath,
+    SndNewChannel, SndPlay,
 };
 
 pub(crate) struct Sapwmus {

@@ -11,10 +11,12 @@
 #![allow(non_snake_case)]
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use crate::cbridge::{MenuHandle, OSErr, WindowPtr};
+use crate::cbridge::{MenuHandle, OSErr, WindowPtr, watchCursor};
+use crate::exchange::{CursorShape, set_cursor_shape, set_title};
 use crate::langue::{Langue, langue};
 use crate::port;
 use crate::shared::*;
+use crate::text::pstr_to_string;
 use std::ffi::c_void;
 use std::sync::Mutex;
 use std::sync::atomic::Ordering;
@@ -90,13 +92,64 @@ struct Slot8([u8; 8]);
 // Curseur
 // ---------------------------------------------------------------------------
 
-/// Emplacement stable du « handle » de curseur : `GetCursor` renverra son
-/// adresse, et `*GetCursor(id)` (8 octets) sera non-null pour `SetCursor`.
-static mut CURSOR_HANDLE: Slot8 = Slot8([0; 8]);
+/// Nombre d'emplacements de curseur (les ids classiques du Toolbox :
+/// flèche/sablier/`ibeam`...). Un seul id (`watchCursor`) est défini par
+/// `cbridge.rs`, les autres tombent sur la flèche.
+const NB_CURSOR_SLOTS: usize = 4;
+
+/// Emplacements stables des « handles » de curseur : `GetCursor(id)` renvoie
+/// celui de l'id. L'id y est gravé **+1** en little-endian (2 octets) :
+/// - `*GetCursor(id)` (8 octets lus en `void*` par le C) reste non-nul,
+/// - `SetCursor` relit l'id par rapport d'adresse pour choisir la forme.
+static mut CURSOR_SLOTS: [Slot8; NB_CURSOR_SLOTS] = [Slot8([0; 8]); NB_CURSOR_SLOTS];
 
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetCursor(_id: i16) -> Cursor {
-    unsafe { core::ptr::addr_of_mut!(CURSOR_HANDLE) as *mut c_void }
+pub(crate) extern "C" fn GetCursor(id: i16) -> Cursor {
+    let idx = (id.max(0) as usize) % NB_CURSOR_SLOTS;
+    unsafe {
+        let slot = core::ptr::addr_of_mut!(CURSOR_SLOTS)
+            .cast::<Slot8>()
+            .add(idx);
+        let stored = id.wrapping_add(1);
+        (*slot).0[0] = stored as u8;
+        (*slot).0[1] = (stored >> 8) as u8;
+        slot as *mut c_void
+    }
+}
+
+/// Relit l'id gravé par `GetCursor` dans un handle ; renvoie `None` si le
+/// pointeur n'est pas un des emplacements (handle nul ou octets déréférencés).
+fn cursor_id(c: Cursor) -> Option<i16> {
+    if c.is_null() {
+        return None;
+    }
+    unsafe {
+        let base = core::ptr::addr_of!(CURSOR_SLOTS) as usize;
+        let addr = c as usize;
+        let align = core::mem::size_of::<Slot8>();
+        if addr >= base && addr < base + NB_CURSOR_SLOTS * align && (addr - base) % align == 0 {
+            Some(core::ptr::read_unaligned(c as *const i16).wrapping_sub(1))
+        } else {
+            None
+        }
+    }
+}
+
+/// `SetCursor` du C : pose la forme demandée (sablier pendant les temps de
+/// chargement, flèche sinon) via le pont `exchange.rs` ; c'est le thread egui
+/// qui l'applique réellement à l'écran.
+pub(crate) fn SetCursor(c: Cursor) {
+    let shape = match cursor_id(c) {
+        Some(id) if id == watchCursor as i16 => CursorShape::Watch,
+        _ => CursorShape::Arrow,
+    };
+    set_cursor_shape(shape);
+}
+
+/// `CarboniseSetCursorArrow` : restaure la flèche après une attente
+/// (SAPWIND.C, SAP3D.C, SAPWMUS.C, SAPWCLAV.C).
+pub(crate) fn CarboniseSetCursorArrow() {
+    set_cursor_shape(CursorShape::Arrow);
 }
 
 // ---------------------------------------------------------------------------
@@ -307,6 +360,14 @@ pub(crate) extern "C" fn NewCWindow(
     let p = port::create(b, 8);
     WINDOW_PORT.store(p as *mut SapPort, Ordering::SeqCst);
     p
+}
+
+/// `SetWTitle` : le titre (chaîne Pascal MacRoman) part par le pont
+/// `exchange.rs` ; c'est le thread egui qui l'applique à la fenêtre native
+/// (`ViewportCommand::Title`), une seule fenêtre étant créée par `NewCWindow`.
+#[unsafe(no_mangle)]
+pub(crate) extern "C" fn SetWTitle(_w: WindowPtr, title: StringPtr) {
+    set_title(pstr_to_string(title));
 }
 
 // ---------------------------------------------------------------------------

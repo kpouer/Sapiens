@@ -5,15 +5,17 @@
 Fixe l'aire dans laquelle il ne faut plus afficher la souris systeme
 **************************************************************************/
 use crate::Sapiens;
-use crate::acam::{DiffRgn, DisposeRgn, FAUX, GetClip, NewRgn, RectRgn, SetClip, VRAI};
+use crate::acam::{
+    CarboniseSetCursorArrow, DiffRgn, DisposeRgn, FAUX, GetClip, NewRgn, RectRgn, SetClip, VRAI,
+};
 use crate::cbridge::{QElemPtr, TMTask};
-use crate::exchange::{Cursor, set_cursor};
+use crate::exchange::set_cursor_hidden;
 use crate::port;
 use crate::sapiens::ECHELLE;
 use crate::sapiens::sapwbrt::CopyOffscreen;
 use crate::sapiens::sapwind::SapWind;
 use crate::shared::{Boolean, KeyMap, Rect};
-use crate::stubs::{Button, CarboniseSetCursorArrow, GetKeys, GetMouse, InsXTime, PrimeTime};
+use crate::stubs::{Button, GetKeys, GetMouse, InsXTime, PrimeTime};
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 
@@ -394,12 +396,12 @@ impl SapWind {
 
 #[allow(non_snake_case)]
 pub(crate) fn HideCursor() {
-    set_cursor(Cursor::Hidden);
+    set_cursor_hidden(true);
 }
 
 #[allow(non_snake_case)]
 pub(crate) fn ShowCursor() {
-    set_cursor(Cursor::Default);
+    set_cursor_hidden(false);
 }
 
 #[derive(Debug, Default)]

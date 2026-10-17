@@ -10,6 +10,7 @@ use crate::cbridge::{
     DateTimeRec, MenuHandle, OSErr, QElemPtr, SndChannelPtr, THPrint, TPPrPort, TPrStatus,
     WindowPtr,
 };
+use crate::exchange::INPUT;
 use crate::port;
 use crate::shared::*;
 use std::ffi::c_void;
@@ -109,8 +110,6 @@ pub(crate) extern "C" fn SizeWindow(w: WindowPtr, wWidth: i16, wHeight: i16, _up
         },
     );
 }
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SetWTitle(_w: WindowPtr, _title: StringPtr) {}
 #[allow(non_snake_case)]
 pub(crate) fn LocalToGlobal(_pt: &mut Point) {}
 
@@ -306,14 +305,6 @@ pub(crate) extern "C" fn CarboniseSetNewControl(
 ) -> i16 {
     0
 }
-
-// ---------------------------------------------------------------------------
-// Curseur
-// ---------------------------------------------------------------------------
-
-pub(crate) fn SetCursor(_c: Cursor) {}
-
-pub(crate) fn CarboniseSetCursorArrow() {}
 
 #[unsafe(no_mangle)]
 pub(crate) extern "C" fn CarboniseSetPatBlack() {}

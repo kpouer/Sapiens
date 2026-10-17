@@ -3,9 +3,9 @@
 //! Regroupe : les types QuickDraw/`repr(C)` (Rect, Point, RGBColor, ...), la
 //! structure de port de dessin `SapPort`, les pointeurs globaux de port
 //! (courant et fenêtre), la LUT 256 couleurs (http:// `Index2Color` /
-//! `Color2Index` / rendu egui), le registre des allocations (pour libérer
-//! proprement les `Ptr`/`Handle`), et l'état des entrées (souris/clavier)
-//! alimenté par egui et consommé par les stubs `GetMouse`/`Button`/`GetKeys`.
+//! `Color2Index` / rendu egui) et le registre des allocations (pour libérer
+//! proprement les `Ptr`/`Handle`). L'état des entrées (souris/clavier) et les
+//! autres échanges entre le thread C et egui sont dans `exchange.rs`.
 
 #![allow(dead_code)]
 #![allow(non_snake_case)]
@@ -316,27 +316,3 @@ pub(crate) const PAT_COPY: i16 = 8;
 pub(crate) const PAT_OR: i16 = 9;
 pub(crate) const PAT_XOR: i16 = 10;
 pub(crate) const PAT_BIC: i16 = 11;
-
-// ---------------------------------------------------------------------------
-// Entrées
-// ---------------------------------------------------------------------------
-
-/// État des entrées posé par egui (thread principal) et lu par le C.
-#[derive(Clone, Copy, Default)]
-pub(crate) struct InputState {
-    /// Position souris normalisée (0..1) dans la fenêtre egui.
-    pub(crate) mouse_h: f32,
-    pub(crate) mouse_v: f32,
-    pub(crate) button: bool,
-    /// État clavier aligné sur `KeyMap` du C (`unsigned long[4]`, soit 4 mots
-    /// de 64 bits). Pour un keycode Mac `k` (0..127), le bit `((k^24)&31)`
-    /// du mot `k>>5` est posé, conformément à `KeyPressed` (SAPWCLAV.C).
-    pub(crate) keymap: [u64; 4],
-}
-
-pub(crate) static INPUT: Mutex<InputState> = Mutex::new(InputState {
-    mouse_h: 0.5,
-    mouse_v: 0.5,
-    button: false,
-    keymap: [0; 4],
-});

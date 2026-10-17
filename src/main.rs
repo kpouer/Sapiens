@@ -17,7 +17,9 @@ pub(crate) mod stubs;
 pub(crate) mod text;
 
 use crate::acam::Random;
-use crate::exchange::{Cursor, get_cursor, set_menu_command};
+use crate::exchange::{
+    CursorShape, INPUT, cursor_hidden, cursor_shape, set_menu_command, take_title,
+};
 use crate::langue::{
     LangMode, Langue, effective_lang, langue, load_lang_mode, save_lang_mode, set_game_language,
 };
@@ -41,7 +43,7 @@ use crate::sapiens::sapwmess::Sapwmess;
 use crate::sapiens::sapwmus::Sapwmus;
 use eframe::egui;
 use egui::CursorIcon;
-use shared::{INPUT, SapPort, WINDOW_PORT, lut_rgb};
+use shared::{SapPort, WINDOW_PORT, lut_rgb};
 
 fn main() {
     // Le code C ouvre les fichiers relatifs (data/mobs/*.BRT) dans le répertoire
@@ -199,18 +201,29 @@ impl SapiensApp {
     }
 }
 
-impl From<Cursor> for CursorIcon {
-    fn from(value: Cursor) -> Self {
+impl From<CursorShape> for CursorIcon {
+    fn from(value: CursorShape) -> Self {
         match value {
-            Cursor::Hidden => CursorIcon::None,
-            Cursor::Default => CursorIcon::Default,
+            CursorShape::Arrow => CursorIcon::Default,
+            CursorShape::Watch => CursorIcon::Progress,
         }
     }
 }
 
 impl eframe::App for SapiensApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        ctx.set_cursor_icon(get_cursor().into());
+        // Curseur posé par le thread C (forme + visibilité, cf. exchange.rs) :
+        // la visibilité prime, comme sur le Mac (`HideCursor` masque quoi qu'il
+        // en soit de la forme).
+        ctx.set_cursor_icon(if cursor_hidden() {
+            CursorIcon::None
+        } else {
+            cursor_shape().into()
+        });
+        // Titre posé par `SetWTitle` (thread C), appliqué une seule fois.
+        if let Some(title) = take_title() {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Title(title));
+        }
         // Le Rust est autoritaire sur la langue : on réimpose la sélection
         // (un `Sapiens.cfg` chargé par ChargePref pourrait la remettre en
         // cause au démarrage).

@@ -275,6 +275,18 @@ fn decode(b: u8) -> char {
     }
 }
 
+/// Chaîne Pascal MacRoman → `String` (titres de fenêtre échangés avec egui,
+/// cf. `SetWTitle` dans `acam.rs`).
+pub(crate) fn pstr_to_string(p: StringPtr) -> String {
+    if p.is_null() {
+        return String::new();
+    }
+    unsafe {
+        let n = *p as usize;
+        (0..n).map(|i| decode(*p.add(1 + i))).collect()
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Métriques de police (cache par famille × graisse × taille)
 // ---------------------------------------------------------------------------

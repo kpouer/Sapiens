@@ -9,9 +9,10 @@ use std::process::exit;
 
 use crate::Sapiens;
 use crate::acam::{
-    BackColor, BlockMove, CheckItem, CtoPstr, DisableItem, DisposHandle, DrawMenuBar, EnableItem,
-    FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, MaxMem, NewCWindow,
-    PenNormal, PtoCstr, Random, SetMenuBar, TickCount, VRAI,
+    BackColor, BlockMove, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle,
+    DrawMenuBar, EnableItem, FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle,
+    GetNewMBar, MaxMem, NewCWindow, PenNormal, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle,
+    TickCount, VRAI,
 };
 use crate::cbridge::{
     DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, ctrlItem,
@@ -36,13 +37,13 @@ use crate::shared::{
 use crate::stubs::{
     AddResMenu, Alert, ArreteMusique, BeginUpdate, CarboniseAdapteStaticText,
     CarboniseGetDialogTextEditHandle, CarboniseGetMenuBarHeight, CarboniseInvalRect,
-    CarboniseNewUserItemProc, CarboniseSetCursorArrow, CarboniseSetPortDialog,
-    CarboniseValideUpdate, DisposeRoutineDescriptor, DragWindow, DrawPicture, EndUpdate,
-    FindWindow, FrontWindow, GetCtlValue, GetDItem, GetDialogItem, GetIText, GetNewDialog,
-    GetNextEvent, GetPicture, GetResource, HLock, HUnlock, HiliteMenu,
-    InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc, ParamText, PopPath,
-    PushPath, ReleaseResource, SelectWindow, SetCTitle, SetCtlValue, SetCursor,
-    SetDialogDefaultItem, SetDialogItem, SetIText, SetWTitle, SizeWindow, SystemClick, SystemTask,
+    CarboniseNewUserItemProc, CarboniseSetPortDialog, CarboniseValideUpdate,
+    DisposeRoutineDescriptor, DragWindow, DrawPicture, EndUpdate, FindWindow, FrontWindow,
+    GetCtlValue, GetDItem, GetDialogItem, GetIText, GetNewDialog, GetNextEvent, GetPicture,
+    GetResource, HLock, HUnlock, HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect,
+    OpenDeskAcc, ParamText, PopPath, PushPath, ReleaseResource, SelectWindow, SetCTitle,
+    SetCtlValue, SetDialogDefaultItem, SetDialogItem, SetIText, SizeWindow, SystemClick,
+    SystemTask,
 };
 use crate::text::{DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize};
 

@@ -10,7 +10,9 @@
 use std::sync::atomic::{AtomicI16, Ordering};
 
 use crate::Sapiens;
-use crate::acam::{CtoPstr, FAUX, GetCursor, RGBForeColor, TickCount, VRAI};
+use crate::acam::{
+    CarboniseSetCursorArrow, CtoPstr, FAUX, GetCursor, RGBForeColor, SetCursor, TickCount, VRAI,
+};
 use crate::cbridge::watchCursor;
 use crate::cbridge::{FILE, feof, fprintf, fscanf, strcmp, strcpy};
 use crate::port;
@@ -23,7 +25,6 @@ use crate::sapiens::{
     NB_OISEAUX_MAX, NB_ROCHERS, NB_ROCHERS_MAX,
 };
 use crate::shared::{Boolean, RGBColor, StringPtr};
-use crate::stubs::{CarboniseSetCursorArrow, SetCursor};
 use crate::text::{DrawString, StringWidth, TextFont};
 
 const VITESSE_DEPLACEMENT_OISEAUX: u16 = 10;
