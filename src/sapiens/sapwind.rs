@@ -226,38 +226,6 @@ Affichage d'un message durant l'initialisation
 ***********************************************************************************/
 pub(crate) fn MessInit(_format: *mut i8) {}
 
-/**********************************************************************************
-                                SetValItem
-=> Fixe une valeur type chainedans un item
-<= VRAI si la valeur est bonne, FAUX si la valeur a été tronquée
-**********************************************************************************/
-pub(crate) fn SetValItem(dialog: DialogPtr, itemHit: i16, c: *mut i8) -> i16 {
-    let mut itemType: i16 = 0;
-    let mut control: Handle = core::ptr::null_mut();
-    let mut box_: Rect = Rect::default();
-    let mut chaine: [i8; 255] = [0; 255];
-    unsafe {
-        strcpy(&raw mut chaine as *mut i8, c);
-    }
-    /* C'est un texte ??? */
-    GetDItem(
-        dialog,
-        itemHit,
-        &raw mut itemType,
-        &raw mut control,
-        &raw mut box_,
-    );
-    /* On fixe la chaine */
-    CtoPstr(chaine.as_mut_ptr());
-    if (itemType & editText as i16) != 0 || (itemType & statText as i16) != 0 {
-        SetIText(control, &raw mut chaine as *mut u8);
-    }
-    if (itemType & ctrlItem as i16) != 0 {
-        SetCTitle(control, &raw mut chaine as *mut u8);
-    }
-    VRAI as i16
-}
-
 /***********************************************************************************
                                 SetValBouton
 => Fixe une valeur VRAI ou FAUX dans un bouton
@@ -320,32 +288,6 @@ pub(crate) fn GetValBouton(dialog: DialogPtr, itemHit: i16) -> i16 {
         return value;
     }
     FAUX as i16
-}
-
-/***********************************************************************************
-                                GetValItem
-Lit  une valeur type chaine dans un item texte editable
-**********************************************************************************/
-pub(crate) fn GetValItem(dialog: DialogPtr, itemHit: i16, chaine: *mut i8) -> i16 {
-    let mut itemType: i16 = 0;
-    let mut handle: Handle = core::ptr::null_mut();
-    let mut box_: Rect = Rect::default();
-
-    /* C'est un texte ??? */
-    GetDItem(
-        dialog,
-        itemHit,
-        &raw mut itemType,
-        &raw mut handle,
-        &raw mut box_,
-    );
-    if (itemType & editText as i16) != 0 || (itemType & statText as i16) != 0 {
-        GetIText(handle, chaine as *mut u8);
-        PtoCstr(chaine as *mut u8);
-        VRAI as i16
-    } else {
-        FAUX as i16
-    }
 }
 
 /******************************************************************************************
