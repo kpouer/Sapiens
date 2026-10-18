@@ -41,9 +41,7 @@ impl Sapwcvt {
         let tabcvtombre = &mut self.TabCvtCoulOmbre;
         for i in 0..256 {
             let mut rgb = Index2Color(i);
-            rgb.red >>= 1;
-            rgb.green >>= 1;
-            rgb.blue >>= 1;
+            rgb >>= 1;
             tabcvtombre[i as usize] = SapColor2Index(&rgb) as u8;
         }
     }

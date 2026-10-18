@@ -12,6 +12,7 @@
 
 use crate::cbridge::TEText;
 use std::ffi::c_void;
+use std::ops::ShrAssign;
 use std::sync::Mutex;
 use std::sync::atomic::AtomicPtr;
 // ---------------------------------------------------------------------------
@@ -134,6 +135,14 @@ pub(crate) struct RGBColor {
     pub(crate) red: u16,
     pub(crate) green: u16,
     pub(crate) blue: u16,
+}
+
+impl ShrAssign<u8> for RGBColor {
+    fn shr_assign(&mut self, rhs: u8) {
+        self.red >>= rhs;
+        self.green >>= rhs;
+        self.blue >>= rhs;
+    }
 }
 
 #[repr(C)]
