@@ -25,31 +25,26 @@ impl Sapwcvt {
     *************************************************************************/
     pub(crate) fn FabriqueLuts(&mut self) {
         /* Calcul de la LUT st vers index */
-        let tabcvt = addr_of_mut!(self.TabCvtCoul) as *mut u8;
-        for r in 0..8i16 {
-            for v in 0..8i16 {
-                for b in 0..8i16 {
+        let tabcvt = &mut self.TabCvtCoul;
+        for r in 0..8u16 {
+            for v in 0..8 {
+                for b in 0..8 {
                     let rgb = RGBColor {
-                        red: (r as u16) * 9362,
-                        green: (v as u16) * 9362,
-                        blue: (b as u16) * 9362,
+                        red: r * 9362,
+                        green: v * 9362,
+                        blue: b * 9362,
                     };
-                    unsafe {
-                        *tabcvt.add(((r << 8) + (v << 4) + b) as usize) =
-                            SapColor2Index(&rgb) as u8;
-                    }
+                    tabcvt[((r << 8) + (v << 4) + b) as usize] = SapColor2Index(&rgb) as u8;
                 }
             }
         }
-        let tabcvtombre = addr_of_mut!(self.TabCvtCoulOmbre) as *mut u8;
-        for i in 0..256i16 {
+        let tabcvtombre = &mut self.TabCvtCoulOmbre;
+        for i in 0..256 {
             let mut rgb = Index2Color(i);
             rgb.red >>= 1;
             rgb.green >>= 1;
             rgb.blue >>= 1;
-            unsafe {
-                *tabcvtombre.add(i as usize) = SapColor2Index(&rgb) as u8;
-            }
+            tabcvtombre[i as usize] = SapColor2Index(&rgb) as u8;
         }
     }
 
