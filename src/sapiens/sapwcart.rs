@@ -168,7 +168,6 @@ impl Sapiens {
                              CARTE:
     ***********************************************************************/
     pub(crate) fn carte(&mut self) {
-        let angle: i16;
         let mut r = Rect::default();
 
         /* deconnecte sous menu */
@@ -207,7 +206,7 @@ impl Sapiens {
         /* affichage */
         self.aff_mont(j as i16);
         /* on affiche la fleche */
-        angle = ((self.sapglob.dzeta + 32) / 64) & 15;
+        let angle = ((self.sapglob.dzeta + 32) / 64) & 15;
         self.Affmobbrtomb(
             self.sapwind.mobFleches + 1 + angle,
             (TAILLE_X_CARTE / 2 - 8) as i16,
@@ -238,8 +237,7 @@ impl Sapiens {
     /***********************************************************************
                              ZOOCAR:Gere le zoom
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn zoocar(&mut self) {
+    pub(crate) fn zoocar(&mut self) {
         let mut bitmap: i16 = 0;
 
         let _g = port::on(self.sapwind.mainWindow);
@@ -275,8 +273,8 @@ impl Sapiens {
                 }
             } else {
                 (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
-                let s = *addr_of!(self.sapglob.sposy);
-                if s != *addr_of!(self.sapglob.dsposy) {
+                let s = self.sapglob.sposy;
+                if s != self.sapglob.dsposy {
                     self.sapglob.zoom = (s / 2 + 30) as u8;
                     if self.sapglob.zoom < 16 {
                         self.sapglob.zoom = 16;
@@ -284,7 +282,7 @@ impl Sapiens {
                     if self.sapglob.zoom > 160 {
                         self.sapglob.zoom = 160;
                     }
-                    *addr_of_mut!(self.sapglob.dsposy) = s;
+                    self.sapglob.dsposy = s;
                     self.carte();
                 }
             }
