@@ -415,9 +415,8 @@ impl Sapiens {
                                 self.sapglob.sposx,
                             );
                         }
-                    } else
-                    /* La souris est dans la partie haute de l'ecran */
-                    if self.sapglob.icone == 0 {
+                    } else if self.sapglob.icone == 0 {
+                        /* La souris est dans la partie haute de l'ecran */
                         /* Bouton et pas d'icone */
                         let pt = GetMouse().zoom(port::window_zoom());
 
@@ -456,7 +455,7 @@ impl Sapglob {
             /*le premier element le recoit*/
             debliste.elements[0] = element as u8;
         } else {
-            /*liste est elle pleine*/
+            /*liste est-elle pleine*/
             if debliste.taille == debliste.maxtaille {
                 return 1; /*deja pleine*/
             }

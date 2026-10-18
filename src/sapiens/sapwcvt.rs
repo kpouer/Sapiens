@@ -23,7 +23,7 @@ impl Sapwcvt {
     /*************************************************************************
                     FabriqueLuts
     *************************************************************************/
-    pub(crate) unsafe extern "C" fn FabriqueLuts(&mut self) {
+    pub(crate) fn FabriqueLuts(&mut self) {
         /* Calcul de la LUT st vers index */
         let tabcvt = addr_of_mut!(self.TabCvtCoul) as *mut u8;
         for r in 0..8i16 {
@@ -34,7 +34,10 @@ impl Sapwcvt {
                         green: (v as u16) * 9362,
                         blue: (b as u16) * 9362,
                     };
-                    *tabcvt.add(((r << 8) + (v << 4) + b) as usize) = SapColor2Index(&rgb) as u8;
+                    unsafe {
+                        *tabcvt.add(((r << 8) + (v << 4) + b) as usize) =
+                            SapColor2Index(&rgb) as u8;
+                    }
                 }
             }
         }
@@ -44,7 +47,9 @@ impl Sapwcvt {
             rgb.red >>= 1;
             rgb.green >>= 1;
             rgb.blue >>= 1;
-            *tabcvtombre.add(i as usize) = SapColor2Index(&rgb) as u8;
+            unsafe {
+                *tabcvtombre.add(i as usize) = SapColor2Index(&rgb) as u8;
+            }
         }
     }
 
@@ -64,49 +69,5 @@ impl Sapwcvt {
         unsafe {
             Self::CvtCouleurStEnRgb(*palette.add(index as usize), rgb);
         }
-    }
-
-    /*************************************************************************
-                    CvtRgbEnCouleur
-    Recherche dans la palette st en entrée l'index de la couleur
-    la plus proche en rvb
-    *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn CvtRgbEnCouleur(palette: *mut i16, rgb: *mut RGBColor) -> i16 {
-        let mut imin: i16 = 0;
-        let mut delmin: u32 = u32::MAX;
-        for i in 0..16i16 {
-            let mut refx = RGBColor::default();
-            Self::CvtCouleurEnRgb(palette, i, &mut refx);
-            let delta = ((refx.green as i32 - (*rgb).green as i32).abs()
-                + (refx.red as i32 - (*rgb).red as i32).abs()
-                + (refx.blue as i32 - (*rgb).blue as i32).abs()) as u32;
-            if delta < delmin {
-                if delta == 0 {
-                    return i;
-                }
-                delmin = delta;
-                imin = i;
-            }
-        }
-        imin
-    }
-}
-
-impl Sapiens {
-    /*************************************************************************
-                    CvtIndexEnCouleur
-    Convertit un index de palette systeme en index de palette ST
-    en utilisant la deuxieme section de la palette
-    *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn CvtIndexEnCouleur(&self, palette: *mut i16, index: i16) -> i16 {
-        for i in 0..16i16 {
-            if *palette.add(i as usize + 16) == index {
-                return i;
-            }
-        }
-        self.Collapse("CvtIndexEnCouleur: Index non trouve");
-        -1
     }
 }
