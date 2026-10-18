@@ -10,7 +10,7 @@ use crate::sapiens::sapwclav::GetKeyMap;
 use crate::sapiens::{FormeId, Mont};
 use crate::shared::{CGrafPtr, Rect};
 use log::error;
-use std::ptr::{addr_of, addr_of_mut, null_mut};
+use std::ptr::{addr_of, null_mut};
 
 const TAILLE_X_CARTE: i64 = 144;
 const TAILLE_Y_CARTE: i64 = 80;
@@ -58,13 +58,13 @@ impl Sapiens {
         CopyOffscreen(
             self.sapwcart.ecr_carte,
             self.sapwind.debecr,
-            addr_of_mut!(self.sapwcart.aire_carte),
+            &self.sapwcart.aire_carte,
             &rdest,
         );
         CopyOffscreen(
             self.sapwcart.ecr_carte,
             self.sapwind.mainWindow,
-            addr_of_mut!(self.sapwcart.aire_carte),
+            &self.sapwcart.aire_carte,
             &rdest,
         );
     }

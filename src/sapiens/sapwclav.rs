@@ -85,8 +85,8 @@ impl Sapiens {
         CopyOffscreen(
             self.sapwind.debecr,
             self.sapwind.mainWindow,
-            &raw mut self.sapwclav.rsouris,
-            &raw mut self.sapwclav.rsouris,
+            &self.sapwclav.rsouris,
+            &self.sapwclav.rsouris,
         );
         self.sapwclav.rsouris = Rect::default();
     }
@@ -112,8 +112,8 @@ impl Sapiens {
         CopyOffscreen(
             self.sapwind.debecr,
             self.sapwind.BuffMouse,
-            &raw mut self.sapwclav.rsouris,
-            &raw mut rsource,
+            &self.sapwclav.rsouris,
+            &rsource,
         );
         /* On copie egalement l'ecran physique sur le buffer de la souris */
         /* On affiche la souris */
@@ -123,8 +123,8 @@ impl Sapiens {
         CopyOffscreen(
             self.sapwind.BuffMouse,
             self.sapwind.mainWindow,
-            &raw mut rsource,
-            &raw mut self.sapwclav.rsouris,
+            &rsource,
+            &self.sapwclav.rsouris,
         );
         /* On efface la difference (les deux rectangles sont sur l'ecran : ils
         sont a l'echelle de la fenetre, meme si on dessine sur BuffMouse) */
@@ -141,8 +141,8 @@ impl Sapiens {
         CopyOffscreen(
             self.sapwind.debecr,
             self.sapwind.mainWindow,
-            &raw mut oldRect,
-            &raw mut oldRect,
+            &oldRect,
+            &oldRect,
         );
         SetClip(rgnClip);
         DisposeRgn(rgnClip);

@@ -1067,20 +1067,15 @@ pub(crate) fn SapiensCreeOffscreen(taillex: i16, tailley: i16) -> CGrafPtr {
                         CopyOffscreen
 Copy un rectangle entre la source et la destination
 **************************************************************************/
-pub(crate) fn CopyOffscreen(
-    source: CGrafPtr,
-    dest: CGrafPtr,
-    rsourceIn: *const Rect,
-    rdestIn: *const Rect,
-) {
+pub(crate) fn CopyOffscreen(source: CGrafPtr, dest: CGrafPtr, rsourceIn: &Rect, rdestIn: &Rect) {
+    if rsourceIn.is_empty() {
+        return;
+    }
+    /* Chaque port porte son échelle : un rectangle est mis à l'échelle
+    uniquement s'il est adressé à la fenêtre. */
+    let realSource = port::zoomed(source, rsourceIn);
+    let realDest = port::zoomed(dest, rdestIn);
     unsafe {
-        if (*rsourceIn).is_empty() {
-            return;
-        }
-        /* Chaque port porte son échelle : un rectangle est mis à l'échelle
-        uniquement s'il est adressé à la fenêtre. */
-        let realSource = port::zoomed(source, &*rsourceIn);
-        let realDest = port::zoomed(dest, &*rdestIn);
         // Sur ecran
         if port::is_window(dest) {
             let _g = port::on(dest);
@@ -1158,8 +1153,7 @@ impl Sapiens {
             (255 * ECHELLE) as i16,
             ((32 + TAILLE_TFR) * ECHELLE) as i16,
         );
-        let rp = &rsourc as *const Rect;
-        CopyOffscreen(self.sapwind.Ecran2, self.sapwind.Ecran1, rp, rp);
+        CopyOffscreen(self.sapwind.Ecran2, self.sapwind.Ecran1, &rsourc, &rsourc);
     }
 
     /*************************************************************************
@@ -1216,8 +1210,7 @@ impl Sapiens {
             (200 * ECHELLE) as i16,
         );
         if etat != 0 {
-            let rp = &r as *const Rect;
-            CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, rp, rp);
+            CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, &r, &r);
         } else {
             let _g = port::on(self.sapwind.mainWindow);
             CarboniseSetPatGray();
@@ -1237,10 +1230,9 @@ impl Sapiens {
     /*************************************************************************
                     CopyEcran1Sur2
     *************************************************************************/
-    pub(crate) extern "C" fn CopyEcran1Sur2(&self) {
+    pub(crate) fn CopyEcran1Sur2(&self) {
         let rsourc = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
-        let rp = &rsourc as *const Rect;
-        CopyOffscreen(self.sapwind.Ecran1, self.sapwind.Ecran2, rp, rp);
+        CopyOffscreen(self.sapwind.Ecran1, self.sapwind.Ecran2, &rsourc, &rsourc);
     }
     /*************************************************************************
                     TfrEcr
@@ -1252,8 +1244,7 @@ impl Sapiens {
             CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, r, r);
         } else {
             let r2 = Rect::new(0, 0, (320 * ECHELLE) as i16, (200 * ECHELLE) as i16);
-            let rp = &r2 as *const Rect;
-            CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, rp, rp);
+            CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, &r2, &r2);
         }
     }
     /*************************************************************************
@@ -1308,8 +1299,7 @@ impl Sapiens {
         let _g = port::on(self.sapwind.debecr);
         self.Affmobbrtomb(mob, colonne, ligne, deltah, deltav, &mut r);
         if recopie {
-            let rp = &r as *const Rect;
-            CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, rp, rp);
+            CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, &r, &r);
         }
     }
     /*************************************************************************

@@ -201,12 +201,7 @@ impl Sapiens {
                     ((1 + 100) * ECHELLE) as i16,
                 );
 
-                CopyOffscreen(
-                    self.sapwind.debecr,
-                    self.sapwind.Ecran1,
-                    &mut rsourc,
-                    &mut rdest,
-                );
+                CopyOffscreen(self.sapwind.debecr, self.sapwind.Ecran1, &rsourc, &rdest);
                 self.delai(15 * 60);
                 self.Final();
             }

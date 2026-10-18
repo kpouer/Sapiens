@@ -42,8 +42,8 @@ impl Sapiens {
         CopyOffscreen(
             self.sapwind.debecr,
             self.sapwind.mainWindow,
-            &raw mut self.sapwmess.rMess,
-            &raw mut self.sapwmess.rMess,
+            &self.sapwmess.rMess,
+            &self.sapwmess.rMess,
         );
         CarboniseInvalRect(&raw const self.sapwmess.rMess);
     }
