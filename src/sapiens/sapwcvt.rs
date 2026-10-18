@@ -1,9 +1,7 @@
 #![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
-use crate::Sapiens;
 use crate::acam::Index2Color;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::shared::RGBColor;
-use std::ptr::addr_of_mut;
 
 pub(crate) struct Sapwcvt {
     pub(crate) TabCvtCoul: [u8; 0x778],
