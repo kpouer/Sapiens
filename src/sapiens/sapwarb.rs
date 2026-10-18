@@ -45,7 +45,7 @@ impl Sapiens {
     /**************************************************************************
                             calpar
     ***************************************************************************/
-    fn calpar(&mut self, largeur: i16, ang: *mut i16, lr: *mut i16, lo: *mut i16) {
+    fn calpar(&mut self, largeur: i16) -> (i16, i16, i16) {
         let mut n = self.sapwarb.largtronc as i32
             - ((self.random.rnd0() as i32
                 * self.sapwarb.qutlgn as i32
@@ -55,18 +55,15 @@ impl Sapiens {
             n = (self.sapwarb.largtronc as i32 * self.random.rnd0() as i32) >> 8;
         }
         n += 1;
-        unsafe {
-            *lo = n as i16;
-        }
+        let lo = n as i16;
         let mut largeur =
             ((self.random.rnd0() as i32 * (largeur >> 1) as i32) >> 8) + (largeur >> 2) as i32 + 1;
         if self.random.rnd0() <= 40 {
             largeur += 1;
         }
-        unsafe {
-            *ang = (((self.random.rnd0() as i32 * 70) >> 8) + self.sapwarb.amini as i32) as i16;
-            *lr = largeur as i16;
-        }
+        let ang = (((self.random.rnd0() as i32 * 70) >> 8) + self.sapwarb.amini as i32) as i16;
+        let lr = largeur as i16;
+        (ang, lr, lo)
     }
 
     /**************************************************************************
@@ -163,11 +160,7 @@ impl Sapiens {
                 self.touffe((AncXG + AncXD) / 2, Ancy);
             } else if Ancy > 0 {
                 /* Branche gauche */
-                let mut ang: i16 = 0;
-                let mut lr: i16 = 0;
-                let mut lo: i16 = 0;
-                let mut bidon: i16 = 0;
-                self.calpar(largeur, &mut ang, &mut lr, &mut lo); /*Largeur longueur deltangle */
+                let (mut ang, mut lr, mut lo) = self.calpar(largeur); /*Largeur longueur deltangle */
                 ang = ang + angle;
                 if ang > 450 {
                     ang = 900 - ang;
@@ -178,7 +171,7 @@ impl Sapiens {
                 if lr < 1 {
                     lr = 1;
                 }
-                self.calpar(largeur, &mut ang, &mut bidon, &mut lo); /*Largeur longueur deltangle */
+                (ang, lr, lo) = self.calpar(largeur); /*Largeur longueur deltangle */
                 ang = angle - ang;
                 if ang < 10 {
                     ang = 124 - ang;
