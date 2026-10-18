@@ -38,7 +38,7 @@ pub(crate) type PicHandle = *mut *mut Pic;
 pub(crate) type TEHandle = *mut *mut TEText;
 
 pub(crate) type StringPtr = *mut u8;
-pub(crate) type KeyMap = *mut u64;
+pub(crate) type KeyMap = [u64; 4];
 pub(crate) type ControlActionProcPtr =
     ::std::option::Option<unsafe extern "C" fn(control: ControlHandle, part: i16)>;
 

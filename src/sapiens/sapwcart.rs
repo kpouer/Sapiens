@@ -238,8 +238,6 @@ impl Sapiens {
                              ZOOCAR:Gere le zoom
     ***********************************************************************/
     pub(crate) fn zoocar(&mut self) {
-        let mut bitmap: i16 = 0;
-
         let _g = port::on(self.sapwind.mainWindow);
 
         loop {
@@ -261,7 +259,8 @@ impl Sapiens {
         self.carte();
         loop {
             self.GereInterface();
-            if GetKeyMap(&mut bitmap) != 0 {
+            let bitmap = GetKeyMap();
+            if bitmap != 0 {
                 if bitmap & 1 != 0 {
                     self.ChangeZoomCarte(-2);
                 }

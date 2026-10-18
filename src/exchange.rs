@@ -10,11 +10,11 @@
 //!   menus) restent chez l'émulation concernée et sont exposés par snapshot
 //!   (`acam.rs`).
 
+use crate::shared::KeyMap;
 use log::{error, info};
 use std::fmt::Display;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU8, Ordering};
-
 // ---------------------------------------------------------------------------
 // Curseur (thread C → egui)
 // ---------------------------------------------------------------------------
@@ -135,7 +135,7 @@ pub(crate) struct InputState {
     /// État clavier aligné sur `KeyMap` du C (`unsigned long[4]`, soit 4 mots
     /// de 64 bits). Pour un keycode Mac `k` (0..127), le bit `((k^24)&31)`
     /// du mot `k>>5` est posé, conformément à `KeyPressed` (SAPWCLAV.C).
-    pub(crate) keymap: [u64; 4],
+    pub(crate) keymap: KeyMap,
 }
 
 pub(crate) static INPUT: Mutex<InputState> = Mutex::new(InputState {

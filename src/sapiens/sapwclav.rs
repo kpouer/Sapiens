@@ -155,90 +155,71 @@ impl Sapiens {
                         KeyPressed
 Dit si une touche d'ascii donnee est appuyee sur le keymap en entree
 ********************************************************************/
-pub(crate) fn KeyPressed(km: *mut KeyMap, ascii: i16) -> Boolean {
-    let p = km as *mut u64;
-    unsafe { ((*p.add((ascii >> 5) as usize) >> (((ascii ^ 24) & 31) as u32)) & 1) != 0 }
+pub(crate) fn KeyPressed(km: &KeyMap, ascii: i16) -> Boolean {
+    ((km[(ascii >> 5) as usize] >> (((ascii ^ 24) & 31) as u32)) & 1) != 0
 }
 
 /*************************************************************
                     GetKeyMap
 ***************************************************************/
-pub(crate) fn GetKeyMap(bitmap: *mut i16) -> i16 {
-    let mut theKeys = KeyMap::default();
-
-    unsafe {
-        *bitmap = 0;
-        GetKeys(theKeys);
-        if KeyPressed(&raw mut theKeys, 0x7E) {
-            *bitmap |= 1;
-        }
-        if KeyPressed(&raw mut theKeys, 0x7D) {
-            *bitmap |= 2;
-        }
-        if KeyPressed(&raw mut theKeys, 0x7B) {
-            *bitmap |= 4;
-        }
-        if KeyPressed(&raw mut theKeys, 0x7C) {
-            *bitmap |= 8;
-        }
-        if KeyPressed(&raw mut theKeys, 0x31) {
-            *bitmap |= 32; /* Espace */
-        }
-        if KeyPressed(&raw mut theKeys, 0x24) {
-            *bitmap |= 16; /* RC */
-        }
-        if KeyPressed(&raw mut theKeys, 0x35) {
-            *bitmap |= 64; /* ESC*/
-        }
-        if KeyPressed(&raw mut theKeys, 0x08) {
-            *bitmap |= 32; /* Carte*/
-        }
-        if KeyPressed(&raw mut theKeys, 0x2e) {
-            *bitmap |= 32; /* Carte*/
-        }
+pub(crate) fn GetKeyMap() -> i16 {
+    let mut bitmap = 0;
+    let theKeys = GetKeys();
+    if KeyPressed(&theKeys, 0x7E) {
+        bitmap |= 1;
     }
-    unsafe { *bitmap }
-}
-
-/*********************************************************************
-                        IsKey
-  Dit si une touche d'ascii donnee est appuyee sur le keymap en entree
-********************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn IsKey(ascii: i16) -> Boolean {
-    let mut theKeys = KeyMap::default();
-
-    GetKeys(theKeys);
-    KeyPressed(&raw mut theKeys, ascii)
+    if KeyPressed(&theKeys, 0x7D) {
+        bitmap |= 2;
+    }
+    if KeyPressed(&theKeys, 0x7B) {
+        bitmap |= 4;
+    }
+    if KeyPressed(&theKeys, 0x7C) {
+        bitmap |= 8;
+    }
+    if KeyPressed(&theKeys, 0x31) {
+        bitmap |= 32; /* Espace */
+    }
+    if KeyPressed(&theKeys, 0x24) {
+        bitmap |= 16; /* RC */
+    }
+    if KeyPressed(&theKeys, 0x35) {
+        bitmap |= 64; /* ESC*/
+    }
+    if KeyPressed(&theKeys, 0x08) {
+        bitmap |= 32; /* Carte*/
+    }
+    if KeyPressed(&theKeys, 0x2e) {
+        bitmap |= 32; /* Carte*/
+    }
+    bitmap
 }
 
 /*************************************************************
                     GetKeyMapJoueur2
 ***************************************************************/
 fn GetKeyMapJoueur2() -> i16 {
-    let mut theKeys = KeyMap::default();
-
     let mut bitmap = 0;
-    GetKeys(theKeys);
-    if KeyPressed(&raw mut theKeys, 0x5b) {
+    let theKeys = GetKeys();
+    if KeyPressed(&theKeys, 0x5b) {
         bitmap |= 1;
     }
-    if KeyPressed(&raw mut theKeys, 0x54) {
+    if KeyPressed(&theKeys, 0x54) {
         bitmap |= 2;
     }
-    if KeyPressed(&raw mut theKeys, 0x56) {
+    if KeyPressed(&theKeys, 0x56) {
         bitmap |= 4;
     }
-    if KeyPressed(&raw mut theKeys, 0x58) {
+    if KeyPressed(&theKeys, 0x58) {
         bitmap |= 8;
     }
-    if KeyPressed(&raw mut theKeys, 0x53) {
+    if KeyPressed(&theKeys, 0x53) {
         bitmap |= 32; /* Espace */
     }
-    if KeyPressed(&raw mut theKeys, 0x55) {
+    if KeyPressed(&theKeys, 0x55) {
         bitmap |= 16; /* RC */
     }
-    if KeyPressed(&raw mut theKeys, 0x42) {
+    if KeyPressed(&theKeys, 0x42) {
         bitmap |= 64; /* ESC*/
     }
     bitmap
@@ -250,9 +231,8 @@ impl Sapiens {
     Donne un deplacement / a la position 160,100 de la souris
     ***************************************************************/
     pub(crate) fn getkey3d(&mut self) -> i16 {
-        let mut bitmap: i16 = 0;
-
-        if GetKeyMap(&raw mut bitmap) == 0 {
+        let mut bitmap = GetKeyMap();
+        if bitmap == 0 {
             (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
             let mut delt = self.sapglob.sposx - self.sapglob.dsposx;
             if delt > 0 && delt > 16 {
@@ -286,16 +266,17 @@ impl Sapiens {
     => 0 joeur principal, 1 secondaire
     */
     pub(crate) fn getkey(&mut self, quoi: u16) -> i16 {
-        let mut bitmap = 0;
+        let mut bitmap;
 
         if quoi != 0 {
             bitmap = GetKeyMapJoueur2();
         } else {
             /* joueur primaire */
-            if GetKeyMap(&raw mut bitmap) == 0 {
+            bitmap = GetKeyMap();
+            if bitmap == 0 {
                 (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
                 let delt = self.sapglob.sposx - self.sapglob.dsposx;
-                if delt > 0 && delt > 10 {
+                if delt > 10 {
                     bitmap |= 8;
                 }
                 if delt < 0 && -delt > 10 {
@@ -434,8 +415,6 @@ impl Souris {
 
 impl Sapiens {
     pub(crate) fn vq_mouse(&mut self) -> (i16, i16, i16) {
-        let mut theKeys = KeyMap::default();
-
         port::set(self.sapwind.mainWindow);
         self.GereInterface();
         let pt = GetMouse().zoom(port::window_zoom());
@@ -448,8 +427,8 @@ impl Sapiens {
         let y = (pt.v as f32 / ECHELLE as f32) as i16;
         let mut bouton_ptr = Button() as i16;
         if bouton_ptr > 0 {
-            GetKeys(theKeys);
-            if KeyPressed(&raw mut theKeys, 0x38) {
+            let theKeys = GetKeys();
+            if KeyPressed(&theKeys, 0x38) {
                 bouton_ptr |= 2;
             }
         }

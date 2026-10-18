@@ -508,14 +508,12 @@ fn menu_handle_ptr(menu: &Menu) -> MenuHandle {
     (menu as *const Menu) as *mut c_void
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetNewMBar(_menuBarID: i16) -> Handle {
+pub(crate) fn GetNewMBar(_menuBarID: i16) -> Handle {
     *MENU_MODEL.lock().unwrap() = Some(build_model());
     unsafe { core::ptr::addr_of_mut!(MENU_BAR_HANDLE) as *mut _ }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetMHandle(menuID: i16) -> MenuHandle {
+pub(crate) fn GetMHandle(menuID: i16) -> MenuHandle {
     let g = MENU_MODEL.lock().unwrap();
     match &*g {
         Some(m) => m

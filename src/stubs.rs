@@ -33,15 +33,8 @@ pub(crate) static qd: QDGlobals = QDGlobals {
 // ---------------------------------------------------------------------------
 // Gestion des fenetres / evenements
 // ---------------------------------------------------------------------------
-
-pub(crate) fn GetKeys(theKeys: KeyMap) {
-    if theKeys.is_null() {
-        return;
-    }
-    let keymap = INPUT.lock().unwrap().keymap;
-    unsafe {
-        std::ptr::copy_nonoverlapping(keymap.as_ptr(), theKeys, 4);
-    }
+pub(crate) fn GetKeys() -> KeyMap {
+    INPUT.lock().unwrap().keymap
 }
 
 pub(crate) fn Button() -> Boolean {
