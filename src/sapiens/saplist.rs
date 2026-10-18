@@ -449,7 +449,7 @@ impl Sapglob {
     /***********************************************************************
                   AJOUTL:ajoute un element a une liste
     ***********************************************************************/
-    pub(crate) fn ajoutl(&mut self, debliste_id: ListeId, element: u16) -> u16 {
+    pub(crate) fn ajoutl(&mut self, debliste_id: ListeId, element: u16) -> bool {
         let debliste = self.liste_mut(debliste_id);
         if debliste_id == ListeId::Listbidon {
             /*le premier element le recoit*/
@@ -457,12 +457,12 @@ impl Sapglob {
         } else {
             /*liste est-elle pleine*/
             if debliste.taille == debliste.maxtaille {
-                return 1; /*deja pleine*/
+                return true; /*deja pleine*/
             }
             debliste.elements[debliste.taille as usize] = element as u8;
             debliste.taille += 1;
         }
-        0 /*ok*/
+        false /*ok*/
     }
 
     /***********************************************************************
@@ -483,7 +483,7 @@ impl Sapglob {
                 orgliste.elements[rang as usize] as u16
             };
             let erreur = self.ajoutl(receptliste_id, element);
-            if erreur != 0 {
+            if erreur {
                 /*pas de place en reception*/
                 let orgliste = self.liste_mut(orgliste_id);
                 orgliste.taille = orgliste.taille.wrapping_add(1);
