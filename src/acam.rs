@@ -729,8 +729,7 @@ pub(crate) unsafe fn plot(port: *mut SapPort, x: i16, y: i16, c: u8) {
 }
 
 /// Remplit un rectangle (respecte clip), et accumule dans la région ouverte.
-unsafe fn fill_rect(port: *mut SapPort, r: &Rect, color: u8) {
-    let p = &mut *port;
+fn fill_rect(p: &mut SapPort, r: &Rect, color: u8) {
     p.open_acc = p.open_acc.union(&r);
     let c = r.intersect(&p.clip);
     if c.is_empty() {
@@ -740,22 +739,26 @@ unsafe fn fill_rect(port: *mut SapPort, r: &Rect, color: u8) {
     let base = p.pixels;
     if p.pen_mode == PAT_COPY {
         let wpx = (c.right - c.left) as usize;
-        for y in c.top..c.bottom {
-            let row = base.add((y as usize) * w + (c.left as usize));
-            std::ptr::write_bytes(row, color, wpx);
+        unsafe {
+            for y in c.top..c.bottom {
+                let row = base.add((y as usize) * w + (c.left as usize));
+                std::ptr::write_bytes(row, color, wpx);
+            }
         }
     } else {
         for y in c.top..c.bottom {
-            let row = base.add((y as usize) * w);
-            for x in c.left..c.right {
-                let d = row.add((x - c.left) as usize);
-                let v = match p.pen_mode {
-                    PAT_OR => *d | color,
-                    PAT_XOR => *d ^ color,
-                    PAT_BIC => *d & !color,
-                    _ => color,
-                };
-                *d = v;
+            unsafe {
+                let row = base.add((y as usize) * w);
+                for x in c.left..c.right {
+                    let d = row.add((x - c.left) as usize);
+                    let v = match p.pen_mode {
+                        PAT_OR => *d | color,
+                        PAT_XOR => *d ^ color,
+                        PAT_BIC => *d & !color,
+                        _ => color,
+                    };
+                    *d = v;
+                }
             }
         }
     }
@@ -987,7 +990,7 @@ pub(crate) fn PaintRect(r: &Rect) {
     }
     unsafe {
         let fore = (*p).fore_index;
-        fill_rect(p, r, fore);
+        fill_rect(&mut *p, r, fore);
     }
 }
 
@@ -998,7 +1001,7 @@ pub(crate) fn EraseRect(r: &Rect) {
     }
     unsafe {
         let back = (*p).back_index;
-        fill_rect(p, r, back);
+        fill_rect(&mut *p, r, back);
     }
 }
 
@@ -1379,7 +1382,7 @@ pub(crate) fn EraseRgn(rgn: RgnHandle) {
     }
     unsafe {
         let back = (*p).back_index;
-        fill_rect(p, &*(rgn as *const Rect), back);
+        fill_rect(&mut *p, &*(rgn as *const Rect), back);
     }
 }
 
