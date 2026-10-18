@@ -9,6 +9,7 @@ use crate::sapiens::sapwbrt::{CopyOffscreen, DoFrameRect, SapiensCreeOffscreen};
 use crate::sapiens::sapwclav::GetKeyMap;
 use crate::sapiens::{FormeId, Mont};
 use crate::shared::{CGrafPtr, Rect};
+use log::error;
 use std::ptr::{addr_of, addr_of_mut, null_mut};
 
 const TAILLE_X_CARTE: i64 = 144;
@@ -128,23 +129,21 @@ impl Sapiens {
             let mut jmin = 0;
             let mut minyc = 32767;
             if let Some(tab_elt_car) = &self.sapwcart.tab_elt_car {
-                for j in 0..nb {
-                    if tab_elt_car[j as usize].aire.bottom < minyc {
+                for j in 0..nb as usize {
+                    if tab_elt_car[j].aire.bottom < minyc {
                         jmin = j;
-                        minyc = tab_elt_car[j as usize].aire.bottom;
+                        minyc = tab_elt_car[j].aire.bottom;
                     }
                 }
                 if minyc == 32767 {
                     return;
                 }
-                self.Affmob3d(
-                    tab_elt_car[jmin as usize].mob,
-                    tab_elt_car[jmin as usize].aire,
-                    null_mut(),
-                );
+                self.Affmob3d(tab_elt_car[jmin].mob, tab_elt_car[jmin].aire, null_mut());
             }
             if let Some(tab_elt_car) = &mut self.sapwcart.tab_elt_car {
-                tab_elt_car[jmin as usize].aire.bottom = 32767;
+                tab_elt_car[jmin].aire.bottom = 32767;
+            } else {
+                error!("self.sapwcart.tab_elt_car should be something");
             }
         }
     }
