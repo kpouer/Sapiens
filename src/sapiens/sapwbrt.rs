@@ -502,15 +502,7 @@ impl Sapiens {
     tableau des index de palette ou NULL si palette standard du Mob
     <= rien
     ******************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn Affmobbrt(
-        &self,
-        num: i16,
-        x: i16,
-        y: i16,
-        sens: i16,
-        tabIndex: *mut i16,
-    ) {
+    pub(crate) fn Affmobbrt(&self, num: i16, x: i16, y: i16, sens: i16, tabIndex: *mut i16) {
         let mob = &self.sapwbrt.TabMob[num as usize];
         let mut x = ((x as i32) * (ECHELLE as i32)) as i16;
         let mut y = ((y as i32) * (ECHELLE as i32)) as i16;
@@ -798,8 +790,7 @@ impl Sapiens {
 Ecrit le pixel en coordonnée x, y de couleur systeme coul
 => x (0-640) ,y(0-200), index de la couleur systeme
 ******************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn PlotIndexPixBrt(gfx: CGrafPtr, x: i16, y: i16, coul: i16) {
+pub(crate) fn PlotIndexPixBrt(gfx: CGrafPtr, x: i16, y: i16, coul: i16) {
     let Some(info) = port::info(gfx) else {
         return;
     };
@@ -818,8 +809,7 @@ correspondant a un point dans le port courrant
 => x,y
 <= couleur
 ******************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetIndexPixBrt(gfx: CGrafPtr, x: i16, y: i16) -> i16 {
+pub(crate) fn GetIndexPixBrt(gfx: CGrafPtr, x: i16, y: i16) -> i16 {
     let Some(info) = port::info(gfx) else {
         return -1;
     };
@@ -895,25 +885,6 @@ impl Sapiens {
 }
 
 /******************************************************************
-                    RemplitLigneBrut
-Remplit la zone comprise entre deux lignes avec la couleur donnee
-=> ligne debut, ligne fin ,couleur
-******************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn RemplitLigneBrut(y1: i16, y2: i16, index: i16) {
-    let Some(info) = port::info(port::current()) else {
-        return;
-    };
-    let mut data = info.pixels;
-    let tailleLigne = info.row_bytes;
-    let y1pix = y1 as i32 * ECHELLE as i32;
-    unsafe {
-        data = data.add((tailleLigne as i64 * y1pix as i64) as usize);
-        let len = ((y2 as i32 - y1 as i32) as i64) * (ECHELLE as i64) * (tailleLigne as i64);
-        std::ptr::write_bytes(data, index as u8, len as usize);
-    }
-}
-/******************************************************************
                     RemplitZoneLignes
                     Travaille sur le port courrant
 Remplit la zone  avec le tableau de couleur  donne
@@ -982,8 +953,7 @@ impl Sapiens {
     ;    Epaissr_               Epaisseur
     ;
     ***************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn TraceDisque(
+    pub(crate) fn TraceDisque(
         &self,
         dg: *mut i16,
         dd: *mut i16,
@@ -1081,8 +1051,7 @@ Cree un offscreen de taille donnee, compatible avec le MaxDevice
 => fenetre d'affichage, taille X offscreen, taille Y offscreen
 <= pointeur sur CGrafPort ou NULL si erreur
 **************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SapiensCreeOffscreen(taillex: i16, tailley: i16) -> CGrafPtr {
+pub(crate) fn SapiensCreeOffscreen(taillex: i16, tailley: i16) -> CGrafPtr {
     port::create(
         Rect {
             top: 0,
@@ -1093,14 +1062,7 @@ pub(crate) extern "C" fn SapiensCreeOffscreen(taillex: i16, tailley: i16) -> CGr
         8,
     )
 }
-/**************************************************************************
-                       LibereOffscreen
-Libere l'offscreen crée
-**************************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn LibereOffscreen(myGrafPort: CGrafPtr) {
-    port::close(myGrafPort);
-}
+
 /**************************************************************************
                         CopyOffscreen
 Copy un rectangle entre la source et la destination
@@ -1275,7 +1237,6 @@ impl Sapiens {
     /*************************************************************************
                     CopyEcran1Sur2
     *************************************************************************/
-    #[unsafe(no_mangle)]
     pub(crate) extern "C" fn CopyEcran1Sur2(&self) {
         let rsourc = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
         let rp = &rsourc as *const Rect;
@@ -1286,8 +1247,7 @@ impl Sapiens {
     Transfere une aire de debecr vers la fenetre visible
     Transfere de debecr vers MainWindow
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn TfrEcr(&self, r: Option<&Rect>) {
+    pub(crate) fn TfrEcr(&self, r: Option<&Rect>) {
         if let Some(r) = r {
             CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, r, r);
         } else {
@@ -1301,8 +1261,7 @@ impl Sapiens {
     Affiche un mob sur l'ecran virtuel
     => Numero du mob, position y (0-200) ,position x (0-320), sens
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn Affmob(&self, mob: i16, y: i16, x: i16, inverse: i16) {
+    pub(crate) fn Affmob(&self, mob: i16, y: i16, x: i16, inverse: i16) {
         let _g = port::on(self.sapwind.Ecran1);
         self.Affmobbrt(mob, x, y, inverse, std::ptr::null_mut());
     }
@@ -1311,8 +1270,7 @@ impl Sapiens {
     Affiche un mob sur l'ecran virtuel constant et l'ecran virtuel volatile
     => Numero du mob, position y (0-200) ,position x (0-320), sens
     *************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn AffmobConst(&self, mob: i16, y: i16, x: i16, inverse: i16) {
+    pub(crate) fn AffmobConst(&self, mob: i16, y: i16, x: i16, inverse: i16) {
         let _g = port::on(self.sapwind.Ecran1);
         self.Affmobbrt(mob, x, y, inverse, std::ptr::null_mut());
         port::set(self.sapwind.Ecran2);
