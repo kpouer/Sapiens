@@ -31,6 +31,7 @@ use crate::stubs::{
 };
 use std::os::raw::c_void;
 use std::ptr::null_mut;
+use std::rc::Rc;
 use std::sync::atomic::Ordering;
 
 const NB_LIGNE_SILEX: i16 = 200;
@@ -170,7 +171,11 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn plot_ecr(&self, y: i16, x: i16, couleur: i16) {
         let mut rgb = RGBColor::default();
-        Sapwcvt::CvtCouleurEnRgb(self.sapglob.palhaute, couleur, &mut rgb);
+        Sapwcvt::CvtCouleurEnRgb(
+            self.sapglob.palhaute.borrow().as_ref(),
+            couleur as usize,
+            &mut rgb,
+        );
         RGBForeColor(&rgb);
         MoveTo(x * ECHELLE as i16, y * ECHELLE as i16);
         Line(ECHELLE as i16, 0);
@@ -1108,8 +1113,8 @@ impl Sapiens {
                 sap1.cross[FormeVue::BUSTE as usize] = 8;
                 sap1.cross[FormeVue::TETE as usize] = 12;
             }
-            self.sapglob.pal_chron = self.sapglob.palhaute;
-            self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut i16;
+            self.sapglob.pal_chron = Rc::clone(&self.sapglob.palhaute);
+            self.sapglob.palhaute = Rc::clone(&self.saplist.pal2);
             self.primjauge(1);
             self.AfficheSuite();
             let mut cont: i8 = 1;
@@ -1310,7 +1315,7 @@ impl Sapiens {
             }
             self.eff_sour();
             /* On est enregistre le personnage a une massue */
-            self.sapglob.palhaute = self.sapglob.pal_chron;
+            self.sapglob.palhaute = Rc::clone(&self.sapglob.pal_chron);
             self.DebutAventure(false);
             self.FixeAireNoMouseAireBasse();
         }
@@ -1434,8 +1439,8 @@ impl Sapiens {
                             DEF3D: Defini la 3d
     ***********************************************************************/
     pub(crate) fn DEF3D(&mut self) {
-        self.sapglob.pal_chron = self.sapglob.palhaute;
-        self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut i16;
+        self.sapglob.pal_chron = Rc::clone(&self.sapglob.palhaute);
+        self.sapglob.palhaute = Rc::clone(&self.saplist.pal2);
         /* Affichage sur Ecran */
         let mut cont: i8 = 1;
         let mut pos: i8;
@@ -1468,7 +1473,7 @@ impl Sapiens {
             } else {
                 let pt = Point::new(self.sapglob.sposx, self.sapglob.sposy);
                 let mut i: i16 = 0;
-                while i < NB_JAUGES_3D as i16 {
+                while i < NB_JAUGES_3D {
                     r = AIREJAUGE3d(i);
                     if pt.v >= r.top && pt.v <= r.bottom {
                         pos = i as i8;
@@ -1932,11 +1937,11 @@ impl Sapiens {
             return;
         }
         self.sapglob.dervue = Vue::AUCUNE;
-        let tfr = self.sapglob.ciel_degr;
+        let tfr = self.sapglob.ciel_degr.clone();
         /* on taille le silex */
         self.bruit(10);
         let trace_syl = self.cursil(regb as i16);
-        self.sapglob.palhaute = &raw const self.saplist.pal2 as *mut i16;
+        self.sapglob.palhaute = Rc::clone(&self.saplist.pal2);
         self.sapglob.flefba = 0;
         if (trace_syl as u16) > PRECISION_SILEX as u16 {
             /* trace et incertitude du dit*/

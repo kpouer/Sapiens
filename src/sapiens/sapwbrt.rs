@@ -984,14 +984,12 @@ impl Sapiens {
                         if fy < 200 {
                             let delta = (x2 - x1) >> 16;
                             let mut sx1: i16 = (x1 >> 16) as i16;
-                            let tcole = std::ptr::addr_of!(self.sapwarb.tabcoul) as *const i16;
+                            let tcole = &self.sapwarb.tabcoul;
                             for i in 0..8 {
                                 let index1 = self.sapwcvt.TabCvtCoul
-                                    [(*self.sapglob.palhaute.add(*tcole.add(i) as usize)) as usize];
-                                let index2 = self.sapwcvt.TabCvtCoul[(*self
-                                    .sapglob
-                                    .palhaute
-                                    .add(*tcole.add(i + 1) as usize))
+                                    [self.sapglob.palhaute.borrow()[i] as usize];
+                                let index2 = self.sapwcvt.TabCvtCoul[self.sapglob.palhaute.borrow()
+                                    [tcole[i + 1] as usize]
                                     as usize];
                                 let sx2: i16 =
                                     ((x1 >> 16) + ((delta * tabpourc[i] as i64) >> 16)) as i16;

@@ -442,13 +442,11 @@ impl Sapiens {
             colfin * ECHELLE as i16,
             lignefin * ECHELLE as i16,
         );
-        unsafe {
-            self.BoxFill(
-                port::current(),
-                &mut aire,
-                *self.sapglob.palhaute.offset(index as isize),
-            );
-        }
+        self.BoxFill(
+            port::current(),
+            &mut aire,
+            self.sapglob.palhaute.borrow()[index as usize],
+        );
     }
 }
 
@@ -715,16 +713,12 @@ impl Sapiens {
 Calcule la deuxieme section de la palette ST en entrée :
 index de la couleur dans la palette systeme
 ********************************************************************/
-unsafe fn CalcIndexPalette(palette: *mut i16) {
-    unsafe {
-        let mut rgb: RGBColor = RGBColor::default();
+unsafe fn CalcIndexPalette(palette: &mut [i16]) {
+    let mut rgb: RGBColor = RGBColor::default();
 
-        let mut i: i16 = 0;
-        while i < 16 {
-            Sapwcvt::CvtCouleurEnRgb(palette, i, &mut rgb);
-            *palette.offset((16 + i) as isize) = SapColor2Index(&rgb);
-            i += 1;
-        }
+    for i in 0..16 {
+        Sapwcvt::CvtCouleurEnRgb(palette, i, &mut rgb);
+        palette[16 + i] = SapColor2Index(&rgb);
     }
 }
 
@@ -1136,8 +1130,8 @@ impl Sapiens {
             self.FixeMenusReduit();
             port::set(self.sapwind.mainWindow);
             MessInit(self.sapwind.GetStr(20)); /* Initialsations des ecrans */
-            CalcIndexPalette(&raw mut self.saplist.pal1 as *mut i16);
-            CalcIndexPalette(&raw mut self.saplist.pal2 as *mut i16);
+            CalcIndexPalette(self.saplist.pal1.borrow_mut().as_mut());
+            CalcIndexPalette(self.saplist.pal2.borrow_mut().as_mut());
             self.sapwind.Ecran1 = SapiensCreeOffscreen(256 * ECHELLE as i16, 100 * ECHELLE as i16);
             if self.sapwind.Ecran1.is_null() {
                 self.Collapse("[SapWind.init_graph.1] Unable to create offscreen");

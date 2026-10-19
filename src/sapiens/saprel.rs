@@ -5,6 +5,7 @@
 ***********************************************************************/
 use std::os::raw::c_void;
 use std::ptr::{addr_of, addr_of_mut};
+use std::rc::Rc;
 use std::sync::atomic::Ordering;
 
 use crate::Sapiens;
@@ -472,17 +473,15 @@ impl Sapiens {
             /* dois t'on modifier le degrad couleur */
             if self.sapglob.tabheur[self.sapglob.pos_evt as usize].q != 0 {
                 /* Changement du degrade du ciel avec les huits couleurs ST en entrée*/
-                self.sapglob.ciel_degr = self.sapglob.tabheur[self.sapglob.pos_evt as usize]
-                    .pal
-                    .as_mut_ptr();
+                self.sapglob.ciel_degr =
+                    Rc::clone(&self.sapglob.tabheur[self.sapglob.pos_evt as usize].pal);
                 self.sapw3d.FixeDegradesFonctionHeure(
                     self.sapglob.tabheur[self.sapglob.pos_evt as usize].clone(),
                 );
             } else {
                 /* On fixe la pal haute */
-                self.sapglob.palhaute = self.sapglob.tabheur[self.sapglob.pos_evt as usize]
-                    .pal
-                    .as_mut_ptr();
+                self.sapglob.palhaute =
+                    Rc::clone(&self.sapglob.tabheur[self.sapglob.pos_evt as usize].pal);
             }
             self.sapglob.pos_evt += 1;
             if self.sapglob.pos_evt >= NBREVTHEURE as i16 {

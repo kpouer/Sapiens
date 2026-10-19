@@ -4,6 +4,7 @@
 **************************************************************************/
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
+
 use crate::acam::{FAUX, TickCount, VRAI};
 use crate::cbridge::strcat;
 use crate::langue::Langue::{ES, FR};
@@ -19,7 +20,8 @@ use crate::shared::{Ptr, Rect};
 use crate::stubs::{GetMouse, GetNomCheminCourant, OpenDocument, PopPath, PushPath};
 use crate::{DOWN, INCONNU, MOB_CADRE, SELECT, Sapiens, UP};
 use log::warn;
-use std::ptr::addr_of_mut;
+use std::cell::RefCell;
+use std::rc::Rc;
 /***********************************************************************
                 InverseOption
 ***********************************************************************/
@@ -46,51 +48,48 @@ impl Default for InverseOption {
 }
 
 impl Sapiens {
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn InverseOption(&mut self, menusel: i16, n: i16) {
-        unsafe {
-            self.eff_sour();
-            if self.saplist.inverse_option.LastMenuInvers >= 0 {
-                SwapCouleur(
-                    self.sapwind.debecr,
-                    &self.saplist.inverse_option.rInvert,
-                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(4)) as usize] as i16,
-                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(1)) as usize] as i16,
-                );
-                self.TfrEcr(Some(&self.saplist.inverse_option.rInvert));
-                self.saplist.inverse_option.LastMenuInvers = -1;
-            }
-            if menusel >= 0 {
-                self.saplist.inverse_option.rInvert = Rect::new(
-                    (tccol[menusel as usize] as i16) * 6 * ECHELLE as i16,
-                    (tclin[menusel as usize] as i16 - self.sapglob.tlpos[menusel as usize] as i16
-                        + 1
-                        + n)
-                        * 7
-                        * ECHELLE as i16
-                        - 1,
-                    (tccol[menusel as usize] as i16 + tcncol[menusel as usize] as i16)
-                        * 6
-                        * ECHELLE as i16,
-                    (tclin[menusel as usize] as i16 - self.sapglob.tlpos[menusel as usize] as i16
-                        + 1
-                        + n
-                        + 1)
-                        * 7
-                        * ECHELLE as i16
-                        - 1,
-                );
-                SwapCouleur(
-                    self.sapwind.debecr,
-                    &self.saplist.inverse_option.rInvert,
-                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(1)) as usize] as i16,
-                    self.sapwcvt.TabCvtCoul[(*self.sapglob.palbasse.add(4)) as usize] as i16,
-                );
-                self.TfrEcr(Some(&self.saplist.inverse_option.rInvert));
-            }
-            self.saplist.inverse_option.LastMenuInvers = menusel;
-            self.saplist.inverse_option.Lastn = n;
+    pub(crate) fn InverseOption(&mut self, menusel: i16, n: i16) {
+        self.eff_sour();
+        if self.saplist.inverse_option.LastMenuInvers >= 0 {
+            SwapCouleur(
+                self.sapwind.debecr,
+                &self.saplist.inverse_option.rInvert,
+                self.sapwcvt.TabCvtCoul[self.sapglob.palbasse.borrow()[4] as usize] as i16,
+                self.sapwcvt.TabCvtCoul[self.sapglob.palbasse.borrow()[1] as usize] as i16,
+            );
+            self.TfrEcr(Some(&self.saplist.inverse_option.rInvert));
+            self.saplist.inverse_option.LastMenuInvers = -1;
         }
+        if menusel >= 0 {
+            self.saplist.inverse_option.rInvert = Rect::new(
+                (tccol[menusel as usize] as i16) * 6 * ECHELLE as i16,
+                (tclin[menusel as usize] as i16 - self.sapglob.tlpos[menusel as usize] as i16
+                    + 1
+                    + n)
+                    * 7
+                    * ECHELLE as i16
+                    - 1,
+                (tccol[menusel as usize] as i16 + tcncol[menusel as usize] as i16)
+                    * 6
+                    * ECHELLE as i16,
+                (tclin[menusel as usize] as i16 - self.sapglob.tlpos[menusel as usize] as i16
+                    + 1
+                    + n
+                    + 1)
+                    * 7
+                    * ECHELLE as i16
+                    - 1,
+            );
+            SwapCouleur(
+                self.sapwind.debecr,
+                &self.saplist.inverse_option.rInvert,
+                self.sapwcvt.TabCvtCoul[self.sapglob.palbasse.borrow()[4] as usize] as i16,
+                self.sapwcvt.TabCvtCoul[self.sapglob.palbasse.borrow()[1] as usize] as i16,
+            );
+            self.TfrEcr(Some(&self.saplist.inverse_option.rInvert));
+        }
+        self.saplist.inverse_option.LastMenuInvers = menusel;
+        self.saplist.inverse_option.Lastn = n;
     }
 }
 
@@ -101,9 +100,9 @@ const OUTREPLEINE: u8 = 27;
 pub(crate) struct Saplist {
     inverse_option: InverseOption,
     sliste: [ListeId; 2],
-    pub(crate) pal1: [i16; 32],
-    pub(crate) pal2: [i16; 32],
-    pal_zero: [i16; 32],
+    pub(crate) pal1: Rc<RefCell<[i16; 32]>>,
+    pub(crate) pal2: Rc<RefCell<[i16; 32]>>,
+    pal_zero: Rc<RefCell<[i16; 32]>>,
 }
 
 impl Default for Saplist {
@@ -111,15 +110,15 @@ impl Default for Saplist {
         Self {
             inverse_option: InverseOption::default(),
             sliste: [ListeId::Liste0, ListeId::Liste1],
-            pal1: [
+            pal1: Rc::new(RefCell::new([
                 0x006, 0x542, 0x650, 0x777, 0x430, 0x310, 0x320, 0x210, 0x005, 0x432, 0x443, 0x444,
                 0x322, 0x332, 0x211, 0x000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            ],
-            pal2: [
+            ])),
+            pal2: Rc::new(RefCell::new([
                 0x777, 0x000, 0x700, 0x320, 0x430, 0x540, 0x650, 0x531, 0x631, 0x641, 0x444, 0x050,
                 0x070, 0x770, 0x450, 0x005, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            ],
-            pal_zero: [0; 32],
+            ])),
+            pal_zero: Rc::new(RefCell::new([0; 32])),
         }
     }
 }
@@ -150,10 +149,10 @@ impl Sapiens {
         self.sapglob.dsposy = 0;
         self.sapglob.sposy = 160;
         /* toute Palettes a zéro*/
-        self.sapglob.palhaute = addr_of_mut!(self.saplist.pal_zero) as *mut i16;
-        self.sapglob.pal_chron = addr_of_mut!(self.saplist.pal_zero) as *mut i16;
-        self.sapglob.palbasse = addr_of_mut!(self.saplist.pal_zero) as *mut i16;
-        self.sapglob.ciel_degr = addr_of_mut!(self.saplist.pal_zero) as *mut i16;
+        self.sapglob.palhaute = Rc::clone(&self.saplist.pal_zero);
+        self.sapglob.pal_chron = Rc::clone(&self.saplist.pal_zero);
+        self.sapglob.palbasse = Rc::clone(&self.saplist.pal_zero);
+        self.sapglob.ciel_degr = Rc::clone(&self.saplist.pal_zero);
         let _first_init = self.init_graph();
         hires();
         self.sapglob.xj = 0x5800;
@@ -171,9 +170,9 @@ impl Sapiens {
         self.prm(SapId::Sap3, 0);
         self.prm(SapId::Sap4, 0);
         self.framebadass();
-        self.sapglob.palhaute = addr_of_mut!(self.saplist.pal2) as *mut i16;
-        self.sapglob.pal_chron = addr_of_mut!(self.saplist.pal2) as *mut i16;
-        self.sapglob.palbasse = addr_of_mut!(self.saplist.pal1) as *mut i16;
+        self.sapglob.palhaute = Rc::clone(&self.saplist.pal2);
+        self.sapglob.pal_chron = Rc::clone(&self.saplist.pal2);
+        self.sapglob.palbasse = Rc::clone(&self.saplist.pal1);
         /* Mise en place version */
         self.DebutAventure(true);
         self.afstat();
@@ -791,10 +790,9 @@ impl Sapiens {
     /***********************************************************************
                             INIMEN:Initialise Menu
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn inimen(&mut self, entmenu: u16) {
+    pub(crate) fn inimen(&mut self, entmenu: u16) {
         unsafe {
-            let mut j: i16 = 0;
+            let mut j = 0;
             let t = TickCount();
             let refer1 = self.sap_lang.GetRefer1();
 
@@ -900,35 +898,33 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn gere_souris(&mut self) {
         self.bouge_souris();
-        unsafe {
-            if self.sapglob.sposy < 105 {
-                self.sapglob.icone = 0;
-                self.eff_sour();
-            } else {
-                /* calcul position 53 du centre de la souris */
-                let x: i16 = (self.sapglob.sposx + 8) / 6;
-                let y: i16 = (self.sapglob.sposy + 8) / 7;
-                /* calcul de l'icone (par defaut rien) */
-                self.sapglob.icone = INCONNU!(self.sapwind);
-                self.sapglob.s_menu = -1;
-                /* on balaye les menus */
-                for i in 0..2 {
-                    let men = self.sapglob.smenu[i] as i16;
-                    /*on teste les verticales : men 111 implique pas de sousmenu*/
-                    if (men != 111)
-                        && (x >= tccol[men as usize] as i16)
-                        && (x <= tccol[men as usize] as i16 + tcncol[men as usize] as i16)
-                    {
-                        self.sapglob.s_menu = men;
-                        self.sapglob.stdlist = self.saplist.sliste[i];
-                        /* on teste les horizontales */
-                        if y < tclin[men as usize] as i16 {
-                            self.sapglob.icone = UP!(self.sapwind);
-                        } else if y > tclin[men as usize] as i16 + tcnlin[men as usize] as i16 {
-                            self.sapglob.icone = DOWN!(self.sapwind);
-                        } else {
-                            self.sapglob.icone = SELECT!(self.sapwind);
-                        }
+        if self.sapglob.sposy < 105 {
+            self.sapglob.icone = 0;
+            self.eff_sour();
+        } else {
+            /* calcul position 53 du centre de la souris */
+            let x: i16 = (self.sapglob.sposx + 8) / 6;
+            let y: i16 = (self.sapglob.sposy + 8) / 7;
+            /* calcul de l'icone (par defaut rien) */
+            self.sapglob.icone = INCONNU!(self.sapwind);
+            self.sapglob.s_menu = -1;
+            /* on balaye les menus */
+            for i in 0..2 {
+                let men = self.sapglob.smenu[i] as i16;
+                /*on teste les verticales : men 111 implique pas de sousmenu*/
+                if (men != 111)
+                    && (x >= tccol[men as usize] as i16)
+                    && (x <= tccol[men as usize] as i16 + tcncol[men as usize] as i16)
+                {
+                    self.sapglob.s_menu = men;
+                    self.sapglob.stdlist = self.saplist.sliste[i];
+                    /* on teste les horizontales */
+                    if y < tclin[men as usize] as i16 {
+                        self.sapglob.icone = UP!(self.sapwind);
+                    } else if y > tclin[men as usize] as i16 + tcnlin[men as usize] as i16 {
+                        self.sapglob.icone = DOWN!(self.sapwind);
+                    } else {
+                        self.sapglob.icone = SELECT!(self.sapwind);
                     }
                 }
             }

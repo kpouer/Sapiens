@@ -9,7 +9,9 @@ use crate::sapiens::{
     IndexColor, NB_LIGNES_CIEL, TypeMuse, TypeReference, Vue, cellule, liste, sap,
 };
 use crate::sapiens::{evt, gemcadre, gemnbrecad, h_chron};
+use std::cell::RefCell;
 use std::ptr::{addr_of_mut, null_mut};
+use std::rc::Rc;
 use strum::EnumIter;
 
 pub(crate) static tabprf: [u8; 4] = [25, 33, 34, 35]; /*objet prefere*/
@@ -249,10 +251,10 @@ pub(crate) struct Sapglob {
     pub(crate) param: [u8; 6],
 
     pub(crate) soma: [cellule; 54], /* rempli dans init_glob */
-    pub(crate) palhaute: *mut i16,
-    pub(crate) palbasse: *mut i16,
-    pub(crate) pal_chron: *mut i16,
-    pub(crate) ciel_degr: *mut i16,
+    pub(crate) palhaute: Rc<RefCell<[i16; 32]>>,
+    pub(crate) palbasse: Rc<RefCell<[i16; 32]>>,
+    pub(crate) pal_chron: Rc<RefCell<[i16; 32]>>,
+    pub(crate) ciel_degr: Rc<RefCell<[i16; 32]>>,
     pub(crate) pos_evt: i16,
 
     pub(crate) tabheur: [h_chron; 37],
@@ -1312,10 +1314,10 @@ impl Default for Sapglob {
                 adresse: null_mut(),
                 taille: 0,
             }; 54], /* rempli dans init_glob */
-            palhaute: null_mut(),
-            palbasse: null_mut(),
-            pal_chron: null_mut(),
-            ciel_degr: null_mut(),
+            palhaute: Rc::new(RefCell::new([0; 32])),
+            palbasse: Rc::new(RefCell::new([0; 32])),
+            pal_chron: Rc::new(RefCell::new([0; 32])),
+            ciel_degr: Rc::new(RefCell::new([0; 32])),
             pos_evt: 0,
 
             tabheur: [
@@ -1650,7 +1652,7 @@ fn hc(h: i16, q: i16, pal: [i16; 32]) -> h_chron {
     h_chron {
         h,
         q,
-        pal,
+        pal: Rc::new(RefCell::new(pal)),
         TabCouleursCiel: [IndexColor::default(); NB_LIGNES_CIEL],
         TabPaletteDistance: null_mut(),
     }

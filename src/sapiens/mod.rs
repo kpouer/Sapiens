@@ -13,6 +13,8 @@
 
 use crate::sapiens::sapglob::SapId;
 use crate::shared::{Ptr, RGBColor};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub(crate) mod muse;
 pub(crate) mod sap3d;
@@ -205,7 +207,7 @@ pub(crate) struct brin {
 pub(crate) struct h_chron {
     pub(crate) h: i16,
     pub(crate) q: i16,
-    pub(crate) pal: [i16; 32],
+    pub(crate) pal: Rc<RefCell<[i16; 32]>>,
     pub(crate) TabCouleursCiel: [IndexColor; NB_LIGNES_CIEL],
     pub(crate) TabPaletteDistance: *mut *mut i16,
 }
@@ -214,7 +216,7 @@ impl Default for h_chron {
         Self {
             h: 0,
             q: 0,
-            pal: [0; 32],
+            pal: Rc::new(RefCell::new([0; 32])),
             TabCouleursCiel: [IndexColor::default(); NB_LIGNES_CIEL],
             TabPaletteDistance: std::ptr::null_mut(),
         }

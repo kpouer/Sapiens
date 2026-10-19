@@ -221,7 +221,7 @@ Calcul des tableau de degrades du ciel
 const TAB_LIGN: [i16; 8] = [0, 41 * 2, 48 * 2, 53 * 2, 57 * 2, 59 * 2, 61 * 2, 64 * 2];
 
 impl Sapiens {
-    unsafe fn CalculeDegradeDuCiel(&self, palette: *mut i16, tab_couleurs_ciel: &mut [IndexColor]) {
+    unsafe fn CalculeDegradeDuCiel(&self, palette: &[i16], tab_couleurs_ciel: &mut [IndexColor]) {
         let mut rgbDep = RGBColor::default();
         let mut rgbDest = RGBColor::default();
         let mut j: i32 = 0;
@@ -233,9 +233,9 @@ impl Sapiens {
         for i in 0..NB_LIGNES_CIEL as i32 {
             /* Changement de ligne */
             if i == TAB_LIGN[j as usize] as i32 {
-                Sapwcvt::CvtCouleurEnRgb(palette, j as i16, &mut rgbDep);
+                Sapwcvt::CvtCouleurEnRgb(palette, j as usize, &mut rgbDep);
                 j += 1;
-                Sapwcvt::CvtCouleurEnRgb(palette, j as i16, &mut rgbDest);
+                Sapwcvt::CvtCouleurEnRgb(palette, j as usize, &mut rgbDest);
                 let dist = TAB_LIGN[j as usize] as i32 - TAB_LIGN[(j - 1) as usize] as i32;
                 incRed = (rgbDest.red as i64 - rgbDep.red as i64) / dist as i64;
                 incGreen = (rgbDest.green as i64 - rgbDep.green as i64) / dist as i64;
@@ -308,7 +308,7 @@ impl Sapiens {
                     e.TabPaletteDistance = NewPtrClear(
                         (std::mem::size_of::<*mut i16>() as i64) * (NB_DEGRADE_DISTANCE as i64),
                     ) as *mut *mut i16;
-                    self.CalculeDegradeDuCiel(e.pal.as_mut_ptr(), &mut e.TabCouleursCiel);
+                    self.CalculeDegradeDuCiel(e.pal.borrow().as_ref(), &mut e.TabCouleursCiel);
                     self.CalculeDegradeDistance(e.h, e.TabPaletteDistance);
                 }
             }
@@ -329,7 +329,7 @@ impl Sapw3d {
                         FixeDegradesFonctionHeure
     En fonctione de l'evenement de changement de l'aire injecte les tabelaux de couleurs
     *****************************************************************************/
-    pub(crate) const fn FixeDegradesFonctionHeure(&mut self, chron: h_chron) {
+    pub(crate) fn FixeDegradesFonctionHeure(&mut self, chron: h_chron) {
         self.TAB_COULEURS_CIEL = chron.TabCouleursCiel;
         self.TAB_PALETTE_DISTANCE = chron.TabPaletteDistance;
     }

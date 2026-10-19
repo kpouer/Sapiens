@@ -56,9 +56,7 @@ impl Sapwcvt {
     /*************************************************************************
                     CvtCouleurEnRgb
     *************************************************************************/
-    pub(crate) fn CvtCouleurEnRgb(palette: *mut i16, index: i16, rgb: &mut RGBColor) {
-        unsafe {
-            Self::CvtCouleurStEnRgb(*palette.add(index as usize), rgb);
-        }
+    pub(crate) fn CvtCouleurEnRgb(palette: &[i16], index: usize, rgb: &mut RGBColor) {
+        Self::CvtCouleurStEnRgb(palette[index], rgb);
     }
 }
