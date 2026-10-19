@@ -205,10 +205,10 @@ impl Sapiens {
         largcad2: u16,
     ) {
         /*calcul des parametres de depart*/
-        let mut ligne: i16 = (ligncad1 * 7 / 2) as i16;
-        let mut colon: i16 = (colcad1 * 3 / 2) as i16;
-        let mut haut: i16 = (hautcad1 * 7 / 2) as i16;
-        let mut larg: i16 = (largcad1 * 3 / 2) as i16;
+        let mut ligne = (ligncad1 * 7 / 2) as i16;
+        let mut colon = (colcad1 * 3 / 2) as i16;
+        let mut haut = (hautcad1 * 7 / 2) as i16;
+        let mut larg = (largcad1 * 3 / 2) as i16;
         /* on l'injecte ds les N cadres*/
 
         for i in 0..gemnbrecad as usize {
@@ -217,7 +217,7 @@ impl Sapiens {
             self.sapglob.gemzoom[i].haut = haut;
             self.sapglob.gemzoom[i].larg = larg;
         }
-        /* on calcule les coordonn�es d'arriv�e*/
+        /* on calcule les coordonnées d'arrivée*/
         ligne = (ligncad2 * 7 / 2) as i16;
         colon = (colcad2 * 3 / 2) as i16;
         haut = (hautcad2 * 7 / 2) as i16;
@@ -296,7 +296,7 @@ impl Sapiens {
                     CLAVM:Gestion des menus au clavier
     ***********************************************************************/
     pub(crate) fn clavm(&mut self) {
-        let mut y: i16;
+        let mut y;
         let mut r;
 
         /* gestion souris pour clavm */
@@ -489,7 +489,7 @@ impl Sapglob {
                 1 /*erreur*/
             } else {
                 /*on recompacte la liste d'origine*/
-                let mut i: u8 = rang as u8;
+                let mut i = rang as u8;
                 let orgliste = self.liste_mut(orgliste_id);
                 while i != orgliste.taille {
                     orgliste.elements[i as usize] = orgliste.elements[i as usize + 1];
@@ -528,11 +528,10 @@ impl Sapiens {
         let debliste = self.sapglob.liste(debliste_id);
         unsafe {
             if (rang as u8) < debliste.taille {
-                /*rang a afficher existe*/
-                let refer = self.sap_lang.GetRefer((*debliste).typeRef);
+                /*rang à afficher existe*/
+                let refer = self.sap_lang.GetRefer(debliste.typeRef);
                 self.mot(
-                    refer.add(((*debliste).elements[rang as usize].wrapping_sub(1)) as usize)
-                        as *mut i8,
+                    refer.add(debliste.elements[rang as usize].wrapping_sub(1) as usize) as *mut i8,
                 );
             }
         }
@@ -557,18 +556,18 @@ impl Sapiens {
         }
 
         let taille = self.sapglob.liste(debliste_id).taille;
-        if (self.sapglob.lpos as u8) > taille {
+        if (self.sapglob.lpos) > taille {
             self.sapglob.lpos = taille;
         }
         let mut travl2 = self.sapglob.lpos.wrapping_sub(1); /*debut d'affichage*/
         /* On efface le fond de la liste */
         r = Rect::new(
-            (self.sapglob.colaff as i16) * 6 * ECHELLE as i16,
-            (self.sapglob.linaff as i16) * 7 * ECHELLE as i16 - 1,
-            (self.sapglob.colaff as i16 + self.sapglob.cncol as i16) * 6 * ECHELLE as i16,
-            (self.sapglob.linaff as i16 + self.sapglob.cnlin as i16) * 7 * ECHELLE as i16,
+            (self.sapglob.colaff) * 6 * ECHELLE as i16,
+            (self.sapglob.linaff) * 7 * ECHELLE as i16 - 1,
+            (self.sapglob.colaff + self.sapglob.cncol as i16) * 6 * ECHELLE as i16,
+            (self.sapglob.linaff + self.sapglob.cnlin as i16) * 7 * ECHELLE as i16,
         );
-        self.BoxFill(self.sapwind.debecr, &mut r, 0x542 as i16);
+        self.BoxFill(self.sapwind.debecr, &mut r, 0x542);
         /* On affiche tous les mots */
         let taille = self.sapglob.liste(debliste_id).taille;
         if taille != 0 {
@@ -576,7 +575,7 @@ impl Sapiens {
             if travl2 > 1 {
                 self.Gotoxy(
                     (self.sapglob.ccol as i16 + self.sapglob.cncol as i16) - 1,
-                    self.sapglob.linaff as i16,
+                    self.sapglob.linaff,
                 );
                 self.affcar('<' as i16);
                 self.Gotoxy(self.sapglob.ccol as i16, self.sapglob.clin as i16);
@@ -592,7 +591,7 @@ impl Sapiens {
             if travl2 < taille {
                 self.Gotoxy(
                     (self.sapglob.ccol as i16 + self.sapglob.cncol as i16) - 1,
-                    (self.sapglob.linaff - 1) as i16,
+                    self.sapglob.linaff - 1,
                 );
                 self.affcar('>' as i16);
             }
@@ -850,8 +849,8 @@ impl Sapiens {
                 let mut i = 0;
                 self.sapglob.lpos = 111;
                 while (i as u16) != self.sapglob.liste(self.sapglob.stdlist).taille as u16 {
-                    let rang: u8 = self.sapglob.liste(self.sapglob.stdlist).elements[i as usize]; /*rang de l'objet*/
-                    let valeur: u8 = (*refer1.add(rang.wrapping_sub(1) as usize)).param1 & 0xF0;
+                    let rang = self.sapglob.liste(self.sapglob.stdlist).elements[i as usize]; /*rang de l'objet*/
+                    let valeur = (*refer1.add(rang.wrapping_sub(1) as usize)).param1 & 0xF0;
                     if ((self.sapglob.criter == 1) && (valeur == 0x20))
                         || ((self.sapglob.criter == 2) && (valeur == 0x40))
                     {
