@@ -154,7 +154,6 @@ impl Sapiens {
     fn AffCarBrt(&mut self, car: i16, couleur: i16, couleurOmbre: i16, taille: i16) {
         if self.sapwcar.lissage_police || langue() == Langue::ES {
             /* ES Pour les caracteres speciaux */
-            let mut info = FontInfo::default();
             let mut dx: i16 = 0;
             let dy: i16 = 0;
             let mut car = CvtCarLissage(car);
@@ -169,7 +168,7 @@ impl Sapiens {
             TextFont(POLICE_LISSAGE as i16);
             TextSize(taille);
             TextFace(STYLE_LISSAGE as i16);
-            GetFontInfo(&mut info);
+            let info = GetFontInfo().unwrap_or_default();
             SetColorFont(self, couleurOmbre);
             MoveTo(
                 self.sapwcar.pt_ecr_car.h + dx,

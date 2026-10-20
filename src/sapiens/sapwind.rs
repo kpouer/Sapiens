@@ -921,14 +921,12 @@ impl SapWind {
 Fixe la fonte du dialogue en entrée
 ******************************************************************************************/
 unsafe fn SetFontDialog(dialog: DialogPtr, font: i16, taille: i16) {
+    CarboniseSetPortDialog(dialog);
+    TextFont(font);
+    TextSize(taille);
+    let info = GetFontInfo().unwrap_or_default();
+    let te: TEHandle = CarboniseGetDialogTextEditHandle(dialog);
     unsafe {
-        let mut info: crate::shared::FontInfo = crate::shared::FontInfo::default();
-
-        CarboniseSetPortDialog(dialog);
-        TextFont(font);
-        TextSize(taille);
-        GetFontInfo(&raw mut info);
-        let te: TEHandle = CarboniseGetDialogTextEditHandle(dialog);
         if !te.is_null() {
             (**te).txFont = font;
             (**te).txSize = taille;

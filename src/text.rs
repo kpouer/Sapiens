@@ -481,8 +481,7 @@ unsafe fn fdt_state(p: *mut SapPort) -> (Fam, bool, i16) {
 // API QuickDraw
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn TextFont(font: i16) {
+pub(crate) fn TextFont(font: i16) {
     let p = cur_port();
     if p.is_null() {
         return;
@@ -490,8 +489,7 @@ pub(crate) extern "C" fn TextFont(font: i16) {
     unsafe { (*p).tx_font = font }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn TextSize(size: i16) {
+pub(crate) fn TextSize(size: i16) {
     let p = cur_port();
     if p.is_null() {
         return;
@@ -499,8 +497,7 @@ pub(crate) extern "C" fn TextSize(size: i16) {
     unsafe { (*p).tx_size = size }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn TextFace(face: i16) {
+pub(crate) fn TextFace(face: i16) {
     let p = cur_port();
     if p.is_null() {
         return;
@@ -508,35 +505,29 @@ pub(crate) extern "C" fn TextFace(face: i16) {
     unsafe { (*p).tx_face = face }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetStdFont() -> i16 {
+pub(crate) fn GetStdFont() -> i16 {
     0 // geneva
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetFontInfo(info: *mut FontInfo) {
-    if info.is_null() {
-        return;
-    }
+pub(crate) fn GetFontInfo() -> Option<FontInfo> {
     let p = cur_port();
     if p.is_null() {
-        return;
+        return None;
     }
     unsafe {
         let (fam, bold, size) = fdt_state(p);
         let m = font_metrics(fam, bold, size);
-        *info = FontInfo {
+        Some(FontInfo {
             ascent: m.ascent.round() as i16,
             descent: m.descent.round() as i16,
             widening: m.widening.round() as i16,
             leading: m.leading.round() as i16,
-        };
+        })
     }
 }
 
 /// Largeur (en pixels) d'un caractère dans la fonte courante du port.
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn CharWidth(c: i8) -> i16 {
+pub(crate) fn CharWidth(c: i8) -> i16 {
     let p = cur_port();
     if p.is_null() {
         return 0;
@@ -548,8 +539,7 @@ pub(crate) extern "C" fn CharWidth(c: i8) -> i16 {
 }
 
 /// Dessine un caractère à la position courante (baseline = pen_loc).
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn DrawChar(c: i8) {
+pub(crate) fn DrawChar(c: i8) {
     let p = cur_port();
     if p.is_null() {
         return;
@@ -563,8 +553,7 @@ pub(crate) extern "C" fn DrawChar(c: i8) {
 }
 
 /// Dessine une chaîne Pascal (1er octet = longueur), avance le crayon.
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn DrawString(s: StringPtr) {
+pub(crate) fn DrawString(s: StringPtr) {
     if s.is_null() {
         return;
     }
@@ -587,8 +576,7 @@ pub(crate) extern "C" fn DrawString(s: StringPtr) {
 }
 
 /// Largeur d'une chaîne Pascal dans la fonte courante.
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn StringWidth(s: StringPtr) -> i16 {
+pub(crate) fn StringWidth(s: StringPtr) -> i16 {
     if s.is_null() {
         return 0;
     }
@@ -730,15 +718,13 @@ mod tests {
         TextFont(2);
         TextSize(12);
         TextFace(0);
-        let mut info = FontInfo::default();
-        GetFontInfo(&mut info);
+        let info = GetFontInfo().unwrap_or_default();
         assert!(info.ascent > 0, "ascent nul : {info:?}");
         assert!(info.descent > 0);
         assert!(info.widening > 0);
 
         TextFace(1);
-        let mut bold = FontInfo::default();
-        GetFontInfo(&mut bold);
+        let bold = GetFontInfo().unwrap_or_default();
         // Le gras reste dans le même ordre de grandeurs en hauteur.
         let di = (bold.ascent - info.ascent).abs();
         assert!(di <= 4, "bold {bold:?} vs regular {info:?} (diff {di})");
