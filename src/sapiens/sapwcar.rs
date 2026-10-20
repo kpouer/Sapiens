@@ -8,7 +8,7 @@ use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtCar, CvtCarLissage};
 use crate::sapiens::sapwbrt::{DoEraseRect, DoPaintRect};
 use crate::sapiens::{NB_MOTS_BKMOTS, POLICE_LISSAGE, STYLE_LISSAGE};
-use crate::shared::{Boolean, CGrafPtr, FontInfo, Point, RGBColor, Rect, RgnHandle};
+use crate::shared::{Boolean, CGrafPtr, Point, RGBColor, Rect, RgnHandle};
 use crate::stubs::CarboniseSetPatBlack;
 use crate::text::{CharWidth, DrawChar, GetFontInfo, TextFace, TextFont, TextSize};
 use crate::{Sapiens, port};

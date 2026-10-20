@@ -446,14 +446,12 @@ unsafe fn draw_glyph(p: *mut SapPort, bx: i16, by: i16, g: &GlyphDraw) {
     for (row, line) in g.px.chunks_exact(w).enumerate() {
         for (colp, &a) in line.iter().enumerate() {
             if a > 127 {
-                unsafe {
-                    plot(
-                        p,
-                        (basex + colp as i32) as i16,
-                        (basey + row as i32) as i16,
-                        col,
-                    );
-                }
+                plot(
+                    p,
+                    (basex + colp as i32) as i16,
+                    (basey + row as i32) as i16,
+                    col,
+                );
             }
         }
     }
@@ -469,7 +467,7 @@ fn cur_port() -> *mut SapPort {
 }
 
 #[inline]
-unsafe fn fdt_state(p: *mut SapPort) -> (Fam, bool, i16) {
+fn fdt_state(p: *mut SapPort) -> (Fam, bool, i16) {
     let pp = unsafe { &*p };
     let fam = fdt_family(pp.tx_font);
     let bold = pp.tx_face & 1 != 0;
@@ -514,16 +512,14 @@ pub(crate) fn GetFontInfo() -> Option<FontInfo> {
     if p.is_null() {
         return None;
     }
-    unsafe {
-        let (fam, bold, size) = fdt_state(p);
-        let m = font_metrics(fam, bold, size);
-        Some(FontInfo {
-            ascent: m.ascent.round() as i16,
-            descent: m.descent.round() as i16,
-            widening: m.widening.round() as i16,
-            leading: m.leading.round() as i16,
-        })
-    }
+    let (fam, bold, size) = fdt_state(p);
+    let m = font_metrics(fam, bold, size);
+    Some(FontInfo {
+        ascent: m.ascent.round() as i16,
+        descent: m.descent.round() as i16,
+        widening: m.widening.round() as i16,
+        leading: m.leading.round() as i16,
+    })
 }
 
 /// Largeur (en pixels) d'un caractère dans la fonte courante du port.
@@ -532,10 +528,8 @@ pub(crate) fn CharWidth(c: i8) -> i16 {
     if p.is_null() {
         return 0;
     }
-    unsafe {
-        let (fam, bold, size) = fdt_state(p);
-        get_glyph(fam, bold, size, decode(c as u8)).advance
-    }
+    let (fam, bold, size) = fdt_state(p);
+    get_glyph(fam, bold, size, decode(c as u8)).advance
 }
 
 /// Dessine un caractère à la position courante (baseline = pen_loc).

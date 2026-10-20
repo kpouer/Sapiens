@@ -707,23 +707,25 @@ pub(crate) fn cur() -> *mut SapPort {
 
 /// Trace un pixel plein (`mode` tenu en compte), avec clip.
 #[inline]
-pub(crate) unsafe fn plot(port: *mut SapPort, x: i16, y: i16, c: u8) {
-    let p = &mut *port;
-    if x < p.clip.left || x >= p.clip.right || y < p.clip.top || y >= p.clip.bottom {
-        return;
+pub(crate) fn plot(port: *mut SapPort, x: i16, y: i16, c: u8) {
+    unsafe {
+        let p = &mut *port;
+        if x < p.clip.left || x >= p.clip.right || y < p.clip.top || y >= p.clip.bottom {
+            return;
+        }
+        let w = p.row_bytes as usize;
+        let off = (y as usize) * w + (x as usize);
+        if off >= p.pixel_len {
+            return;
+        }
+        let d = p.pixels.add(off);
+        *d = match p.pen_mode {
+            PAT_OR => *d | c,
+            PAT_XOR => *d ^ c,
+            PAT_BIC => *d & !c,
+            _ => c,
+        };
     }
-    let w = p.row_bytes as usize;
-    let off = (y as usize) * w + (x as usize);
-    if off >= p.pixel_len {
-        return;
-    }
-    let d = p.pixels.add(off);
-    *d = match p.pen_mode {
-        PAT_OR => *d | c,
-        PAT_XOR => *d ^ c,
-        PAT_BIC => *d & !c,
-        _ => c,
-    };
 }
 
 /// Remplit un rectangle (respecte clip), et accumule dans la région ouverte.
