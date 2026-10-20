@@ -223,19 +223,18 @@ const TAB_LIGN: [i16; 8] = [0, 41 * 2, 48 * 2, 53 * 2, 57 * 2, 59 * 2, 61 * 2, 6
 impl Sapiens {
     unsafe fn CalculeDegradeDuCiel(&self, palette: &[i16], tab_couleurs_ciel: &mut [IndexColor]) {
         let mut rgbDep = RGBColor::default();
-        let mut rgbDest = RGBColor::default();
-        let mut j: i32 = 0;
-        let mut incRed: i64 = 0;
-        let mut incGreen: i64 = 0;
-        let mut incBlue: i64 = 0;
+        let mut j = 0;
+        let mut incRed = 0;
+        let mut incGreen = 0;
+        let mut incBlue = 0;
 
         let _g = port::on(self.sapwind.Ecran1);
         for i in 0..NB_LIGNES_CIEL as i32 {
             /* Changement de ligne */
             if i == TAB_LIGN[j as usize] as i32 {
-                Sapwcvt::CvtCouleurEnRgb(palette, j as usize, &mut rgbDep);
+                rgbDep = RGBColor::CvtCouleurStEnRgb(palette[j as usize]);
                 j += 1;
-                Sapwcvt::CvtCouleurEnRgb(palette, j as usize, &mut rgbDest);
+                let rgbDest = RGBColor::CvtCouleurStEnRgb(palette[j as usize]);
                 let dist = TAB_LIGN[j as usize] as i32 - TAB_LIGN[(j - 1) as usize] as i32;
                 incRed = (rgbDest.red as i64 - rgbDep.red as i64) / dist as i64;
                 incGreen = (rgbDest.green as i64 - rgbDep.green as i64) / dist as i64;

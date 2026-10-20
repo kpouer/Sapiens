@@ -524,12 +524,9 @@ impl Sapiens {
     /******************************************************************************************
                                     DoInfo
     ******************************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn DoInfo(&self) {
+    pub(crate) fn DoInfo(&self) {
         let mut str_: [i8; 255] = [0; 255];
-        unsafe {
-            GetVersionSapiens(&raw mut str_ as *mut i8);
-        }
+        GetVersionSapiens(&raw mut str_ as *mut i8);
         CtoPstr(str_.as_mut_ptr());
         ParamText(
             &raw mut str_ as *mut u8,
@@ -545,14 +542,12 @@ impl Sapiens {
     *******************************************************************************************/
 
     pub(crate) fn DoMenuCommand(&mut self, menuResult: i32) {
-        let menuID: i16;
-        let menuItem: i16;
         let mut daName: [u8; 256] = [0; 256];
 
         self.AdjustMenus();
         self.souris.MontreSouris();
-        menuID = ((menuResult >> 16) & 0xFFFF) as i16; /* HiWord */
-        menuItem = (menuResult & 0xFFFF) as i16; /* LoWord */
+        let menuID = ((menuResult >> 16) & 0xFFFF) as i16; /* HiWord */
+        let menuItem = (menuResult & 0xFFFF) as i16; /* LoWord */
         unsafe {
             if menuID == CvtDefaultLangRess(128) {
                 /* menuPomme */
@@ -663,37 +658,32 @@ impl Sapiens {
                     }
                     self.Collapse(&format!("{i} images 3d : {} ticks", TickCount() - t));
                 }
-                if car == 0x23
-                /*'P'*/
-                {
+                if car == 0x23 {
+                    /*'P'*/
                     self.AffPalette();
                 }
-                if car == 0x29
-                /*'M'*/
-                {
+                if car == 0x29 {
+                    /*'M'*/
                     if self.sapwmus.quelle_musique == 1 {
                         self.MusicInit(2);
                     } else {
                         self.MusicInit(1);
                     }
                 }
-                if car == 0x06
-                /*'T'*/
-                {
+                if car == 0x06 {
+                    /*'T'*/
                     i = 0;
                     while i < 64 {
                         self.chrono(1);
                         i += 1;
                     }
                 }
-                if car == 0x0f
-                /*R*/
-                {
+                if car == 0x0f {
+                    /*R*/
                     self.InitMobs();
                 }
-                if car == 0x01
-                /*S*/
-                {
+                if car == 0x01 {
+                    /*S*/
                     t = 0;
                     MaxMem(&raw mut t);
                 }
@@ -713,11 +703,9 @@ impl Sapiens {
 Calcule la deuxieme section de la palette ST en entrée :
 index de la couleur dans la palette systeme
 ********************************************************************/
-unsafe fn CalcIndexPalette(palette: &mut [i16]) {
-    let mut rgb: RGBColor = RGBColor::default();
-
+fn CalcIndexPalette(palette: &mut [i16]) {
     for i in 0..16 {
-        Sapwcvt::CvtCouleurEnRgb(palette, i, &mut rgb);
+        let rgb = RGBColor::CvtCouleurStEnRgb(palette[i]);
         palette[16 + i] = SapColor2Index(&rgb);
     }
 }

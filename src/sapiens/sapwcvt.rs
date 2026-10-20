@@ -1,6 +1,7 @@
 #![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
 use crate::acam::Index2Color;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
+use crate::sapiens::sapwind::SapWind;
 use crate::shared::RGBColor;
 
 pub(crate) struct Sapwcvt {
@@ -43,20 +44,17 @@ impl Sapwcvt {
             tabcvtombre[i as usize] = SapColor2Index(&rgb) as u8;
         }
     }
+}
 
+impl RGBColor {
     /*************************************************************************
                     CvtCouleurStEnRgb
     *************************************************************************/
-    const fn CvtCouleurStEnRgb(val: i16, rgb: &mut RGBColor) {
-        rgb.red = (((val & 0x700) >> 8) as u16) * 9362;
-        rgb.green = (((val & 0x070) >> 4) as u16) * 9362;
-        rgb.blue = ((val & 0x007) as u16) * 9362;
-    }
-
-    /*************************************************************************
-                    CvtCouleurEnRgb
-    *************************************************************************/
-    pub(crate) fn CvtCouleurEnRgb(palette: &[i16], index: usize, rgb: &mut RGBColor) {
-        Self::CvtCouleurStEnRgb(palette[index], rgb);
+    pub(crate) const fn CvtCouleurStEnRgb(val: i16) -> Self {
+        Self {
+            red: (((val & 0x700) >> 8) as u16) * 9362,
+            green: (((val & 0x070) >> 4) as u16) * 9362,
+            blue: ((val & 0x007) as u16) * 9362,
+        }
     }
 }

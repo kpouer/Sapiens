@@ -170,12 +170,8 @@ impl Sapiens {
     => ligne,colonne ,couleur ST
     ***********************************************************************/
     pub(crate) fn plot_ecr(&self, y: i16, x: i16, couleur: i16) {
-        let mut rgb = RGBColor::default();
-        Sapwcvt::CvtCouleurEnRgb(
-            self.sapglob.palhaute.borrow().as_ref(),
-            couleur as usize,
-            &mut rgb,
-        );
+        let rgb =
+            RGBColor::CvtCouleurStEnRgb(self.sapglob.palhaute.borrow().as_ref()[couleur as usize]);
         RGBForeColor(&rgb);
         MoveTo(x * ECHELLE as i16, y * ECHELLE as i16);
         Line(ECHELLE as i16, 0);
