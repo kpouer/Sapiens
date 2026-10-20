@@ -96,8 +96,7 @@ impl Sapiens {
     ; => N. mob,Ligne,Colonne
     **************************************************************************/
     pub(crate) fn aff_sour(&mut self, mob: i16, ligne: i16, colonne: i16) {
-        let mut r: Rect = Rect::default();
-        let mut oldRect: Rect = self.sapwclav.rsouris;
+        let oldRect = self.sapwclav.rsouris;
         /* Effacement a l'ancienne position */
         /* Aire de la souris sur l'ecran */
         self.sapwclav.rsouris = self.CalculeAireMob(mob, colonne, ligne);
@@ -118,6 +117,7 @@ impl Sapiens {
         /* On copie egalement l'ecran physique sur le buffer de la souris */
         /* On affiche la souris */
         let _g = port::on(self.sapwind.BuffMouse);
+        let mut r = Rect::default();
         self.Affmobbrtomb(mob, 0, 0, 4, 4, &raw mut r);
         /* On le recopie sur le reel */
         CopyOffscreen(

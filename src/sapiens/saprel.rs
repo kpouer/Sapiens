@@ -152,8 +152,6 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn sceveu(&mut self, quoi: u16) {
         unsafe {
-            let mut rsourc;
-            let mut rdest;
             let scenme = self.sap_lang.GetScenme();
 
             self.sapglob.dervue = Vue::AUCUNE;
@@ -191,11 +189,10 @@ impl Sapiens {
             }
             /* Transfert debecr vers reel */
             self.TfrEcr(None);
-            if quoi == 6
-            /* Bravo tu as gagné */
-            {
-                rdest = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
-                rsourc = Rect::new(
+            if quoi == 6 {
+                /* Bravo tu as gagné */
+                let rdest = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
+                let rsourc = Rect::new(
                     (32 * ECHELLE) as i16,
                     ECHELLE as i16,
                     ((32 + 255) * ECHELLE) as i16,

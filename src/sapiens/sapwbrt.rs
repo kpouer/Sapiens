@@ -222,16 +222,14 @@ impl Sapiens {
     ******************************************************************/
     pub(crate) fn ChargeFichierBrt(&mut self, nom: &str, id: i16, nbMobs: i16, vide: i16) -> i16 {
         let f: *mut FILE;
-        let n: i16;
         let mut nbcol: i16 = 0;
         let mut nbligne: i16 = 0;
         let mut nb_objets: i16 = 0;
         let mut r: u8 = 0;
         let mut g: u8 = 0;
         let mut b: u8 = 0;
-        let mut chaine;
         unsafe {
-            chaine = cbridge::convert_to_c_char_ptr(nom);
+            let chaine = cbridge::convert_to_c_char_ptr(nom);
             /* On ouvre le fichier en lecture */
             f = fopen(chaine, c"rb".as_ptr());
             if f.is_null() {
@@ -256,7 +254,7 @@ impl Sapiens {
             if !Read(f, &mut r as *mut u8 as Ptr, 1) {
                 return -1;
             }
-            n = (r as i16) + 1;
+            let n = (r as i16) + 1;
             self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].nbEntrees = n;
             let taille = (n as i64) * (size_of::<BRGBColor>() as i64);
             let mut rgb = NewPtr(taille) as *mut BRGBColor;
