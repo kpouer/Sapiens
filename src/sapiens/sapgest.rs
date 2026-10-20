@@ -17,7 +17,6 @@ use crate::port;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapglob::{ListeId, SapId, tenerv};
 use crate::sapiens::sapwbrt::{DoFrameRect, GetIndexPixBrt, PlotIndexPixBrt};
-use crate::sapiens::sapwcvt::Sapwcvt;
 use crate::sapiens::sapwind::{ValideUpdate, bande};
 use crate::sapiens::sapwmus::{attends_bruit, quel_synthe};
 use crate::sapiens::{

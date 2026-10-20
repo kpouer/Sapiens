@@ -14,7 +14,6 @@ use std::ptr::{addr_of_mut, null_mut};
 use crate::acam::{DisposPtr, NewPtrClear, Random, TickCount};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapwbrt::RemplitZoneLignes;
-use crate::sapiens::sapwcvt::Sapwcvt;
 use crate::sapiens::{
     ECHELLE, FormeId, IndexColor, MontId, NB_DEGRADE_DISTANCE, NB_ETOILES, NB_LIGNES_CIEL,
     NB_LIGNES_TERRE, NBREVTHEURE, h_chron,

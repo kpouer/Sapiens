@@ -16,8 +16,8 @@ use crate::acam::{
 };
 use crate::cbridge::{
     DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, ctrlItem,
-    editText, everyEvent, geneva, helvetica, optionKey, radCtrl, statText, strcat, strcpy, strlen,
-    userItem, watchCursor, whiteColor,
+    everyEvent, geneva, helvetica, optionKey, radCtrl, strcat, strcpy, strlen, userItem,
+    watchCursor, whiteColor,
 };
 use crate::exchange::take_menu_command;
 use crate::langue::{langue_i16, set_langue};
@@ -28,7 +28,6 @@ use crate::sapiens::sapwbrt::{
     DoEraseRect, DoFrameRect, DoLine, DoMoveTo, DoPenSize, DoTextSize, DoZoomRect,
     SapiensCreeOffscreen, SetPathInData,
 };
-use crate::sapiens::sapwcvt::Sapwcvt;
 use crate::sapiens::{ECHELLE, STR_VRAC, TAILLE_STR_MESS_FORMATE, Vue};
 use crate::shared::{
     Boolean, CGrafPtr, ControlHandle, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr,
@@ -39,11 +38,10 @@ use crate::stubs::{
     CarboniseGetDialogTextEditHandle, CarboniseGetMenuBarHeight, CarboniseInvalRect,
     CarboniseNewUserItemProc, CarboniseSetPortDialog, CarboniseValideUpdate,
     DisposeRoutineDescriptor, DragWindow, DrawPicture, EndUpdate, FindWindow, FrontWindow,
-    GetCtlValue, GetDItem, GetDialogItem, GetIText, GetNewDialog, GetNextEvent, GetPicture,
-    GetResource, HLock, HUnlock, HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect,
-    OpenDeskAcc, ParamText, PopPath, PushPath, ReleaseResource, SelectWindow, SetCTitle,
-    SetCtlValue, SetDialogDefaultItem, SetDialogItem, SetIText, SizeWindow, SystemClick,
-    SystemTask,
+    GetCtlValue, GetDItem, GetDialogItem, GetNewDialog, GetNextEvent, GetPicture, GetResource,
+    HLock, HUnlock, HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc,
+    ParamText, PopPath, PushPath, ReleaseResource, SelectWindow, SetCtlValue, SetDialogDefaultItem,
+    SetDialogItem, SizeWindow, SystemClick, SystemTask,
 };
 use crate::text::{DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize};
 

@@ -1,7 +1,6 @@
 #![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
 use crate::acam::Index2Color;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
-use crate::sapiens::sapwind::SapWind;
 use crate::shared::RGBColor;
 
 pub(crate) struct Sapwcvt {
