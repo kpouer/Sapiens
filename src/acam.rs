@@ -16,7 +16,6 @@ use crate::exchange::{CursorShape, set_cursor_shape, set_title};
 use crate::langue::{Langue, langue};
 use crate::port;
 use crate::shared::*;
-use crate::text::pstr_to_string;
 use std::ffi::c_void;
 use std::sync::Mutex;
 use std::sync::atomic::Ordering;
@@ -365,9 +364,8 @@ pub(crate) extern "C" fn NewCWindow(
 /// `SetWTitle` : le titre (chaîne Pascal MacRoman) part par le pont
 /// `exchange.rs` ; c'est le thread egui qui l'applique à la fenêtre native
 /// (`ViewportCommand::Title`), une seule fenêtre étant créée par `NewCWindow`.
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SetWTitle(_w: WindowPtr, title: StringPtr) {
-    set_title(pstr_to_string(title));
+pub(crate) fn SetWTitle(_w: WindowPtr, title: String) {
+    set_title(title);
 }
 
 // ---------------------------------------------------------------------------

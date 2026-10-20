@@ -9,15 +9,14 @@ use std::process::exit;
 
 use crate::Sapiens;
 use crate::acam::{
-    BackColor, BlockMove, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle,
-    DrawMenuBar, EnableItem, FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle,
-    GetNewMBar, MaxMem, NewCWindow, PenNormal, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle,
-    TickCount, VRAI,
+    BackColor, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle, DrawMenuBar,
+    EnableItem, FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, MaxMem,
+    NewCWindow, PenNormal, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI,
 };
 use crate::cbridge::{
     DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, ctrlItem,
-    everyEvent, geneva, helvetica, optionKey, radCtrl, strcat, strcpy, strlen, userItem,
-    watchCursor, whiteColor,
+    everyEvent, geneva, helvetica, optionKey, radCtrl, strcpy, strlen, userItem, watchCursor,
+    whiteColor,
 };
 use crate::exchange::take_menu_command;
 use crate::langue::{langue_i16, set_langue};
@@ -43,7 +42,9 @@ use crate::stubs::{
     ParamText, PopPath, PushPath, ReleaseResource, SelectWindow, SetCtlValue, SetDialogDefaultItem,
     SetDialogItem, SizeWindow, SystemClick, SystemTask,
 };
-use crate::text::{DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize};
+use crate::text::{
+    DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize, pstr_to_string,
+};
 
 /******************** Constantes (SAPIENS.H / acam.h) *******************/
 const VERS: i64 = 0x76657273; /* 'vers' */
@@ -154,30 +155,27 @@ impl SapWind {
 
 /******************************************************************************************
                           GetVersionSapiens
-Affiche la version du logiciel dans l'user item en entrée. Le texte est centré
-Structure des 'vers'
+Retourne la version du logiciel, ou une chaine vide si la ressource 'vers' est
+absente. Structure des 'vers'
 2 octets de version en hexa
 3 octets de release
 1 octet de pays
 taille de la chaine courte suivi de la chaine courte
 taille de la chaine longue suivi de la chaine longue
 ******************************************************************************************/
-pub(crate) fn GetVersionSapiens(chaine: *mut i8) -> Boolean {
+pub(crate) fn GetVersionSapiens() -> String {
+    let ress: Handle = GetResource(VERS, 1);
+    if ress.is_null() {
+        return String::new();
+    }
+    HLock(ress);
     unsafe {
-        chaine.write(0);
-        let ress: Handle = GetResource(VERS, 1);
-        if ress.is_null() {
-            return FAUX;
-        }
-        HLock(ress);
         let p: *mut u8 = *ress as *mut u8;
-        /* On recherche le pointeur sur la chaine longue de la version */
-        let p = p.add(6); /* On saute jusqu'a la short version string */
-        BlockMove(p.add(1) as *const c_void, chaine as *mut c_void, *p as i64);
-        chaine.add(*p as usize).write(0);
+        /* On saute jusqu'à la short version string (chaine Pascal) */
+        let s = pstr_to_string(p.add(6) as StringPtr);
         HUnlock(ress);
         ReleaseResource(ress);
-        VRAI
+        s
     }
 }
 
@@ -524,7 +522,7 @@ impl Sapiens {
     ******************************************************************************************/
     pub(crate) fn DoInfo(&self) {
         let mut str_: [i8; 255] = [0; 255];
-        GetVersionSapiens(&raw mut str_ as *mut i8);
+        copie_chaine(&mut str_, &GetVersionSapiens());
         CtoPstr(str_.as_mut_ptr());
         ParamText(
             &raw mut str_ as *mut u8,
@@ -831,20 +829,11 @@ impl Sapiens {
                                      FixeTitreMainWindow
     ***********************************************************************************/
     pub(crate) fn FixeTitreMainWindow(&self) {
-        unsafe {
-            let mut chaine: [i8; 255] = [0; 255];
-            let mut str_: [i8; 255] = [0; 255];
-
-            strcpy(
-                &raw mut chaine as *mut i8,
-                c"Sapiens ".as_ptr() as *const i8,
-            );
-            GetVersionSapiens(&raw mut str_ as *mut i8);
-            strcat(&raw mut chaine as *mut i8, &raw const str_ as *const i8);
-            CtoPstr(chaine.as_mut_ptr());
-            port::set(self.sapwind.mainWindow);
-            SetWTitle(self.sapwind.mainWindow, &raw mut chaine as *mut u8);
-        }
+        port::set(self.sapwind.mainWindow);
+        SetWTitle(
+            self.sapwind.mainWindow,
+            format!("Sapiens {}", GetVersionSapiens()),
+        );
     }
 
     /****************************************************************************
@@ -1052,7 +1041,7 @@ impl Sapiens {
                 ReleaseResource(pict as Handle);
             }
             /* Affichage de la version de sapiens */
-            GetVersionSapiens(&raw mut chaine as *mut i8);
+            copie_chaine(&mut chaine, &GetVersionSapiens());
             self.sapwind.AffStr(
                 &raw mut chaine as *mut i8,
                 helvetica as i16,
