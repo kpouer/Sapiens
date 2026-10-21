@@ -155,21 +155,18 @@ pub(crate) fn CarboniseSetCursorArrow() {
 // Mémoire
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
 #[deprecated]
-pub(crate) extern "C" fn NewPtr(size: i64) -> Ptr {
+pub(crate) fn NewPtr(size: i64) -> Ptr {
     alloc_pixels(size.max(0) as usize)
 }
 
-#[unsafe(no_mangle)]
 #[deprecated]
-pub(crate) extern "C" fn NewPtrClear(size: i64) -> Ptr {
+pub(crate) fn NewPtrClear(size: i64) -> Ptr {
     alloc_pixels(size.max(0) as usize)
 }
 
-#[unsafe(no_mangle)]
 #[deprecated]
-pub(crate) extern "C" fn DisposPtr(p: Ptr) {
+pub(crate) fn DisposPtr(p: Ptr) {
     free_pixels(p);
 }
 
@@ -305,7 +302,7 @@ pub(crate) fn CtoPstr(str: *mut i8) -> *mut u8 {
     }
 }
 
-pub(crate) extern "C" fn GetIndString(s: StringPtr, _id: i16, _index: i16) {
+pub(crate) fn GetIndString(s: StringPtr, _id: i16, _index: i16) {
     if s.is_null() {
         return;
     }

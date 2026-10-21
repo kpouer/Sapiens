@@ -593,15 +593,14 @@ pub(crate) fn StringWidth(s: StringPtr) -> i16 {
 /// `just` : 0 = gauche (teJustLeft), 1 = centré (teJustCenter), 2 = droite
 /// (teJustRight). Le texte est centré verticalement dans le rectangle, clippé
 /// par pixel au port (via `plot`).
-pub(crate) fn TextBox(text: *const c_void, length: i64, b: *const Rect, just: i16) {
-    if text.is_null() || b.is_null() {
+pub(crate) fn TextBox(text: *const c_void, length: i64, boxr: &Rect, just: i16) {
+    if text.is_null() {
         return;
     }
     let p = cur_port();
     if p.is_null() {
         return;
     }
-    let boxr = unsafe { *b };
     if boxr.is_empty() {
         return;
     }
