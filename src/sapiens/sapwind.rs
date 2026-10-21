@@ -10,7 +10,7 @@ use std::process::exit;
 use crate::Sapiens;
 use crate::acam::{
     BackColor, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle, DrawMenuBar,
-    EnableItem, FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, MaxMem,
+    EnableItem, FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar,
     NewCWindow, PenNormal, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI,
 };
 use crate::cbridge::{
@@ -611,80 +611,70 @@ impl Sapiens {
     Gestion du clavier
     => evenement a traiter
     ********************************************************************/
-    pub(crate) fn DoEvtClavier(&mut self, event: *const EventRecord) {
-        unsafe {
-            let ev = &*event;
-            let mut t: i64;
-
-            if ev.modifiers & cmdKey as i16 != 0 {
-                let _car = (ev.message & 0xFF) as i16;
-                self.AdjustMenus();
-                self.DoMenuCommand(MenuKey((ev.message & charCodeMask as i64) as i16) as i32);
-            } else if ev.modifiers & optionKey as i16 != 0 {
-                let mut i: i16;
-                let car: i16 = ((ev.message & 0xFF00) >> 8) as i16;
-                if car == 0x11
-                /*T*/
-                {
-                    /* Transfert Ecran */
-                    t = TickCount();
-                    i = 0;
-                    while i < 200 {
-                        self.TfrEcr(None);
-                        i += 1;
-                    }
-                    self.Collapse(&format!(
-                        "{i} transferts totaux de l'ecran : {} ticks",
-                        TickCount() - t
-                    ));
+    pub(crate) fn DoEvtClavier(&mut self, ev: &EventRecord) {
+        if ev.modifiers & cmdKey as i16 != 0 {
+            let _car = (ev.message & 0xFF) as i16;
+            self.AdjustMenus();
+            self.DoMenuCommand(MenuKey((ev.message & charCodeMask as i64) as i16) as i32);
+        } else if ev.modifiers & optionKey as i16 != 0 {
+            let mut i: i16;
+            let car: i16 = ((ev.message & 0xFF00) >> 8) as i16;
+            if car == 0x11
+            /*T*/
+            {
+                /* Transfert Ecran */
+                let t = TickCount();
+                i = 0;
+                while i < 200 {
+                    self.TfrEcr(None);
+                    i += 1;
                 }
-                if car == 0x02
-                /*'D'*/
-                {
-                    /* 3d */
-                    t = TickCount();
-                    i = 0;
-                    while i < 50 {
-                        self.affich(self.sapglob.dzeta as u16);
-                        i += 1;
-                    }
-                    self.Collapse(&format!("{i} images 3d : {} ticks", TickCount() - t));
+                self.Collapse(&format!(
+                    "{i} transferts totaux de l'ecran : {} ticks",
+                    TickCount() - t
+                ));
+            }
+            if car == 0x02
+            /*'D'*/
+            {
+                /* 3d */
+                let t = TickCount();
+                i = 0;
+                while i < 50 {
+                    self.affich(self.sapglob.dzeta as u16);
+                    i += 1;
                 }
-                if car == 0x23 {
-                    /*'P'*/
-                    self.AffPalette();
+                self.Collapse(&format!("{i} images 3d : {} ticks", TickCount() - t));
+            }
+            if car == 0x23 {
+                /*'P'*/
+                self.AffPalette();
+            }
+            if car == 0x29 {
+                /*'M'*/
+                if self.sapwmus.quelle_musique == 1 {
+                    self.MusicInit(2);
+                } else {
+                    self.MusicInit(1);
                 }
-                if car == 0x29 {
-                    /*'M'*/
-                    if self.sapwmus.quelle_musique == 1 {
-                        self.MusicInit(2);
-                    } else {
-                        self.MusicInit(1);
-                    }
+            }
+            if car == 0x06 {
+                /*'T'*/
+                i = 0;
+                while i < 64 {
+                    self.chrono(1);
+                    i += 1;
                 }
-                if car == 0x06 {
-                    /*'T'*/
-                    i = 0;
-                    while i < 64 {
-                        self.chrono(1);
-                        i += 1;
-                    }
-                }
-                if car == 0x0f {
-                    /*R*/
-                    self.InitMobs();
-                }
-                if car == 0x01 {
-                    /*S*/
-                    t = 0;
-                    MaxMem(&raw mut t);
-                }
-            } else {
-                let car: i16 = (ev.message & charCodeMask as i64) as i16;
-                /* Touches de fonction */
-                if car == 0x10 {
-                    self.DoAide();
-                }
+            }
+            if car == 0x0f {
+                /*R*/
+                self.InitMobs();
+            }
+        } else {
+            let car: i16 = (ev.message & charCodeMask as i64) as i16;
+            /* Touches de fonction */
+            if car == 0x10 {
+                self.DoAide();
             }
         }
     }
@@ -1165,7 +1155,7 @@ impl Sapiens {
             match event.what as u32 {
                 keyDown => {
                     self.sapwind.toucheClav = event.message as i16 & charCodeMask as i16;
-                    self.DoEvtClavier(&raw const event as *const _);
+                    self.DoEvtClavier(&event);
                 }
                 mouseDown => {
                     /* On cherche quelle fenetre a été cliquée */

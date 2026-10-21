@@ -11,7 +11,7 @@
 #![allow(non_snake_case)]
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use crate::cbridge::{MenuHandle, OSErr, WindowPtr, watchCursor};
+use crate::cbridge::{MenuHandle, WindowPtr, watchCursor};
 use crate::exchange::{CursorShape, set_cursor_shape, set_title};
 use crate::langue::{Langue, langue};
 use crate::port;
@@ -173,8 +173,7 @@ pub(crate) extern "C" fn DisposPtr(p: Ptr) {
     free_pixels(p);
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn NewHandle(size: i64) -> Handle {
+pub(crate) fn NewHandle(size: i64) -> Handle {
     let data: *mut c_void = if size > 0 {
         alloc_pixels(size as usize) as *mut c_void
     } else {
@@ -187,8 +186,7 @@ pub(crate) extern "C" fn NewHandle(size: i64) -> Handle {
     outer
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn NewHandleClear(size: i64) -> Handle {
+pub(crate) fn NewHandleClear(size: i64) -> Handle {
     let h = NewHandle(size);
     if !h.is_null() {
         unsafe {
@@ -202,8 +200,7 @@ pub(crate) extern "C" fn NewHandleClear(size: i64) -> Handle {
     h
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SetHandleSize(h: Handle, size: i64) {
+pub(crate) fn SetHandleSize(h: Handle, size: i64) {
     if h.is_null() {
         return;
     }
@@ -234,8 +231,7 @@ pub(crate) extern "C" fn SetHandleSize(h: Handle, size: i64) {
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn DisposHandle(h: Handle) {
+pub(crate) fn DisposHandle(h: Handle) {
     if h.is_null() {
         return;
     }
@@ -248,8 +244,7 @@ pub(crate) extern "C" fn DisposHandle(h: Handle) {
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetHandleSize(h: Handle) -> i64 {
+pub(crate) fn GetHandleSize(h: Handle) -> i64 {
     if h.is_null() {
         return 0;
     }
@@ -268,20 +263,7 @@ pub(crate) extern "C" fn GetHandleSize(h: Handle) -> i64 {
     }
 }
 
-pub(crate) fn MemError() -> OSErr {
-    0
-}
-
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn MaxMem(grow: *mut i64) -> i64 {
-    if !grow.is_null() {
-        unsafe { *grow = 0 };
-    }
-    0
-}
-
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn BlockMove(src: *const c_void, dest: *mut c_void, len: i64) {
+pub(crate) fn BlockMove(src: *const c_void, dest: *mut c_void, len: i64) {
     if src.is_null() || dest.is_null() || len <= 0 {
         return;
     }
@@ -294,8 +276,7 @@ pub(crate) extern "C" fn BlockMove(src: *const c_void, dest: *mut c_void, len: i
 // Chaînes Pascal
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn PtoCstr(str: StringPtr) -> *mut i8 {
+pub(crate) fn PtoCstr(str: StringPtr) -> *mut i8 {
     if str.is_null() {
         return std::ptr::null_mut();
     }
@@ -337,7 +318,7 @@ pub(crate) extern "C" fn GetIndString(s: StringPtr, _id: i16, _index: i16) {
 // Fenêtre principale
 // ---------------------------------------------------------------------------
 
-pub(crate) extern "C" fn NewCWindow(
+pub(crate) fn NewCWindow(
     _storage: *mut c_void,
     bounds: *const Rect,
     _title: StringPtr,
