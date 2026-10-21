@@ -435,11 +435,11 @@ fn rasterize(fam: Fam, bold: bool, size: i16, ch: char) -> GlyphDraw {
 
 /// Trace un glyphe dont la baseline est en (bx, by), pixel par pixel (clip et
 /// pen_mode gérés par `plot`). La couverture est seuillée pour rester net.
-unsafe fn draw_glyph(p: *mut SapPort, bx: i16, by: i16, g: &GlyphDraw) {
+fn draw_glyph(p: &mut SapPort, bx: i16, by: i16, g: &GlyphDraw) {
     if g.w <= 0 || g.h <= 0 {
         return;
     }
-    let col = unsafe { (*p).fore_index };
+    let col = p.fore_index;
     let basex = bx as i32 + g.ox;
     let basey = by as i32 + g.oy;
     let w = g.w as usize;
@@ -461,17 +461,21 @@ unsafe fn draw_glyph(p: *mut SapPort, bx: i16, by: i16, g: &GlyphDraw) {
 // État texte du port courant
 // ---------------------------------------------------------------------------
 
+/// Exécute `f` sur le port courant (`None` s'il n'y en a pas). La référence ne
+/// sort pas de la closure.
 #[inline]
-fn cur_port() -> *mut SapPort {
-    CURRENT_PORT.load(std::sync::atomic::Ordering::SeqCst)
+fn with_port<R>(f: impl FnOnce(&mut SapPort) -> R) -> Option<R> {
+    let p = CURRENT_PORT.load(std::sync::atomic::Ordering::SeqCst);
+    // SAFETY : le port courant est posé par `port::set_current` et reste valide
+    // tant qu'il est courant ; seul le thread du jeu dessine.
+    unsafe { p.as_mut() }.map(f)
 }
 
 #[inline]
-fn fdt_state(p: *mut SapPort) -> (Fam, bool, i16) {
-    let pp = unsafe { &*p };
-    let fam = fdt_family(pp.tx_font);
-    let bold = pp.tx_face & 1 != 0;
-    let size = pp.tx_size;
+fn fdt_state(p: &SapPort) -> (Fam, bool, i16) {
+    let fam = fdt_family(p.tx_font);
+    let bold = p.tx_face & 1 != 0;
+    let size = p.tx_size;
     (fam, bold, size)
 }
 
@@ -480,27 +484,15 @@ fn fdt_state(p: *mut SapPort) -> (Fam, bool, i16) {
 // ---------------------------------------------------------------------------
 
 pub(crate) fn TextFont(font: i16) {
-    let p = cur_port();
-    if p.is_null() {
-        return;
-    }
-    unsafe { (*p).tx_font = font }
+    with_port(|p| p.tx_font = font);
 }
 
 pub(crate) fn TextSize(size: i16) {
-    let p = cur_port();
-    if p.is_null() {
-        return;
-    }
-    unsafe { (*p).tx_size = size }
+    with_port(|p| p.tx_size = size);
 }
 
 pub(crate) fn TextFace(face: i16) {
-    let p = cur_port();
-    if p.is_null() {
-        return;
-    }
-    unsafe { (*p).tx_face = face }
+    with_port(|p| p.tx_face = face);
 }
 
 pub(crate) fn GetStdFont() -> i16 {
@@ -508,42 +500,35 @@ pub(crate) fn GetStdFont() -> i16 {
 }
 
 pub(crate) fn GetFontInfo() -> Option<FontInfo> {
-    let p = cur_port();
-    if p.is_null() {
-        return None;
-    }
-    let (fam, bold, size) = fdt_state(p);
-    let m = font_metrics(fam, bold, size);
-    Some(FontInfo {
-        ascent: m.ascent.round() as i16,
-        descent: m.descent.round() as i16,
-        widening: m.widening.round() as i16,
-        leading: m.leading.round() as i16,
+    with_port(|p| {
+        let (fam, bold, size) = fdt_state(p);
+        let m = font_metrics(fam, bold, size);
+        FontInfo {
+            ascent: m.ascent.round() as i16,
+            descent: m.descent.round() as i16,
+            widening: m.widening.round() as i16,
+            leading: m.leading.round() as i16,
+        }
     })
 }
 
 /// Largeur (en pixels) d'un caractère dans la fonte courante du port.
 pub(crate) fn CharWidth(c: i8) -> i16 {
-    let p = cur_port();
-    if p.is_null() {
-        return 0;
-    }
-    let (fam, bold, size) = fdt_state(p);
-    get_glyph(fam, bold, size, decode(c as u8)).advance
+    with_port(|p| {
+        let (fam, bold, size) = fdt_state(p);
+        get_glyph(fam, bold, size, decode(c as u8)).advance
+    })
+    .unwrap_or(0)
 }
 
 /// Dessine un caractère à la position courante (baseline = pen_loc).
 pub(crate) fn DrawChar(c: i8) {
-    let p = cur_port();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
+    with_port(|p| {
         let (fam, bold, size) = fdt_state(p);
         let g = get_glyph(fam, bold, size, decode(c as u8));
-        let loc = (*p).pen_loc;
+        let loc = p.pen_loc;
         draw_glyph(p, loc.h, loc.v, &g);
-    }
+    });
 }
 
 /// Dessine une chaîne Pascal (1er octet = longueur), avance le crayon.
@@ -551,22 +536,18 @@ pub(crate) fn DrawString(s: StringPtr) {
     if s.is_null() {
         return;
     }
-    let p = cur_port();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
+    with_port(|p| unsafe {
         let len = *s as usize;
         let (fam, bold, size) = fdt_state(p);
-        let by = (*p).pen_loc.v;
-        let mut h = (*p).pen_loc.h;
+        let by = p.pen_loc.v;
+        let mut h = p.pen_loc.h;
         for i in 0..len {
             let g = get_glyph(fam, bold, size, decode(*s.add(1 + i)));
             draw_glyph(p, h, by, &g);
             h = h.wrapping_add(g.advance);
         }
-        (*p).pen_loc.h = h;
-    }
+        p.pen_loc.h = h;
+    });
 }
 
 /// Largeur d'une chaîne Pascal dans la fonte courante.
@@ -574,11 +555,7 @@ pub(crate) fn StringWidth(s: StringPtr) -> i16 {
     if s.is_null() {
         return 0;
     }
-    let p = cur_port();
-    if p.is_null() {
-        return 0;
-    }
-    unsafe {
+    with_port(|p| unsafe {
         let len = *s as usize;
         let (fam, bold, size) = fdt_state(p);
         let mut w: i32 = 0;
@@ -586,7 +563,8 @@ pub(crate) fn StringWidth(s: StringPtr) -> i16 {
             w += get_glyph(fam, bold, size, decode(*s.add(1 + i))).advance as i32;
         }
         w.clamp(i16::MIN as i32, i16::MAX as i32) as i16
-    }
+    })
+    .unwrap_or(0)
 }
 
 /// Trace un texte (octets C, longueur explicite) dans un rectangle, justifié.
@@ -594,18 +572,11 @@ pub(crate) fn StringWidth(s: StringPtr) -> i16 {
 /// (teJustRight). Le texte est centré verticalement dans le rectangle, clippé
 /// par pixel au port (via `plot`).
 pub(crate) fn TextBox(text: *const c_void, length: i64, boxr: &Rect, just: i16) {
-    if text.is_null() {
-        return;
-    }
-    let p = cur_port();
-    if p.is_null() {
-        return;
-    }
-    if boxr.is_empty() {
+    if text.is_null() || boxr.is_empty() {
         return;
     }
     let n = length.max(0) as usize;
-    unsafe {
+    with_port(|p| unsafe {
         let bytes = text as *const u8;
         let (fam, bold, size) = fdt_state(p);
         // Largeur totale (i32, le texte peut déborder d'un i16).
@@ -633,7 +604,7 @@ pub(crate) fn TextBox(text: *const c_void, length: i64, boxr: &Rect, just: i16) 
                 break;
             }
         }
-    }
+    });
 }
 #[cfg(test)]
 mod tests {

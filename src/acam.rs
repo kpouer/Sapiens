@@ -685,9 +685,8 @@ pub(crate) fn cur() -> *mut SapPort {
 
 /// Trace un pixel plein (`mode` tenu en compte), avec clip.
 #[inline]
-pub(crate) fn plot(port: *mut SapPort, x: i16, y: i16, c: u8) {
+pub(crate) fn plot(p: &mut SapPort, x: i16, y: i16, c: u8) {
     unsafe {
-        let p = &mut *port;
         if x < p.clip.left || x >= p.clip.right || y < p.clip.top || y >= p.clip.bottom {
             return;
         }
@@ -769,7 +768,7 @@ fn draw_line(port: *mut SapPort, x0: i16, y0: i16, x1: i16, y1: i16) {
         loop {
             for py in y..y + ph {
                 for px in x..x + pw {
-                    plot(port, px as i16, py as i16, c);
+                    plot(p, px as i16, py as i16, c);
                 }
             }
             if x == x1 && y == y1 {
@@ -994,15 +993,15 @@ fn frame_rect(port: *mut SapPort, r: &Rect) {
             if x > clip_overflow_bound() {
                 break;
             }
-            plot(port, x, r.top, c);
+            plot(p, x, r.top, c);
             if bottom >= r.top {
-                plot(port, x, bottom, c);
+                plot(p, x, bottom, c);
             }
         }
         for y in r.top..r.bottom {
-            plot(port, r.left, y, c);
+            plot(p, r.left, y, c);
             if right >= r.left {
-                plot(port, right, y, c);
+                plot(p, right, y, c);
             }
         }
     }
