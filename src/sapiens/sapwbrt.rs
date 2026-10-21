@@ -155,9 +155,9 @@ pub(crate) fn DoTextSize(x: i16) {
 /****************************************************************************
             DoTextBox
 *****************************************************************************/
-pub(crate) fn DoTextBox(text: *mut i8, length: i16, box_: &Rect, just: i16) {
+pub(crate) fn DoTextBox(text: &[u8], box_: &Rect, just: i16) {
     let dest = DoZoomRect(box_);
-    TextBox(text as *const c_void, length as i64, &dest, just);
+    TextBox(text, &dest, just);
 }
 /****************************************************************************
             DoScrollRect

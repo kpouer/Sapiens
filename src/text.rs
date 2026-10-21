@@ -571,18 +571,16 @@ pub(crate) fn StringWidth(s: StringPtr) -> i16 {
 /// `just` : 0 = gauche (teJustLeft), 1 = centré (teJustCenter), 2 = droite
 /// (teJustRight). Le texte est centré verticalement dans le rectangle, clippé
 /// par pixel au port (via `plot`).
-pub(crate) fn TextBox(text: *const c_void, length: i64, boxr: &Rect, just: i16) {
-    if text.is_null() || boxr.is_empty() {
+pub(crate) fn TextBox(text: &[u8], boxr: &Rect, just: i16) {
+    if boxr.is_empty() {
         return;
     }
-    let n = length.max(0) as usize;
     with_port(|p| unsafe {
-        let bytes = text as *const u8;
         let (fam, bold, size) = fdt_state(p);
         // Largeur totale (i32, le texte peut déborder d'un i16).
-        let mut total: i32 = 0;
-        for i in 0..n {
-            total += get_glyph(fam, bold, size, decode(*bytes.add(i))).advance as i32;
+        let mut total = 0;
+        for &c in text {
+            total += get_glyph(fam, bold, size, decode(c)).advance as i32;
         }
         let m = font_metrics(fam, bold, size);
         let fh = (m.ascent + m.descent) as i32;
@@ -593,9 +591,9 @@ pub(crate) fn TextBox(text: *const c_void, length: i64, boxr: &Rect, just: i16) 
             1 => ((boxr.left as i32 + boxr.right as i32) - total) / 2, // centré
             _ => boxr.left as i32,                    // gauche
         };
-        let mut acc: i32 = 0;
-        for i in 0..n {
-            let g = get_glyph(fam, bold, size, decode(*bytes.add(i)));
+        let mut acc = 0;
+        for &c in text {
+            let g = get_glyph(fam, bold, size, decode(c));
             let x = (start + acc) as i16;
             let y = baseline as i16;
             draw_glyph(p, x, y, &g);
@@ -759,12 +757,7 @@ mod tests {
             bottom: 50,
             right: 180,
         };
-        TextBox(
-            text.as_ptr() as *const c_void,
-            text.len() as i64,
-            &boxr,
-            1, // teJustCenter
-        );
+        TextBox(text, &boxr, 1); // teJustCenter
         CURRENT_PORT.store(old, Ordering::SeqCst);
         let n = t.count();
         assert!(n > 100, "trop peu de pixels tracés : {n}");

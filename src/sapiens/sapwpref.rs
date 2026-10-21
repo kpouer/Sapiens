@@ -24,6 +24,7 @@ use crate::stubs::{
     LocalToGlobal, ModalDialog, NewMenu, PopUpMenuSelect, PreservePath, RestorePath,
 };
 use crate::text::{TextFace, TextFont, TextSize};
+use std::ffi::CStr;
 use std::os::raw::c_void;
 
 const VERSION_PREF: &[u8] = b"Sapiens Preferences 2.0.0\0";
@@ -205,14 +206,8 @@ unsafe extern "C" fn VectAfficheMenuLangue(window: DialogPtr, itemid: i16) {
     TextFont(times as i16);
     TextSize(16);
     TextFace(0);
-    unsafe {
-        DoTextBox(
-            chaine.as_mut_ptr(),
-            strlen(chaine.as_ptr()) as i16,
-            &r,
-            crate::cbridge::teJustLeft as i16,
-        );
-    }
+    let chaine = CStr::from_ptr(&chaine as *const i8).to_bytes();
+    DoTextBox(chaine, &r, crate::cbridge::teJustLeft as i16);
     r.right += 14;
     r.InsetRect(-1, -1);
     DrawArrowPopUp(&mut r);

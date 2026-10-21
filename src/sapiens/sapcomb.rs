@@ -9,7 +9,6 @@ Quadra :             10010  20
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 
-use crate::DEBCRANE;
 use crate::DEBTETE;
 use crate::MOB_ANIMAL_MORT;
 use crate::MOB_CHEMIN;
@@ -37,6 +36,7 @@ use crate::sapiens::{
 use crate::shared::{Boolean, Point, Rect};
 use crate::text::TextFont;
 use crate::{DEBBEST, Sapiens};
+use crate::{DEBCRANE, cbridge};
 use std::ffi::CStr;
 use std::ptr::addr_of_mut;
 use std::sync::atomic::Ordering;
@@ -356,32 +356,25 @@ impl Sapiens {
     L'utilisateur a cliqué dans la zone haute : on regarde si le click a eu lieu
     dans une case du génerique
     ***********************************************************************/
-    fn AffStrVolatile(&mut self, pt: Point, chaine: *mut i8) {
-        unsafe {
-            if !chaine.is_null() && CStr::from_ptr(chaine).to_bytes().len() != 0 {
-                let mut raff = Rect::new(pt.h - 8, pt.v - 8, pt.h + 100, pt.v + 40);
-                if raff.left < 0 {
-                    raff.OffsetRect(-raff.left, 0);
-                }
-                if raff.right > 640 {
-                    raff.OffsetRect(640 - raff.right, 0);
-                }
-                DoEraseRect(&raff);
-                raff.InsetRect(4, 4);
-                TextFont(geneva as i16);
-                DoTextSize(9);
-                DoTextBox(
-                    chaine,
-                    CStr::from_ptr(chaine).to_bytes().len() as i16,
-                    &raff,
-                    teJustLeft as i16,
-                );
-                raff.InsetRect(-4, -4);
-                DoFrameRect(&raff);
-                self.delai(60);
-                self.AttendsFinBouton();
-                self.TfrEcr(Some(&raff));
+    fn AffStrVolatile(&mut self, pt: Point, chaine: &[u8]) {
+        if !chaine.is_empty() {
+            let mut raff = Rect::new(pt.h - 8, pt.v - 8, pt.h + 100, pt.v + 40);
+            if raff.left < 0 {
+                raff.OffsetRect(-raff.left, 0);
             }
+            if raff.right > 640 {
+                raff.OffsetRect(640 - raff.right, 0);
+            }
+            DoEraseRect(&raff);
+            raff.InsetRect(4, 4);
+            TextFont(geneva as i16);
+            DoTextSize(9);
+            DoTextBox(chaine, &raff, teJustLeft as i16);
+            raff.InsetRect(-4, -4);
+            DoFrameRect(&raff);
+            self.delai(60);
+            self.AttendsFinBouton();
+            self.TfrEcr(Some(&raff));
         }
     }
 
@@ -412,7 +405,8 @@ impl Sapiens {
                     } else {
                         copie_chaine(&raw mut chaine as *mut i8, self.sapwind.GetStr(28));
                     }
-                    self.AffStrVolatile(pt, &raw mut chaine as *mut i8);
+                    let chaine = CStr::from_ptr(&chaine as *const i8).to_bytes();
+                    self.AffStrVolatile(pt, chaine);
                 }
                 /* Dans le cadre de la tete */
                 r.OffsetRect(0, 44);
@@ -437,7 +431,8 @@ impl Sapiens {
                     } else {
                         copie_chaine(&raw mut chaine as *mut i8, self.sapwind.GetStr(18));
                     }
-                    self.AffStrVolatile(pt, &raw mut chaine as *mut i8);
+                    let chaine = CStr::from_ptr(&chaine as *const i8).to_bytes();
+                    self.AffStrVolatile(pt, chaine);
                 }
             }
         }
