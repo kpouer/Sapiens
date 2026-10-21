@@ -520,7 +520,7 @@ impl Sapiens {
                                                                     AfficheSol
                                     On affiche les lignes du sol
     *********************************************************************************/
-    unsafe fn AfficheSol(&mut self) {
+    fn AfficheSol(&mut self) {
         let mut r;
         let mut rdep: Rect;
         let mut i: i32;
@@ -580,11 +580,13 @@ impl Sapiens {
             rdep = r;
             let mut k = 256 - offset as i32;
             while k < 512 {
-                self.Affmob3d(
-                    self.sapwind.mob3D + 25,
-                    r,
-                    *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
-                );
+                unsafe {
+                    self.Affmob3d(
+                        self.sapwind.mob3D + 25,
+                        r,
+                        *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
+                    );
+                }
                 r.OffsetRect(largeur as i16, 0);
                 k += largeur;
             }
@@ -592,11 +594,13 @@ impl Sapiens {
             k = 256 - offset as i32;
             while k > 0 {
                 r.OffsetRect(-largeur as i16, 0);
-                self.Affmob3d(
-                    self.sapwind.mob3D + 25,
-                    r,
-                    *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
-                );
+                unsafe {
+                    self.Affmob3d(
+                        self.sapwind.mob3D + 25,
+                        r,
+                        *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
+                    );
+                }
                 k -= largeur;
             }
             j -= HAUTEUR_MIN_BANDE;
@@ -637,11 +641,13 @@ impl Sapiens {
                 rdep = r;
                 let mut kk = 256 - offset;
                 while kk < 512 {
-                    self.Affmob3d(
-                        nmob,
-                        r,
-                        *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
-                    );
+                    unsafe {
+                        self.Affmob3d(
+                            nmob,
+                            r,
+                            *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
+                        );
+                    }
                     r.OffsetRect(largeur2 as i16, 0);
                     kk += largeur2;
                 }
@@ -649,11 +655,13 @@ impl Sapiens {
                 kk = 256 - offset;
                 while kk > 0 {
                     r.OffsetRect(-largeur2 as i16, 0);
-                    self.Affmob3d(
-                        nmob,
-                        r,
-                        *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
-                    );
+                    unsafe {
+                        self.Affmob3d(
+                            nmob,
+                            r,
+                            *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
+                        );
+                    }
                     kk -= largeur2;
                 }
             }
@@ -666,7 +674,7 @@ impl Sapiens {
 /******************************************************************
                     TrameCielOrage
 ******************************************************************/
-unsafe fn TrameCielOrage(index: i16) {
+fn TrameCielOrage(index: i16) {
     /* Origine des données de l'ecran */
     let Some(info) = port::info(port::current()) else {
         return;
@@ -675,36 +683,40 @@ unsafe fn TrameCielOrage(index: i16) {
     let tailleLigne = info.row_bytes;
     let mut d = data;
     let mut i = NB_LIGNES_CIEL as i32 / 2;
-    while i > 0 {
-        i -= 1;
-        let mut j = tailleLigne as i32 / 2;
-        while j > 0 {
-            j -= 1;
-            *d = index as u8;
-            *d.offset((tailleLigne as i64 + 1) as isize) = index as u8;
-            d = d.add(2);
+    unsafe {
+        while i > 0 {
+            i -= 1;
+            let mut j = tailleLigne as i32 / 2;
+            while j > 0 {
+                j -= 1;
+                *d = index as u8;
+                *d.offset((tailleLigne as i64 + 1) as isize) = index as u8;
+                d = d.add(2);
+            }
+            d = d.add(tailleLigne as usize);
         }
-        d = d.add(tailleLigne as usize);
     }
 }
 
 /******************************************************************
                     Flou
 ******************************************************************/
-unsafe fn Flou() {
+fn Flou() {
     /* Origine des données de l'ecran */
     let Some(info) = port::info(port::current()) else {
         return;
     };
     let data = info.pixels;
     let tailleLigne = info.row_bytes;
-    for y in 0..200i32 {
-        let mut p = data.add((tailleLigne as i64 * y as i64) as usize);
-        let mut x = 0;
-        while x < tailleLigne as i32 {
-            *p = *p.add(1);
-            p = p.add(3);
-            x += 3;
+    unsafe {
+        for y in 0..200 {
+            let mut p = data.add((tailleLigne as i64 * y) as usize);
+            let mut x = 0;
+            while x < tailleLigne as i32 {
+                *p = *p.add(1);
+                p = p.add(3);
+                x += 3;
+            }
         }
     }
 }
@@ -713,7 +725,7 @@ unsafe fn Flou() {
                     TracePluie
 => index de la couleur, nombre de gouttes
 ******************************************************************/
-unsafe fn TracePluie(random: &mut Random, index: i16, n: i16) {
+fn TracePluie(random: &mut Random, index: i16, n: i16) {
     if random.myRandom(0, 1000) > 500 {
         Flou();
     }
@@ -724,16 +736,18 @@ unsafe fn TracePluie(random: &mut Random, index: i16, n: i16) {
     let data = info.pixels;
     let tailleLigne = info.row_bytes;
     let mut n = n as i32;
-    while n > 0 {
-        n -= 1;
-        let x = random.myRandom(0, tailleLigne as i64) as i16;
-        let y = random.myRandom(0, 150) as i16;
-        let mut j = 50;
-        let mut p = data.add((tailleLigne as i64 * y as i64 + x as i64) as usize);
-        while j > 0 {
-            j -= 1;
-            *p = index as u8;
-            p = p.add((tailleLigne as i64 - 1) as usize);
+    unsafe {
+        while n > 0 {
+            n -= 1;
+            let x = random.myRandom(0, tailleLigne as i64) as i16;
+            let y = random.myRandom(0, 150) as i16;
+            let mut j = 50;
+            let mut p = data.add((tailleLigne as i64 * y as i64 + x as i64) as usize);
+            while j > 0 {
+                j -= 1;
+                *p = index as u8;
+                p = p.add((tailleLigne as i64 - 1) as usize);
+            }
         }
     }
 }
@@ -743,8 +757,7 @@ impl Sapiens {
                         eff3d
                 Effacement de la 3d
     *****************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn eff3d(
+    pub(crate) fn eff3d(
         &mut self,
         _ciel: u8,  /* NU */
         _terre: u8, /* NU */
@@ -780,8 +793,7 @@ impl Sapiens {
     /***************************************************************************************
                                      Pluie
     ***************************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn Pluie(&mut self) {
+    pub(crate) fn Pluie(&mut self) {
         let _g = port::on(self.sapwind.Ecran1);
 
         if self.sap3d.FreqEclair < 1000 && self.sap3d.FreqEclair > 500 {

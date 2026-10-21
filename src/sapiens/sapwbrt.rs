@@ -4,10 +4,7 @@ use crate::acam::{
     BackColor, BlockMove, CopyBits, DisposPtr, EraseRect, ForeColor, FrameRect, Line, MoveTo,
     NewPtr, PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect, SetRect,
 };
-use crate::cbridge::{
-    DialogPtr, FILE, RetraceRect, blackColor, fclose, fopen, getc, patOr, sprintf, srcCopy,
-    whiteColor,
-};
+use crate::cbridge::{FILE, blackColor, fclose, fopen, getc, patOr, sprintf, srcCopy, whiteColor};
 use crate::langue::Langue::GB;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapgest::Sapgest;
@@ -15,11 +12,11 @@ use crate::sapiens::saptxt::{CvtDefaultLangRess, CvtLangRess};
 use crate::sapiens::sapwind::{SapiensExit, ValideUpdate};
 use crate::sapiens::{ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalCoul};
 use crate::shared::RGBColor as BRGBColor;
-use crate::shared::{CGrafPtr, Handle, Ptr, RGBColor, Rect, RgnHandle};
+use crate::shared::{CGrafPtr, Ptr, RGBColor, Rect, RgnHandle};
 use crate::stubs::{
     CarboniseInvalRect, CarboniseSetPatGray, CarboniseValideUpdate, ConvertPNGFileToOffscreen,
-    DisposePtr, DrawPicture, FixeCheminRelatif, GetDItem, GetPicture, GetRectFilePng, PopPath,
-    PushPath, SaisitChemin,
+    DisposePtr, DrawPicture, FixeCheminRelatif, GetPicture, GetRectFilePng, PopPath, PushPath,
+    SaisitChemin,
 };
 use crate::text::{TextBox, TextSize};
 use crate::{Sapiens, cbridge, port};
@@ -28,20 +25,6 @@ use std::os::raw::c_void;
 
 const TAILLE_TFR: u32 = 66;
 
-/*********************************************************************
-                            RetraceItem
-Retrace instanatanemen,t l'item demandé
-********************************************************************/
-pub(crate) fn RetraceItem(dialog: DialogPtr, item: i16) {
-    let mut itemType: i16 = 0;
-    let mut handle = Handle::default();
-    let mut box_ = Rect::default();
-
-    GetDItem(dialog, item, &mut itemType, &mut handle, &mut box_);
-    unsafe {
-        RetraceRect(dialog, &mut box_);
-    }
-}
 /***********************************************************************
                SetPathInData
 => id de la picture,aire

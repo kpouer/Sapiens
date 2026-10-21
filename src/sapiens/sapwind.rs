@@ -544,64 +544,62 @@ impl Sapiens {
         self.souris.MontreSouris();
         let menuID = ((menuResult >> 16) & 0xFFFF) as i16; /* HiWord */
         let menuItem = (menuResult & 0xFFFF) as i16; /* LoWord */
-        unsafe {
-            if menuID == CvtDefaultLangRess(128) {
-                /* menuPomme */
-                match menuItem {
-                    itemInformation => self.DoInfo(),
-                    itemAide => self.DoAide(),
-                    _ => {
-                        GetItem(
-                            GetMHandle(CvtDefaultLangRess(128)),
-                            menuItem,
-                            &raw mut daName as *mut u8,
-                        );
-                        OpenDeskAcc(&raw mut daName as *mut c_void as StringPtr);
-                    }
+        if menuID == CvtDefaultLangRess(128) {
+            /* menuPomme */
+            match menuItem {
+                itemInformation => self.DoInfo(),
+                itemAide => self.DoAide(),
+                _ => {
+                    GetItem(
+                        GetMHandle(CvtDefaultLangRess(128)),
+                        menuItem,
+                        &raw mut daName as *mut u8,
+                    );
+                    OpenDeskAcc(&raw mut daName as *mut c_void as StringPtr);
                 }
-            } else if menuID == CvtDefaultLangRess(129) {
-                /* menuFichier */
-                match menuItem {
-                    itemNouveau => self.trgest(3),
-                    itemCharger => {
-                        self.trgest(1);
-                        self.inimen(0);
-                    }
-                    itemSauver => self.trgest(2),
-                    itemPreferences => self.DoPreferences(),
-                    itemQuitter if self.ConfirmePerteAventure() => {
-                        SapiensExit(0);
-                    }
-                    _ => {}
+            }
+        } else if menuID == CvtDefaultLangRess(129) {
+            /* menuFichier */
+            match menuItem {
+                itemNouveau => self.trgest(3),
+                itemCharger => {
+                    self.trgest(1);
+                    self.inimen(0);
                 }
-            } else if menuID == CvtDefaultLangRess(130) {
-                /* menuVoir */
-                match menuItem {
-                    iPaysage => {
-                        self.trobsv(0);
-                        if self.sapglob.flcomb != 0 {
-                            self.TraiteVueLaterale();
-                        }
-                    }
-                    iLaterale => {
-                        self.trobsv(1);
+                itemSauver => self.trgest(2),
+                itemPreferences => self.DoPreferences(),
+                itemQuitter if self.ConfirmePerteAventure() => {
+                    SapiensExit(0);
+                }
+                _ => {}
+            }
+        } else if menuID == CvtDefaultLangRess(130) {
+            /* menuVoir */
+            match menuItem {
+                iPaysage => {
+                    self.trobsv(0);
+                    if self.sapglob.flcomb != 0 {
                         self.TraiteVueLaterale();
                     }
-                    iPanorama => self.trobsv(2),
-                    iCarte => self.trobsv(3),
-                    _ => {}
                 }
-            } else if menuID == CvtDefaultLangRess(131) {
-                /* menuFenetre */
-                match menuItem {
-                    iEchelle100 => self.sapwind.set_zoom(1.0),
-                    iEchelle200 => self.sapwind.set_zoom(2.0),
-                    iEchelle300 => self.sapwind.set_zoom(3.0),
-                    iEchelle400 => self.sapwind.set_zoom(4.0),
-                    _ => {}
+                iLaterale => {
+                    self.trobsv(1);
+                    self.TraiteVueLaterale();
                 }
-                self.sapwind.FixeTailleMainWindow();
+                iPanorama => self.trobsv(2),
+                iCarte => self.trobsv(3),
+                _ => {}
             }
+        } else if menuID == CvtDefaultLangRess(131) {
+            /* menuFenetre */
+            match menuItem {
+                iEchelle100 => self.sapwind.set_zoom(1.0),
+                iEchelle200 => self.sapwind.set_zoom(2.0),
+                iEchelle300 => self.sapwind.set_zoom(3.0),
+                iEchelle400 => self.sapwind.set_zoom(4.0),
+                _ => {}
+            }
+            self.sapwind.FixeTailleMainWindow();
         }
         HiliteMenu(0);
         self.AdjustMenus();
@@ -1165,11 +1163,11 @@ impl Sapiens {
         self.CheckChangeMusique();
         while GetNextEvent(everyEvent as i16, &mut event) {
             match event.what as u32 {
-                _keyDown => {
+                keyDown => {
                     self.sapwind.toucheClav = event.message as i16 & charCodeMask as i16;
                     self.DoEvtClavier(&raw const event as *const _);
                 }
-                _mouseDown => {
+                mouseDown => {
                     /* On cherche quelle fenetre a été cliquée */
                     part = FindWindow(event.where_, &mut windowResult);
                     /* Où a-t'on cliqué ??? */
@@ -1198,7 +1196,7 @@ impl Sapiens {
                         _ => {}
                     }
                 }
-                _updateEvt => {
+                updateEvt => {
                     if port::is_window(window) {
                         //                    AcamGetPortOffscreen(&gbak);
                         port::set(window);
@@ -1212,7 +1210,7 @@ impl Sapiens {
                         //                    AcamSetPortOffscreen(gbak);
                     }
                 }
-                _activateEvt => {
+                activateEvt => {
                     if (event.message & 1) > 0 {
                         /* on reprends le traitement */
                     } else {
@@ -1220,7 +1218,7 @@ impl Sapiens {
                         self.souris.MontreSouris();
                     }
                 }
-                _app4Evt if (event.message >> 24) == 1 => {
+                app4Evt if (event.message >> 24) == 1 => {
                     if (event.message & 1) > 0 {
                         /* on reprends le traitement */
                         port::set(self.sapwind.mainWindow);

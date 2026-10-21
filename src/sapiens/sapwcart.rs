@@ -124,7 +124,7 @@ impl Sapiens {
 => Nombre d'objets a afficher
 ***************************************************************************/
 impl Sapiens {
-    fn aff_mont(&mut self, nb: i16) {
+    fn aff_mont(&mut self, _nb: i16) {
         loop {
             let mut jmin = 0;
             let mut minyc = 32767;
