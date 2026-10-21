@@ -235,14 +235,14 @@ impl Sapiens {
         if bitmap == 0 {
             (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
             let mut delt = self.sapglob.sposx - self.sapglob.dsposx;
-            if delt > 0 && delt > 16 {
+            if delt > 16 {
                 bitmap |= 8;
             }
             if delt < 0 && -delt > 16 {
                 bitmap |= 4;
             }
             delt = self.sapglob.sposy - self.sapglob.dsposy;
-            if delt > 0 && delt > 8 {
+            if delt > 8 {
                 bitmap |= 2;
             }
             if delt < 0 && -delt > 8 {
@@ -283,7 +283,7 @@ impl Sapiens {
                     bitmap |= 4;
                 }
                 let delt = self.sapglob.sposy - self.sapglob.dsposy;
-                if delt > 0 && delt > 5 {
+                if delt > 5 {
                     bitmap |= 2;
                 }
                 if delt < 0 && -delt > 5 {

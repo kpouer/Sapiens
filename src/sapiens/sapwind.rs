@@ -481,10 +481,10 @@ impl Sapiens {
             EnableItem(menu, 0);
         }
         menu = GetMHandle(CvtDefaultLangRess(131)); /* menuFenetre */
-        CheckItem(menu, iEchelle100 as i16, self.sapwind.SapZoom == 1.0);
-        CheckItem(menu, iEchelle200 as i16, self.sapwind.SapZoom == 2.0);
-        CheckItem(menu, iEchelle300 as i16, self.sapwind.SapZoom == 3.0);
-        CheckItem(menu, iEchelle400 as i16, self.sapwind.SapZoom == 4.0);
+        CheckItem(menu, iEchelle100, self.sapwind.SapZoom == 1.0);
+        CheckItem(menu, iEchelle200, self.sapwind.SapZoom == 2.0);
+        CheckItem(menu, iEchelle300, self.sapwind.SapZoom == 3.0);
+        CheckItem(menu, iEchelle400, self.sapwind.SapZoom == 4.0);
         DrawMenuBar();
     }
 
@@ -569,10 +569,8 @@ impl Sapiens {
                     }
                     itemSauver => self.trgest(2),
                     itemPreferences => self.DoPreferences(),
-                    itemQuitter => {
-                        if self.ConfirmePerteAventure() {
-                            SapiensExit(0);
-                        }
+                    itemQuitter if self.ConfirmePerteAventure() => {
+                        SapiensExit(0);
                     }
                     _ => {}
                 }
@@ -1168,7 +1166,7 @@ impl Sapiens {
         while GetNextEvent(everyEvent as i16, &mut event) {
             match event.what as u32 {
                 _keyDown => {
-                    self.sapwind.toucheClav = (event.message as i16 & charCodeMask as i16) as i16;
+                    self.sapwind.toucheClav = event.message as i16 & charCodeMask as i16;
                     self.DoEvtClavier(&raw const event as *const _);
                 }
                 _mouseDown => {
@@ -1191,10 +1189,8 @@ impl Sapiens {
                             DragWindow(windowResult, event.where_, &bounds);
                         }
                         /* Dans une fenetre : alors on le traite */
-                        _inContent => {
-                            if windowResult != window {
-                                SelectWindow(windowResult);
-                            }
+                        _inContent if windowResult != window => {
+                            SelectWindow(windowResult);
 
                             //if(window==mainWindow)
                             //       DoClick(event.where);
@@ -1224,20 +1220,18 @@ impl Sapiens {
                         self.souris.MontreSouris();
                     }
                 }
-                _app4Evt => {
-                    if (event.message >> 24) == 1 {
-                        if (event.message & 1) > 0 {
-                            /* on reprends le traitement */
-                            port::set(self.sapwind.mainWindow);
-                            self.TfrEcr(None);
-                            self.tfrima();
-                            if self.sapglob.dervue == Vue::LATERALE {
-                                self.tfrdemi();
-                            }
-                        } else {
-                            /* On est arrêté */
-                            self.souris.MontreSouris();
+                _app4Evt if (event.message >> 24) == 1 => {
+                    if (event.message & 1) > 0 {
+                        /* on reprends le traitement */
+                        port::set(self.sapwind.mainWindow);
+                        self.TfrEcr(None);
+                        self.tfrima();
+                        if self.sapglob.dervue == Vue::LATERALE {
+                            self.tfrdemi();
                         }
+                    } else {
+                        /* On est arrêté */
+                        self.souris.MontreSouris();
                     }
                 }
                 _ => {}

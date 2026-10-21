@@ -105,7 +105,7 @@ impl Sapiens {
         // S300 l'arret de la musique se fait dans SapiensExit
         //if(!IsExitMuse) atexit(ExitMuse);
         //IsExitMuse=VRAI;
-        self.sapwmus.quelle_musique = quelle as i16;
+        self.sapwmus.quelle_musique = quelle;
         PushPath();
         SetPathInData(&self.sapgest, c"musics".as_ptr() as *mut i8);
         let nom = if quelle == 1 {

@@ -1690,8 +1690,8 @@ fn SaisieNomFichierAventureEcriture(nom: *mut i8) -> Boolean {
         fType: 0,
         fName: [0; 64],
     };
-    let mut chaine = [0 as i8; 255];
-    let mut titre = [0 as i8; 255];
+    let mut chaine = [0; 255];
+    let mut titre = [0; 255];
 
     unsafe {
         let point = Point::new(
@@ -1805,7 +1805,7 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn charge(&mut self) {
         unsafe {
-            let mut nom = [0 as i8; 255];
+            let mut nom = [0; 255];
             let mut ptr: *mut u8;
             let mut j: usize;
             let mut checksum: i16 = 111;

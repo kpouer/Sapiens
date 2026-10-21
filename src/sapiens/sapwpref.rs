@@ -72,7 +72,7 @@ impl Sapiens {
                 f,
             );
             fwrite(
-                &raw const self.sapcomb.ModeJoueur2 as *const i16 as *const c_void,
+                &raw const self.sapcomb.ModeJoueur2 as *const c_void,
                 size_of::<i16>() as u64,
                 1,
                 f,
@@ -91,7 +91,7 @@ impl Sapiens {
                 f,
             );
             fwrite(
-                &raw const self.sapwind.SapZoom as *const f32 as *const c_void,
+                &raw const self.sapwind.SapZoom as *const c_void,
                 size_of::<i16>() as u64,
                 1,
                 f,
@@ -132,7 +132,7 @@ impl Sapiens {
     <= VRAi si first init
     ***********************************************************************/
     pub(crate) fn ChargePref(&mut self) -> Boolean {
-        let mut chaine = [0 as i8; 255];
+        let mut chaine = [0; 255];
         PreservePath();
         unsafe {
             SetPathPreferences();
@@ -195,7 +195,7 @@ fn GetLibLangue(n: i16, str_: *mut i8) {
 ********************************************************************/
 unsafe extern "C" fn VectAfficheMenuLangue(window: DialogPtr, itemid: i16) {
     let mut r: Rect = Rect::default();
-    let mut chaine = [0 as i8; 255];
+    let mut chaine = [0; 255];
 
     let _g = port::on(window);
     GetRectItem(window, itemid, &raw mut r);
@@ -224,7 +224,7 @@ unsafe extern "C" fn VectAfficheMenuLangue(window: DialogPtr, itemid: i16) {
 => Menu a remplir
 ******************************************************************************************/
 fn CreeMenuLangue(menu: MenuHandle) {
-    let mut nom = [0 as i8; 255];
+    let mut nom = [0; 255];
 
     for i in 0..SAP_NB_LANGUAGES {
         GetLibLangue(i, nom.as_mut_ptr());

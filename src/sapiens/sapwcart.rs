@@ -129,10 +129,10 @@ impl Sapiens {
             let mut jmin = 0;
             let mut minyc = 32767;
             if let Some(tab_elt_car) = &self.sapwcart.tab_elt_car {
-                for j in 0..nb as usize {
-                    if tab_elt_car[j].aire.bottom < minyc {
+                for (j, elt) in tab_elt_car.iter().enumerate() {
+                    if elt.aire.bottom < minyc {
                         jmin = j;
-                        minyc = tab_elt_car[j].aire.bottom;
+                        minyc = elt.aire.bottom;
                     }
                 }
                 if minyc == 32767 {
@@ -197,10 +197,8 @@ impl Sapiens {
             if j >= NB_OBJETS_MAX {
                 break;
             }
-            if mont.forme.is_some_and(|id| id.forme().num_mob >= 0) {
-                if self.calc_cart(mont, j) {
-                    j += 1;
-                }
+            if mont.forme.is_some_and(|id| id.forme().num_mob >= 0) && self.calc_cart(mont, j) {
+                j += 1;
             }
         }
         /* affichage */
@@ -223,13 +221,7 @@ impl Sapiens {
                            ChangeZoomCarte
     ***********************************************************************/
     pub(crate) fn ChangeZoomCarte(&mut self, delta: i16) {
-        let mut z = self.sapglob.zoom as i16 + delta;
-        if z > 160 {
-            z = 160;
-        }
-        if z < 16 {
-            z = 16;
-        }
+        let z = (self.sapglob.zoom as i16 + delta).clamp(16, 160);
         self.sapglob.zoom = z as u8;
         self.carte();
     }
@@ -275,12 +267,7 @@ impl Sapiens {
                 let s = self.sapglob.sposy;
                 if s != self.sapglob.dsposy {
                     self.sapglob.zoom = (s / 2 + 30) as u8;
-                    if self.sapglob.zoom < 16 {
-                        self.sapglob.zoom = 16;
-                    }
-                    if self.sapglob.zoom > 160 {
-                        self.sapglob.zoom = 160;
-                    }
+                    self.sapglob.zoom = self.sapglob.zoom.clamp(16, 160);
                     self.sapglob.dsposy = s;
                     self.carte();
                 }

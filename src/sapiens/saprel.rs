@@ -535,7 +535,7 @@ impl Sapiens {
     => Contexte de 1 à ....
     */
     unsafe fn cause(&mut self, context: u16, mess_add: *const i8) {
-        let mut chaine = [0 as i8; 255];
+        let mut chaine = [0; 255];
         unsafe {
             /*y cause ti ?*/
             if self.sapglob.fdialo != 0 {
