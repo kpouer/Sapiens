@@ -558,7 +558,7 @@ pub(crate) fn StringWidth(s: StringPtr) -> i16 {
     with_port(|p| unsafe {
         let len = *s as usize;
         let (fam, bold, size) = fdt_state(p);
-        let mut w: i32 = 0;
+        let mut w = 0;
         for i in 0..len {
             w += get_glyph(fam, bold, size, decode(*s.add(1 + i))).advance as i32;
         }
