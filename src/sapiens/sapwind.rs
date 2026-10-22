@@ -14,6 +14,7 @@ use crate::acam::{
     GetNewMBar, NewCWindow, ParamText, PenNormal, PtoCstr, Random, SetCursor, SetMenuBar,
     SetWTitle, TickCount, VRAI,
 };
+use crate::audio;
 use crate::cbridge::{
     DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, ctrlItem,
     everyEvent, geneva, helvetica, optionKey, radCtrl, strcpy, strlen, userItem, watchCursor,
@@ -34,14 +35,14 @@ use crate::shared::{
     TEHandle,
 };
 use crate::stubs::{
-    AddResMenu, ArreteMusique, BeginUpdate, CarboniseAdapteStaticText,
-    CarboniseGetDialogTextEditHandle, CarboniseGetMenuBarHeight, CarboniseInvalRect,
-    CarboniseNewUserItemProc, CarboniseSetPortDialog, CarboniseValideUpdate,
-    DisposeRoutineDescriptor, DragWindow, DrawPicture, EndUpdate, FindWindow, FrontWindow,
-    GetCtlValue, GetDItem, GetDialogItem, GetNewDialog, GetNextEvent, GetPicture, GetResource,
-    HLock, HUnlock, HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc,
-    PopPath, PushPath, ReleaseResource, SelectWindow, SetCtlValue, SetDialogDefaultItem,
-    SetDialogItem, SizeWindow, SystemClick, SystemTask,
+    AddResMenu, BeginUpdate, CarboniseAdapteStaticText, CarboniseGetDialogTextEditHandle,
+    CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseNewUserItemProc,
+    CarboniseSetPortDialog, CarboniseValideUpdate, DisposeRoutineDescriptor, DragWindow,
+    DrawPicture, EndUpdate, FindWindow, FrontWindow, GetCtlValue, GetDItem, GetDialogItem,
+    GetNewDialog, GetNextEvent, GetPicture, GetResource, HLock, HUnlock, HiliteMenu,
+    InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc, PopPath, PushPath,
+    ReleaseResource, SelectWindow, SetCtlValue, SetDialogDefaultItem, SetDialogItem, SizeWindow,
+    SystemClick, SystemTask,
 };
 use crate::text::{
     DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize, pstr_to_string,
@@ -1260,6 +1261,6 @@ impl SapWind {
                         SapiensExit
 ********************************************************************/
 pub(crate) fn SapiensExit(code: i32) {
-    ArreteMusique(true);
+    audio::stop_music();
     exit(code);
 }

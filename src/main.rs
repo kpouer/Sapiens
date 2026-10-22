@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 pub(crate) mod acam;
+mod audio;
 pub(crate) mod cbridge;
 mod dialogs;
 mod exchange;
@@ -68,6 +69,8 @@ fn main() {
     // au C avant que le thread jeu ne démarre.
     let lang_mode = initial_lang_mode();
     set_game_language(effective_lang(lang_mode));
+
+    audio::init();
 
     // Compteur 11 ms pour sapiensTimer (SAPWCLAV.C).
     let sapiens_timer = Arc::new(AtomicU64::new(0));

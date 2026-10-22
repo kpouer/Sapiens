@@ -9,15 +9,12 @@
 // Muse1 (musique 1, 1098 octets) et muse2 (musique 2, 1736 octets), avec
 // respectivement les voies dvoie1-3 et dvoie21-23 decrivant la structure des
 // boucles : {repetitions, position, base de sequence, instrument par defaut}.
-// Ces tableaux ne sont plus references par le code compile : l'unique
-// consommateur (Sources/SAPWMUS.C) est deja porte en Rust dans
-// src/sapiens/sapwmus.rs, ou le chemin OLD_VERSION (commente) les utilisait.
-// Ils demeurent disponibles pour un eventuel portage de ce chemin.
+// Ils sont lus par le sequenceur de src/audio/music.rs (port du chemin
+// OLD_VERSION de Sources/SAPWMUS.C).
 
 /*
  MUSIQUE 1 & 2 : SAPIENS
 */
-#![allow(dead_code)]
 pub(crate) static muse1: [u8; 1098] = [
     0x80, 0x00, 0x06, 0xFF, 0x84, 0x91, 0x06, 0x30, 0x18, 0x37, 0x18, 0x30, 0x0C, 0x30, 0x0C, 0x37,
     0x0C, 0x37, 0x0C, 0xFF, 0x88, 0x00, 0x0C, 0x45, 0x0C, 0x45, 0x0C, 0x43, 0x06, 0x45, 0x12, 0x00,
