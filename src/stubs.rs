@@ -159,8 +159,7 @@ pub(crate) extern "C" fn GetNewDialog(
 ) -> DialogPtr {
     std::ptr::null_mut()
 }
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetDItem(
+pub(crate) fn GetDItem(
     _dialog: DialogPtr,
     _itemNo: i16,
     _itemType: *mut i16,
@@ -168,8 +167,7 @@ pub(crate) extern "C" fn GetDItem(
     _box: *mut Rect,
 ) {
 }
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetDialogItem(
+pub(crate) fn GetDialogItem(
     _dialog: DialogPtr,
     _itemNo: i16,
     _itemType: *mut i16,
@@ -194,13 +192,6 @@ pub(crate) extern "C" fn SetDItem(
     _item: Handle,
     _box: *mut Rect,
 ) {
-}
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn Alert(_alertID: i16, _filter: *mut c_void) -> i16 {
-    0
-}
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn ParamText(_p1: StringPtr, _p2: StringPtr, _p3: StringPtr, _p4: StringPtr) {
 }
 #[unsafe(no_mangle)]
 pub(crate) extern "C" fn SetDialogDefaultItem(_dialog: DialogPtr, _item: i16) {}
@@ -463,26 +454,6 @@ pub(crate) extern "C" fn GetNomCheminCourant(_path: *mut i8) {}
 // ---------------------------------------------------------------------------
 // Boites de dialogue fichiers
 // ---------------------------------------------------------------------------
-
-pub(crate) fn SFGetFile(
-    _where: Point,
-    _prompt: Option<&str>,
-    _fileFilter: *mut c_void,
-    _numTypes: i16,
-    _typeList: *mut c_void,
-    _dlgHook: *mut c_void,
-    _reply: *mut SFReply,
-) {
-}
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SFPutFile(
-    _where: Point,
-    _prompt: StringPtr,
-    _origName: StringPtr,
-    _dlgHook: *mut c_void,
-    _reply: *mut SFReply,
-) {
-}
 
 // ---------------------------------------------------------------------------
 // Saisie de texte (TextEdit) / Coeur dialogues

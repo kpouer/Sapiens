@@ -9,9 +9,10 @@ use std::process::exit;
 
 use crate::Sapiens;
 use crate::acam::{
-    BackColor, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle, DrawMenuBar,
-    EnableItem, FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar,
-    NewCWindow, PenNormal, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI,
+    Alert, BackColor, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle,
+    DrawMenuBar, EnableItem, FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle,
+    GetNewMBar, NewCWindow, ParamText, PenNormal, PtoCstr, Random, SetCursor, SetMenuBar,
+    SetWTitle, TickCount, VRAI,
 };
 use crate::cbridge::{
     DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, ctrlItem,
@@ -33,13 +34,13 @@ use crate::shared::{
     TEHandle,
 };
 use crate::stubs::{
-    AddResMenu, Alert, ArreteMusique, BeginUpdate, CarboniseAdapteStaticText,
+    AddResMenu, ArreteMusique, BeginUpdate, CarboniseAdapteStaticText,
     CarboniseGetDialogTextEditHandle, CarboniseGetMenuBarHeight, CarboniseInvalRect,
     CarboniseNewUserItemProc, CarboniseSetPortDialog, CarboniseValideUpdate,
     DisposeRoutineDescriptor, DragWindow, DrawPicture, EndUpdate, FindWindow, FrontWindow,
     GetCtlValue, GetDItem, GetDialogItem, GetNewDialog, GetNextEvent, GetPicture, GetResource,
     HLock, HUnlock, HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc,
-    ParamText, PopPath, PushPath, ReleaseResource, SelectWindow, SetCtlValue, SetDialogDefaultItem,
+    PopPath, PushPath, ReleaseResource, SelectWindow, SetCtlValue, SetDialogDefaultItem,
     SetDialogItem, SizeWindow, SystemClick, SystemTask,
 };
 use crate::text::{
@@ -227,9 +228,9 @@ pub(crate) fn MessInit(_format: *mut i8) {}
 => Fixe une valeur VRAI ou FAUX dans un bouton
 **********************************************************************************/
 pub(crate) fn SetValBouton(dialog: DialogPtr, itemHit: i16, value: Boolean) -> i16 {
-    let mut itemType: i16 = 0;
+    let mut itemType = 0;
     let mut control: Handle = core::ptr::null_mut();
-    let mut box_: Rect = Rect::default();
+    let mut box_ = Rect::default();
 
     /* C'est un texte ??? */
     GetDItem(
@@ -925,8 +926,7 @@ unsafe fn SetFontDialog(dialog: DialogPtr, font: i16, taille: i16) {
 /*******************************************************************
                         OuvreDialogue
 ********************************************************************/
-#[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn OuvreDialogue(numDitl: i16) -> DialogPtr {
+pub(crate) fn OuvreDialogue(numDitl: i16) -> DialogPtr {
     unsafe {
         let dialog: DialogPtr = GetNewDialog(numDitl, core::ptr::null_mut(), -1isize as WindowPtr);
         if !dialog.is_null() {

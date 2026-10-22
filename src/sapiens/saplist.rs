@@ -6,18 +6,16 @@
 #![allow(non_snake_case)]
 
 use crate::acam::{FAUX, TickCount, VRAI};
-use crate::cbridge::strcat;
-use crate::langue::Langue::{ES, FR};
 use crate::langue::langue;
 use crate::port;
 use crate::sapiens::sapglob::{
     ListeId, SapId, Sapglob, tccol, tclin, tcncol, tcnlin, tcolcdr, tposcur,
 };
-use crate::sapiens::sapwbrt::{AffichePictDansAire, SetPathInData, SwapCouleur};
+use crate::sapiens::sapwbrt::{AffichePictDansAire, SwapCouleur};
 use crate::sapiens::sapwind::{cadreg, hires};
 use crate::sapiens::{ECHELLE, Vue, geminterv, gemnbrecad};
 use crate::shared::{Ptr, Rect};
-use crate::stubs::{GetMouse, GetNomCheminCourant, OpenDocument, PopPath, PushPath};
+use crate::stubs::GetMouse;
 use crate::{DOWN, INCONNU, MOB_CADRE, SELECT, Sapiens, UP};
 use log::warn;
 use std::cell::RefCell;
@@ -1040,23 +1038,9 @@ impl Sapiens {
                             D032AYDE
     ***********************************************************************/
     pub(crate) fn DoAide(&self) {
-        let mut chaine: [i8; 255] = [0; 255];
-        PushPath();
-        SetPathInData(&self.sapgest, c"docs".as_ptr() as *mut i8);
-        GetNomCheminCourant(chaine.as_mut_ptr());
-        unsafe {
-            if langue() == FR {
-                strcat(chaine.as_mut_ptr(), c"sapiens_fr.html".as_ptr());
-            } else if langue() == ES {
-                strcat(chaine.as_mut_ptr(), c"sapiens_es.html".as_ptr());
-            } else {
-                strcat(chaine.as_mut_ptr(), c"sapiens_gb.html".as_ptr());
-            }
-        }
-        if OpenDocument(chaine.as_mut_ptr()) != 0 {
+        if !crate::dialogs::open_manual(langue()) {
             self.Collapse("Can't open manual.");
         }
-        PopPath();
     }
 
     /***********************************************************************
@@ -1163,9 +1147,9 @@ impl Sapiens {
         self.initprim(); /*inits primaires*/
         //Final();
         //	DEF3D();
-        self.clavm();
-        self.action();
         loop {
+            self.clavm();
+            self.action();
             if self.sapglob.flcomb > 0 {
                 self.TraiteVueLaterale();
             }

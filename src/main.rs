@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 pub(crate) mod acam;
 pub(crate) mod cbridge;
+mod dialogs;
 mod exchange;
 pub(crate) mod langue;
 pub(crate) mod port;
@@ -17,8 +18,10 @@ pub(crate) mod stubs;
 pub(crate) mod text;
 
 use crate::acam::Random;
+use crate::dialogs::PreferencesState;
 use crate::exchange::{
-    CursorShape, INPUT, cursor_hidden, cursor_shape, set_menu_command, take_title,
+    AlertRequest, CursorShape, INPUT, UiRequest, UiResponse, cursor_hidden, cursor_shape,
+    set_menu_command, take_title, take_ui_request,
 };
 use crate::langue::{
     LangMode, Langue, effective_lang, langue, load_lang_mode, save_lang_mode, set_game_language,
@@ -44,6 +47,7 @@ use crate::sapiens::sapwmus::Sapwmus;
 use eframe::egui;
 use egui::CursorIcon;
 use shared::{SapPort, WINDOW_PORT, lut_rgb};
+use std::sync::mpsc::Sender;
 
 fn main() {
     // Le code C ouvre les fichiers relatifs (data/mobs/*.BRT) dans le répertoire
@@ -189,6 +193,19 @@ struct SapiensApp {
     tex: Option<egui::TextureHandle>,
     dump: Option<PortDumper>,
     lang_mode: LangMode,
+    last_save_dir: Option<std::path::PathBuf>,
+    active_dialog: Option<ActiveDialog>,
+}
+
+enum ActiveDialog {
+    Alert {
+        request: AlertRequest,
+        reply: Option<Sender<UiResponse>>,
+    },
+    Preferences {
+        state: PreferencesState,
+        reply: Option<Sender<UiResponse>>,
+    },
 }
 
 impl SapiensApp {
@@ -197,6 +214,104 @@ impl SapiensApp {
             tex: None,
             dump: PortDumper::from_env(),
             lang_mode,
+            last_save_dir: None,
+            active_dialog: None,
+        }
+    }
+
+    /// Traite une requête déposée par le thread C. Les boîtes de fichiers
+    /// (`rfd`) sont ouvertes tout de suite ; alertes et préférences passent par
+    /// une fenêtre egui modale rendue en fin de frame.
+    fn dispatch_ui_request(&mut self) {
+        if self.active_dialog.is_some() {
+            return;
+        }
+        let Some((request, reply)) = take_ui_request() else {
+            return;
+        };
+        let lang = langue();
+        match request {
+            UiRequest::OpenFile(request) => {
+                let path = dialogs::pick_open_file(&mut self.last_save_dir, &request, lang);
+                let _ = reply.send(UiResponse::File(path));
+            }
+            UiRequest::SaveFile(request) => {
+                let path = dialogs::pick_save_file(&mut self.last_save_dir, &request, lang);
+                let _ = reply.send(UiResponse::File(path));
+            }
+            UiRequest::Alert(request) => {
+                self.active_dialog = Some(ActiveDialog::Alert {
+                    request,
+                    reply: Some(reply),
+                });
+            }
+            UiRequest::Preferences(request) => {
+                self.active_dialog = Some(ActiveDialog::Preferences {
+                    state: PreferencesState::from_request(request, self.lang_mode),
+                    reply: Some(reply),
+                });
+            }
+        }
+    }
+
+    fn render_dialogs(&mut self, ctx: &egui::Context) {
+        let lang = langue();
+        let mut response: Option<UiResponse> = None;
+
+        if let Some(dialog) = self.active_dialog.as_mut() {
+            match dialog {
+                ActiveDialog::Alert { request, .. } => {
+                    let spec = dialogs::alert_spec(request, lang);
+                    let modal = egui::Modal::new(egui::Id::new("sapiens_alert")).show(ctx, |ui| {
+                        ui.set_min_width(360.0);
+                        dialogs::render_alert(ui, &spec)
+                    });
+                    if let Some(item) = modal
+                        .inner
+                        .or_else(|| modal.should_close().then_some(spec.dismiss))
+                    {
+                        response = Some(UiResponse::Alert(item));
+                    }
+                }
+                ActiveDialog::Preferences { state, .. } => {
+                    let modal =
+                        egui::Modal::new(egui::Id::new("sapiens_preferences")).show(ctx, |ui| {
+                            ui.set_min_width(420.0);
+                            dialogs::render_preferences(ui, state, lang)
+                        });
+                    let should_close = modal.should_close();
+                    if let Some(outcome) = modal
+                        .inner
+                        .or_else(|| should_close.then_some(dialogs::PreferencesOutcome::Cancel))
+                    {
+                        match outcome {
+                            dialogs::PreferencesOutcome::Ok(result) => {
+                                if result.lang_mode != self.lang_mode {
+                                    self.lang_mode = result.lang_mode;
+                                    set_game_language(effective_lang(result.lang_mode));
+                                    save_lang_mode(result.lang_mode);
+                                }
+                                response = Some(UiResponse::Preferences(Some(result)));
+                            }
+                            dialogs::PreferencesOutcome::Cancel => {
+                                response = Some(UiResponse::Preferences(None));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Some(response) = response {
+            if let Some(mut dialog) = self.active_dialog.take() {
+                let reply = match &mut dialog {
+                    ActiveDialog::Alert { reply, .. } => reply,
+                    ActiveDialog::Preferences { reply, .. } => reply,
+                };
+                if let Some(reply) = reply.take() {
+                    let _ = reply.send(response);
+                }
+            }
         }
     }
 }
@@ -224,6 +339,8 @@ impl eframe::App for SapiensApp {
         if let Some(title) = take_title() {
             ctx.send_viewport_cmd(egui::ViewportCommand::Title(title));
         }
+        // Requête bloquante du thread C (alerte, fichier, préférences).
+        self.dispatch_ui_request();
         // Le Rust est autoritaire sur la langue : on réimpose la sélection
         // (un `Sapiens.cfg` chargé par ChargePref pourrait la remettre en
         // cause au démarrage).
@@ -233,7 +350,9 @@ impl eframe::App for SapiensApp {
         }
 
         // Raccourcis clavier (équivalents MenuKey) avant la barre de menus.
-        handle_shortcuts(ctx);
+        if self.active_dialog.is_none() {
+            handle_shortcuts(ctx);
+        }
 
         // Barre de menus Mac reconstituée (modèle → src/acam.rs).
         let menus = acam::menus_snapshot();
@@ -276,8 +395,10 @@ impl eframe::App for SapiensApp {
                 }
             });
         });
-        if let Some(r) = command {
-            set_menu_command(r);
+        if self.active_dialog.is_none() {
+            if let Some(r) = command {
+                set_menu_command(r);
+            }
         }
 
         record_input(ctx);
@@ -295,23 +416,24 @@ impl eframe::App for SapiensApp {
                     });
                 });
             ctx.request_repaint_after(std::time::Duration::from_millis(10));
-            return;
-        }
+        } else {
+            let img = port_image(window);
+            if let Some(d) = &mut self.dump {
+                d.tick(window);
+            }
+            // Ré-upload à chaque frame (remplace la texture du même nom).
+            self.tex = Some(ctx.load_texture("sapiens", img, egui::TextureOptions::NEAREST));
 
-        let img = port_image(window);
-        if let Some(d) = &mut self.dump {
-            d.tick(window);
-        }
-        // Ré-upload à chaque frame (remplace la texture du même nom).
-        self.tex = Some(ctx.load_texture("sapiens", img, egui::TextureOptions::NEAREST));
-
-        egui::CentralPanel::default()
-            .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
-            .show(ctx, |ui| {
-                ui.centered_and_justified(|ui| {
-                    ui.add(egui::Image::new(self.tex.as_ref().unwrap()));
+            egui::CentralPanel::default()
+                .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
+                .show(ctx, |ui| {
+                    ui.centered_and_justified(|ui| {
+                        ui.add(egui::Image::new(self.tex.as_ref().unwrap()));
+                    });
                 });
-            });
+        }
+
+        self.render_dialogs(ctx);
         // Rafraîchissement permanent (boucle de jeu C).
         ctx.request_repaint();
     }

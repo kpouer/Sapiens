@@ -10,11 +10,14 @@
 //!   menus) restent chez l'émulation concernée et sont exposés par snapshot
 //!   (`acam.rs`).
 
+use crate::langue::LangMode;
 use crate::shared::KeyMap;
 use log::{error, info};
 use std::fmt::Display;
+use std::path::PathBuf;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU8, Ordering};
+use std::sync::mpsc::{Receiver, Sender, channel};
 // ---------------------------------------------------------------------------
 // Curseur (thread C → egui)
 // ---------------------------------------------------------------------------
@@ -118,7 +121,8 @@ pub(crate) fn set_menu_command(menu_result: i32) {
 
 /// Reprise et remise a zero de la commande en attente (cote thread C).
 pub(crate) fn take_menu_command() -> Option<i32> {
-    MENU_COMMAND.swap(0, Ordering::SeqCst).into()
+    let command = MENU_COMMAND.swap(0, Ordering::SeqCst);
+    (command != 0).then_some(command)
 }
 
 // ---------------------------------------------------------------------------
@@ -144,3 +148,133 @@ pub(crate) static INPUT: Mutex<InputState> = Mutex::new(InputState {
     button: false,
     keymap: [0; 4],
 });
+
+// ---------------------------------------------------------------------------
+// Dialogues modaux (thread C → egui → thread C)
+// ---------------------------------------------------------------------------
+//
+// Les appels Toolbox `Alert`, les préférences et les boîtes de choix de
+// fichiers sont bloquants dans le code d'origine. Le thread C dépose donc une
+// requête, puis attend la réponse ; egui (seul à pouvoir ouvrir `rfd` et une
+// fenêtre modale) la traite dans `update()` et renvoie le résultat.
+
+#[derive(Clone)]
+pub(crate) struct AlertRequest {
+    pub(crate) alert_id: i16,
+    pub(crate) params: [String; 4],
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct PreferencesRequest {
+    pub(crate) is_bruitages: bool,
+    pub(crate) music: bool,
+    pub(crate) lissage_police: bool,
+    pub(crate) mode_joueur2: i16,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct PreferencesResult {
+    pub(crate) is_bruitages: bool,
+    pub(crate) music: bool,
+    pub(crate) lissage_police: bool,
+    pub(crate) mode_joueur2: i16,
+    pub(crate) lang_mode: LangMode,
+}
+
+#[derive(Clone)]
+pub(crate) struct FileRequest {
+    pub(crate) extension: String,
+    pub(crate) default_name: String,
+}
+
+pub(crate) enum UiRequest {
+    Alert(AlertRequest),
+    Preferences(PreferencesRequest),
+    OpenFile(FileRequest),
+    SaveFile(FileRequest),
+}
+
+pub(crate) enum UiResponse {
+    Alert(i16),
+    Preferences(Option<PreferencesResult>),
+    File(Option<PathBuf>),
+}
+
+struct PendingRequest {
+    request: UiRequest,
+    reply: Sender<UiResponse>,
+}
+
+static PENDING_REQUEST: Mutex<Option<PendingRequest>> = Mutex::new(None);
+
+fn request(request: UiRequest) -> Receiver<UiResponse> {
+    let (tx, rx) = channel();
+    let mut pending = PENDING_REQUEST.lock().unwrap();
+    if pending.is_some() {
+        error!("une requête d'interface était déjà en attente");
+    }
+    *pending = Some(PendingRequest { request, reply: tx });
+    rx
+}
+
+/// Reprise de la requête en attente par egui. La réponse doit être envoyée sur
+/// le canal retourné, sinon le thread C reste bloqué.
+pub(crate) fn take_ui_request() -> Option<(UiRequest, Sender<UiResponse>)> {
+    PENDING_REQUEST
+        .lock()
+        .unwrap()
+        .take()
+        .map(|p| (p.request, p.reply))
+}
+
+/// Affiche une alerte et attend l'item de bouton choisi (thread C).
+pub(crate) fn request_alert(alert_id: i16, params: [String; 4]) -> i16 {
+    match request(UiRequest::Alert(AlertRequest { alert_id, params }))
+        .recv()
+        .unwrap_or(UiResponse::Alert(0))
+    {
+        UiResponse::Alert(item) => item,
+        _ => 0,
+    }
+}
+
+/// Affiche la boîte de préférences (thread C). `None` = annulation.
+pub(crate) fn request_preferences(initial: PreferencesRequest) -> Option<PreferencesResult> {
+    match request(UiRequest::Preferences(initial))
+        .recv()
+        .unwrap_or(UiResponse::Preferences(None))
+    {
+        UiResponse::Preferences(result) => result,
+        _ => None,
+    }
+}
+
+/// Demande un fichier à charger (thread C).
+pub(crate) fn request_open_file(extension: &str, default_name: &str) -> Option<PathBuf> {
+    let req = FileRequest {
+        extension: extension.to_string(),
+        default_name: default_name.to_string(),
+    };
+    match request(UiRequest::OpenFile(req))
+        .recv()
+        .unwrap_or(UiResponse::File(None))
+    {
+        UiResponse::File(path) => path,
+        _ => None,
+    }
+}
+
+/// Demande un nom de fichier pour sauvegarder (thread C).
+pub(crate) fn request_save_file(extension: &str, default_name: &str) -> Option<PathBuf> {
+    let req = FileRequest {
+        extension: extension.to_string(),
+        default_name: default_name.to_string(),
+    };
+    match request(UiRequest::SaveFile(req))
+        .recv()
+        .unwrap_or(UiResponse::File(None))
+    {
+        UiResponse::File(path) => path,
+        _ => None,
+    }
+}

@@ -5,14 +5,9 @@
                            D G le 30 Janvier 1987
 ***********************************************************************/
 use crate::Sapiens;
-use crate::acam::{
-    CtoPstr, DisposPtr, FAUX, ForeColor, Line, MoveTo, PtoCstr, RGBForeColor, TickCount, VRAI,
-};
-use crate::cbridge::{
-    CInfoPBRec, blackColor, fclose, fopen, getc, putc, remove, strcpy, stricmp, strlen,
-};
-use crate::langue::Langue::{ES, FR};
-use crate::langue::langue;
+use crate::acam::{DisposPtr, FAUX, ForeColor, Line, MoveTo, RGBForeColor, TickCount, VRAI};
+use crate::cbridge::{blackColor, fclose, fopen, getc, putc};
+use crate::exchange::{request_open_file, request_save_file};
 use crate::port;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapglob::{ListeId, SapId, tenerv};
@@ -23,12 +18,10 @@ use crate::sapiens::{
     ECHELLE, FormeVue, NB_ARBRES_MAX, NB_MAX_HERBE_AV_PLAN, NB_NUAGES_MAX, NB_OISEAUX_MAX,
     NB_ROCHERS_MAX, PRECISION_SILEX, Vue,
 };
-use crate::shared::{Boolean, Point, RGBColor, Rect, SFReply, StringPtr};
-use crate::stubs::{
-    CarboniseInvalRect, DisposeRoutineDescriptor, PreservePath, RestorePath, SFGetFile, SFPutFile,
-    SaisitChemin, SetPathApplication, SetVol, qd,
-};
-use std::os::raw::c_void;
+use crate::shared::{Boolean, Point, RGBColor, Rect};
+use crate::stubs::{CarboniseInvalRect, SaisitChemin, SetPathApplication};
+use std::ffi::CString;
+use std::path::{Path, PathBuf};
 use std::ptr::null_mut;
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
@@ -59,10 +52,8 @@ static formonde: [u8; 100] = [
 pub(crate) struct Sapgest {
     forsyl: *const u8,
     palSilex: [u16; 8],
-    /* Nom du dernier fichier d'aventure propose a la sauvegarde */
-    nom_sauve: [i8; 255],
-    /* Extension courante du filtre de selection de fichiers (ex-`ExtensionCmp`) */
-    extension_cmp: Option<&'static str>,
+    /* Dernier fichier d'aventure charge ou sauve (nom par defaut du dialogue) */
+    dernier_fichier: Option<PathBuf>,
     /* Volume et repertoire de l'application (ex-globals SAPIENS.H) */
     pub(crate) PathApplication: i64,
     pub(crate) volumeApplication: i16,
@@ -73,8 +64,7 @@ impl Default for Sapgest {
         Self {
             forsyl: forsy1.as_ptr(),
             palSilex: [0; 8],
-            nom_sauve: [0; 255],
-            extension_cmp: None,
+            dernier_fichier: None,
             PathApplication: 0,
             volumeApplication: 0,
         }
@@ -1540,44 +1530,30 @@ impl Sapiens {
     }
 }
 
-/*********************************************************************
-                           SaisieNomFichierLecture
-Saisi un nom de fichier pour une lecture
-=> Adresse ou rnager le nom,extension avec laquelle filtrer
-<= VRAI si ok
-********************************************************************/
-/*---------------------------------------------------------------
-                Filtre pour la selection des fichiers selon leur extension
----------------------------------------------------------------*/
-extern "C" fn vect_filtre_selon_extension_sapiens(
-    info: *mut CInfoPBRec,
-    extension: *const i8,
-) -> Boolean {
-    let mut nom = [0 as i8; 80];
-    let mut i: usize = 0;
+fn chemin_c(path: &Path) -> Option<CString> {
+    CString::new(path.as_os_str().as_encoded_bytes()).ok()
+}
 
-    unsafe {
-        /* BlockMove((char *) info->hFileInfo.ioNamePtr, nom, 79) */
-        let src = (*info).hFileInfo.ioNamePtr as *const i8;
-        let mut j: usize = 0;
-        while j < 79 {
-            nom[j] = *src.add(j);
-            j += 1;
-        }
-        PtoCstr(nom.as_mut_ptr() as StringPtr);
-        while nom[i] != 0 {
-            if nom[i] == b'.' as i8 {
-                i += 1;
-                if stricmp(nom.as_mut_ptr().add(i), extension) == 0 {
-                    return false;
-                } else {
-                    return true;
-                }
-            }
-            i += 1;
-        }
-    }
-    true
+fn nom_joueur(sapiens: &Sapiens) -> String {
+    let bytes: Vec<u8> = sapiens
+        .saptxt
+        .nomjoueur
+        .iter()
+        .map(|b| *b as u8)
+        .take_while(|b| *b != 0)
+        .collect();
+    String::from_utf8_lossy(&bytes).into_owned()
+}
+
+fn nom_defaut_sauvegarde(sapiens: &Sapiens) -> String {
+    sapiens
+        .sapgest
+        .dernier_fichier
+        .as_ref()
+        .and_then(|p| p.file_stem())
+        .map(|n| n.to_string_lossy().into_owned())
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| nom_joueur(sapiens))
 }
 
 impl Sapiens {
@@ -1595,136 +1571,6 @@ impl Sapiens {
     }
 }
 
-/*****************************************************************************
-                   AJOUTE_EXTENSION
-=> Nom du fichier, Extension du fichier
-*****************************************************************************/
-fn ajoute_extension(mut nom: *mut i8, mut ext: *const i8) {
-    unsafe {
-        while *nom != 0 && *nom != b'.' as i8 {
-            nom = nom.add(1);
-        }
-
-        *nom = b'.' as i8;
-        nom = nom.add(1);
-        *nom = *ext;
-        ext = ext.add(1);
-        nom = nom.add(1);
-        *nom = *ext;
-        ext = ext.add(1);
-        nom = nom.add(1);
-        *nom = *ext;
-        nom = nom.add(1);
-        *nom = 0;
-    }
-}
-
-/*********************************************************************
-                         SaisieNomFichierLecture
-Saisi un nom de fichier pour une lecture
-=> Adresse ou ranger le nom,extension avec laquelle filtrer
-<= VRAI si ok
-***********************************************************************/
-impl Sapiens {
-    fn SaisieNomFichierLecture(&mut self, nom: *mut i8, extension: &'static str) -> Boolean {
-        let mut reply = SFReply {
-            good: false,
-            vRefNum: 0,
-            fType: 0,
-            fName: [0; 64],
-        };
-
-        let point = Point::new(
-            (qd.screenBits.bounds.bottom - 200) / 2,
-            (qd.screenBits.bounds.right - 348) / 2,
-        );
-        unsafe {
-            if !extension.is_empty() {
-                self.sapgest.extension_cmp = Some(extension);
-                let chaine = format!("Chargement du fichier :|*.{extension}|*.{extension}");
-                let vect_filtre = vect_filtre_selon_extension_sapiens as *mut c_void;
-                SFGetFile(
-                    point,
-                    Some(&chaine),
-                    vect_filtre,
-                    -1,
-                    null_mut(),
-                    null_mut(),
-                    &mut reply,
-                );
-                DisposeRoutineDescriptor(vect_filtre);
-            } else {
-                SFGetFile(
-                    point,
-                    None,
-                    null_mut(),
-                    -1,
-                    null_mut(),
-                    null_mut(),
-                    &mut reply,
-                );
-            }
-
-            if !reply.good {
-                return false;
-            }
-            SetVol(null_mut(), reply.vRefNum);
-            PtoCstr(reply.fName.as_mut_ptr() as *mut u8);
-            strcpy(nom, reply.fName.as_ptr());
-            VRAI
-        }
-    }
-}
-
-/*********************************************************************
-                         SaisieNomFichierAventureEcriture
-Saisi un nom de fichier pour une ecriture
-=> Prompt,nom,format ou 0 si aucun
-   si protect == NULL aucune saisie n'est faite
-<= Format du fichier ou 0 si aucun
-********************************************************************/
-fn SaisieNomFichierAventureEcriture(nom: *mut i8) -> Boolean {
-    let mut reply = SFReply {
-        good: false,
-        vRefNum: 0,
-        fType: 0,
-        fName: [0; 64],
-    };
-    let mut chaine = [0; 255];
-    let mut titre = [0; 255];
-
-    unsafe {
-        let point = Point::new(
-            ((qd.screenBits.bounds.right - 304) / 2) as i16,
-            ((qd.screenBits.bounds.bottom - 184) / 2) as i16,
-        );
-        strcpy(chaine.as_mut_ptr(), nom);
-        CtoPstr(chaine.as_mut_ptr());
-        if langue() == FR {
-            strcpy(titre.as_mut_ptr(), c"Fichier".as_ptr());
-        } else if langue() == ES {
-            strcpy(titre.as_mut_ptr(), c"Archivo".as_ptr());
-        } else {
-            strcpy(titre.as_mut_ptr(), c"File".as_ptr());
-        }
-        CtoPstr(titre.as_mut_ptr());
-        SFPutFile(
-            point,
-            titre.as_mut_ptr() as StringPtr,
-            chaine.as_mut_ptr() as StringPtr,
-            null_mut(),
-            &mut reply,
-        );
-        if !reply.good {
-            return false;
-        }
-        SetVol(null_mut(), reply.vRefNum);
-        PtoCstr(reply.fName.as_mut_ptr() as *mut u8);
-        strcpy(nom, reply.fName.as_ptr());
-        true
-    }
-}
-
 impl Sapiens {
     /***********************************************************************
                                     SAUVE:
@@ -1738,27 +1584,22 @@ impl Sapiens {
                 return;
             }
 
-            PreservePath();
-            if strlen(&raw const self.sapgest.nom_sauve as *const i8) == 0 {
-                strcpy(
-                    &raw mut self.sapgest.nom_sauve as *mut i8,
-                    &raw const self.saptxt.nomjoueur as *const i8,
-                );
-            }
-            if !SaisieNomFichierAventureEcriture(&raw mut self.sapgest.nom_sauve as *mut i8) {
-                RestorePath();
+            let nom = nom_defaut_sauvegarde(self);
+            let Some(mut chemin) = request_save_file("sap", &nom) else {
                 return;
-            }
-            ajoute_extension(&raw mut self.sapgest.nom_sauve as *mut i8, c"sap".as_ptr());
-            remove(&raw const self.sapgest.nom_sauve as *const i8);
-            let mut fichier = fopen(
-                &raw const self.sapgest.nom_sauve as *const i8,
-                c"wb".as_ptr(),
-            );
+            };
+            chemin.set_extension("sap");
+            let Some(chemin_c) = chemin_c(&chemin) else {
+                self.sapglob.flefba = 0;
+                self.comment(92); /*erreur*/
+                return;
+            };
+            self.sapgest.dernier_fichier = Some(chemin.clone());
+            let _ = std::fs::remove_file(&chemin);
+            let mut fichier = fopen(chemin_c.as_ptr(), c"wb".as_ptr());
             if fichier.is_null() {
                 self.sapglob.flefba = 0;
                 self.comment(92); /*erreur*/
-                RestorePath();
                 return;
             }
             let mut j: usize = 0;
@@ -1783,20 +1624,17 @@ impl Sapiens {
             putc(checksum as i32, fichier);
             self.sap3d.SauveEltsDecorsMobiles(fichier);
             fclose(fichier);
-            fichier = fopen(
-                &raw const self.sapgest.nom_sauve as *const i8,
-                c"rb".as_ptr(),
-            );
-            if getc(fichier) != b'G' as i32 {
+            fichier = fopen(chemin_c.as_ptr(), c"rb".as_ptr());
+            if fichier.is_null() || getc(fichier) != b'G' as i32 {
+                if !fichier.is_null() {
+                    fclose(fichier);
+                }
                 self.sapglob.flefba = 0;
                 self.comment(92); /*erreur*/
-                RestorePath();
                 return;
-            } else {
-                self.sapglob.jour_dsk = self.sapglob.jour_act;
             }
+            self.sapglob.jour_dsk = self.sapglob.jour_act;
             fclose(fichier);
-            RestorePath();
         }
     }
 
@@ -1805,24 +1643,25 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn charge(&mut self) {
         unsafe {
-            let mut nom = [0; 255];
             let mut ptr: *mut u8;
             let mut j: usize;
             let mut checksum: i16 = 111;
 
             self.sapglob.flefba = 0;
 
-            PreservePath();
-            if !self.SaisieNomFichierLecture(nom.as_mut_ptr(), "sap") {
-                RestorePath();
+            let Some(mut chemin) = request_open_file("sap", "") else {
                 return;
-            }
-            ajoute_extension(nom.as_mut_ptr(), c"sap".as_ptr());
-            let fichier = fopen(nom.as_ptr(), c"rb".as_ptr());
+            };
+            chemin.set_extension("sap");
+            let Some(chemin_c) = chemin_c(&chemin) else {
+                self.comment(92);
+                return;
+            };
+            self.sapgest.dernier_fichier = Some(chemin);
+            let fichier = fopen(chemin_c.as_ptr(), c"rb".as_ptr());
             self.sapglob.flefba = 0;
             if fichier.is_null() {
                 self.comment(92);
-                RestorePath();
                 return;
             }
             self.primsap();
@@ -1841,7 +1680,6 @@ impl Sapiens {
                             self.sapglob.flefba = 0;
                             self.comment(92); /*erreur*/
                             fclose(fichier);
-                            RestorePath();
                             return;
                         }
                         checksum = checksum.wrapping_add(car as i16);
@@ -1876,7 +1714,6 @@ impl Sapiens {
             if self.sapglob.scenar == 6 {
                 self.sceveu(6); /* Ouaaais c'est lui !!!!!*/
             }
-            RestorePath();
         }
     }
 

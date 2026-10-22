@@ -12,7 +12,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use crate::cbridge::{MenuHandle, WindowPtr, watchCursor};
-use crate::exchange::{CursorShape, set_cursor_shape, set_title};
+use crate::exchange::{CursorShape, request_alert, set_cursor_shape, set_title};
 use crate::langue::{Langue, langue};
 use crate::port;
 use crate::shared::*;
@@ -309,6 +309,41 @@ pub(crate) fn GetIndString(s: StringPtr, _id: i16, _index: i16) {
     unsafe {
         *s = 0;
     }
+}
+
+// ---------------------------------------------------------------------------
+// Alertes / ParamText
+// ---------------------------------------------------------------------------
+
+static PARAM_TEXT: Mutex<[String; 4]> =
+    Mutex::new([String::new(), String::new(), String::new(), String::new()]);
+
+fn c_string(p: StringPtr) -> String {
+    if p.is_null() {
+        return String::new();
+    }
+    unsafe {
+        std::ffi::CStr::from_ptr(p as *const i8)
+            .to_string_lossy()
+            .into_owned()
+    }
+}
+
+/// Substitution des quatre zones `^0`..`^3` des alertes (Toolbox Mac).
+#[unsafe(no_mangle)]
+pub(crate) extern "C" fn ParamText(p1: StringPtr, p2: StringPtr, p3: StringPtr, p4: StringPtr) {
+    let mut g = PARAM_TEXT.lock().unwrap();
+    g[0] = c_string(p1);
+    g[1] = c_string(p2);
+    g[2] = c_string(p3);
+    g[3] = c_string(p4);
+}
+
+/// Affiche une alerte via egui et attend l'item choisi. Bloquant côté C.
+#[unsafe(no_mangle)]
+pub(crate) extern "C" fn Alert(alert_id: i16, _filter: *mut c_void) -> i16 {
+    let params = PARAM_TEXT.lock().unwrap().clone();
+    request_alert(alert_id, params)
 }
 
 // ---------------------------------------------------------------------------

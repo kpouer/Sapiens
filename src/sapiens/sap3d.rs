@@ -3789,7 +3789,7 @@ impl Sapiens {
                         .wrapping_sub(9)
                 { /* Attente de trame */ }
 
-                if self.sapglob.presence != 0 && self.sapglob.mort != 0 && cont {
+                if self.sapglob.presence != 0 || self.sapglob.mort == 0 || !cont {
                     break;
                 }
             }

@@ -145,16 +145,20 @@ pub(crate) fn effective_lang(mode: LangMode) -> Langue {
 // Persistance (fichier `lang` sous le dossier de configuration utilisateur)
 // ---------------------------------------------------------------------------
 
-fn lang_path() -> std::path::PathBuf {
+/// Dossier de configuration utilisateur (préférences, langue).
+pub(crate) fn config_dir() -> std::path::PathBuf {
     let home = std::env::var("HOME")
         .or_else(|_| std::env::var("USERPROFILE"))
         .unwrap_or_else(|_| ".".to_string());
-    let base = if cfg!(target_os = "macos") {
+    if cfg!(target_os = "macos") {
         std::path::Path::new(&home).join("Library/Application Support/Sapiens")
     } else {
         std::path::Path::new(&home).join(".config/sapiens")
-    };
-    base.join("lang")
+    }
+}
+
+fn lang_path() -> std::path::PathBuf {
+    config_dir().join("lang")
 }
 
 pub(crate) fn load_lang_mode() -> LangMode {
