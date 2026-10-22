@@ -203,7 +203,7 @@ pub(crate) fn CvtDefaultLangRess(id: i16) -> i16 {
 
 impl Sapglob {
     // Choisit les touches « homme », « femme », « oui » selon la langue courante.
-    pub(crate) unsafe fn init_and_check_texts(&mut self) {
+    pub(crate) fn init_and_check_texts(&mut self) {
         match langue() {
             FR => {
                 self.homme = b'H';

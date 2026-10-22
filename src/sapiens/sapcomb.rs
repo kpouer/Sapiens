@@ -9,6 +9,7 @@ Quadra :             10010  20
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 
+use crate::DEBCRANE;
 use crate::DEBTETE;
 use crate::MOB_ANIMAL_MORT;
 use crate::MOB_CHEMIN;
@@ -36,7 +37,6 @@ use crate::sapiens::{
 use crate::shared::{Boolean, Point, Rect};
 use crate::text::TextFont;
 use crate::{DEBBEST, Sapiens};
-use crate::{DEBCRANE, cbridge};
 use std::ffi::CStr;
 use std::ptr::addr_of_mut;
 use std::sync::atomic::Ordering;

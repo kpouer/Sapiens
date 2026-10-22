@@ -13,7 +13,6 @@
 #![allow(non_snake_case)]
 
 use std::collections::HashMap;
-use std::ffi::c_void;
 use std::sync::{Arc, LazyLock, Mutex};
 
 use ab_glyph::{Font as _, FontRef, GlyphId, PxScale, ScaleFont};
@@ -575,7 +574,7 @@ pub(crate) fn TextBox(text: &[u8], boxr: &Rect, just: i16) {
     if boxr.is_empty() {
         return;
     }
-    with_port(|p| unsafe {
+    with_port(|p| {
         let (fam, bold, size) = fdt_state(p);
         // Largeur totale (i32, le texte peut déborder d'un i16).
         let mut total = 0;
