@@ -644,12 +644,14 @@ impl Sapiens {
         let mut i: i16;
 
         /* On calcule les index de couleurs */
-        let _g = port::on(self.sapwind.debecr);
-        i = 0;
-        while i < NB_COUL_SILEX {
-            self.sapgest.palSilex[i as usize] =
-                SapColor2Index(&TAB_COUL_SILEX_RGB[i as usize]) as u16;
-            i += 1;
+        {
+            let _g = port::on(self.sapwind.debecr);
+            i = 0;
+            while i < NB_COUL_SILEX {
+                self.sapgest.palSilex[i as usize] =
+                    SapColor2Index(&TAB_COUL_SILEX_RGB[i as usize]) as u16;
+                i += 1;
+            }
         }
         /* On fixe l'ecart stochastique gauche et droite */
         self.sapgest.forsyl = if regb == 0 {

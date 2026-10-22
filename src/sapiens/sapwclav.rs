@@ -6,7 +6,7 @@ Fixe l'aire dans laquelle il ne faut plus afficher la souris systeme
 **************************************************************************/
 use crate::Sapiens;
 use crate::acam::{
-    CarboniseSetCursorArrow, DiffRgn, DisposeRgn, FAUX, GetClip, NewRgn, RectRgn, SetClip, VRAI,
+    CarboniseSetCursorArrow, DisposeRgn, FAUX, GetClip, NewRgn, RectRgn, SetClip, VRAI,
 };
 use crate::cbridge::{QElemPtr, TMTask};
 use crate::exchange::set_cursor_hidden;
@@ -116,9 +116,11 @@ impl Sapiens {
         );
         /* On copie egalement l'ecran physique sur le buffer de la souris */
         /* On affiche la souris */
-        let _g = port::on(self.sapwind.BuffMouse);
-        let mut r = Rect::default();
-        self.Affmobbrtomb(mob, 0, 0, 4, 4, &raw mut r);
+        {
+            let _g = port::on(self.sapwind.BuffMouse);
+            let mut r = Rect::default();
+            self.Affmobbrtomb(mob, 0, 0, 4, 4, &raw mut r);
+        }
         /* On le recopie sur le reel */
         CopyOffscreen(
             self.sapwind.BuffMouse,
@@ -127,28 +129,77 @@ impl Sapiens {
             &self.sapwclav.rsouris,
         );
         /* On efface la difference (les deux rectangles sont sur l'ecran : ils
-        sont a l'echelle de la fenetre, meme si on dessine sur BuffMouse) */
-        let rgn1 = NewRgn();
-        let rgn2 = NewRgn();
-        let rgnClip = NewRgn();
-        let r1 = port::zoomed(port::window(), &oldRect);
-        let r2 = port::zoomed(port::window(), &self.sapwclav.rsouris);
-        RectRgn(rgn1, &r1);
-        RectRgn(rgn2, &r2);
-        DiffRgn(rgn1, rgn2, rgn1);
-        GetClip(rgnClip);
-        SetClip(rgn1);
-        CopyOffscreen(
-            self.sapwind.debecr,
-            self.sapwind.mainWindow,
-            &oldRect,
-            &oldRect,
-        );
-        SetClip(rgnClip);
-        DisposeRgn(rgnClip);
-        DisposeRgn(rgn1);
-        DisposeRgn(rgn2);
+        sont a l'echelle de la fenetre, meme si on dessine sur BuffMouse).
+        On decompose oldRect - rsouris en rectangles disjoints : une region
+        rectangulaire ne peut pas representer le L obtenu quand les deux se
+        chevauchent, et effacer le rectangle entier recouvrirait le curseur
+        fraichement dessine (clignotement). */
+        {
+            let _g = port::on(self.sapwind.mainWindow);
+            let rgnClip = NewRgn();
+            GetClip(rgnClip);
+            for band in difference_rects(&oldRect, &self.sapwclav.rsouris) {
+                if band.is_empty() {
+                    continue;
+                }
+                let rgn = NewRgn();
+                let z = port::zoomed(port::window(), &band);
+                RectRgn(rgn, &z);
+                SetClip(rgn);
+                CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, &band, &band);
+                DisposeRgn(rgn);
+            }
+            SetClip(rgnClip);
+            DisposeRgn(rgnClip);
+        }
     }
+}
+
+/*************************************************************************
+            difference_rects
+Decoupe `a - b` en rectangles disjoints (au plus 4).
+**************************************************************************/
+fn difference_rects(a: &Rect, b: &Rect) -> [Rect; 4] {
+    let mut out = [Rect::default(); 4];
+    if a.is_empty() {
+        return out;
+    }
+    if b.is_empty() {
+        out[0] = *a;
+        return out;
+    }
+    let mut n = 0;
+    /* Bande du haut, pleine largeur. */
+    let bas = a.bottom.min(b.top);
+    if a.top < bas {
+        out[n] = Rect::new(a.left, a.top, a.right, bas);
+        n += 1;
+    }
+    /* Bande du bas, pleine largeur. */
+    let haut = a.top.max(b.bottom);
+    if haut < a.bottom {
+        out[n] = Rect::new(a.left, haut, a.right, a.bottom);
+        n += 1;
+    }
+    /* Bande verticale restante, de part et d'autre de b. */
+    let vt = a.top.max(b.top);
+    let vb = a.bottom.min(b.bottom);
+    if vt < vb {
+        if a.left < b.left {
+            let r = Rect::new(a.left, vt, a.right.min(b.left), vb);
+            if !r.is_empty() {
+                out[n] = r;
+                n += 1;
+            }
+        }
+        if b.right < a.right {
+            let r = Rect::new(a.left.max(b.right), vt, a.right, vb);
+            if !r.is_empty() {
+                out[n] = r;
+            }
+        }
+    }
+    out
 }
 
 /*********************************************************************
@@ -444,5 +495,52 @@ impl Sapiens {
     **************************************************************************/
     pub(crate) const fn FixeAireNoMouseAireBasse(&mut self) {
         self.FixeAireNoMouse(rBasse);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::difference_rects;
+    use crate::shared::Rect;
+
+    fn area(r: &Rect) -> i32 {
+        if r.is_empty() {
+            0
+        } else {
+            (r.right as i32 - r.left as i32) * (r.bottom as i32 - r.top as i32)
+        }
+    }
+
+    fn aire_diff(a: &Rect, b: &Rect) -> i32 {
+        difference_rects(a, b).iter().map(area).sum()
+    }
+
+    #[test]
+    fn chevauchement_diagonal() {
+        let a = Rect::new(10, 10, 20, 20);
+        let b = Rect::new(14, 14, 24, 24);
+        let parts = difference_rects(&a, &b);
+        assert_eq!(aire_diff(&a, &b), 100 - 36);
+        for p in &parts {
+            assert!(p.intersect(&b).is_empty());
+        }
+    }
+
+    #[test]
+    fn b_inclus_dans_a() {
+        let a = Rect::new(0, 0, 10, 10);
+        let b = Rect::new(2, 2, 8, 8);
+        let parts = difference_rects(&a, &b);
+        assert_eq!(aire_diff(&a, &b), 100 - 36);
+        for p in &parts {
+            assert!(p.intersect(&b).is_empty());
+        }
+    }
+
+    #[test]
+    fn sans_chevauchement_ou_a_inclus() {
+        let a = Rect::new(0, 0, 10, 10);
+        assert_eq!(aire_diff(&a, &Rect::new(20, 20, 30, 30)), 100);
+        assert_eq!(aire_diff(&a, &Rect::new(-5, -5, 15, 15)), 0);
     }
 }
