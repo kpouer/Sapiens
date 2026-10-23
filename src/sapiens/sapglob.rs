@@ -200,7 +200,7 @@ pub(crate) struct Sapglob {
     pub(crate) tstdlist: [ListeId; 9], /* &liste0..&liste8, initialise par init_glob */
     /*Variables Globales*/
     pub(crate) distsp: i16,
-    pub(crate) presence: i16,
+    pub(crate) presence: i16, // bool ?
     pub(crate) fin: u8,
     pub(crate) sensmob: u8,
     pub(crate) ptranim: Option<AnimPtr>,
@@ -836,7 +836,7 @@ impl Default for Sapglob {
                 posccoeur: 5, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: None,            /* &sap1, remis dans init_glob */
+                adversaire: SapId::Sap1,     /* &sap1, remis dans init_glob */
                 possession: ListeId::Liste1, /* &liste1, remis dans init_glob */
             },
             sap2: sap {
@@ -869,7 +869,7 @@ impl Default for Sapglob {
                 posccoeur: 296, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: None,            /* &sap2, remis dans init_glob */
+                adversaire: SapId::Sap2,     /* &sap2, remis dans init_glob */
                 possession: ListeId::Liste1, /* &list10, remis dans init_glob */
             },
             sap3: sap {
@@ -902,7 +902,7 @@ impl Default for Sapglob {
                 posccoeur: 5, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: None,            /* &sap2, remis dans init_glob */
+                adversaire: SapId::Sap2,     /* &sap2, remis dans init_glob */
                 possession: ListeId::Liste1, /* &list11, remis dans init_glob */
             },
             sap4: sap {
@@ -935,7 +935,7 @@ impl Default for Sapglob {
                 posccoeur: 296, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: None,            /* &sap2, remis dans init_glob */
+                adversaire: SapId::Sap2,     /* &sap2, remis dans init_glob */
                 possession: ListeId::Liste1, /* &list12, remis dans init_glob */
             },
             destine: [
@@ -2013,10 +2013,11 @@ impl Sapiens {
             s.sapanim[14] = None;
         }
 
-        self.sapglob.sap1.adversaire = Some(SapId::Sap1);
-        self.sapglob.sap2.adversaire = Some(SapId::Sap2);
-        self.sapglob.sap3.adversaire = Some(SapId::Sap2);
-        self.sapglob.sap4.adversaire = Some(SapId::Sap2);
+        // todo inutile ?
+        self.sapglob.sap1.adversaire = SapId::Sap1;
+        self.sapglob.sap2.adversaire = SapId::Sap2;
+        self.sapglob.sap3.adversaire = SapId::Sap2;
+        self.sapglob.sap4.adversaire = SapId::Sap2;
         self.sapglob.sap1.possession = ListeId::Liste1;
         self.sapglob.sap2.possession = ListeId::Liste10;
         self.sapglob.sap3.possession = ListeId::Liste11;

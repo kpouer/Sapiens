@@ -234,9 +234,9 @@ impl Sapglob {
         }
         /*On positionne l'adversaire de l'ami*/
         self.sap3.adversaire = if self.sap4.vie != 0 {
-            Some(SapId::Sap4)
+            SapId::Sap4
         } else {
-            Some(SapId::Sap2)
+            SapId::Sap2
         };
         /*On teste si un des deux clans est vide*/
         if sap1.vie + self.sap3.vie == 0 {
@@ -251,17 +251,17 @@ impl Sapglob {
             /*il a de l'aide ????*/
             {
                 /*oui il a de l'aide*/
-                self.sap2.adversaire = Some(SapId::Sap1);
-                self.sap4.adversaire = Some(SapId::Sap3);
+                self.sap2.adversaire = SapId::Sap1;
+                self.sap4.adversaire = SapId::Sap3;
             } else {
                 /*non il est seul */
-                self.sap2.adversaire = Some(SapId::Sap1);
-                self.sap4.adversaire = Some(SapId::Sap1);
+                self.sap2.adversaire = SapId::Sap1;
+                self.sap4.adversaire = SapId::Sap1;
             }
         } else {
             /*l'aide est seule */
-            self.sap2.adversaire = Some(SapId::Sap3);
-            self.sap4.adversaire = Some(SapId::Sap3);
+            self.sap2.adversaire = SapId::Sap3;
+            self.sap4.adversaire = SapId::Sap3;
         }
         2
     }
@@ -516,7 +516,7 @@ impl Sapiens {
                 self.sapglob.presence = -1;
                 self.sapglob.sap3clav = 0;
                 let s = self.sapglob.sap_mut(sap_id);
-                s.adversaire = Some(SapId::Sap1);
+                s.adversaire = SapId::Sap1;
                 self.sapglob.viecopain = 0;
             }
         } else {
@@ -742,14 +742,13 @@ impl Sapiens {
                 }
             }
             /* Si c'est le Joueur il peut toucher les 3 autres */
-            let adversaire = self.sapglob.sap(sap_id1).adversaire;
             if self.sapglob.who == 0 {
                 self.touchesag(sap_id1, SapId::Sap2);
                 self.touchesag(sap_id1, SapId::Sap3);
                 self.touchesag(sap_id1, SapId::Sap4);
-            } else if let Some(adversaire) = adversaire {
+            } else {
                 /*Si ce n'est pas le joueur il ne vise qu'une personne en particulier*/
-                self.touchesag(sap_id1, adversaire);
+                self.touchesag(sap_id1, self.sapglob.sap(sap_id1).adversaire);
             }
         } /*sagaie existe ?*/
     }
@@ -1478,7 +1477,6 @@ impl Sapiens {
                     if tfr == 7 {
                         /*teste touche*/
                         let who = self.sapglob.who;
-                        let sapiens = self.sapglob.sap_mut(sap_id);
                         /* Si c'est le Joueur il peut toucher les 3 autres */
                         if who == 0 {
                             /* Frappe le copain ????*/
@@ -1488,8 +1486,9 @@ impl Sapiens {
                                 self.touche(sap_id, SapId::Sap2);
                                 self.touche(sap_id, SapId::Sap4);
                             }
-                        } else if let Some(adversaire) = sapiens.adversaire {
+                        } else {
                             /*Si ce n'est pas le joueur il ne vise qu'une personne en particulier*/
+                            let adversaire = self.sapglob.sap_mut(sap_id).adversaire;
                             self.touche(sap_id, adversaire);
                         }
                         self.sapglob.anim_skip();
@@ -2049,8 +2048,8 @@ impl Sapiens {
                             surqui,
                             ((self.sapglob.present[surqui as usize] as i16) < 5) as i16,
                         );
-                    } else if let Some(adversaire) = self.sapglob.peuple(surqui).adversaire {
-                        self.autonhom(surqui, adversaire);
+                    } else {
+                        self.autonhom(surqui, self.sapglob.peuple(surqui).adversaire);
                     }
                 } else {
                     /*bestiole*/
@@ -2059,8 +2058,8 @@ impl Sapiens {
                             surqui,
                             ((self.sapglob.present[surqui as usize] as i16) < 5) as i16,
                         );
-                    } else if let Some(adversaire) = self.sapglob.peuple(surqui).adversaire {
-                        self.bestio(surqui, adversaire);
+                    } else {
+                        self.bestio(surqui, self.sapglob.peuple(surqui).adversaire);
                         /* si c'est un lapin alors il agit aussi sur
                         mon ami*/
                         if (self.sapglob.present[surqui as usize] as i16) > 6
