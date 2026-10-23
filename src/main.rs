@@ -79,27 +79,8 @@ fn main() {
         move || timer_loop(t)
     });
 
-    // Le code C (boucle infinie du jeu original).
-    std::thread::Builder::new()
-        .name("sapiens_c".into())
-        .stack_size(32 * 1024 * 1024)
-        .spawn(|| unsafe {
-            // Zoom natif de la version 1996 : la fenêtre du jeu fait alors
-            // exactement 640x400 et son contenu occupe tout le buffer. Avec
-            // SapZoom=2 l'écran était 1280x800 mais le champ du jeu restait
-            // en 640x400, d'où un rendu décalé.
-            let mut sapwind = SapWind::default();
-            sapwind.set_zoom(1.0);
-            // Pointeurs auto-reférents de SAPGLOB.C (debban, peuple, soma...).
-            let mut sapiens = Sapiens {
-                sapwclav: Sapwclav::with_sapiens_timer(sapiens_timer),
-                sapwind,
-                ..Default::default()
-            };
-            sapiens.init_glob();
-            sapiens.sapiens_main();
-        })
-        .expect("échec du thread C");
+    // Le thread C est lancé depuis `SapiensApp::update`, une fois la taille du
+    // moniteur connue (choix du zoom initial).
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
@@ -110,7 +91,7 @@ fn main() {
     let result = eframe::run_native(
         "Sapiens",
         native_options,
-        Box::new(move |_cc| Ok(Box::new(SapiensApp::new(lang_mode)))),
+        Box::new(move |_cc| Ok(Box::new(SapiensApp::new(lang_mode, sapiens_timer)))),
     );
     if let Err(e) = result {
         eprintln!("eframe: {e}");
@@ -145,6 +126,47 @@ fn timer_loop(t: Arc<AtomicU64>) {
         std::thread::sleep(std::time::Duration::from_millis(11));
         t.fetch_add(1, Ordering::Relaxed);
     }
+}
+
+/// Marge de sécurité (en points egui) pour que la fenêtre tienne à l'écran,
+/// titre, barre de menus du système et dock compris.
+const STARTUP_MARGIN: f32 = 48.0;
+/// Hauteur approximative de la barre de menus interne avant la première frame.
+const MENU_H_ESTIMATE: f32 = 24.0;
+
+/// Zoom initial : 200 % si le moniteur peut contenir la fenêtre (1280×800 plus
+/// la barre de menus), sinon 100 %. Une préférence sauvegardée (`Sapiens.cfg`)
+/// reste prioritaire : `ChargePref` appelle `set_zoom` après coup.
+fn startup_zoom(monitor: egui::Vec2) -> f32 {
+    let base_w = 320.0 * crate::sapiens::ECHELLE as f32;
+    let base_h = 200.0 * crate::sapiens::ECHELLE as f32;
+    let need_w = base_w * 2.0 + STARTUP_MARGIN;
+    let need_h = base_h * 2.0 + MENU_H_ESTIMATE + STARTUP_MARGIN;
+    if monitor.x >= need_w && monitor.y >= need_h {
+        2.0
+    } else {
+        1.0
+    }
+}
+
+/// Lance le code C (boucle infinie du jeu original) avec le zoom initial choisi.
+fn spawn_game_thread(sapiens_timer: Arc<AtomicU64>, initial_zoom: f32) {
+    std::thread::Builder::new()
+        .name("sapiens_c".into())
+        .stack_size(32 * 1024 * 1024)
+        .spawn(move || unsafe {
+            let mut sapwind = SapWind::default();
+            sapwind.set_zoom(initial_zoom);
+            // Pointeurs auto-référents de SAPGLOB.C (debban, peuple, soma...).
+            let mut sapiens = Sapiens {
+                sapwclav: Sapwclav::with_sapiens_timer(sapiens_timer),
+                sapwind,
+                ..Default::default()
+            };
+            sapiens.init_glob();
+            sapiens.sapiens_main();
+        })
+        .expect("échec du thread C");
 }
 
 /// Sous-menu « Fichier → Langue » : Auto / Français / Anglais / Espagnol.
@@ -198,6 +220,10 @@ struct SapiensApp {
     lang_mode: LangMode,
     last_save_dir: Option<std::path::PathBuf>,
     active_dialog: Option<ActiveDialog>,
+    sapiens_timer: Arc<AtomicU64>,
+    game_started: bool,
+    monitor_wait: u32,
+    last_port_size: Option<(usize, usize)>,
 }
 
 enum ActiveDialog {
@@ -212,13 +238,17 @@ enum ActiveDialog {
 }
 
 impl SapiensApp {
-    fn new(lang_mode: LangMode) -> Self {
+    fn new(lang_mode: LangMode, sapiens_timer: Arc<AtomicU64>) -> Self {
         Self {
             tex: None,
             dump: PortDumper::from_env(),
             lang_mode,
             last_save_dir: None,
             active_dialog: None,
+            sapiens_timer,
+            game_started: false,
+            monitor_wait: 0,
+            last_port_size: None,
         }
     }
 
@@ -330,6 +360,22 @@ impl From<CursorShape> for CursorIcon {
 
 impl eframe::App for SapiensApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Le thread C a besoin de la taille du moniteur pour choisir le zoom
+        // initial ; on le lance dès que l'information est disponible (repli sur
+        // 100 % si la plateforme ne la fournit pas).
+        if !self.game_started {
+            if let Some(monitor) = ctx.input(|i| i.viewport().monitor_size) {
+                spawn_game_thread(self.sapiens_timer.clone(), startup_zoom(monitor));
+                self.game_started = true;
+            } else {
+                self.monitor_wait += 1;
+                if self.monitor_wait >= 50 {
+                    spawn_game_thread(self.sapiens_timer.clone(), 1.0);
+                    self.game_started = true;
+                }
+            }
+        }
+
         // Curseur posé par le thread C (forme + visibilité, cf. exchange.rs) :
         // la visibilité prime, comme sur le Mac (`HideCursor` masque quoi qu'il
         // en soit de la forme).
@@ -407,6 +453,18 @@ impl eframe::App for SapiensApp {
         record_input(ctx);
 
         let window = WINDOW_PORT.load(Ordering::SeqCst);
+        if !window.is_null() {
+            // La fenêtre egui suit la taille réelle du port (menu « Échelle »).
+            let (w, h) = port_size(window);
+            if w > 0 && h > 0 && self.last_port_size != Some((w, h)) {
+                self.last_port_size = Some((w, h));
+                let menu_h = (ctx.available_rect().top() - ctx.screen_rect().top()).max(0.0);
+                ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(
+                    w as f32,
+                    h as f32 + menu_h,
+                )));
+            }
+        }
         if window.is_null() {
             egui::CentralPanel::default()
                 .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
@@ -442,29 +500,35 @@ impl eframe::App for SapiensApp {
     }
 }
 
-/// Convertit l'intégralité du tampon d'indices du port fenêtre (1280×800) en
-/// image egui (via la LUT), réduite dans la fenêtre affichée 640×400.
+/// Dimensions (en pixels) du tampon du port fenêtre.
+fn port_size(p: *mut SapPort) -> (usize, usize) {
+    unsafe {
+        let pp = &*p;
+        (
+            (pp.bounds.right - pp.bounds.left).max(0) as usize,
+            (pp.bounds.bottom - pp.bounds.top).max(0) as usize,
+        )
+    }
+}
+
+/// Convertit l'intégralité du tampon d'indices du port fenêtre en image egui
+/// (via la LUT), à sa taille réelle : le zoom est ainsi réellement visible.
 fn port_image(p: *mut SapPort) -> egui::ColorImage {
     unsafe {
         let pp = &*p;
-        let w = (pp.bounds.right - pp.bounds.left).max(0) as usize;
-        let h = (pp.bounds.bottom - pp.bounds.top).max(0) as usize;
+        let (w, h) = port_size(p);
         let row = pp.row_bytes.max(0) as usize;
-        const CW: usize = 640;
-        const CH: usize = 400;
-        let mut pixels = Vec::with_capacity(CW * CH);
-        for y in 0..CH {
-            let sy = (y * h / CH).min(h.saturating_sub(1));
-            let rowp = pp.pixels.add(sy * row);
-            for x in 0..CW {
-                let sx = (x * w / CW).min(w.saturating_sub(1));
-                let idx = *rowp.add(sx);
+        let mut pixels = Vec::with_capacity(w * h);
+        for y in 0..h {
+            let rowp = pp.pixels.add(y * row);
+            for x in 0..w {
+                let idx = *rowp.add(x);
                 let (r, g, b) = lut_rgb(idx);
                 pixels.push(egui::Color32::from_rgb(r, g, b));
             }
         }
         egui::ColorImage {
-            size: [CW, CH],
+            size: [w, h],
             pixels,
         }
     }

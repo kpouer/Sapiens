@@ -28,15 +28,14 @@ fn read_i16(r: &mut impl Read) -> Option<i16> {
 
 impl Sapiens {
     pub(crate) fn SauvePref(&mut self) {
-        let mut out = Vec::with_capacity(VERSION_PREF.len() + 10);
+        let mut out = Vec::with_capacity(VERSION_PREF.len() + 12);
         out.extend_from_slice(VERSION_PREF);
         out.extend_from_slice(&i16::from(self.sapwmus.IsBruitages).to_le_bytes());
         out.extend_from_slice(&self.sapcomb.ModeJoueur2.to_le_bytes());
         out.extend_from_slice(&(self.sapglob.okmuse as i16).to_le_bytes());
         out.extend_from_slice(&langue_i16().to_le_bytes());
-        // Format historique : seuls les deux octets bas de `SapZoom` sont écrits.
-        let zoom_bits = self.sapwind.SapZoom.to_bits();
-        out.extend_from_slice(&(zoom_bits as u16).to_le_bytes());
+        // Comme le code C d'origine : un `float` complet (4 octets).
+        out.extend_from_slice(&self.sapwind.SapZoom.to_le_bytes());
 
         let path = pref_path();
         if let Some(dir) = path.parent() {
@@ -73,17 +72,31 @@ impl Sapiens {
         let Some(l_pref) = read_i16(&mut cur) else {
             return true;
         };
-        let Some(zoom_low) = read_i16(&mut cur) else {
+        // Le C d'origine lit un `float` complet ; une ancienne version du
+        // portage n'en écrivait que les deux octets bas (format court).
+        let mut tail = Vec::new();
+        if cur.read_to_end(&mut tail).is_err() {
             return true;
+        }
+        let zoom = if tail.len() >= 4 {
+            Some(f32::from_le_bytes([tail[0], tail[1], tail[2], tail[3]]))
+        } else if tail.len() >= 2 {
+            Some(f32::from_le_bytes([tail[0], tail[1], 0, 0]))
+        } else {
+            None
         };
 
         self.sapwmus.IsBruitages = is_bruitages != 0;
         self.sapcomb.ModeJoueur2 = mode_joueur2;
         self.sapglob.okmuse = okmuse.into();
         set_langue(l_pref.into());
-        let zoom_bytes = (zoom_low as u16).to_le_bytes();
-        self.sapwind
-            .set_zoom(f32::from_le_bytes([zoom_bytes[0], zoom_bytes[1], 0, 0]));
+        // Une valeur illisible (ancien format tronqué, zoom hors bornes) est
+        // ignorée : on garde le zoom initial choisi selon la taille de l'écran.
+        if let Some(z) = zoom {
+            if z.is_finite() && (1.0..=4.0).contains(&z) {
+                self.sapwind.set_zoom(z);
+            }
+        }
         false
     }
 

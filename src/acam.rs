@@ -369,7 +369,10 @@ pub(crate) fn NewCWindow(
     } else {
         unsafe { *bounds }
     };
-    let p = port::create(b, 8);
+    /* Le positionnement global de la fenêtre est géré par egui : le port de
+    dessin travaille en coordonnées locales (0,0)-(largeur,hauteur). */
+    let local = Rect::new(0, 0, b.right - b.left, b.bottom - b.top);
+    let p = port::create(local, 8);
     WINDOW_PORT.store(p as *mut SapPort, Ordering::SeqCst);
     p
 }
@@ -1413,5 +1416,51 @@ pub(crate) extern "C" fn DisposeRgn(rgn: RgnHandle) {
     }
     unsafe {
         drop(Box::from_raw(rgn as *mut Rect));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn copybits_agrandit_sans_perdre_la_derniere_ligne() {
+        let src = port::create(Rect::new(0, 0, 640, 400), 8);
+        let dst = port::create(Rect::new(0, 0, 1280, 800), 8);
+        let si = port::info(src).unwrap();
+        let di = port::info(dst).unwrap();
+        unsafe {
+            for y in 0..400usize {
+                for x in 0..640usize {
+                    *si.pixels.add(y * 640 + x) = ((x * 7 + y * 13) & 0xFF) as u8;
+                }
+            }
+            std::ptr::write_bytes(di.pixels, 0xAA, 1280 * 800);
+        }
+
+        CopyBits(
+            src,
+            dst,
+            &Rect::new(0, 0, 640, 400),
+            &Rect::new(0, 0, 1280, 800),
+            0,
+            std::ptr::null_mut(),
+        );
+
+        unsafe {
+            for y in 0..800usize {
+                for x in 0..1280usize {
+                    let expected = (((x / 2) * 7 + (y / 2) * 13) & 0xFF) as u8;
+                    assert_eq!(
+                        *di.pixels.add(y * 1280 + x),
+                        expected,
+                        "pixel ({x}, {y}) mal mis à l'échelle"
+                    );
+                }
+            }
+        }
+
+        port::close(src);
+        port::close(dst);
     }
 }

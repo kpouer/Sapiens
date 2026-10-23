@@ -103,7 +103,7 @@ pub(crate) struct SapWind {
 impl Default for SapWind {
     fn default() -> Self {
         Self {
-            SapZoom: 1.0,
+            SapZoom: 2.0,
             MenuReduit: false,
             mainWindow: core::ptr::null_mut(),
             Ecran1: core::ptr::null_mut(),
@@ -602,6 +602,7 @@ impl Sapiens {
                 _ => {}
             }
             self.sapwind.FixeTailleMainWindow();
+            self.RedessineFenetre();
         }
         HiliteMenu(0);
         self.AdjustMenus();
@@ -813,6 +814,21 @@ unsafe fn AfficheFond(gfx: CGrafPtr) {
 }
 
 impl Sapiens {
+    /***********************************************************************************
+                            RedessineFenetre
+    Repeint toute la fenêtre principale depuis le décor (debecr) et, en vue
+    latérale, depuis l'écran virtuel (Ecran1). Utilisé quand la zone visible
+    change de taille (menu « Échelle ») ou après une mise à jour système.
+    ***********************************************************************************/
+    pub(crate) fn RedessineFenetre(&self) {
+        port::set(self.sapwind.mainWindow);
+        self.TfrEcr(None);
+        self.tfrima();
+        if self.sapglob.dervue == Vue::LATERALE {
+            self.tfrdemi();
+        }
+    }
+
     /***********************************************************************************
                                      FixeTitreMainWindow
     ***********************************************************************************/
@@ -1192,11 +1208,7 @@ impl Sapiens {
                         //                    AcamGetPortOffscreen(&gbak);
                         port::set(window);
                         BeginUpdate(window);
-                        self.TfrEcr(None);
-                        self.tfrima();
-                        if self.sapglob.dervue == Vue::LATERALE {
-                            self.tfrdemi();
-                        }
+                        self.RedessineFenetre();
                         EndUpdate(window);
                         //                    AcamSetPortOffscreen(gbak);
                     }
@@ -1212,12 +1224,7 @@ impl Sapiens {
                 app4Evt if (event.message >> 24) == 1 => {
                     if (event.message & 1) > 0 {
                         /* on reprends le traitement */
-                        port::set(self.sapwind.mainWindow);
-                        self.TfrEcr(None);
-                        self.tfrima();
-                        if self.sapglob.dervue == Vue::LATERALE {
-                            self.tfrdemi();
-                        }
+                        self.RedessineFenetre();
                     } else {
                         /* On est arrêté */
                         self.souris.MontreSouris();
