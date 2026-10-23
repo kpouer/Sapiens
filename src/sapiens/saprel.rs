@@ -990,7 +990,8 @@ impl Sapiens {
                 self.trobsv(1);
             }
             self.sapglob.echan = 0;
-            (*self.sapglob.peuple_mut(SapId::Sap3).possession).taille = 0;
+            let liste_id = self.sapglob.peuple_mut(SapId::Sap3).possession;
+            self.sapglob.liste_mut(liste_id).taille = 0;
         }
         self.generique(true);
     }

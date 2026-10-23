@@ -836,8 +836,8 @@ impl Default for Sapglob {
                 posccoeur: 5, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: None, /* &sap1, remis dans init_glob */
-                possession: None, /* &liste1, remis dans init_glob */
+                adversaire: None,            /* &sap1, remis dans init_glob */
+                possession: ListeId::Liste1, /* &liste1, remis dans init_glob */
             },
             sap2: sap {
                 colonne: 2,
@@ -869,8 +869,8 @@ impl Default for Sapglob {
                 posccoeur: 296, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: None,       /* &sap2, remis dans init_glob */
-                possession: null_mut(), /* &list10, remis dans init_glob */
+                adversaire: None,            /* &sap2, remis dans init_glob */
+                possession: ListeId::Liste1, /* &list10, remis dans init_glob */
             },
             sap3: sap {
                 colonne: 2,
@@ -902,8 +902,8 @@ impl Default for Sapglob {
                 posccoeur: 5, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: None,       /* &sap2, remis dans init_glob */
-                possession: null_mut(), /* &list11, remis dans init_glob */
+                adversaire: None,            /* &sap2, remis dans init_glob */
+                possession: ListeId::Liste1, /* &list11, remis dans init_glob */
             },
             sap4: sap {
                 colonne: 2,
@@ -935,8 +935,8 @@ impl Default for Sapglob {
                 posccoeur: 296, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: None,       /* &sap2, remis dans init_glob */
-                possession: null_mut(), /* &list12, remis dans init_glob */
+                adversaire: None,            /* &sap2, remis dans init_glob */
+                possession: ListeId::Liste1, /* &list12, remis dans init_glob */
             },
             destine: [
                 /*chefs -- Type, posx et y, distmax, Rnd, evt, message */

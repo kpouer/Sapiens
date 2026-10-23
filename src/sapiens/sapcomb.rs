@@ -441,55 +441,53 @@ impl Sapiens {
                             ABANDO:Laisse objet qd mort
     ***********************************************************************/
     pub(crate) fn abando(&mut self, sap_id: SapId) {
-        unsafe {
-            let animal = self.sapglob.sap_mut(sap_id).animal;
-            if animal != 0 {
-                /*c'est une bestiole*/
-                for _ in 0..qtviande[animal as usize - 1] {
-                    self.sapglob.ajoutl(ListeId::Liste4, 37);
-                }
-                match animal {
-                    1 => {
-                        /*lapin*/
-                        self.sapglob.ajoutl(ListeId::Liste4, 33); /*peau de lapin*/
-                    }
-                    3 => {
-                        /*loup*/
-                        self.sapglob.ajoutl(ListeId::Liste4, 35);
-                        self.sapglob.ajoutl(ListeId::Liste4, 32);
-                    }
-                    4 => {
-                        /*ours*/
-                        self.sapglob.ajoutl(ListeId::Liste4, 34);
-                        self.sapglob.ajoutl(ListeId::Liste4, 31);
-                    }
-                    _ => {}
-                }
-            } else {
-                /*homme*/
-                if self.sapglob.echan > 2
-                /* pas ma protection ou rien */
-                {
-                    self.sapglob
-                        .ajoutl(ListeId::Liste4, self.sapglob.echan as u16);
-                }
-                let mut i = {
-                    let s = self.sapglob.sap(sap_id);
-                    self.sapglob.liste(s.possession).taille
-                };
-                while i != 0 {
-                    i -= 1;
-                    let element = {
-                        let s = self.sapglob.sap(sap_id);
-                        self.sapglob.liste(s.possession).elements[i as usize] as u16
-                    };
-                    self.sapglob.ajoutl(ListeId::Liste4, element);
-                }
-                /*on quitte pour les autres morts*/
-                let s = self.sapglob.sap_mut(sap_id);
-                self.sapglob.liste_mut(s.possession).taille = 0;
-                self.sapglob.echan = 0;
+        let animal = self.sapglob.sap_mut(sap_id).animal;
+        if animal != 0 {
+            /*c'est une bestiole*/
+            for _ in 0..qtviande[animal as usize - 1] {
+                self.sapglob.ajoutl(ListeId::Liste4, 37);
             }
+            match animal {
+                1 => {
+                    /*lapin*/
+                    self.sapglob.ajoutl(ListeId::Liste4, 33); /*peau de lapin*/
+                }
+                3 => {
+                    /*loup*/
+                    self.sapglob.ajoutl(ListeId::Liste4, 35);
+                    self.sapglob.ajoutl(ListeId::Liste4, 32);
+                }
+                4 => {
+                    /*ours*/
+                    self.sapglob.ajoutl(ListeId::Liste4, 34);
+                    self.sapglob.ajoutl(ListeId::Liste4, 31);
+                }
+                _ => {}
+            }
+        } else {
+            /*homme*/
+            if self.sapglob.echan > 2
+            /* pas ma protection ou rien */
+            {
+                self.sapglob
+                    .ajoutl(ListeId::Liste4, self.sapglob.echan as u16);
+            }
+            let mut i = {
+                let s = self.sapglob.sap(sap_id);
+                self.sapglob.liste(s.possession).taille
+            };
+            while i != 0 {
+                i -= 1;
+                let element = {
+                    let s = self.sapglob.sap(sap_id);
+                    self.sapglob.liste(s.possession).elements[i as usize] as u16
+                };
+                self.sapglob.ajoutl(ListeId::Liste4, element);
+            }
+            /*on quitte pour les autres morts*/
+            let liste_id = self.sapglob.sap_mut(sap_id).possession;
+            self.sapglob.liste_mut(liste_id).taille = 0;
+            self.sapglob.echan = 0;
         }
     }
 
@@ -782,114 +780,110 @@ impl Sapiens {
                     TOUCHE:
     ***********************************************************************/
     /* en entree le sap qui frappe et celui qui encaisse*/
-    pub(crate) fn touche(&mut self, sap_id: SapId, sap_id2: SapId)
-    /*s frappe s2 encaisse*/
-    {
-        unsafe {
-            let coltest: i16;
-            let mut dommage: i16;
-            let mut tfr: i16;
-            /*calcul de la position du test*/
-            let (sens, colonne, hauteur) = {
-                let s = self.sapglob.sap(sap_id);
-                (s.sens, s.colonne, s.hauteur)
-            };
-            if sens != 0 {
-                coltest = colonne + self.sapglob.anim_peek() as i16;
-            } else {
-                coltest = colonne - self.sapglob.anim_peek() as i16;
+    pub(crate) fn touche(&mut self, sap_id: SapId, sap_id2: SapId) {
+        /*s frappe s2 encaisse*/
+        let coltest: i16;
+        let mut dommage: i16;
+        let mut tfr: i16;
+        /*calcul de la position du test*/
+        let (sens, colonne, hauteur) = {
+            let s = self.sapglob.sap(sap_id);
+            (s.sens, s.colonne, s.hauteur)
+        };
+        if sens != 0 {
+            coltest = colonne + self.sapglob.anim_peek() as i16;
+        } else {
+            coltest = colonne - self.sapglob.anim_peek() as i16;
+        }
+        /*quel est l'Adversaire*/
+        /*valeur absolue de la distance*/
+        let (action2, colonne2, hauteur2, sens2) = {
+            let s2 = self.sapglob.sap(sap_id2);
+            (s2.action, s2.colonne, s2.hauteur, s2.sens)
+        };
+        tfr = coltest - colonne2;
+        if tfr < 0 {
+            tfr = -tfr;
+        }
+        /*le frappe-t'on alors qu'il est assis ?*/
+        if tfr > 3 || hauteur2 as i16 > hauteur as i16 + 1 {
+            return;
+        }
+        /*positionne l'impact*/
+        let (hauteur, sens) = {
+            let s = self.sapglob.sap_mut(sap_id);
+            s.blockimpact = 4;
+            s.colimpact =
+                (colonne2 + if sens2 != 0 { -3 } else { 2 } + 6 * (s.sens != 0) as i16) as u8;
+            if s.colimpact > 128 {
+                s.colimpact = 0;
+            } else if s.colimpact as i16 > LIMITE_DROITE + 3 {
+                s.colimpact = (LIMITE_DROITE + 3) as u8;
             }
-            /*quel est l'Adversaire*/
-            /*valeur absolue de la distance*/
-            let (action2, colonne2, hauteur2, sens2) = {
-                let s2 = self.sapglob.sap(sap_id2);
-                (s2.action, s2.colonne, s2.hauteur, s2.sens)
-            };
-            tfr = coltest - colonne2;
-            if tfr < 0 {
-                tfr = -tfr;
-            }
-            /*le frappe-t'on alors qu'il est assis ?*/
-            if tfr > 3 || hauteur2 as i16 > hauteur as i16 + 1 {
-                return;
-            }
-            /*positionne l'impact*/
-            let (hauteur, sens) = {
-                let s = self.sapglob.sap_mut(sap_id);
-                s.blockimpact = 4;
-                s.colimpact =
-                    (colonne2 + if sens2 != 0 { -3 } else { 2 } + 6 * (s.sens != 0) as i16) as u8;
-                if s.colimpact > 128 {
-                    s.colimpact = 0;
-                } else if s.colimpact as i16 > LIMITE_DROITE + 3 {
-                    s.colimpact = (LIMITE_DROITE + 3) as u8;
-                }
-                s.ligneimpact = tabinp[s.hauteur as usize] as u8;
-                (s.hauteur, s.sens)
-            };
-            if (hauteur as i16 / 2 == hauteur2 as i16 / 2) && (sens != sens2) && (action2 & 3) != 0
+            s.ligneimpact = tabinp[s.hauteur as usize] as u8;
+            (s.hauteur, s.sens)
+        };
+        if (hauteur as i16 / 2 == hauteur2 as i16 / 2) && (sens != sens2) && (action2 & 3) != 0 {
+            /*meme hauteur sens oppose et frappent tout deux*/
             {
-                /*meme hauteur sens oppose et frappent tout deux*/
-                {
-                    let s = self.sapglob.sap_mut(sap_id);
-                    s.blockimpact = 2;
+                let s = self.sapglob.sap_mut(sap_id);
+                s.blockimpact = 2;
+            }
+            if self.random.Rnd() < 10 {
+                /*ok destroy*/
+                self.bruit(4);
+                let s2 = self.sapglob.sap_mut(sap_id2);
+                if s2.objet == 1 {
+                    /*destroy hache du sap2*/
+                    s2.forcehache = 0;
+                    self.sapglob.pogne(sap_id2);
                 }
-                if self.random.Rnd() < 10 {
-                    /*ok destroy*/
-                    self.bruit(4);
-                    let s2 = self.sapglob.sap_mut(sap_id2);
-                    if s2.objet == 1 {
-                        /*destroy hache du sap2*/
-                        s2.forcehache = 0;
-                        self.sapglob.pogne(sap_id2);
-                    }
-                    let s = self.sapglob.sap_mut(sap_id);
-                    if s.objet == 1 {
-                        s.forcehache = 0;
-                        self.sapglob.pogne(sap_id);
-                    }
-                }
-                /*Rnd insuffisant*/
-                else {
-                    self.bruit(2);
+                let s = self.sapglob.sap_mut(sap_id);
+                if s.objet == 1 {
+                    s.forcehache = 0;
+                    self.sapglob.pogne(sap_id);
                 }
             }
-            /*hache se touchent*/
+            /*Rnd insuffisant*/
             else {
-                /*il recule*/
-                let (sens, objet, forcehache, hauteur) = {
-                    let s = self.sapglob.sap(sap_id);
-                    (s.sens, s.objet, s.forcehache, s.hauteur)
-                };
-                let s2 = self.sapglob.sap_mut(sap_id2);
-                if sens != 0 {
-                    if s2.colonne < LIMITE_DROITE - 3 {
-                        s2.colonne += 3;
-                    }
-                } else {
-                    if s2.colonne > LIMITE_GAUCHE + 3 {
-                        s2.colonne -= 3;
-                    }
+                self.bruit(2);
+            }
+        }
+        /*hache se touchent*/
+        else {
+            /*il recule*/
+            let (sens, objet, forcehache, hauteur) = {
+                let s = self.sapglob.sap(sap_id);
+                (s.sens, s.objet, s.forcehache, s.hauteur)
+            };
+            let s2 = self.sapglob.sap_mut(sap_id2);
+            if sens != 0 {
+                if s2.colonne < LIMITE_DROITE - 3 {
+                    s2.colonne += 3;
                 }
-                dommage = 5;
-                if objet == 1 {
-                    dommage = forcehache as i16;
+            } else {
+                if s2.colonne > LIMITE_GAUCHE + 3 {
+                    s2.colonne -= 3;
                 }
-                if hauteur == 0 {
-                    dommage *= 2;
+            }
+            dommage = 5;
+            if objet == 1 {
+                dommage = forcehache as i16;
+            }
+            if hauteur == 0 {
+                dommage *= 2;
+            }
+            if sap_id2 == SapId::Sap1 {
+                dommage -= self.sapglob.resistance as i16 / 50;
+            }
+            self.decvie(sap_id2, dommage as u16);
+            let animal = self.sapglob.sap(sap_id).animal;
+            if animal != 0 {
+                if self.random.Rnd() > 200 {
+                    self.bruit(8);
                 }
-                if sap_id2 == SapId::Sap1 {
-                    dommage -= self.sapglob.resistance as i16 / 50;
-                }
-                self.decvie(sap_id2, dommage as u16);
-                let animal = self.sapglob.sap(sap_id).animal;
-                if animal != 0 {
-                    if self.random.Rnd() > 200 {
-                        self.bruit(8);
-                    }
-                } else {
-                    self.bruit(0);
-                }
+            } else {
+                self.bruit(0);
             }
         }
     }
@@ -1297,262 +1291,259 @@ impl Sapiens {
     => Pointeur sur le sap a etudier
     <= 1 si il faut le rappeler immediatement 0 sinon*/
     pub(crate) fn mvtsap(&mut self, sap_id: SapId) -> i16 {
-        unsafe {
-            let mut nummob: i16 = 0;
-            let mut tfr;
-            let mut lastcol: i16;
+        let mut nummob: i16 = 0;
+        let mut tfr;
+        let mut lastcol: i16;
 
+        {
+            let sapiens = self.sapglob.sap_mut(sap_id);
+            self.sapglob.sensmob = sapiens.sens;
+        }
+        let mut registerb: i16 = 0; /*reg b balaye les differents morceaux*/
+        let mut ptrcross: i16 = 0;
+        loop {
+            /*infini*/
+            /*on prend l'animation*/
             {
                 let sapiens = self.sapglob.sap_mut(sap_id);
-                self.sapglob.sensmob = sapiens.sens;
+                self.sapglob.ptranim = sapiens.sapanim[registerb as usize];
             }
-            let mut registerb: i16 = 0; /*reg b balaye les differents morceaux*/
-            let mut ptrcross: i16 = 0;
-            loop {
-                /*infini*/
-                /*on prend l'animation*/
+            /*teste si fin de sap:animation=0*/
+            if self.sapglob.ptranim.is_none() {
+                return 0;
+            }
+            let mut ok: i16 = 0;
+            while ok == 0 {
+                /*ok*/
+                tfr = self.sapglob.anim_read(); /*caractere suivant*/
+                /*teste si le caractere lu est une commande*/
+                if tfr >= 0
+                /*non :pas une commande*/
                 {
-                    let sapiens = self.sapglob.sap_mut(sap_id);
-                    self.sapglob.ptranim = sapiens.sapanim[registerb as usize];
+                    ok += 1;
+                    nummob = tfr as i16;
+                } else
+                /*****************************/
+                /*oui !:on traite la commande*/
+                {
+                    if tfr == -1
+                    /* 255 fin d'animation*/
+                    {
+                        /*l'animation revient a l'animation standard*/
+                        let sapiens = self.sapglob.sap_mut(sap_id);
+                        self.sapglob.ptranim = sapiens.sapanim[registerb as usize + 1];
+                        continue; /*on revient a la lecture de l'animation*/
+                    }
+                    tfr &= 127;
+                    if tfr == 0
+                    /*deplacement vertical*/
+                    {
+                        /*le caractere suivant donne la hauteur*/
+                        let x = self.sapglob.anim_peek() as u8;
+                        let sapiens = self.sapglob.sap_mut(sap_id);
+                        sapiens.deltah = x;
+                        self.sapglob.anim_skip();
+                        continue;
+                    }
+                    if tfr == 1
+                    /*deplacement horizontal*/
+                    {
+                        if registerb == 0
+                        /*uniquement sur 1ere jambe*/
+                        {
+                            let colonne = {
+                                let sensmob = self.sapglob.sensmob;
+                                let sapiens = self.sapglob.sap_mut(sap_id);
+                                lastcol = sapiens.colonne;
+                                if sensmob != 0
+                                /*deplacement vers la droite*/
+                                {
+                                    sapiens.colonne += 1;
+                                } else {
+                                    sapiens.colonne -= 1;
+                                }
+                                sapiens.colonne
+                            };
+                            if (self.sapglob.sensmob == 0 && colonne <= LIMITE_GAUCHE)
+                                || (self.sapglob.sensmob == 1 && colonne > LIMITE_DROITE)
+                            /*sortie !!!!!*/
+                            {
+                                if self.sapglob.presence != 0 {
+                                    {
+                                        let sapiens = self.sapglob.sap_mut(sap_id);
+                                        sapiens.colonne = lastcol;
+                                    }
+                                    if (self.sapglob.present[self.sapglob.who as usize] as i16) < 5
+                                    {
+                                        self.sapglob.arret(sap_id);
+                                        let hauteur = self.sapglob.sap(sap_id).hauteur;
+                                        if hauteur != 0 {
+                                            self.sapglob.posan(sap_id, hauteur as i16 + 8);
+                                        } else {
+                                            self.sapglob.posan(sap_id, 2);
+                                        }
+                                        let objet = self.sapglob.sap(sap_id).objet;
+                                        self.sapglob.posan(sap_id, objet as i16 + 6);
+                                        self.sapglob.sap_mut(sap_id).action &= 127;
+                                        return 1; /*on le refait*/
+                                    }
+                                } else {
+                                    self.sapglob.fin = 128;
+                                    if sap_id == SapId::Sap3 {
+                                        let sap1 = &mut self.sapglob.sap1;
+                                        let sap3 = &self.sapglob.sap3;
+                                        if sap1.vie == 0 {
+                                            self.sapglob.fin = 129;
+                                        }
+                                        sap1.colonne = sap3.colonne;
+                                        sap1.sens = sap3.sens;
+                                    }
+                                    return 0;
+                                }
+                            }
+                        }
+                        continue;
+                    }
+                    if tfr == 2
+                    /*empreinte*/
+                    {
+                        let profond = self.sapglob.profond[self.sapglob.who as usize];
+                        let sapiens = self.sapglob.sap_mut(sap_id);
+                        let inverse = sapiens.sens as i16;
+                        let x = 4 * ((*sapiens).colonne + inverse * 5);
+                        let mob = MOB_EMPREINTE!(self.sapwind);
+                        self.AffmobConst(mob, 100 + profond as i16 - 19, x, inverse);
+                        continue;
+                    }
+                    if tfr == 3
+                    /*neutre*/
+                    {
+                        ptrcross += 1;
+                        ok = 2; /*on passe au morceau suivant*/
+                        break;
+                    }
+                    if tfr == 4
+                    /*depositionne baisse*/
+                    {
+                        let sapiens = self.sapglob.sap_mut(sap_id);
+                        sapiens.hauteur -= 1;
+                        self.sapglob.arret(sap_id);
+                        self.sapglob.posan(sap_id, 10); /*a genoux*/
+                        return 1; /*on le refait*/
+                    }
+                    if tfr == 5
+                    /*recule*/
+                    {
+                        let sensmob = self.sapglob.sensmob;
+                        let presence = self.sapglob.presence;
+                        let sapiens = self.sapglob.sap_mut(sap_id);
+                        if registerb == 0 {
+                            lastcol = sapiens.colonne;
+                            if sensmob != 0 {
+                                sapiens.colonne -= 1;
+                            } else {
+                                sapiens.colonne += 1;
+                            }
+                            if (sensmob == 1 && sapiens.colonne < LIMITE_GAUCHE + 3)
+                                || (sensmob == 0 && sapiens.colonne > LIMITE_DROITE + 3)
+                            /*sortie !!!!!*/
+                            {
+                                if presence != 0 {
+                                    sapiens.colonne = lastcol;
+                                } else {
+                                    self.sapglob.fin = 128;
+                                    if sap_id == SapId::Sap3 {
+                                        let sap1 = &mut self.sapglob.sap1;
+                                        let sap3 = &self.sapglob.sap3;
+                                        if sap1.vie == 0 {
+                                            self.sapglob.fin = 129;
+                                        }
+                                        sap1.colonne = sap3.colonne;
+                                        sap1.sens = sap3.sens;
+                                    }
+                                    return 0;
+                                }
+                            }
+                        }
+                        continue;
+                    }
+                    if tfr == 6 {
+                        /*fin d'arme*/
+                        let x = self.sapglob.anim_peek() as u8;
+                        let sapiens = self.sapglob.sap_mut(sap_id);
+                        sapiens.action = sapiens.action & x;
+                        self.sapglob.anim_skip();
+                        continue;
+                    }
+                    if tfr == 7 {
+                        /*teste touche*/
+                        let who = self.sapglob.who;
+                        let sapiens = self.sapglob.sap_mut(sap_id);
+                        /* Si c'est le Joueur il peut toucher les 3 autres */
+                        if who == 0 {
+                            /* Frappe le copain ????*/
+                            if self.sapglob.presence < 1 {
+                                self.touche(sap_id, SapId::Sap3);
+                            } else {
+                                self.touche(sap_id, SapId::Sap2);
+                                self.touche(sap_id, SapId::Sap4);
+                            }
+                        } else if let Some(adversaire) = sapiens.adversaire {
+                            /*Si ce n'est pas le joueur il ne vise qu'une personne en particulier*/
+                            self.touche(sap_id, adversaire);
+                        }
+                        self.sapglob.anim_skip();
+                        continue;
+                    }
+                    if tfr == 8 {
+                        /*fin sagaie*/
+                        self.sapglob.pogne(sap_id);
+                        continue;
+                    }
                 }
-                /*teste si fin de sap:animation=0*/
-                if self.sapglob.ptranim.is_none() {
+            } /*ok*/
+            if ok == 1
+            /*ok on y va sinon anim suiv*/
+            {
+                let (ligne, sens, animal) = {
+                    let sapiens = self.sapglob.sap(sap_id);
+                    (sapiens.ligne, sapiens.sens, sapiens.animal)
+                };
+                /*Le caractere lu a ete traite soit comme numero de block
+                soit comme commande*/
+                let mut linmob: i16 = ligne as i16 + self.sapglob.anim_read() as i16;
+                tfr = self.sapglob.anim_read();
+                if sens != 0 {
+                    tfr = (-(tfr as i16) + 6) as i8;
+                    /* teste l'ours*/
+                    if animal == 4 {
+                        tfr += 8;
+                    }
+                }
+
+                let ptranim = self.sapglob.ptranim;
+                let who = self.sapglob.profond[self.sapglob.who as usize];
+                let sapiens = self.sapglob.sap_mut(sap_id);
+                sapiens.sapanim[registerb as usize] = ptranim; /*on memorise la nlle position*/
+                let colmob: i16 = tfr as i16 + sapiens.colonne;
+                if colmob > 127 {
                     return 0;
                 }
-                let mut ok: i16 = 0;
-                while ok == 0 {
-                    /*ok*/
-                    tfr = self.sapglob.anim_read(); /*caractere suivant*/
-                    /*teste si le caractere lu est une commande*/
-                    if tfr >= 0
-                    /*non :pas une commande*/
-                    {
-                        ok += 1;
-                        nummob = tfr as i16;
-                    } else
-                    /*****************************/
-                    /*oui !:on traite la commande*/
-                    {
-                        if tfr == -1
-                        /* 255 fin d'animation*/
-                        {
-                            /*l'animation revient a l'animation standard*/
-                            let sapiens = self.sapglob.sap_mut(sap_id);
-                            self.sapglob.ptranim = sapiens.sapanim[registerb as usize + 1];
-                            continue; /*on revient a la lecture de l'animation*/
-                        }
-                        tfr &= 127;
-                        if tfr == 0
-                        /*deplacement vertical*/
-                        {
-                            /*le caractere suivant donne la hauteur*/
-                            let x = self.sapglob.anim_peek() as u8;
-                            let sapiens = self.sapglob.sap_mut(sap_id);
-                            sapiens.deltah = x;
-                            self.sapglob.anim_skip();
-                            continue;
-                        }
-                        if tfr == 1
-                        /*deplacement horizontal*/
-                        {
-                            if registerb == 0
-                            /*uniquement sur 1ere jambe*/
-                            {
-                                let colonne = {
-                                    let sensmob = self.sapglob.sensmob;
-                                    let sapiens = self.sapglob.sap_mut(sap_id);
-                                    lastcol = sapiens.colonne;
-                                    if sensmob != 0
-                                    /*deplacement vers la droite*/
-                                    {
-                                        sapiens.colonne += 1;
-                                    } else {
-                                        sapiens.colonne -= 1;
-                                    }
-                                    sapiens.colonne
-                                };
-                                if (self.sapglob.sensmob == 0 && colonne <= LIMITE_GAUCHE)
-                                    || (self.sapglob.sensmob == 1 && colonne > LIMITE_DROITE)
-                                /*sortie !!!!!*/
-                                {
-                                    if self.sapglob.presence != 0 {
-                                        {
-                                            let sapiens = self.sapglob.sap_mut(sap_id);
-                                            sapiens.colonne = lastcol;
-                                        }
-                                        if (self.sapglob.present[self.sapglob.who as usize] as i16)
-                                            < 5
-                                        {
-                                            self.sapglob.arret(sap_id);
-                                            let hauteur = self.sapglob.sap(sap_id).hauteur;
-                                            if hauteur != 0 {
-                                                self.sapglob.posan(sap_id, hauteur as i16 + 8);
-                                            } else {
-                                                self.sapglob.posan(sap_id, 2);
-                                            }
-                                            let objet = self.sapglob.sap(sap_id).objet;
-                                            self.sapglob.posan(sap_id, objet as i16 + 6);
-                                            self.sapglob.sap_mut(sap_id).action &= 127;
-                                            return 1; /*on le refait*/
-                                        }
-                                    } else {
-                                        self.sapglob.fin = 128;
-                                        if sap_id == SapId::Sap3 {
-                                            let sap1 = &mut self.sapglob.sap1;
-                                            let sap3 = &self.sapglob.sap3;
-                                            if sap1.vie == 0 {
-                                                self.sapglob.fin = 129;
-                                            }
-                                            sap1.colonne = sap3.colonne;
-                                            sap1.sens = sap3.sens;
-                                        }
-                                        return 0;
-                                    }
-                                }
-                            }
-                            continue;
-                        }
-                        if tfr == 2
-                        /*empreinte*/
-                        {
-                            let profond = self.sapglob.profond[self.sapglob.who as usize];
-                            let sapiens = self.sapglob.sap_mut(sap_id);
-                            let inverse = sapiens.sens as i16;
-                            let x = 4 * ((*sapiens).colonne + inverse * 5);
-                            let mob = MOB_EMPREINTE!(self.sapwind);
-                            self.AffmobConst(mob, 100 + profond as i16 - 19, x, inverse);
-                            continue;
-                        }
-                        if tfr == 3
-                        /*neutre*/
-                        {
-                            ptrcross += 1;
-                            ok = 2; /*on passe au morceau suivant*/
-                            break;
-                        }
-                        if tfr == 4
-                        /*depositionne baisse*/
-                        {
-                            let sapiens = self.sapglob.sap_mut(sap_id);
-                            sapiens.hauteur -= 1;
-                            self.sapglob.arret(sap_id);
-                            self.sapglob.posan(sap_id, 10); /*a genoux*/
-                            return 1; /*on le refait*/
-                        }
-                        if tfr == 5
-                        /*recule*/
-                        {
-                            let sensmob = self.sapglob.sensmob;
-                            let presence = self.sapglob.presence;
-                            let sapiens = self.sapglob.sap_mut(sap_id);
-                            if registerb == 0 {
-                                lastcol = sapiens.colonne;
-                                if sensmob != 0 {
-                                    sapiens.colonne -= 1;
-                                } else {
-                                    sapiens.colonne += 1;
-                                }
-                                if (sensmob == 1 && sapiens.colonne < LIMITE_GAUCHE + 3)
-                                    || (sensmob == 0 && sapiens.colonne > LIMITE_DROITE + 3)
-                                /*sortie !!!!!*/
-                                {
-                                    if presence != 0 {
-                                        sapiens.colonne = lastcol;
-                                    } else {
-                                        self.sapglob.fin = 128;
-                                        if sap_id == SapId::Sap3 {
-                                            let sap1 = &mut self.sapglob.sap1;
-                                            let sap3 = &self.sapglob.sap3;
-                                            if sap1.vie == 0 {
-                                                self.sapglob.fin = 129;
-                                            }
-                                            sap1.colonne = sap3.colonne;
-                                            sap1.sens = sap3.sens;
-                                        }
-                                        return 0;
-                                    }
-                                }
-                            }
-                            continue;
-                        }
-                        if tfr == 6 {
-                            /*fin d'arme*/
-                            let x = self.sapglob.anim_peek() as u8;
-                            let sapiens = self.sapglob.sap_mut(sap_id);
-                            sapiens.action = sapiens.action & x;
-                            self.sapglob.anim_skip();
-                            continue;
-                        }
-                        if tfr == 7 {
-                            /*teste touche*/
-                            let who = self.sapglob.who;
-                            let sapiens = self.sapglob.sap_mut(sap_id);
-                            /* Si c'est le Joueur il peut toucher les 3 autres */
-                            if who == 0 {
-                                /* Frappe le copain ????*/
-                                if self.sapglob.presence < 1 {
-                                    self.touche(sap_id, SapId::Sap3);
-                                } else {
-                                    self.touche(sap_id, SapId::Sap2);
-                                    self.touche(sap_id, SapId::Sap4);
-                                }
-                            } else if let Some(adversaire) = sapiens.adversaire {
-                                /*Si ce n'est pas le joueur il ne vise qu'une personne en particulier*/
-                                self.touche(sap_id, adversaire);
-                            }
-                            self.sapglob.anim_skip();
-                            continue;
-                        }
-                        if tfr == 8 {
-                            /*fin sagaie*/
-                            self.sapglob.pogne(sap_id);
-                            continue;
-                        }
-                    }
-                } /*ok*/
-                if ok == 1
-                /*ok on y va sinon anim suiv*/
-                {
-                    let (ligne, sens, animal) = {
-                        let sapiens = self.sapglob.sap(sap_id);
-                        (sapiens.ligne, sapiens.sens, sapiens.animal)
-                    };
-                    /*Le caractere lu a ete traite soit comme numero de block
-                    soit comme commande*/
-                    let mut linmob: i16 = ligne as i16 + self.sapglob.anim_read() as i16;
-                    tfr = self.sapglob.anim_read();
-                    if sens != 0 {
-                        tfr = (-(tfr as i16) + 6) as i8;
-                        /* teste l'ours*/
-                        if animal == 4 {
-                            tfr += 8;
-                        }
-                    }
-
-                    let ptranim = self.sapglob.ptranim;
-                    let who = self.sapglob.profond[self.sapglob.who as usize];
-                    let sapiens = self.sapglob.sap_mut(sap_id);
-                    sapiens.sapanim[registerb as usize] = ptranim; /*on memorise la nlle position*/
-                    let colmob: i16 = tfr as i16 + sapiens.colonne;
-                    if colmob > 127 {
-                        return 0;
-                    }
-                    if nummob > 10 {
-                        linmob += sapiens.deltah as i16;
-                    }
-                    let mob =
-                        nummob + sapiens.cross[ptrcross as usize] as i16 + MOB_CORPS!(self.sapwind);
-                    let inverse = sapiens.sens as i16;
-                    self.Affmob(
-                        mob,
-                        (linmob as i8) as i16 + who as i8 as i16 + 32,
-                        4 * colmob,
-                        inverse,
-                    );
+                if nummob > 10 {
+                    linmob += sapiens.deltah as i16;
                 }
-                registerb += 2; /*morceau suivant*/
-            } /*infini*/
-        }
+                let mob =
+                    nummob + sapiens.cross[ptrcross as usize] as i16 + MOB_CORPS!(self.sapwind);
+                let inverse = sapiens.sens as i16;
+                self.Affmob(
+                    mob,
+                    (linmob as i8) as i16 + who as i8 as i16 + 32,
+                    4 * colmob,
+                    inverse,
+                );
+            }
+            registerb += 2; /*morceau suivant*/
+        } /*infini*/
     } /*fin de procedure*/
 
     /***********************************************************************

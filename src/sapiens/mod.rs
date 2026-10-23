@@ -182,7 +182,7 @@ pub(crate) struct sap {
     pub(crate) sapanim: [Option<AnimPtr>; 15usize],
     pub(crate) cross: [u8; 8usize],
     pub(crate) adversaire: Option<SapId>,
-    pub(crate) possession: Option<ListeId>,
+    pub(crate) possession: ListeId,
 }
 impl Default for sap {
     fn default() -> Self {
