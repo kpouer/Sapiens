@@ -869,8 +869,8 @@ impl Default for Sapglob {
                 posccoeur: 296, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: SapId::Sap2,     /* &sap2, remis dans init_glob */
-                possession: ListeId::Liste1, /* &list10, remis dans init_glob */
+                adversaire: SapId::Sap2, /* &sap2, remis dans init_glob */
+                possession: ListeId::Liste10, /* &list10, remis dans init_glob */
             },
             sap3: sap {
                 colonne: 2,
@@ -902,8 +902,8 @@ impl Default for Sapglob {
                 posccoeur: 5, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: SapId::Sap2,     /* &sap2, remis dans init_glob */
-                possession: ListeId::Liste1, /* &list11, remis dans init_glob */
+                adversaire: SapId::Sap2, /* &sap2, remis dans init_glob */
+                possession: ListeId::Liste11, /* &list11, remis dans init_glob */
             },
             sap4: sap {
                 colonne: 2,
@@ -935,8 +935,8 @@ impl Default for Sapglob {
                 posccoeur: 296, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: SapId::Sap2,     /* &sap2, remis dans init_glob */
-                possession: ListeId::Liste1, /* &list12, remis dans init_glob */
+                adversaire: SapId::Sap2, /* &sap2, remis dans init_glob */
+                possession: ListeId::Liste12, /* &list12, remis dans init_glob */
             },
             destine: [
                 /*chefs -- Type, posx et y, distmax, Rnd, evt, message */
@@ -2012,16 +2012,6 @@ impl Sapiens {
             }
             s.sapanim[14] = None;
         }
-
-        // todo inutile ?
-        self.sapglob.sap1.adversaire = SapId::Sap1;
-        self.sapglob.sap2.adversaire = SapId::Sap2;
-        self.sapglob.sap3.adversaire = SapId::Sap2;
-        self.sapglob.sap4.adversaire = SapId::Sap2;
-        self.sapglob.sap1.possession = ListeId::Liste1;
-        self.sapglob.sap2.possession = ListeId::Liste10;
-        self.sapglob.sap3.possession = ListeId::Liste11;
-        self.sapglob.sap4.possession = ListeId::Liste12;
 
         self.sapglob.soma = [
             cellule {
