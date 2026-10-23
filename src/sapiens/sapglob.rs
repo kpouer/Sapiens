@@ -83,6 +83,60 @@ pub(crate) enum SapId {
     Sap4,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum AnimTable {
+    Anjm1,
+    Anjm2,
+    Anjm3,
+    Anacr1,
+    Anacr2,
+    Angen1,
+    Angen2,
+    Anaga1,
+    Anaga2,
+    Anrga1,
+    Anrga2,
+    Anbras,
+    Anbra1,
+    Anbra2,
+    Anhac1,
+    Ansag1,
+    Anpoin,
+    Anhach,
+    Ansag,
+    Anbust,
+    Anbst1,
+    Antete,
+    Antet1,
+    Antet2,
+    Anarm1,
+    Anarm3,
+    Anarm4,
+    Aneutr,
+    Anlou1,
+    Anlou2,
+    Anlap1,
+    Anlap2,
+    Anlap3,
+}
+
+/// Curseur dans une table d'animation (remplace l'ancien `*mut i8`).
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) struct AnimPtr {
+    table: AnimTable,
+    off: u16,
+}
+
+impl AnimPtr {
+    pub(crate) const fn new(table: AnimTable) -> Self {
+        Self { table, off: 0 }
+    }
+
+    const fn at(table: AnimTable, offset: u16) -> Self {
+        Self { table, off: offset }
+    }
+}
+
 pub(crate) struct Sapglob {
     /*définitions des variables globales*/
     pub(crate) lpos: u8,
@@ -147,7 +201,7 @@ pub(crate) struct Sapglob {
     pub(crate) presence: i16,
     pub(crate) fin: u8,
     pub(crate) sensmob: u8,
-    pub(crate) ptranim: *mut i8,
+    pub(crate) ptranim: Option<AnimPtr>,
     pub(crate) present: [i8; 4],
     anjm1: [i8; 48],
     anjm2: [i8; 6],
@@ -183,7 +237,7 @@ pub(crate) struct Sapglob {
     pub(crate) anlap2: [i8; 12],
     pub(crate) anlap3: [i8; 13],
     /*blocks animation -- initialise par init_glob*/
-    pub(crate) debban: [[*mut i8; 14]; 13],
+    pub(crate) debban: [[Option<AnimPtr>; 14]; 13],
     pub(crate) sap1: sap,
     pub(crate) sap2: sap,
     pub(crate) sap3: sap,
@@ -431,7 +485,7 @@ impl Default for Sapglob {
             presence: 0,
             fin: 0,
             sensmob: 0,
-            ptranim: null_mut(),
+            ptranim: None,
             present: [0; 4],
             anjm1: [
                 0x82u8 as i8,
@@ -749,7 +803,7 @@ impl Default for Sapglob {
                 0xFFu8 as i8,
             ],
             anlap3: [90, 28, 2, 90, 28, 2, 90, 28, 2, 90, 28, 2, 0xFFu8 as i8],
-            debban: [[null_mut(); 14]; 13],
+            debban: [[None; 14]; 13],
             sap1: sap {
                 colonne: 2,
                 ligne: 32,
@@ -778,7 +832,7 @@ impl Default for Sapglob {
                 flg_mort: 0,
                 poslcoeur: 8,
                 posccoeur: 5, /* ligne colonne position du coeur */
-                sapanim: [null_mut(); 15],
+                sapanim: [None; 15],
                 cross: [0; 8],
                 adversaire: None,       /* &sap1, remis dans init_glob */
                 possession: null_mut(), /* &liste1, remis dans init_glob */
@@ -811,7 +865,7 @@ impl Default for Sapglob {
                 flg_mort: 0,
                 poslcoeur: 8,
                 posccoeur: 296, /* ligne colonne position du coeur */
-                sapanim: [null_mut(); 15],
+                sapanim: [None; 15],
                 cross: [0; 8],
                 adversaire: None,       /* &sap2, remis dans init_glob */
                 possession: null_mut(), /* &list10, remis dans init_glob */
@@ -844,7 +898,7 @@ impl Default for Sapglob {
                 flg_mort: 0,
                 poslcoeur: 56,
                 posccoeur: 5, /* ligne colonne position du coeur */
-                sapanim: [null_mut(); 15],
+                sapanim: [None; 15],
                 cross: [0; 8],
                 adversaire: None,       /* &sap2, remis dans init_glob */
                 possession: null_mut(), /* &list11, remis dans init_glob */
@@ -877,7 +931,7 @@ impl Default for Sapglob {
                 flg_mort: 0,
                 poslcoeur: 56,
                 posccoeur: 296, /* ligne colonne position du coeur */
-                sapanim: [null_mut(); 15],
+                sapanim: [None; 15],
                 cross: [0; 8],
                 adversaire: None,       /* &sap2, remis dans init_glob */
                 possession: null_mut(), /* &list12, remis dans init_glob */
@@ -1554,6 +1608,62 @@ impl Default for Sapglob {
 }
 
 impl Sapglob {
+    const fn anim_table(&self, table: AnimTable) -> &[i8] {
+        match table {
+            AnimTable::Anjm1 => &self.anjm1,
+            AnimTable::Anjm2 => &self.anjm2,
+            AnimTable::Anjm3 => &self.anjm3,
+            AnimTable::Anacr1 => &self.anacr1,
+            AnimTable::Anacr2 => &self.anacr2,
+            AnimTable::Angen1 => &self.angen1,
+            AnimTable::Angen2 => &self.angen2,
+            AnimTable::Anaga1 => &self.anaga1,
+            AnimTable::Anaga2 => &self.anaga2,
+            AnimTable::Anrga1 => &self.anrga1,
+            AnimTable::Anrga2 => &self.anrga2,
+            AnimTable::Anbras => &self.anbras,
+            AnimTable::Anbra1 => &self.anbra1,
+            AnimTable::Anbra2 => &self.anbra2,
+            AnimTable::Anhac1 => &self.anhac1,
+            AnimTable::Ansag1 => &self.ansag1,
+            AnimTable::Anpoin => &self.anpoin,
+            AnimTable::Anhach => &self.anhach,
+            AnimTable::Ansag => &self.ansag,
+            AnimTable::Anbust => &self.anbust,
+            AnimTable::Anbst1 => &self.anbst1,
+            AnimTable::Antete => &self.antete,
+            AnimTable::Antet1 => &self.antet1,
+            AnimTable::Antet2 => &self.antet2,
+            AnimTable::Anarm1 => &self.anarm1,
+            AnimTable::Anarm3 => &self.anarm3,
+            AnimTable::Anarm4 => &self.anarm4,
+            AnimTable::Aneutr => &self.aneutr,
+            AnimTable::Anlou1 => &self.anlou1,
+            AnimTable::Anlou2 => &self.anlou2,
+            AnimTable::Anlap1 => &self.anlap1,
+            AnimTable::Anlap2 => &self.anlap2,
+            AnimTable::Anlap3 => &self.anlap3,
+        }
+    }
+
+    /// Octet courant de `ptranim`, sans avancer.
+    pub(crate) const fn anim_peek(&self) -> i8 {
+        let p = self.ptranim.expect("ptranim null");
+        self.anim_table(p.table)[p.off as usize]
+    }
+
+    /// Octet courant de `ptranim`, puis avance d'un octet.
+    pub(crate) const fn anim_read(&mut self) -> i8 {
+        let v = self.anim_peek();
+        self.anim_skip();
+        v
+    }
+
+    /// Avance `ptranim` d'un octet.
+    pub(crate) const fn anim_skip(&mut self) {
+        self.ptranim.as_mut().expect("ptranim null").off += 1;
+    }
+
     pub(crate) const fn sap(&self, sap_id: SapId) -> &sap {
         match sap_id {
             SapId::Sap1 => &self.sap1,
@@ -1665,519 +1775,483 @@ impl Sapiens {
     /// sapanim, adversaire, possession, soma). Equivalent des initialisateurs
     /// statiques auto-referents du C. A appeler avant sapiens_main.
     pub(crate) unsafe fn init_glob(&mut self) {
-        unsafe {
-            // macro prête à l'emploi
-            macro_rules! ccp {
-                ($x:expr) => {
-                    ($x) as *mut i8
-                };
+        self.sapglob.debban = [
+            /*marche*/
+            [
+                Some(AnimPtr::new(AnimTable::Anjm1)),
+                Some(AnimPtr::new(AnimTable::Anjm1)),
+                Some(AnimPtr::new(AnimTable::Anbras)),
+                Some(AnimPtr::new(AnimTable::Anbras)),
+                Some(AnimPtr::at(AnimTable::Anjm1, 27)),
+                Some(AnimPtr::new(AnimTable::Anjm1)),
+                Some(AnimPtr::new(AnimTable::Anbust)),
+                Some(AnimPtr::new(AnimTable::Anbust)),
+                Some(AnimPtr::new(AnimTable::Antete)),
+                Some(AnimPtr::new(AnimTable::Antete)),
+                None,
+                None,
+                Some(AnimPtr::at(AnimTable::Anbras, 15)),
+                Some(AnimPtr::new(AnimTable::Anbras)),
+            ],
+            /*arret*/
+            [
+                Some(AnimPtr::new(AnimTable::Anjm2)),
+                Some(AnimPtr::new(AnimTable::Anjm2)),
+                Some(AnimPtr::new(AnimTable::Anbra1)),
+                Some(AnimPtr::new(AnimTable::Anbra1)),
+                Some(AnimPtr::new(AnimTable::Anjm3)),
+                Some(AnimPtr::new(AnimTable::Anjm3)),
+                Some(AnimPtr::new(AnimTable::Anbust)),
+                Some(AnimPtr::new(AnimTable::Anbust)),
+                Some(AnimPtr::new(AnimTable::Antet2)),
+                Some(AnimPtr::new(AnimTable::Antet2)),
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Anbra2)),
+                Some(AnimPtr::new(AnimTable::Anbra2)),
+            ],
+            /*frappe du poing*/
+            [
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Aneutr)),
+                None,
+                Some(AnimPtr::new(AnimTable::Anpoin)),
+                None,
+            ],
+            /*frappe avec hache*/
+            [
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Anarm1)),
+                None,
+                Some(AnimPtr::new(AnimTable::Anhach)),
+                None,
+            ],
+            /*frappe avec sagaie*/
+            [
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Aneutr)),
+                Some(AnimPtr::new(AnimTable::Aneutr)),
+                Some(AnimPtr::new(AnimTable::Ansag)),
+                Some(AnimPtr::new(AnimTable::Anbra2)),
+            ],
+            /*rien en main*/
+            [
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Aneutr)),
+                Some(AnimPtr::new(AnimTable::Aneutr)),
+                None,
+                None,
+            ],
+            /*hache en main*/
+            [
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Anarm3)),
+                Some(AnimPtr::new(AnimTable::Anarm3)),
+                Some(AnimPtr::new(AnimTable::Anhac1)),
+                Some(AnimPtr::new(AnimTable::Anhac1)),
+            ],
+            /*sagaie en main*/
+            [
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Anarm4)),
+                Some(AnimPtr::new(AnimTable::Anarm4)),
+                Some(AnimPtr::new(AnimTable::Ansag1)),
+                Some(AnimPtr::new(AnimTable::Ansag1)),
+            ],
+            /*accroupi*/
+            [
+                Some(AnimPtr::new(AnimTable::Anacr1)),
+                Some(AnimPtr::new(AnimTable::Anacr1)),
+                Some(AnimPtr::new(AnimTable::Anbra1)),
+                Some(AnimPtr::new(AnimTable::Anbra1)),
+                Some(AnimPtr::new(AnimTable::Anacr2)),
+                Some(AnimPtr::new(AnimTable::Anacr2)),
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Antet2)),
+                Some(AnimPtr::new(AnimTable::Antet2)),
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Anbra2)),
+                Some(AnimPtr::new(AnimTable::Anbra2)),
+            ],
+            /*a genoux*/
+            [
+                Some(AnimPtr::new(AnimTable::Angen1)),
+                Some(AnimPtr::new(AnimTable::Angen1)),
+                Some(AnimPtr::new(AnimTable::Anbra1)),
+                Some(AnimPtr::new(AnimTable::Anbra1)),
+                Some(AnimPtr::new(AnimTable::Angen2)),
+                Some(AnimPtr::new(AnimTable::Angen2)),
+                Some(AnimPtr::new(AnimTable::Anbust)),
+                Some(AnimPtr::new(AnimTable::Anbust)),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            ],
+            /*plat ventre*/
+            [
+                Some(AnimPtr::new(AnimTable::Aneutr)),
+                Some(AnimPtr::new(AnimTable::Aneutr)),
+                Some(AnimPtr::new(AnimTable::Aneutr)),
+                Some(AnimPtr::new(AnimTable::Aneutr)),
+                Some(AnimPtr::new(AnimTable::Aneutr)),
+                Some(AnimPtr::new(AnimTable::Aneutr)),
+                Some(AnimPtr::new(AnimTable::Anbst1)),
+                Some(AnimPtr::new(AnimTable::Anbust)),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            ],
+            /*en garde avance*/
+            [
+                Some(AnimPtr::new(AnimTable::Anaga1)),
+                None,
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Anaga2)),
+                None,
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Antet1)),
+                None,
+                None,
+                None,
+                None,
+                None,
+            ],
+            /*en garde recule*/
+            [
+                Some(AnimPtr::new(AnimTable::Anrga1)),
+                None,
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Anrga2)),
+                None,
+                None,
+                None,
+                Some(AnimPtr::new(AnimTable::Antet1)),
+                None,
+                None,
+                None,
+                None,
+                None,
+            ],
+        ];
+
+        for sap_id in [SapId::Sap1, SapId::Sap2, SapId::Sap3, SapId::Sap4] {
+            let s = self.sapglob.sap_mut(sap_id);
+            for i in 0..14 {
+                s.sapanim[i] = Some(AnimPtr::new(AnimTable::Aneutr));
             }
-
-            self.sapglob.debban = [
-                /*marche*/
-                [
-                    ccp!(addr_of_mut!(self.sapglob.anjm1)),
-                    ccp!(addr_of_mut!(self.sapglob.anjm1)),
-                    ccp!(addr_of_mut!(self.sapglob.anbras)),
-                    ccp!(addr_of_mut!(self.sapglob.anbras)),
-                    ccp!(addr_of_mut!(self.sapglob.anjm1).add(27)),
-                    ccp!(addr_of_mut!(self.sapglob.anjm1)),
-                    ccp!(addr_of_mut!(self.sapglob.anbust)),
-                    ccp!(addr_of_mut!(self.sapglob.anbust)),
-                    ccp!(addr_of_mut!(self.sapglob.antete)),
-                    ccp!(addr_of_mut!(self.sapglob.antete)),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.anbras).add(15)),
-                    ccp!(addr_of_mut!(self.sapglob.anbras)),
-                ],
-                /*arret*/
-                [
-                    ccp!(addr_of_mut!(self.sapglob.anjm2)),
-                    ccp!(addr_of_mut!(self.sapglob.anjm2)),
-                    ccp!(addr_of_mut!(self.sapglob.anbra1)),
-                    ccp!(addr_of_mut!(self.sapglob.anbra1)),
-                    ccp!(addr_of_mut!(self.sapglob.anjm3)),
-                    ccp!(addr_of_mut!(self.sapglob.anjm3)),
-                    ccp!(addr_of_mut!(self.sapglob.anbust)),
-                    ccp!(addr_of_mut!(self.sapglob.anbust)),
-                    ccp!(addr_of_mut!(self.sapglob.antet2)),
-                    ccp!(addr_of_mut!(self.sapglob.antet2)),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.anbra2)),
-                    ccp!(addr_of_mut!(self.sapglob.anbra2)),
-                ],
-                /*frappe du poing*/
-                [
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.aneutr)),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.anpoin)),
-                    null_mut(),
-                ],
-                /*frappe avec hache*/
-                [
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.anarm1)),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.anhach)),
-                    null_mut(),
-                ],
-                /*frappe avec sagaie*/
-                [
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.aneutr)),
-                    ccp!(addr_of_mut!(self.sapglob.aneutr)),
-                    ccp!(addr_of_mut!(self.sapglob.ansag)),
-                    ccp!(addr_of_mut!(self.sapglob.anbra2)),
-                ],
-                /*rien en main*/
-                [
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.aneutr)),
-                    ccp!(addr_of_mut!(self.sapglob.aneutr)),
-                    null_mut(),
-                    null_mut(),
-                ],
-                /*hache en main*/
-                [
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.anarm3)),
-                    ccp!(addr_of_mut!(self.sapglob.anarm3)),
-                    ccp!(addr_of_mut!(self.sapglob.anhac1)),
-                    ccp!(addr_of_mut!(self.sapglob.anhac1)),
-                ],
-                /*sagaie en main*/
-                [
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.anarm4)),
-                    ccp!(addr_of_mut!(self.sapglob.anarm4)),
-                    ccp!(addr_of_mut!(self.sapglob.ansag1)),
-                    ccp!(addr_of_mut!(self.sapglob.ansag1)),
-                ],
-                /*accroupi*/
-                [
-                    ccp!(addr_of_mut!(self.sapglob.anacr1)),
-                    ccp!(addr_of_mut!(self.sapglob.anacr1)),
-                    ccp!(addr_of_mut!(self.sapglob.anbra1)),
-                    ccp!(addr_of_mut!(self.sapglob.anbra1)),
-                    ccp!(addr_of_mut!(self.sapglob.anacr2)),
-                    ccp!(addr_of_mut!(self.sapglob.anacr2)),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.antet2)),
-                    ccp!(addr_of_mut!(self.sapglob.antet2)),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.anbra2)),
-                    ccp!(addr_of_mut!(self.sapglob.anbra2)),
-                ],
-                /*a genoux*/
-                [
-                    ccp!(addr_of_mut!(self.sapglob.angen1)),
-                    ccp!(addr_of_mut!(self.sapglob.angen1)),
-                    ccp!(addr_of_mut!(self.sapglob.anbra1)),
-                    ccp!(addr_of_mut!(self.sapglob.anbra1)),
-                    ccp!(addr_of_mut!(self.sapglob.angen2)),
-                    ccp!(addr_of_mut!(self.sapglob.angen2)),
-                    ccp!(addr_of_mut!(self.sapglob.anbust)),
-                    ccp!(addr_of_mut!(self.sapglob.anbust)),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                ],
-                /*plat ventre*/
-                [
-                    ccp!(addr_of_mut!(self.sapglob.aneutr)),
-                    ccp!(addr_of_mut!(self.sapglob.aneutr)),
-                    ccp!(addr_of_mut!(self.sapglob.aneutr)),
-                    ccp!(addr_of_mut!(self.sapglob.aneutr)),
-                    ccp!(addr_of_mut!(self.sapglob.aneutr)),
-                    ccp!(addr_of_mut!(self.sapglob.aneutr)),
-                    ccp!(addr_of_mut!(self.sapglob.anbst1)),
-                    ccp!(addr_of_mut!(self.sapglob.anbust)),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                ],
-                /*en garde avance*/
-                [
-                    ccp!(addr_of_mut!(self.sapglob.anaga1)),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.anaga2)),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.antet1)),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                ],
-                /*en garde recule*/
-                [
-                    ccp!(addr_of_mut!(self.sapglob.anrga1)),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.anrga2)),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    ccp!(addr_of_mut!(self.sapglob.antet1)),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                    null_mut(),
-                ],
-            ];
-
-            for sap_id in [SapId::Sap1, SapId::Sap2, SapId::Sap3, SapId::Sap4] {
-                for i in 0..14 {
-                    let x = addr_of_mut!(self.sapglob.aneutr);
-                    let s = self.sapglob.sap_mut(sap_id);
-                    s.sapanim[i] = ccp!(x);
-                }
-                let s = self.sapglob.sap_mut(sap_id);
-                s.sapanim[14] = null_mut();
-            }
-
-            self.sapglob.sap1.adversaire = Some(SapId::Sap1);
-            self.sapglob.sap2.adversaire = Some(SapId::Sap2);
-            self.sapglob.sap3.adversaire = Some(SapId::Sap2);
-            self.sapglob.sap4.adversaire = Some(SapId::Sap2);
-            self.sapglob.sap1.possession = addr_of_mut!(self.sapglob.liste1) as *mut liste;
-            self.sapglob.sap2.possession = addr_of_mut!(self.sapglob.list10) as *mut liste;
-            self.sapglob.sap3.possession = addr_of_mut!(self.sapglob.list11) as *mut liste;
-            self.sapglob.sap4.possession = addr_of_mut!(self.sapglob.list12) as *mut liste;
-
-            self.sapglob.soma = [
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.soif) as *mut _ as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.fatig) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.faim) as *mut _ as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.mort) as *mut _ as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.bless) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.zoom) as *mut _ as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.agilite) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.force) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.resistance) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.charisme) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.vie) as *mut _ as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.sexe) as *mut _ as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.viecopain) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.sap1.cross) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 8,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.sap3.cross) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 8,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.scenar) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.scenpr) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.ciel) as *mut _ as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.terre) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.liste1.taille) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.liste1.elements) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 30,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.tagress[0]) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.enetoi[0]) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 2,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.tagress[1]) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.enetoi[1]) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 2,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.tagress[2]) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.enetoi[2]) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 2,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.tagress[3]) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.enetoi[3]) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 2,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.xj) as *mut _ as *mut std::os::raw::c_void,
-                    taille: 2,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.yj) as *mut _ as *mut std::os::raw::c_void,
-                    taille: 2,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.dzeta) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 2,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.heure) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 2,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.sap3.vie) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.saptxt.nomjoueur) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 8,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.saptxt.nomcopain) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 6,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.present[2]) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.jour_act) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 2,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.param) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 6,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.tabclav1) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 7,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.tabclav2) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 7,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.liste8.elements[4]) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.liste8.elements[5]) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapglob.bidon) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 1,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sap3d.FreqOrage) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 4,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sap3d.DistMinFoudroie) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 4,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sap3d.nbNuages) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 4,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sap3d.nbOiseaux) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 4,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sap3d.nbRochers) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 4,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sap3d.nbHommes) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 4,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sap3d.nbArbres) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 4,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sapcomb.nbHerbes) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 4,
-                },
-                cellule {
-                    adresse: addr_of_mut!(self.sap3d.VitesseDeplacementNuages) as *mut _
-                        as *mut std::os::raw::c_void,
-                    taille: 4,
-                },
-                cellule {
-                    adresse: null_mut(),
-                    taille: 0,
-                },
-            ];
+            s.sapanim[14] = None;
         }
+
+        self.sapglob.sap1.adversaire = Some(SapId::Sap1);
+        self.sapglob.sap2.adversaire = Some(SapId::Sap2);
+        self.sapglob.sap3.adversaire = Some(SapId::Sap2);
+        self.sapglob.sap4.adversaire = Some(SapId::Sap2);
+        self.sapglob.sap1.possession = addr_of_mut!(self.sapglob.liste1);
+        self.sapglob.sap2.possession = addr_of_mut!(self.sapglob.list10);
+        self.sapglob.sap3.possession = addr_of_mut!(self.sapglob.list11);
+        self.sapglob.sap4.possession = addr_of_mut!(self.sapglob.list12);
+
+        self.sapglob.soma = [
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.soif) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.fatig) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.faim) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.mort) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.bless) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.zoom) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.agilite) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.force) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.resistance) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.charisme) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.vie) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.sexe) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.viecopain) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.sap1.cross) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 8,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.sap3.cross) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 8,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.scenar) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.scenpr) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.ciel) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.terre) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.liste1.taille) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.liste1.elements) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 30,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.tagress[0]) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.enetoi[0]) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 2,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.tagress[1]) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.enetoi[1]) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 2,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.tagress[2]) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.enetoi[2]) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 2,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.tagress[3]) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.enetoi[3]) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 2,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.xj) as *mut _ as *mut std::os::raw::c_void,
+                taille: 2,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.yj) as *mut _ as *mut std::os::raw::c_void,
+                taille: 2,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.dzeta) as *mut _ as *mut std::os::raw::c_void,
+                taille: 2,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.heure) as *mut _ as *mut std::os::raw::c_void,
+                taille: 2,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.sap3.vie) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.saptxt.nomjoueur) as *mut _ as *mut std::os::raw::c_void,
+                taille: 8,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.saptxt.nomcopain) as *mut _ as *mut std::os::raw::c_void,
+                taille: 6,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.present[2]) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.jour_act) as *mut _ as *mut std::os::raw::c_void,
+                taille: 2,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.param) as *mut _ as *mut std::os::raw::c_void,
+                taille: 6,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.tabclav1) as *mut _ as *mut std::os::raw::c_void,
+                taille: 7,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.tabclav2) as *mut _ as *mut std::os::raw::c_void,
+                taille: 7,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.liste8.elements[4]) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.liste8.elements[5]) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapglob.bidon) as *mut _ as *mut std::os::raw::c_void,
+                taille: 1,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sap3d.FreqOrage) as *mut _ as *mut std::os::raw::c_void,
+                taille: 4,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sap3d.DistMinFoudroie) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 4,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sap3d.nbNuages) as *mut _ as *mut std::os::raw::c_void,
+                taille: 4,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sap3d.nbOiseaux) as *mut _ as *mut std::os::raw::c_void,
+                taille: 4,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sap3d.nbRochers) as *mut _ as *mut std::os::raw::c_void,
+                taille: 4,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sap3d.nbHommes) as *mut _ as *mut std::os::raw::c_void,
+                taille: 4,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sap3d.nbArbres) as *mut _ as *mut std::os::raw::c_void,
+                taille: 4,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sapcomb.nbHerbes) as *mut _ as *mut std::os::raw::c_void,
+                taille: 4,
+            },
+            cellule {
+                adresse: addr_of_mut!(self.sap3d.VitesseDeplacementNuages) as *mut _
+                    as *mut std::os::raw::c_void,
+                taille: 4,
+            },
+            cellule {
+                adresse: null_mut(),
+                taille: 0,
+            },
+        ];
     }
 }

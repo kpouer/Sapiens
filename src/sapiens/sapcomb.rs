@@ -24,8 +24,8 @@ use crate::acam::{FAUX, VRAI};
 use crate::cbridge::{geneva, teJustLeft};
 use crate::port;
 use crate::sapiens::sapglob::{
-    ListeId, SapId, Sapglob, bestagress, besthaut, bestlin, bestvie, hautlin, hautou, qtviande,
-    tabinp, tribforce, tribvie,
+    AnimPtr, AnimTable, ListeId, SapId, Sapglob, bestagress, besthaut, bestlin, bestvie, hautlin,
+    hautou, qtviande, tabinp, tribforce, tribvie,
 };
 use crate::sapiens::sapwbrt::{DoEraseRect, DoFrameRect, DoTextBox, DoTextSize};
 use crate::sapiens::sapwmus::attends_bruit;
@@ -38,7 +38,6 @@ use crate::shared::{Boolean, Point, Rect};
 use crate::text::TextFont;
 use crate::{DEBBEST, Sapiens};
 use std::ffi::CStr;
-use std::ptr::addr_of_mut;
 use std::sync::atomic::Ordering;
 use strum::IntoEnumIterator;
 
@@ -110,7 +109,7 @@ impl Sapglob {
     pub(crate) fn posan(&mut self, sap_id: SapId, mut anim: i16) {
         anim -= 1;
         for i in 0..14 {
-            if self.debban[anim as usize][i] as u8 > 0 {
+            if self.debban[anim as usize][i].is_some() {
                 self.sap_mut(sap_id).sapanim[i] = self.debban[anim as usize][i];
             }
         }
@@ -796,9 +795,9 @@ impl Sapiens {
                 (s.sens, s.colonne, s.hauteur)
             };
             if sens != 0 {
-                coltest = colonne + *self.sapglob.ptranim as i16;
+                coltest = colonne + self.sapglob.anim_peek() as i16;
             } else {
-                coltest = colonne - *self.sapglob.ptranim as i16;
+                coltest = colonne - self.sapglob.anim_peek() as i16;
             }
             /*quel est l'Adversaire*/
             /*valeur absolue de la distance*/
@@ -1013,10 +1012,9 @@ impl Sapiens {
     pub(crate) fn iniune(&mut self, sap_id: SapId) {
         {
             {
-                let x = addr_of_mut!(self.sapglob.aneutr) as *mut i8;
                 let s = self.sapglob.sap_mut(sap_id);
-                s.sapanim[10] = x; /*supprime arme*/
-                s.sapanim[11] = x;
+                s.sapanim[10] = Some(AnimPtr::new(AnimTable::Aneutr)); /*supprime arme*/
+                s.sapanim[11] = Some(AnimPtr::new(AnimTable::Aneutr));
                 s.action = 0;
                 s.ligne = 2;
                 s.hauteur = 0;
@@ -1179,8 +1177,8 @@ impl Sapiens {
             }
             if type_ == 0 {
                 /*personne*/
-                s.sapanim[0] = std::ptr::null_mut(); /*pas généré*/
-                s.sapanim[1] = std::ptr::null_mut();
+                s.sapanim[0] = None; /*pas généré*/
+                s.sapanim[1] = None;
                 s.colonne = 200;
                 s.vie = 0;
             }
@@ -1188,18 +1186,16 @@ impl Sapiens {
         } else {
             /*bestiole*/
             if type_ >= 7 {
-                let x = addr_of_mut!(self.sapglob.anlap1) as *mut i8;
                 let s = self.sapglob.sap_mut(sap_id);
-                s.sapanim[1] = x;
+                s.sapanim[1] = Some(AnimPtr::new(AnimTable::Anlap1));
             } else {
-                let x = addr_of_mut!(self.sapglob.anlou1) as *mut i8;
                 let s = self.sapglob.sap_mut(sap_id);
-                s.sapanim[1] = x;
+                s.sapanim[1] = Some(AnimPtr::new(AnimTable::Anlou1));
             }
             let s = self.sapglob.sap_mut(sap_id);
             s.sapanim[0] = s.sapanim[1];
-            s.sapanim[2] = std::ptr::null_mut(); /*plus d'animation apres 1*/
-            s.sapanim[3] = std::ptr::null_mut();
+            s.sapanim[2] = None; /*plus d'animation apres 1*/
+            s.sapanim[3] = None;
             s.cross[0] = (((type_ & 1) ^ 1) * 4) as u8;
             s.animal = ((type_ - 5) ^ 2) + 1;
             s.vie = bestvie[type_ as usize - 5] as u8;
@@ -1303,7 +1299,7 @@ impl Sapiens {
     pub(crate) fn mvtsap(&mut self, sap_id: SapId) -> i16 {
         unsafe {
             let mut nummob: i16 = 0;
-            let mut tfr: i8;
+            let mut tfr;
             let mut lastcol: i16;
 
             {
@@ -1320,14 +1316,13 @@ impl Sapiens {
                     self.sapglob.ptranim = sapiens.sapanim[registerb as usize];
                 }
                 /*teste si fin de sap:animation=0*/
-                if self.sapglob.ptranim.is_null() {
+                if self.sapglob.ptranim.is_none() {
                     return 0;
                 }
                 let mut ok: i16 = 0;
                 while ok == 0 {
                     /*ok*/
-                    tfr = *self.sapglob.ptranim; /*caractere suivant*/
-                    self.sapglob.ptranim = self.sapglob.ptranim.add(1);
+                    tfr = self.sapglob.anim_read(); /*caractere suivant*/
                     /*teste si le caractere lu est une commande*/
                     if tfr >= 0
                     /*non :pas une commande*/
@@ -1351,10 +1346,10 @@ impl Sapiens {
                         /*deplacement vertical*/
                         {
                             /*le caractere suivant donne la hauteur*/
-                            let x = *self.sapglob.ptranim as u8;
+                            let x = self.sapglob.anim_peek() as u8;
                             let sapiens = self.sapglob.sap_mut(sap_id);
                             sapiens.deltah = x;
-                            self.sapglob.ptranim = self.sapglob.ptranim.add(1);
+                            self.sapglob.anim_skip();
                             continue;
                         }
                         if tfr == 1
@@ -1482,10 +1477,10 @@ impl Sapiens {
                         }
                         if tfr == 6 {
                             /*fin d'arme*/
-                            let x = *self.sapglob.ptranim as u8;
+                            let x = self.sapglob.anim_peek() as u8;
                             let sapiens = self.sapglob.sap_mut(sap_id);
-                            sapiens.action = sapiens.action & (x);
-                            self.sapglob.ptranim = self.sapglob.ptranim.add(1);
+                            sapiens.action = sapiens.action & x;
+                            self.sapglob.anim_skip();
                             continue;
                         }
                         if tfr == 7 {
@@ -1505,7 +1500,7 @@ impl Sapiens {
                                 /*Si ce n'est pas le joueur il ne vise qu'une personne en particulier*/
                                 self.touche(sap_id, adversaire);
                             }
-                            self.sapglob.ptranim = self.sapglob.ptranim.add(1);
+                            self.sapglob.anim_skip();
                             continue;
                         }
                         if tfr == 8 {
@@ -1524,10 +1519,8 @@ impl Sapiens {
                     };
                     /*Le caractere lu a ete traite soit comme numero de block
                     soit comme commande*/
-                    let mut linmob: i16 = ligne as i16 + *self.sapglob.ptranim as i16;
-                    self.sapglob.ptranim = self.sapglob.ptranim.add(1);
-                    tfr = *self.sapglob.ptranim;
-                    self.sapglob.ptranim = self.sapglob.ptranim.add(1);
+                    let mut linmob: i16 = ligne as i16 + self.sapglob.anim_read() as i16;
+                    tfr = self.sapglob.anim_read();
                     if sens != 0 {
                         tfr = (-(tfr as i16) + 6) as i8;
                         /* teste l'ours*/
@@ -1650,13 +1643,11 @@ impl Sapiens {
             } else {
                 /*c'est une bestiole*/
                 if (self.sapglob.present[self.sapglob.who as usize] as i16) > 6 {
-                    let x = addr_of_mut!(self.sapglob.anlap2) as *mut i8;
                     let scop = self.sapglob.sap_mut(scop_id);
-                    scop.sapanim[1] = x;
+                    scop.sapanim[1] = Some(AnimPtr::new(AnimTable::Anlap2));
                 } else {
-                    let x = addr_of_mut!(self.sapglob.anlou2) as *mut i8;
                     let scop = self.sapglob.sap_mut(scop_id);
-                    scop.sapanim[1] = x;
+                    scop.sapanim[1] = Some(AnimPtr::new(AnimTable::Anlou2));
                 }
             }
         } else {
@@ -1670,15 +1661,13 @@ impl Sapiens {
                 }
                 /*arrete*/
                 if (self.sapglob.present[self.sapglob.who as usize] as i16) > 6 {
-                    let x = addr_of_mut!(self.sapglob.anlap1) as *mut i8;
                     let scop = self.sapglob.sap_mut(scop_id);
-                    scop.sapanim[1] = x;
-                    scop.sapanim[0] = x;
+                    scop.sapanim[1] = Some(AnimPtr::new(AnimTable::Anlap1));
+                    scop.sapanim[0] = Some(AnimPtr::new(AnimTable::Anlap1));
                 } else {
-                    let x = addr_of_mut!(self.sapglob.anlou1) as *mut i8;
                     let scop = self.sapglob.sap_mut(scop_id);
-                    scop.sapanim[1] = x;
-                    scop.sapanim[0] = x;
+                    scop.sapanim[1] = Some(AnimPtr::new(AnimTable::Anlou1));
+                    scop.sapanim[0] = Some(AnimPtr::new(AnimTable::Anlou1));
                 }
                 let scop = self.sapglob.sap_mut(scop_id);
                 scop.coeur = DEBCRANE!(self.sapwind) + 8;
@@ -1924,9 +1913,8 @@ impl Sapiens {
             if (vie < 40 && self.random.Rnd() > 180) || self.random.Rnd() < 10 {
                 let fuite = self.sapglob.sap(sap_id2).fuite;
                 if fuite == 0 {
-                    let x = addr_of_mut!(self.sapglob.anlou2) as *mut i8;
                     let s2 = self.sapglob.sap_mut(sap_id2);
-                    s2.sapanim[1] = x;
+                    s2.sapanim[1] = Some(AnimPtr::new(AnimTable::Anlou2));
                     s2.fuite = 1;
                     s2.colsag = self.random.Rnd() / 12;
                 }
@@ -1945,13 +1933,11 @@ impl Sapiens {
             }
             if self.random.Rnd() < self.sapglob.sap(sap_id2).agressivite as i16 {
                 if self.random.Rnd() > 100 {
-                    let x = addr_of_mut!(self.sapglob.anlou1) as *mut i8;
                     let s2 = self.sapglob.sap_mut(sap_id2);
-                    s2.sapanim[1] = x;
+                    s2.sapanim[1] = Some(AnimPtr::new(AnimTable::Anlou1));
                 } else {
-                    let xw = addr_of_mut!(self.sapglob.anlou2) as *mut i8;
                     let s2 = self.sapglob.sap_mut(sap_id2);
-                    s2.sapanim[1] = xw;
+                    s2.sapanim[1] = Some(AnimPtr::new(AnimTable::Anlou2));
                 }
             }
             let s2 = self.sapglob.sap_mut(sap_id2);
@@ -1980,7 +1966,7 @@ impl Sapiens {
                 /* plus l'adversaire est proche plus il s'agite*/
                 if self.random.Rnd() / 8 > self.sapglob.distsp {
                     self.sapglob.sap_mut(sap_id2).sapanim[0] =
-                        addr_of_mut!(self.sapglob.anlap3) as *mut i8; /*lapin observe*/
+                        Some(AnimPtr::new(AnimTable::Anlap3)); /*lapin observe*/
                     let (vitesse, snssag, action, sens) = {
                         let s1 = self.sapglob.sap_mut(sap_id1);
                         (s1.vitesse, s1.snssag, s1.action, s1.sens)
@@ -1989,23 +1975,20 @@ impl Sapiens {
                         || (vitesse & 2) == 0
                         || snssag != 255
                         || action != 0
-                    /*si proche et bouge ou si sagaie en l'air*/
                     {
-                        let x = addr_of_mut!(self.sapglob.anlap2) as *mut i8;
+                        /*si proche et bouge ou si sagaie en l'air*/
                         let s2 = self.sapglob.sap_mut(sap_id2);
-                        s2.sapanim[1] = x; /*fuite*/
+                        s2.sapanim[1] = Some(AnimPtr::new(AnimTable::Anlap2)); /*fuite*/
                         s2.sens = sens;
                         s2.fuite = 1;
                     }
                 } else {
                     let agressivite = self.sapglob.sap(sap_id2).agressivite;
-                    if self.random.Rnd() < agressivite as i16
-                    /*ici la peur*/
-                    {
-                        let x = addr_of_mut!(self.sapglob.anlap2) as *mut i8;
+                    if self.random.Rnd() < agressivite as i16 {
+                        /*ici la peur*/
                         let distsp = self.sapglob.distsp;
                         let s2 = self.sapglob.sap_mut(sap_id2);
-                        s2.sapanim[0] = x;
+                        s2.sapanim[0] = Some(AnimPtr::new(AnimTable::Anlap2));
                         if self.random.Rnd() < 25 && distsp < 45 {
                             /*Reglage sortie Lapin*/
                             s2.sens = (self.random.Rnd() & 1) as u8; /*sens au hasard*/
@@ -2017,7 +2000,7 @@ impl Sapiens {
             let s2 = self.sapglob.sap_mut(sap_id2);
             if s2.colonne < LIMITE_GAUCHE + 3 || s2.colonne > LIMITE_DROITE - 3 {
                 /*il sort de l'ecran : on le degenere*/
-                s2.sapanim[0] = core::ptr::null_mut();
+                s2.sapanim[0] = None;
                 s2.colonne = 200;
                 s2.vie = 0; /* a pu lapin*/
                 self.sapglob.present[self.sapglob.who as usize] = 0;
