@@ -475,19 +475,19 @@ impl Sapiens {
                 }
                 let mut i = {
                     let s = self.sapglob.sap(sap_id);
-                    (*s.possession).taille
+                    self.sapglob.liste(s.possession).taille
                 };
                 while i != 0 {
                     i -= 1;
                     let element = {
                         let s = self.sapglob.sap(sap_id);
-                        (*s.possession).elements[i as usize] as u16
+                        self.sapglob.liste(s.possession).elements[i as usize] as u16
                     };
                     self.sapglob.ajoutl(ListeId::Liste4, element);
                 }
                 /*on quitte pour les autres morts*/
                 let s = self.sapglob.sap_mut(sap_id);
-                (*s.possession).taille = 0;
+                self.sapglob.liste_mut(s.possession).taille = 0;
                 self.sapglob.echan = 0;
             }
         }

@@ -71,6 +71,8 @@ pub(crate) enum ListeId {
     Liste7,
     Liste8,
     Liste10,
+    Liste11,
+    Liste12,
     Listbidon,
     Zoneu,
 }
@@ -834,8 +836,8 @@ impl Default for Sapglob {
                 posccoeur: 5, /* ligne colonne position du coeur */
                 sapanim: [None; 15],
                 cross: [0; 8],
-                adversaire: None,       /* &sap1, remis dans init_glob */
-                possession: null_mut(), /* &liste1, remis dans init_glob */
+                adversaire: None, /* &sap1, remis dans init_glob */
+                possession: None, /* &liste1, remis dans init_glob */
             },
             sap2: sap {
                 colonne: 2,
@@ -1694,6 +1696,8 @@ impl Sapglob {
             ListeId::Liste7 => &self.liste7,
             ListeId::Liste8 => &self.liste8,
             ListeId::Liste10 => &self.list10,
+            ListeId::Liste11 => &self.list11,
+            ListeId::Liste12 => &self.list12,
             ListeId::Listbidon => &self.listbidon,
             ListeId::Zoneu => &self.zoneu,
         }
@@ -1711,6 +1715,8 @@ impl Sapglob {
             ListeId::Liste7 => &mut self.liste7,
             ListeId::Liste8 => &mut self.liste8,
             ListeId::Liste10 => &mut self.list10,
+            ListeId::Liste11 => &mut self.list11,
+            ListeId::Liste12 => &mut self.list12,
             ListeId::Listbidon => &mut self.listbidon,
             ListeId::Zoneu => &mut self.zoneu,
         }
@@ -2011,10 +2017,10 @@ impl Sapiens {
         self.sapglob.sap2.adversaire = Some(SapId::Sap2);
         self.sapglob.sap3.adversaire = Some(SapId::Sap2);
         self.sapglob.sap4.adversaire = Some(SapId::Sap2);
-        self.sapglob.sap1.possession = addr_of_mut!(self.sapglob.liste1);
-        self.sapglob.sap2.possession = addr_of_mut!(self.sapglob.list10);
-        self.sapglob.sap3.possession = addr_of_mut!(self.sapglob.list11);
-        self.sapglob.sap4.possession = addr_of_mut!(self.sapglob.list12);
+        self.sapglob.sap1.possession = ListeId::Liste1;
+        self.sapglob.sap2.possession = ListeId::Liste10;
+        self.sapglob.sap3.possession = ListeId::Liste11;
+        self.sapglob.sap4.possession = ListeId::Liste12;
 
         self.sapglob.soma = [
             cellule {

@@ -11,7 +11,7 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 
-use crate::sapiens::sapglob::{AnimPtr, SapId};
+use crate::sapiens::sapglob::{AnimPtr, ListeId, SapId};
 use crate::shared::{Ptr, RGBColor};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -182,7 +182,7 @@ pub(crate) struct sap {
     pub(crate) sapanim: [Option<AnimPtr>; 15usize],
     pub(crate) cross: [u8; 8usize],
     pub(crate) adversaire: Option<SapId>,
-    pub(crate) possession: *mut liste,
+    pub(crate) possession: Option<ListeId>,
 }
 impl Default for sap {
     fn default() -> Self {
