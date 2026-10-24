@@ -10,7 +10,7 @@ use crate::sapiens::sapwclav::GetKeyMap;
 use crate::sapiens::{FormeId, Mont};
 use crate::shared::{CGrafPtr, Rect};
 use log::error;
-use std::ptr::{addr_of, null_mut};
+use std::ptr::null_mut;
 
 const TAILLE_X_CARTE: i64 = 144;
 const TAILLE_Y_CARTE: i64 = 80;

@@ -1041,15 +1041,14 @@ pub(crate) fn FrameRoundRect(r: &Rect, _ovalWidth: i16, _ovalHeight: i16) {
     frame_rect(p, r);
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn ClipRect(r: *const Rect) {
+pub(crate) fn ClipRect(r: &Rect) {
     let p = cur();
-    if p.is_null() || r.is_null() {
+    if p.is_null() {
         return;
     }
     unsafe {
         let b = (*p).bounds;
-        (*p).clip = (*r).intersect(&b);
+        (*p).clip = r.intersect(&b);
     }
 }
 
