@@ -1056,8 +1056,7 @@ pub(crate) fn ClipRect(r: &Rect) {
 // CopyBits / ScrollRect
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn CopyBits(
+pub(crate) fn CopyBits(
     srcBits: *const c_void,
     dstBits: *const c_void,
     srcRect: *const Rect,
@@ -1218,28 +1217,21 @@ pub(crate) fn ScrollRect(r: &Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
 // Régions (approximation rectangulaire)
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn NewRgn() -> RgnHandle {
+pub(crate) fn NewRgn() -> RgnHandle {
     let r = Box::new(Rect::default());
     Box::into_raw(r) as *mut c_void
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn RectRgn(rgn: RgnHandle, r: *const Rect) {
+pub(crate) fn RectRgn(rgn: RgnHandle, r: Rect) {
     if rgn.is_null() {
         return;
     }
     unsafe {
-        if r.is_null() {
-            *(rgn as *mut Rect) = Rect::default();
-        } else {
-            *(rgn as *mut Rect) = *r;
-        }
+        *(rgn as *mut Rect) = r;
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn OpenRgn() {
+pub(crate) fn OpenRgn() {
     let p = cur();
     if p.is_null() {
         return;

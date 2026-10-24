@@ -335,7 +335,7 @@ impl Sapiens {
         let _g = port::on(self.sapwind.debecr);
         let rgn: RgnHandle = NewRgn();
         GetClip(rgn);
-        ClipRect(addr_of!(self.sapwmess.rMess));
+        ClipRect(&self.sapwmess.rMess);
         /* Effacement et affichage curseur */
         if car < 32 {
             let r = Rect::new(

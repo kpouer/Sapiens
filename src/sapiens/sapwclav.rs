@@ -130,7 +130,7 @@ impl Sapiens {
                 }
                 let rgn = NewRgn();
                 let z = port::zoomed(port::window(), &band);
-                RectRgn(rgn, &z);
+                RectRgn(rgn, z);
                 SetClip(rgn);
                 CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, &band, &band);
                 DisposeRgn(rgn);

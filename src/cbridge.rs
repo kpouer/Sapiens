@@ -188,34 +188,17 @@ pub(crate) type DialogPtr = *mut ::std::os::raw::c_void;
 unsafe extern "C" {
     pub(crate) fn putc(arg1: i32, arg2: *mut FILE) -> i32;
 
-    pub(crate) fn RetraceRect(d: DialogPtr, r: *mut Rect);
     pub(crate) fn strlen(__s: *const i8) -> u64;
     pub(crate) fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
     pub(crate) fn strcat(__s1: *mut i8, __s2: *const i8) -> *mut i8;
     pub(crate) fn strcpy(__dst: *mut i8, __src: *const i8) -> *mut i8;
     pub(crate) fn sprintf(arg1: *mut i8, arg2: *const i8, ...) -> i32;
-    pub(crate) fn stricmp(c1: *const i8, c2: *const i8) -> i32;
-    pub(crate) fn printf(arg1: *const i8, ...) -> i32;
-    pub(crate) fn fread(
-        __ptr: *mut ::std::os::raw::c_void,
-        __size: u64,
-        __nitems: u64,
-        __stream: *mut FILE,
-    ) -> u64;
-
     pub(crate) fn fopen(__filename: *const i8, __mode: *const i8) -> *mut FILE;
     pub(crate) fn fprintf(arg1: *mut FILE, arg2: *const i8, ...) -> i32;
     pub(crate) fn fscanf(arg1: *mut FILE, arg2: *const i8, ...) -> i32;
     pub(crate) fn feof(arg1: *mut FILE) -> i32;
     pub(crate) fn fclose(arg1: *mut FILE) -> i32;
     pub(crate) fn getc(arg1: *mut FILE) -> i32;
-    pub(crate) fn fwrite(
-        __ptr: *const ::std::os::raw::c_void,
-        __size: u64,
-        __nitems: u64,
-        __stream: *mut FILE,
-    ) -> u64;
-    pub(crate) fn remove(arg1: *const i8) -> i32;
 }
 
 pub fn convert_to_c_char_ptr(s: &str) -> *mut i8 {
