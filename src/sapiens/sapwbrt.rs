@@ -1,8 +1,8 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 use crate::acam::{
-    BackColor, BlockMove, CopyBits, DisposPtr, EraseRect, ForeColor, FrameRect, Line, MoveTo,
-    NewPtr, PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect, SetRect,
+    BackColor, BlockMove, CopyBits, DisposPtr, EraseRect, ForeColor, FrameRect, MoveTo, NewPtr,
+    PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect, SetRect,
 };
 use crate::cbridge::{FILE, blackColor, fclose, fopen, getc, patOr, sprintf, srcCopy, whiteColor};
 use crate::langue::Langue::GB;
@@ -138,13 +138,6 @@ pub(crate) fn DoMoveTo(x: i16, y: i16) {
     MoveTo((x as f32 * z) as i16, (y as f32 * z) as i16);
 }
 
-/****************************************************************************
-            DoLine
-*****************************************************************************/
-pub(crate) fn DoLine(x: i16, y: i16) {
-    let z = port::zoom();
-    Line((x as f32 * z) as i16, (y as f32 * z) as i16);
-}
 /****************************************************************************
             DoTextSize
 *****************************************************************************/

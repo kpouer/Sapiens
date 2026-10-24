@@ -12,8 +12,8 @@ use crate::acam::{
 };
 use crate::audio;
 use crate::cbridge::{
-    DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, everyEvent,
-    geneva, helvetica, optionKey, strcpy, strlen, watchCursor, whiteColor,
+    DRVR, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, everyEvent, helvetica,
+    optionKey, strcpy, strlen, watchCursor, whiteColor,
 };
 use crate::exchange::take_menu_command;
 use crate::langue::{langue_i16, set_langue};
@@ -21,22 +21,17 @@ use crate::port;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::CvtDefaultLangRess;
 use crate::sapiens::sapwbrt::{
-    DoEraseRect, DoFrameRect, DoLine, DoMoveTo, DoPenSize, DoTextSize, DoZoomRect,
-    SapiensCreeOffscreen, SetPathInData,
+    DoFrameRect, DoMoveTo, DoPenSize, DoTextSize, DoZoomRect, SapiensCreeOffscreen, SetPathInData,
 };
 use crate::sapiens::{ECHELLE, STR_VRAC, TAILLE_STR_MESS_FORMATE, Vue};
-use crate::shared::{
-    Boolean, CGrafPtr, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr, TEHandle,
-};
+use crate::shared::{Boolean, CGrafPtr, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr};
 use crate::stubs::{
-    AddResMenu, BeginUpdate, CarboniseAdapteStaticText, CarboniseGetDialogTextEditHandle,
-    CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseSetPortDialog, CarboniseValideUpdate,
-    DragWindow, DrawPicture, EndUpdate, FindWindow, FrontWindow, GetDItem, GetNewDialog,
-    GetNextEvent, GetPicture, HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect,
-    OpenDeskAcc, PopPath, PushPath, ReleaseResource, SelectWindow, SetDialogDefaultItem,
-    SizeWindow, SystemClick, SystemTask,
+    AddResMenu, BeginUpdate, CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseValideUpdate,
+    DragWindow, DrawPicture, EndUpdate, FindWindow, FrontWindow, GetNextEvent, GetPicture,
+    HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc, PopPath,
+    PushPath, ReleaseResource, SelectWindow, SizeWindow, SystemClick, SystemTask,
 };
-use crate::text::{DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize};
+use crate::text::{DrawString, StringWidth, TextFace, TextFont, TextSize};
 use crate::{Sapiens, cbridge};
 use cbridge::*;
 use std::ffi::c_void;
@@ -215,31 +210,6 @@ impl Sapiens {
         self.tfrvirt();
         self.TfrEcr(None);
         n
-    }
-}
-
-/******************************************************************************************
-                                    GetRectItem
-=> Recupere le cadre d'un item donné
-******************************************************************************************/
-pub(crate) fn GetRectItem(dialog: DialogPtr, item: i16, box_: *mut Rect) {
-    let mut itemType: i16 = 0;
-    let mut handle: Handle = core::ptr::null_mut();
-
-    /* On récupère l'item coorespondant à l'aire (seule l'aire nous intéresse) */
-    GetDItem(dialog, item, &raw mut itemType, &raw mut handle, box_);
-}
-
-/*****************************************************************************
-                       DrawArrowPopUp
-****************************************************************************/
-pub(crate) fn DrawArrowPopUp(r: &mut Rect) {
-    let y = (r.bottom + r.top) / 2 + 3;
-    let box_ = Rect::new(r.right - 15, r.top + 1, r.right - 1, r.bottom - 1);
-    DoEraseRect(&box_);
-    for i in 0..6 {
-        DoMoveTo(r.right - 10 - i, y - i);
-        DoLine(i * 2, 0);
     }
 }
 
@@ -795,41 +765,6 @@ impl SapWind {
         DrawString(chaine as *mut u8);
         ForeColor(blackColor as i16);
         PtoCstr(chaine as *mut u8);
-    }
-}
-
-/******************************************************************************************
-                                SetFontDialog
-Fixe la fonte du dialogue en entrée
-******************************************************************************************/
-unsafe fn SetFontDialog(dialog: DialogPtr, font: i16, taille: i16) {
-    CarboniseSetPortDialog(dialog);
-    TextFont(font);
-    TextSize(taille);
-    let info = GetFontInfo().unwrap_or_default();
-    let te: TEHandle = CarboniseGetDialogTextEditHandle(dialog);
-    unsafe {
-        if !te.is_null() {
-            (**te).txFont = font;
-            (**te).txSize = taille;
-            (**te).lineHeight = info.descent + info.ascent + info.leading;
-            (**te).fontAscent = info.ascent;
-        }
-    }
-}
-
-/*******************************************************************
-                        OuvreDialogue
-********************************************************************/
-pub(crate) fn OuvreDialogue(numDitl: i16) -> DialogPtr {
-    unsafe {
-        let dialog: DialogPtr = GetNewDialog(numDitl, core::ptr::null_mut(), -1isize as WindowPtr);
-        if !dialog.is_null() {
-            SetFontDialog(dialog, geneva as i16, 9);
-            CarboniseAdapteStaticText(dialog, numDitl, GetStdFont(), 9);
-            SetDialogDefaultItem(dialog, 1);
-        }
-        dialog
     }
 }
 

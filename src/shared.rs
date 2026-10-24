@@ -164,25 +164,6 @@ pub(crate) struct FontInfo {
     pub(crate) leading: i16,
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug)]
-pub(crate) struct SFReply {
-    pub(crate) good: Boolean,
-    pub(crate) vRefNum: i16,
-    pub(crate) fType: i64,
-    pub(crate) fName: [i8; 64],
-}
-
-#[repr(C)]
-pub(crate) struct QDGlobals {
-    pub(crate) screenBits: QDGlobalsScreenBits,
-}
-
-#[repr(C)]
-pub(crate) struct QDGlobalsScreenBits {
-    pub(crate) bounds: Rect,
-}
-
 // ---------------------------------------------------------------------------
 // Port de dessin
 // ---------------------------------------------------------------------------

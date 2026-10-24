@@ -5,15 +5,6 @@
 use crate::shared::Rect;
 use std::ffi::CString;
 pub(crate) type __int64_t = ::std::os::raw::c_longlong;
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub(crate) struct TPrStatus {
-    pub(crate) dummy: i8,
-}
-pub(crate) const gestaltFindFolderAttr: u32 = 1718578276;
-pub(crate) const times: u32 = 0;
-pub(crate) const sampledSynth: u32 = 5;
-pub(crate) const initMono: u32 = 128;
 
 pub(crate) type OSErr = i16;
 pub(crate) type MenuHandle = *mut ::std::os::raw::c_void;
