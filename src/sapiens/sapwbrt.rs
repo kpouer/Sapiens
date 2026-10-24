@@ -2,7 +2,7 @@
 #![allow(non_snake_case)]
 use crate::acam::{
     BackColor, BlockMove, CopyBits, DisposPtr, EraseRect, ForeColor, FrameRect, MoveTo, NewPtr,
-    PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect, SetRect,
+    PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect,
 };
 use crate::cbridge::{FILE, blackColor, fclose, fopen, getc, patOr, sprintf, srcCopy, whiteColor};
 use crate::langue::Langue::GB;
@@ -690,7 +690,7 @@ impl Sapiens {
         y: i16,
         deltah: i16,
         deltav: i16,
-        r: *mut Rect,
+        r: &mut Rect,
     ) {
         let mob = &self.sapwbrt.TabMob[num as usize];
         let tx: i16 = mob.nbcol;
@@ -700,8 +700,7 @@ impl Sapiens {
         let deltav = ((deltav as i32) * (ECHELLE as i32)) as i16;
         let x = ((x as i32) * (ECHELLE as i32)) as i16;
         let y = ((y as i32) * (ECHELLE as i32)) as i16;
-        SetRect(
-            r,
+        *r = Rect::new(
             x,
             y,
             (x as i32 + tx as i32 + deltah as i32) as i16,

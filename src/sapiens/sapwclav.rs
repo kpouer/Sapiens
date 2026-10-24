@@ -105,7 +105,7 @@ impl Sapiens {
         {
             let _g = port::on(self.sapwind.BuffMouse);
             let mut r = Rect::default();
-            self.Affmobbrtomb(mob, 0, 0, 4, 4, &raw mut r);
+            self.Affmobbrtomb(mob, 0, 0, 4, 4, &mut r);
         }
         /* On le recopie sur le reel */
         CopyOffscreen(
