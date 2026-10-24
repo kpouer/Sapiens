@@ -296,8 +296,7 @@ pub(crate) extern "C" fn CarboniseSetPatGray() {}
 // Ressources / memoire (restants)
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetResource(_type: i64, _id: i16) -> Handle {
+pub(crate) fn GetResource(_type: i64, _id: i16) -> Handle {
     std::ptr::null_mut()
 }
 #[unsafe(no_mangle)]

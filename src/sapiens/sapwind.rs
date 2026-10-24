@@ -32,13 +32,11 @@ use crate::stubs::{
     AddResMenu, BeginUpdate, CarboniseAdapteStaticText, CarboniseGetDialogTextEditHandle,
     CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseSetPortDialog, CarboniseValideUpdate,
     DragWindow, DrawPicture, EndUpdate, FindWindow, FrontWindow, GetDItem, GetNewDialog,
-    GetNextEvent, GetPicture, GetResource, HLock, HUnlock, HiliteMenu,
-    InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc, PopPath, PushPath,
-    ReleaseResource, SelectWindow, SetDialogDefaultItem, SizeWindow, SystemClick, SystemTask,
+    GetNextEvent, GetPicture, HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect,
+    OpenDeskAcc, PopPath, PushPath, ReleaseResource, SelectWindow, SetDialogDefaultItem,
+    SizeWindow, SystemClick, SystemTask,
 };
-use crate::text::{
-    DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize, pstr_to_string,
-};
+use crate::text::{DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize};
 use crate::{Sapiens, cbridge};
 use cbridge::*;
 use std::ffi::c_void;
@@ -162,19 +160,7 @@ taille de la chaine courte suivi de la chaine courte
 taille de la chaine longue suivi de la chaine longue
 ******************************************************************************************/
 pub(crate) fn GetVersionSapiens() -> String {
-    let ress: Handle = GetResource(VERS, 1);
-    if ress.is_null() {
-        return String::new();
-    }
-    HLock(ress);
-    unsafe {
-        let p: *mut u8 = *ress as *mut u8;
-        /* On saute jusqu'à la short version string (chaine Pascal) */
-        let s = pstr_to_string(p.add(6) as StringPtr);
-        HUnlock(ress);
-        ReleaseResource(ress);
-        s
-    }
+    "Rust".to_string()
 }
 
 /** Remplace `vsprintf` (sans varargs) : copie `s` dans le tampon C. */

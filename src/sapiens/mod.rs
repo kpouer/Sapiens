@@ -17,6 +17,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub(crate) mod muse;
+pub(crate) mod pascal_str;
 pub(crate) mod sap3d;
 pub(crate) mod sapcolorcvt;
 pub(crate) mod sapcomb;
