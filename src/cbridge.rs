@@ -46,25 +46,6 @@ pub(crate) struct TEText {
     pub(crate) nLines: i64,
 }
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub(crate) struct TMTask {
-    pub(crate) qLink: *mut ::std::os::raw::c_void,
-    pub(crate) qType: i16,
-    pub(crate) tmAddr: *mut ::std::os::raw::c_void,
-    pub(crate) tmCount: i64,
-    pub(crate) tmWakeUp: i64,
-    pub(crate) tmReserved: i64,
-}
-impl Default for TMTask {
-    fn default() -> Self {
-        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
 pub(crate) type WindowPtr = *mut ::std::os::raw::c_void;
 
 pub(crate) type __darwin_off_t = __int64_t;

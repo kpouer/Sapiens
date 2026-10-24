@@ -1141,8 +1141,6 @@ impl Sapiens {
             while timeBase > TickCount() {
                 core::hint::spin_loop();
             }
-            /* Installation du timer de comptage de frame */
-            self.InstalleTimeTask();
             /* Transfert de l'ecran */
             CarboniseSetCursorArrow();
             firstInit

@@ -8,14 +8,13 @@ use crate::Sapiens;
 use crate::acam::{
     CarboniseSetCursorArrow, DisposeRgn, FAUX, GetClip, NewRgn, RectRgn, SetClip, VRAI,
 };
-use crate::cbridge::{QElemPtr, TMTask};
 use crate::exchange::set_cursor_hidden;
 use crate::port;
 use crate::sapiens::ECHELLE;
 use crate::sapiens::sapwbrt::CopyOffscreen;
 use crate::sapiens::sapwind::SapWind;
 use crate::shared::{Boolean, KeyMap, Rect};
-use crate::stubs::{Button, GetKeys, GetMouse, InsXTime, PrimeTime};
+use crate::stubs::{Button, GetKeys, GetMouse};
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 
@@ -31,8 +30,6 @@ pub(crate) struct Sapwclav {
     /* Derniere position tracee de la souris (ex-`lastposx/lastposy`) */
     last_posx: i16,
     last_posy: i16,
-    /* Tache du timer 11 ms (ex-`timerTask`) */
-    timer_task: TMTask,
     /* ex-`isScrollMouse` */
     #[allow(dead_code)]
     is_scroll_mouse: Boolean,
@@ -53,17 +50,6 @@ Installe le timer de comptage 11ms pour le ralentissement
 **************************************************************************/
 
 impl Sapiens {
-    pub(crate) fn InstalleTimeTask(&mut self) {
-        self.sapwclav.timer_task.qLink = core::ptr::null_mut();
-        self.sapwclav.timer_task.qType = 0;
-        self.sapwclav.timer_task.tmAddr = core::ptr::null_mut();
-        self.sapwclav.timer_task.tmCount = 0;
-        self.sapwclav.timer_task.tmWakeUp = 0;
-        self.sapwclav.timer_task.tmReserved = 0;
-        InsXTime(&raw mut self.sapwclav.timer_task as QElemPtr);
-        PrimeTime(&raw mut self.sapwclav.timer_task as QElemPtr, 11); // 11 milliseconds = 90 fps
-    }
-
     /*************************************************************************
                         litclav
     **************************************************************************/

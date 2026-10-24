@@ -175,7 +175,6 @@ pub(crate) fn GetDialogItem(
     _box: *mut Rect,
 ) {
 }
-#[unsafe(no_mangle)]
 pub(crate) extern "C" fn SetDialogItem(
     _dialog: DialogPtr,
     _itemNo: i16,
@@ -184,7 +183,6 @@ pub(crate) extern "C" fn SetDialogItem(
     _box: *const Rect,
 ) {
 }
-#[unsafe(no_mangle)]
 pub(crate) extern "C" fn SetDItem(
     _dialog: DialogPtr,
     _itemNo: i16,
@@ -326,10 +324,6 @@ pub(crate) fn GetRectFilePng(_name: *mut i8, _r: &mut Rect) -> Boolean {
 // Timers / chemins temporaires
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn PrimeTime(_tmTaskPtr: QElemPtr, _count: i64) {}
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn InsXTime(_tmTaskPtr: QElemPtr) {}
 #[unsafe(no_mangle)]
 pub(crate) extern "C" fn PushPath() {}
 #[unsafe(no_mangle)]
