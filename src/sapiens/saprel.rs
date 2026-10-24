@@ -956,8 +956,7 @@ impl Sapiens {
     /***********************************************************************
                             CREECOP:Crée un copain
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn creecop(&mut self, qui: u16) {
+    pub(crate) fn creecop(&mut self, qui: u16) {
         /*c'est ds la poche*/
         /*on recopie sap2 sur sap3*/
         BlockMove(
@@ -1495,8 +1494,7 @@ impl Sapiens {
        2 panorama
        3 carte
     ***********************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn trobsv(&mut self, regb: u16) {
+    pub(crate) fn trobsv(&mut self, regb: u16) {
         let dzetdep: u16;
         let mut regb = regb;
         let mut posTimer: u64;

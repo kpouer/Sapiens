@@ -12,9 +12,8 @@ use crate::acam::{
 };
 use crate::audio;
 use crate::cbridge::{
-    DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, ctrlItem,
-    everyEvent, geneva, helvetica, optionKey, radCtrl, strcpy, strlen, userItem, watchCursor,
-    whiteColor,
+    DRVR, DialogPtr, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, everyEvent,
+    geneva, helvetica, optionKey, strcpy, strlen, watchCursor, whiteColor,
 };
 use crate::exchange::take_menu_command;
 use crate::langue::{langue_i16, set_langue};
@@ -27,18 +26,15 @@ use crate::sapiens::sapwbrt::{
 };
 use crate::sapiens::{ECHELLE, STR_VRAC, TAILLE_STR_MESS_FORMATE, Vue};
 use crate::shared::{
-    Boolean, CGrafPtr, ControlHandle, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr,
-    TEHandle,
+    Boolean, CGrafPtr, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr, TEHandle,
 };
 use crate::stubs::{
     AddResMenu, BeginUpdate, CarboniseAdapteStaticText, CarboniseGetDialogTextEditHandle,
-    CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseNewUserItemProc,
-    CarboniseSetPortDialog, CarboniseValideUpdate, DisposeRoutineDescriptor, DragWindow,
-    DrawPicture, EndUpdate, FindWindow, FrontWindow, GetCtlValue, GetDItem, GetDialogItem,
-    GetNewDialog, GetNextEvent, GetPicture, GetResource, HLock, HUnlock, HiliteMenu,
+    CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseSetPortDialog, CarboniseValideUpdate,
+    DragWindow, DrawPicture, EndUpdate, FindWindow, FrontWindow, GetDItem, GetNewDialog,
+    GetNextEvent, GetPicture, GetResource, HLock, HUnlock, HiliteMenu,
     InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc, PopPath, PushPath,
-    ReleaseResource, SelectWindow, SetCtlValue, SetDialogDefaultItem, SetDialogItem, SizeWindow,
-    SystemClick, SystemTask,
+    ReleaseResource, SelectWindow, SetDialogDefaultItem, SizeWindow, SystemClick, SystemTask,
 };
 use crate::text::{
     DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize, pstr_to_string,
@@ -223,110 +219,6 @@ impl Sapiens {
 Affichage d'un message durant l'initialisation
 ***********************************************************************************/
 pub(crate) fn MessInit(_format: *mut i8) {}
-
-/***********************************************************************************
-                                SetValBouton
-=> Fixe une valeur VRAI ou FAUX dans un bouton
-**********************************************************************************/
-pub(crate) fn SetValBouton(dialog: DialogPtr, itemHit: i16, value: Boolean) -> i16 {
-    let mut itemType = 0;
-    let mut control: Handle = core::ptr::null_mut();
-    let mut box_ = Rect::default();
-
-    /* C'est un texte ??? */
-    GetDItem(
-        dialog,
-        itemHit,
-        &raw mut itemType,
-        &raw mut control,
-        &raw mut box_,
-    );
-    if (itemType & ctrlItem as i16) != 0 || (itemType & radCtrl as i16) != 0 {
-        GetDItem(
-            dialog,
-            itemHit,
-            &raw mut itemType,
-            &raw mut control,
-            &raw mut box_,
-        );
-        SetCtlValue(control as ControlHandle, if value { 1 } else { 0 });
-        VRAI as i16
-    } else {
-        FAUX as i16
-    }
-}
-
-/***********************************************************************************
-                                GetValBouton
-=>lit une valeur VRAI ou FAUX dans un bouton
-**********************************************************************************/
-pub(crate) fn GetValBouton(dialog: DialogPtr, itemHit: i16) -> i16 {
-    let mut itemType: i16 = 0;
-    let mut control: Handle = core::ptr::null_mut();
-    let mut box_: Rect = Rect::default();
-    let value: i16;
-
-    /* C'est un bouton ??? */
-    GetDItem(
-        dialog,
-        itemHit,
-        &raw mut itemType,
-        &raw mut control,
-        &raw mut box_,
-    );
-    if (itemType & ctrlItem as i16) != 0 || (itemType & radCtrl as i16) != 0 {
-        GetDItem(
-            dialog,
-            itemHit,
-            &raw mut itemType,
-            &raw mut control,
-            &raw mut box_,
-        );
-        value = GetCtlValue(control as ControlHandle);
-        return value;
-    }
-    FAUX as i16
-}
-
-/******************************************************************************************
-                                    DefAfficheItem
- Défini le vecteur d'affichage d'un item de Type User
-=> Dialog, N° de l'item, vecteur
-******************************************************************************************/
-pub(crate) fn DefAfficheItem(
-    dialog: DialogPtr,
-    item: i16,
-    vect_affiche: Option<unsafe extern "C" fn(window: DialogPtr, itemid: i16)>,
-) {
-    let mut handle: Handle = core::ptr::null_mut();
-    let mut rect: Rect = Rect::default();
-    let mut itemType: i16 = 0;
-
-    GetDialogItem(
-        dialog,
-        item,
-        &raw mut itemType,
-        &raw mut handle,
-        &raw mut rect,
-    );
-    if (itemType & 127) == userItem as i16 {
-        /* Deja un vecteur pour cet item ? */
-        if !handle.is_null() {
-            DisposeRoutineDescriptor(handle as *mut c_void);
-        }
-        let proc: *mut c_void = match vect_affiche {
-            Some(f) => f as usize as *mut c_void,
-            None => core::ptr::null_mut(),
-        };
-        SetDialogItem(
-            dialog,
-            item,
-            itemType,
-            CarboniseNewUserItemProc(proc) as Handle,
-            &raw mut rect,
-        );
-    }
-}
 
 impl Sapiens {
     /******************************************************************************************

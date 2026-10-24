@@ -7,8 +7,7 @@
 #![allow(non_snake_case)]
 
 use crate::cbridge::{
-    DateTimeRec, MenuHandle, OSErr, QElemPtr, SndChannelPtr, THPrint, TPPrPort, TPrStatus,
-    WindowPtr,
+    DateTimeRec, MenuHandle, OSErr, SndChannelPtr, THPrint, TPPrPort, TPrStatus, WindowPtr,
 };
 use crate::exchange::INPUT;
 use crate::port;
