@@ -962,18 +962,8 @@ pub(crate) fn Color2Index(c: &RGBColor) -> i16 {
 // ---------------------------------------------------------------------------
 // Rectangles
 // ---------------------------------------------------------------------------
-pub(crate) fn SectRect(src1: *const Rect, src2: *const Rect, dst: *mut Rect) -> Boolean {
-    if src1.is_null() || src2.is_null() || dst.is_null() {
-        return false;
-    }
-    unsafe {
-        *dst = (*src1).intersect(&*src2);
-        if dst.is_null() {
-            false
-        } else {
-            !(*dst).is_empty() as Boolean
-        }
-    }
+pub(crate) fn SectRect(src1: &Rect, src2: &Rect) -> Option<Rect> {
+    Some(src1.intersect(src2)).filter(|r| !r.is_empty())
 }
 
 // ---------------------------------------------------------------------------

@@ -110,8 +110,7 @@ impl Sapiens {
                 (y + r / 8) as i16,
             );
         }
-        let mut rb = Rect::default();
-        if SectRect(&eltCart.aire, addr_of!(self.sapwcart.aire_carte), &mut rb) {
+        if SectRect(&eltCart.aire, &self.sapwcart.aire_carte).is_some() {
             eltCart.mob = self.sapwind.mob3D + forme.numMob3d;
             return true; /* VRAI */
         }

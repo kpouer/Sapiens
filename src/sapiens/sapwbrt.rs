@@ -837,11 +837,11 @@ impl Sapiens {
         let Some(info) = port::info(gfx) else {
             return;
         };
-        let mut aire = info.bounds;
+        let aire = info.bounds;
         let tailleLigne = info.row_bytes;
         let mut data = info.pixels;
         unsafe {
-            if SectRect(r, &aire, &mut aire) {
+            if let Some(aire) = SectRect(r, &aire) {
                 let couleur = self.sapwcvt.TabCvtCoul[couleur as usize];
                 let mut ty = aire.bottom as i32 - aire.top as i32;
                 let tx = aire.right as i32 - aire.left as i32;
@@ -1075,16 +1075,17 @@ pub(crate) fn CopyOffscreen(source: CGrafPtr, dest: CGrafPtr, rsourceIn: &Rect, 
             let mut dataSource = infoSource.pixels;
             let mut dataDest = infoDest.pixels;
             /* Par defaut, le rectangle a transferer est la source */
-            let mut rtfrs = realSource;
+            let rtfrs = realSource;
             /* On passe le bound destination dans le repere de la source */
             boundDest.OffsetRect(
                 realSource.left - realDest.left,
                 realSource.top - realDest.top,
             );
             /* On intersecte les 3 rectangles */
-            let rtfrs_p = &mut rtfrs as *mut Rect;
-            SectRect(rtfrs_p, &boundSource, rtfrs_p);
-            SectRect(rtfrs_p, &boundDest, rtfrs_p);
+            let Some(rtfrs) = SectRect(&rtfrs, &boundSource).and_then(|r| SectRect(&r, &boundDest))
+            else {
+                return;
+            };
             /* On recalcule le rectangle destination */
             let mut rtfrd = rtfrs;
             rtfrd.OffsetRect(
