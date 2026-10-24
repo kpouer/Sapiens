@@ -4,10 +4,6 @@
 ;               HIRES;Passe en resolution et detourne Erreurs Disques
 ;-----------------------------------------------------------------------
 */
-use std::ffi::c_void;
-use std::process::exit;
-
-use crate::Sapiens;
 use crate::acam::{
     Alert, BackColor, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle,
     DrawMenuBar, EnableItem, FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle,
@@ -47,6 +43,10 @@ use crate::stubs::{
 use crate::text::{
     DrawString, GetFontInfo, GetStdFont, StringWidth, TextFace, TextFont, TextSize, pstr_to_string,
 };
+use crate::{Sapiens, cbridge};
+use cbridge::*;
+use std::ffi::c_void;
+use std::process::exit;
 
 /******************** Constantes (SAPIENS.H / acam.h) *******************/
 const VERS: i64 = 0x76657273; /* 'vers' */
@@ -1180,21 +1180,21 @@ impl Sapiens {
                     /* Où a-t'on cliqué ??? */
                     match part as u32 {
                         /* Dans la barre de menu , alors on le traite */
-                        _inMenuBar => {
+                        inMenuBar => {
                             self.DoMenuCommand(MenuSelect(event.where_));
                         }
                         /* Sur le bureau, alors le bureau se débrouille ... sauf si c'est un pseudo document */
-                        _inSysWindow => {
+                        inSysWindow => {
                             SystemClick(&event, windowResult);
                         }
                         /* Dans le deplacement */
-                        _inDrag => {
+                        inDrag => {
                             SelectWindow(windowResult);
                             let bounds = port::SCREEN;
                             DragWindow(windowResult, event.where_, &bounds);
                         }
                         /* Dans une fenetre : alors on le traite */
-                        _inContent if windowResult != window => {
+                        inContent if windowResult != window => {
                             SelectWindow(windowResult);
 
                             //if(window==mainWindow)
