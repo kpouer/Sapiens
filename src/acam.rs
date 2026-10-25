@@ -1153,12 +1153,6 @@ pub(crate) fn ScrollRect(r: &Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
 // ---------------------------------------------------------------------------
 // Régions (approximation rectangulaire)
 // ---------------------------------------------------------------------------
-
-pub(crate) fn NewRgn() -> RgnHandle {
-    let r = Box::new(Rect::default());
-    Box::into_raw(r) as *mut c_void
-}
-
 pub(crate) fn OpenRgn() {
     with_port(|p| {
         p.open_rgn = 1;
@@ -1195,15 +1189,6 @@ pub(crate) fn EraseRgn(rgn: &Rect) {
 
 pub(crate) fn FrameRgn(rgn: &Rect) {
     with_port(|p| frame_rect(p, rgn));
-}
-
-pub(crate) fn DisposeRgn(rgn: RgnHandle) {
-    if rgn.is_null() {
-        return;
-    }
-    unsafe {
-        drop(Box::from_raw(rgn as *mut Rect));
-    }
 }
 
 #[cfg(test)]
