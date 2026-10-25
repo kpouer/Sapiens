@@ -1222,15 +1222,6 @@ pub(crate) fn NewRgn() -> RgnHandle {
     Box::into_raw(r) as *mut c_void
 }
 
-pub(crate) fn RectRgn(rgn: RgnHandle, r: Rect) {
-    if rgn.is_null() {
-        return;
-    }
-    unsafe {
-        *(rgn as *mut Rect) = r;
-    }
-}
-
 pub(crate) fn OpenRgn() {
     let p = cur();
     if p.is_null() {
@@ -1242,109 +1233,30 @@ pub(crate) fn OpenRgn() {
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn CloseRgn(rgn: RgnHandle) {
+pub(crate) fn CloseRgn() -> Option<Rect> {
     let p = cur();
     if p.is_null() {
-        return;
+        return None;
     }
     unsafe {
         let acc = (*p).open_acc;
         (*p).open_rgn = 0;
         (*p).open_acc = Rect::default();
-        if !rgn.is_null() {
-            *(rgn as *mut Rect) = acc;
-        }
+        Some(acc)
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn DiffRgn(a: RgnHandle, b: RgnHandle, dst: RgnHandle) {
-    if dst.is_null() {
-        return;
-    }
-    unsafe {
-        let ra = if a.is_null() {
-            Rect::default()
-        } else {
-            *(a as *const Rect)
-        };
-        let rb = if b.is_null() {
-            Rect::default()
-        } else {
-            *(b as *const Rect)
-        };
-        let out = diff_rect(&ra, &rb);
-        *(dst as *mut Rect) = out;
-    }
-}
-
-fn diff_rect(ra: &Rect, rb: &Rect) -> Rect {
-    if rb.is_empty() {
-        return *ra;
-    }
-    if ra.is_empty() {
-        return Rect::default();
-    }
-    if rb.left <= ra.left && rb.right >= ra.right {
-        // Bande horizontale pleine largeur.
-        if rb.top <= ra.top {
-            if rb.bottom >= ra.bottom {
-                return Rect::default();
-            }
-            return Rect {
-                top: rb.bottom,
-                left: ra.left,
-                bottom: ra.bottom,
-                right: ra.right,
-            };
-        }
-        return Rect {
-            top: ra.top,
-            left: ra.left,
-            bottom: rb.top,
-            right: ra.right,
-        };
-    }
-    if rb.top <= ra.top && rb.bottom >= ra.bottom {
-        // Bande verticale pleine hauteur.
-        if rb.left <= ra.left {
-            if rb.right >= ra.right {
-                return Rect::default();
-            }
-            return Rect {
-                top: ra.top,
-                left: rb.right,
-                bottom: ra.bottom,
-                right: ra.right,
-            };
-        }
-        return Rect {
-            top: ra.top,
-            left: ra.left,
-            bottom: ra.bottom,
-            right: rb.left,
-        };
-    }
-    // Cas général : on garde la partie haute.
-    *ra
-}
-
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetClip(rgn: RgnHandle) {
+pub(crate) fn GetClip() -> Option<Rect> {
     let p = cur();
-    if p.is_null() || rgn.is_null() {
-        return;
+    if p.is_null() {
+        return None;
     }
-    unsafe {
-        *(rgn as *mut Rect) = (*p).clip;
-    }
+    unsafe { Some((*p).clip) }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SetClip(rgn: RgnHandle) {
+pub(crate) fn SetClip(rgn: &Rect) {
     let p = cur();
-    if p.is_null() || rgn.is_null() {
+    if p.is_null() {
         return;
     }
     unsafe {
@@ -1353,26 +1265,23 @@ pub(crate) extern "C" fn SetClip(rgn: RgnHandle) {
     }
 }
 
-pub(crate) fn EraseRgn(rgn: RgnHandle) {
+pub(crate) fn EraseRgn(rgn: &Rect) {
     let p = cur();
-    if p.is_null() || rgn.is_null() {
+    if p.is_null() {
         return;
     }
     unsafe {
         let back = (*p).back_index;
-        fill_rect(&mut *p, &*(rgn as *const Rect), back);
+        fill_rect(&mut *p, rgn, back);
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn FrameRgn(rgn: RgnHandle) {
+pub(crate) fn FrameRgn(rgn: &Rect) {
     let p = cur();
-    if p.is_null() || rgn.is_null() {
+    if p.is_null() {
         return;
     }
-    unsafe {
-        frame_rect(p, &*(rgn as *const Rect));
-    }
+    frame_rect(p, rgn);
 }
 
 #[unsafe(no_mangle)]

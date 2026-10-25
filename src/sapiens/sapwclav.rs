@@ -5,9 +5,7 @@
 Fixe l'aire dans laquelle il ne faut plus afficher la souris systeme
 **************************************************************************/
 use crate::Sapiens;
-use crate::acam::{
-    CarboniseSetCursorArrow, DisposeRgn, FAUX, GetClip, NewRgn, RectRgn, SetClip, VRAI,
-};
+use crate::acam::{CarboniseSetCursorArrow, FAUX, GetClip, SetClip, VRAI};
 use crate::exchange::set_cursor_hidden;
 use crate::port;
 use crate::sapiens::ECHELLE;
@@ -122,21 +120,16 @@ impl Sapiens {
         fraichement dessine (clignotement). */
         {
             let _g = port::on(self.sapwind.mainWindow);
-            let rgnClip = NewRgn();
-            GetClip(rgnClip);
+            let rgnClip = GetClip().expect("clip");
             for band in difference_rects(&oldRect, &self.sapwclav.rsouris) {
                 if band.is_empty() {
                     continue;
                 }
-                let rgn = NewRgn();
-                let z = port::zoomed(port::window(), &band);
-                RectRgn(rgn, z);
-                SetClip(rgn);
+                let rgn = port::zoomed(port::window(), &band);
+                SetClip(&rgn);
                 CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, &band, &band);
-                DisposeRgn(rgn);
             }
-            SetClip(rgnClip);
-            DisposeRgn(rgnClip);
+            SetClip(&rgnClip);
         }
     }
 }

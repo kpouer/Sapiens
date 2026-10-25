@@ -1,14 +1,14 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 #![allow(unsafe_op_in_unsafe_fn)]
-use crate::acam::{ClipRect, DisposeRgn, GetClip, MoveTo, NewRgn, RGBForeColor, SetClip};
+use crate::acam::{ClipRect, GetClip, MoveTo, RGBForeColor, SetClip};
 use crate::langue::Langue::ES;
 use crate::langue::{Langue, langue};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtCar, CvtCarLissage};
 use crate::sapiens::sapwbrt::{DoEraseRect, DoPaintRect};
 use crate::sapiens::{NB_MOTS_BKMOTS, POLICE_LISSAGE, STYLE_LISSAGE};
-use crate::shared::{Boolean, CGrafPtr, Point, RGBColor, Rect, RgnHandle};
+use crate::shared::{Boolean, CGrafPtr, Point, RGBColor, Rect};
 use crate::stubs::CarboniseSetPatBlack;
 use crate::text::{CharWidth, DrawChar, GetFontInfo, TextFace, TextFont, TextSize};
 use crate::{Sapiens, port};
@@ -333,8 +333,7 @@ impl Sapiens {
     **************************************************************************/
     pub(crate) fn affcarmess(&mut self, car: i16) {
         let _g = port::on(self.sapwind.debecr);
-        let rgn: RgnHandle = NewRgn();
-        GetClip(rgn);
+        let rgn = GetClip().expect("Clip");
         ClipRect(&self.sapwmess.rMess);
         /* Effacement et affichage curseur */
         if car < 32 {
@@ -360,8 +359,7 @@ impl Sapiens {
                 14,
             );
         }
-        SetClip(rgn);
-        DisposeRgn(rgn);
+        SetClip(&rgn);
     }
 
     /***********************************************************************

@@ -10,8 +10,8 @@ use std::sync::atomic::Ordering;
 
 use crate::Sapiens;
 use crate::acam::{
-    BackColor, BlockMove, CloseRgn, DisposeRgn, EraseRgn, FAUX, FrameRgn, FrameRoundRect, GetClip,
-    LineTo, NewRgn, OpenRgn, SetClip, TickCount, VRAI,
+    BackColor, BlockMove, CloseRgn, EraseRgn, FAUX, FrameRgn, FrameRoundRect, GetClip, LineTo,
+    OpenRgn, SetClip, TickCount, VRAI,
 };
 use crate::cbridge::{strcat, strcpy, whiteColor};
 use crate::port;
@@ -20,7 +20,7 @@ use crate::sapiens::sapw3d::distance;
 use crate::sapiens::sapwbrt::{CopyOffscreen, DoMoveTo, DoPenSize};
 use crate::sapiens::sapwmus::attends_bruit;
 use crate::sapiens::{NBREVTDESTINE, NBREVTHEURE, Vue, evt};
-use crate::shared::{Ptr, Rect, RgnHandle};
+use crate::shared::{Ptr, Rect};
 
 const ECHELLE: i16 = 2;
 
@@ -326,11 +326,6 @@ impl Sapiens {
     *************************************************************************/
     pub(crate) fn bulle(&mut self, debut: Ptr, qui: i16) {
         unsafe {
-            let mut rbase: Rect;
-            let rgnclip: RgnHandle;
-            let rgn: RgnHandle;
-            let mut x: i16;
-            let mut y: i16;
             let mut p: Ptr = debut;
 
             let _g = port::on(self.sapwind.debecr);
@@ -356,7 +351,7 @@ impl Sapiens {
                 )
             };
             r.bottom += TAILLE_QUEUE;
-            rbase = r;
+            let mut rbase = r;
             /* On efface les bulles en cours */
             if qui == 0 {
                 /* C'est le joueur */
@@ -380,36 +375,34 @@ impl Sapiens {
                 }
             }
             r.bottom -= TAILLE_QUEUE;
-            rgn = NewRgn();
-            rgnclip = NewRgn();
             OpenRgn();
             FrameRoundRect(&r, 16, 16);
             /* Bulle a gauche */
             let sap1 = &self.sapglob.sap1;
             if (qui ^ sap1.sens as i16) != 0 {
-                x = r.left + 48;
-                y = r.bottom;
+                let x = r.left + 48;
+                let y = r.bottom;
                 DoMoveTo(x, y);
                 LineTo(x - TAILLE_QUEUE, y + TAILLE_QUEUE);
                 LineTo(x - 8, y);
                 LineTo(x, y);
             } else {
-                x = r.right - 48;
-                y = r.bottom;
+                let x = r.right - 48;
+                let y = r.bottom;
                 DoMoveTo(x, y);
                 LineTo(x + TAILLE_QUEUE, y + TAILLE_QUEUE);
                 LineTo(x + 8, y);
                 LineTo(x, y);
             }
-            CloseRgn(rgn);
+            let rgn = CloseRgn().expect("A range !");
             BackColor(whiteColor as i16);
-            EraseRgn(rgn);
+            EraseRgn(&rgn);
             DoPenSize(1, 1);
-            FrameRgn(rgn);
-            GetClip(rgnclip);
-            SetClip(rgn);
-            x = r.left + 8;
-            y = r.top + 6;
+            FrameRgn(&rgn);
+            let rgnclip = GetClip().expect("a clip");
+            SetClip(&rgn);
+            let x = r.left + 8;
+            let mut y = r.top + 6;
             self.sapwcar.GotoxyPixel(x, y);
             while *p == b' ' {
                 p = p.add(1);
@@ -429,12 +422,9 @@ impl Sapiens {
                     p = p.add(1);
                 }
             }
-            SetClip(rgnclip);
-            DisposeRgn(rgn);
-            DisposeRgn(rgnclip);
+            SetClip(&rgnclip);
             self.TfrEcr(Some(&rbase));
             DoPenSize(1, 1);
-            return;
         }
     }
 
