@@ -261,15 +261,6 @@ pub(crate) fn GetHandleSize(h: Handle) -> i64 {
     }
 }
 
-pub(crate) fn BlockMove(src: *const c_void, dest: *mut c_void, len: i64) {
-    if src.is_null() || dest.is_null() || len <= 0 {
-        return;
-    }
-    unsafe {
-        std::ptr::copy(src as *const u8, dest as *mut u8, len as usize);
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Chaînes Pascal
 // ---------------------------------------------------------------------------

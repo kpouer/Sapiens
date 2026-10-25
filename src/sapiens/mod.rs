@@ -180,8 +180,8 @@ pub(crate) struct sap {
     pub(crate) flg_mort: i16,
     pub(crate) poslcoeur: i16,
     pub(crate) posccoeur: i16,
-    pub(crate) sapanim: [Option<AnimPtr>; 15usize],
-    pub(crate) cross: [u8; 8usize],
+    pub(crate) sapanim: [Option<AnimPtr>; 15],
+    pub(crate) cross: [u8; 8],
     pub(crate) adversaire: SapId,
     pub(crate) possession: ListeId,
 }

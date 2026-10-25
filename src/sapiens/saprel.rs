@@ -3,15 +3,14 @@
                 SAPREL : Module relationnel (SAPREL.C porté en Rust)
                     (c) god Le 7 Novembre 1986
 ***********************************************************************/
-use std::os::raw::c_void;
 use std::ptr::{addr_of, addr_of_mut};
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
 
 use crate::Sapiens;
 use crate::acam::{
-    BackColor, BlockMove, CloseRgn, EraseRgn, FAUX, FrameRgn, FrameRoundRect, GetClip, LineTo,
-    OpenRgn, SetClip, TickCount, VRAI,
+    BackColor, CloseRgn, EraseRgn, FAUX, FrameRgn, FrameRoundRect, GetClip, LineTo, OpenRgn,
+    SetClip, TickCount, VRAI,
 };
 use crate::cbridge::{strcat, strcpy, whiteColor};
 use crate::port;
@@ -949,11 +948,7 @@ impl Sapiens {
     pub(crate) fn creecop(&mut self, qui: u16) {
         /*c'est ds la poche*/
         /*on recopie sap2 sur sap3*/
-        BlockMove(
-            addr_of!(self.sapglob.sap2.cross) as *const c_void,
-            addr_of_mut!(self.sapglob.sap3.cross) as *mut c_void,
-            8,
-        ); /*parametres*/
+        self.sapglob.sap3.cross = self.sapglob.sap2.cross; /*parametres*/
         unsafe {
             if self.sapglob.presence < 5 {
                 strcpy(

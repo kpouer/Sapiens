@@ -1,8 +1,8 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 use crate::acam::{
-    BackColor, BlockMove, CopyBits, DisposPtr, EraseRect, ForeColor, FrameRect, MoveTo, NewPtr,
-    PaintRect, PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect,
+    BackColor, CopyBits, DisposPtr, EraseRect, ForeColor, FrameRect, MoveTo, NewPtr, PaintRect,
+    PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect,
 };
 use crate::cbridge::{FILE, blackColor, fclose, fopen, getc, patOr, sprintf, srcCopy, whiteColor};
 use crate::langue::Langue::GB;
@@ -21,7 +21,6 @@ use crate::stubs::{
 use crate::text::{TextBox, TextSize};
 use crate::{Sapiens, cbridge, port};
 use std::mem::size_of;
-use std::os::raw::c_void;
 
 const TAILLE_TFR: u32 = 66;
 
@@ -1100,11 +1099,7 @@ pub(crate) fn CopyOffscreen(source: CGrafPtr, dest: CGrafPtr, rsourceIn: &Rect, 
             let tx = rtfrs.right as i32 - rtfrs.left as i32;
             while ty != 0 {
                 ty -= 1;
-                BlockMove(
-                    dataSource as *const c_void,
-                    dataDest as *mut c_void,
-                    tx as i64,
-                );
+                std::ptr::copy(dataSource as *const u8, dataDest, tx as usize);
                 dataSource = dataSource.add(tailleLigneSource as usize);
                 dataDest = dataDest.add(tailleLigneDest as usize);
             }
