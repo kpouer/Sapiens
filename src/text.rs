@@ -12,10 +12,10 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 
-use std::collections::HashMap;
-use std::sync::{Arc, LazyLock, Mutex};
-
 use ab_glyph::{Font as _, FontRef, GlyphId, PxScale, ScaleFont};
+use std::collections::HashMap;
+use std::sync::atomic::Ordering::SeqCst;
+use std::sync::{Arc, LazyLock, Mutex};
 
 use crate::acam::plot;
 use crate::shared::*;
@@ -451,8 +451,8 @@ fn draw_glyph(p: &mut SapPort, bx: i16, by: i16, g: &GlyphDraw) {
 /// Exécute `f` sur le port courant (`None` s'il n'y en a pas). La référence ne
 /// sort pas de la closure.
 #[inline]
-fn with_port<R>(f: impl FnOnce(&mut SapPort) -> R) -> Option<R> {
-    let p = CURRENT_PORT.load(std::sync::atomic::Ordering::SeqCst);
+pub(crate) fn with_port<R>(f: impl FnOnce(&mut SapPort) -> R) -> Option<R> {
+    let p = CURRENT_PORT.load(SeqCst);
     // SAFETY : le port courant est posé par `port::set_current` et reste valide
     // tant qu'il est courant ; seul le thread du jeu dessine.
     unsafe { p.as_mut() }.map(f)
@@ -594,7 +594,6 @@ pub(crate) fn TextBox(text: &[u8], boxr: &Rect, just: i16) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::Ordering;
 
     struct TestPort {
         port: Box<SapPort>,
@@ -663,7 +662,7 @@ mod tests {
         let _g = with_lock();
         let mut t = TestPort::new(160, 40);
         let p = t.port_ptr();
-        let old = CURRENT_PORT.swap(p, Ordering::SeqCst);
+        let old = CURRENT_PORT.swap(p, SeqCst);
         TextFont(2);
         TextSize(12);
         TextFace(0);
@@ -677,7 +676,7 @@ mod tests {
         // Le gras reste dans le même ordre de grandeurs en hauteur.
         let di = (bold.ascent - info.ascent).abs();
         assert!(di <= 4, "bold {bold:?} vs regular {info:?} (diff {di})");
-        CURRENT_PORT.store(old, Ordering::SeqCst);
+        CURRENT_PORT.store(old, SeqCst);
     }
 
     #[test]
@@ -685,7 +684,7 @@ mod tests {
         let _g = with_lock();
         let mut t = TestPort::new(160, 40);
         let p = t.port_ptr();
-        let old = CURRENT_PORT.swap(p, Ordering::SeqCst);
+        let old = CURRENT_PORT.swap(p, SeqCst);
         TextFont(2);
         TextSize(12);
         TextFace(0);
@@ -699,7 +698,7 @@ mod tests {
         unsafe { (*p).pen_loc = pen };
         DrawChar(0xF0u8 as i8);
         assert_eq!(t.count(), 0, "glyphe absent tracé quand même");
-        CURRENT_PORT.store(old, Ordering::SeqCst);
+        CURRENT_PORT.store(old, SeqCst);
     }
 
     #[test]
@@ -707,7 +706,7 @@ mod tests {
         let _g = with_lock();
         let mut t = TestPort::new(160, 40);
         let p = t.port_ptr();
-        let old = CURRENT_PORT.swap(p, Ordering::SeqCst);
+        let old = CURRENT_PORT.swap(p, SeqCst);
         unsafe { (*p).pen_loc = Point { v: 15, h: 10 } };
         TextFont(1);
         TextSize(12);
@@ -720,7 +719,7 @@ mod tests {
         s[4] = b'Z';
         unsafe { DrawString(s.as_mut_ptr()) };
         let w = unsafe { StringWidth(s.as_mut_ptr()) };
-        CURRENT_PORT.store(old, Ordering::SeqCst);
+        CURRENT_PORT.store(old, SeqCst);
         assert!(w > 16, "largeur étrange : {w}");
         let n = t.count();
         assert!(n > 60, "trop peu de pixels tracés : {n}");
@@ -733,7 +732,7 @@ mod tests {
         let _g = with_lock();
         let mut t = TestPort::new(200, 60);
         let p = t.port_ptr();
-        let old = CURRENT_PORT.swap(p, Ordering::SeqCst);
+        let old = CURRENT_PORT.swap(p, SeqCst);
         TextFont(2);
         TextSize(14);
         TextFace(0);
@@ -745,7 +744,7 @@ mod tests {
             right: 180,
         };
         TextBox(text, &boxr, 1); // teJustCenter
-        CURRENT_PORT.store(old, Ordering::SeqCst);
+        CURRENT_PORT.store(old, SeqCst);
         let n = t.count();
         assert!(n > 100, "trop peu de pixels tracés : {n}");
         // Le texte est centré verticalement : présence de pixels dans la

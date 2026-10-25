@@ -16,6 +16,7 @@ use crate::exchange::{CursorShape, request_alert, set_cursor_shape, set_title};
 use crate::langue::{Langue, langue};
 use crate::port;
 use crate::shared::*;
+use crate::text::with_port;
 use std::ffi::c_void;
 use std::sync::Mutex;
 use std::sync::atomic::Ordering;
@@ -826,73 +827,45 @@ fn draw_line(port: *mut SapPort, x0: i16, y0: i16, x1: i16, y1: i16) {
 }
 
 pub(crate) fn MoveTo(h: i16, v: i16) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        (*p).pen_loc = Point { v, h };
-    }
+    with_port(|p| p.pen_loc = Point { v, h });
 }
 
 pub(crate) fn LineTo(h: i16, v: i16) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        let loc = (*p).pen_loc;
+    with_port(|p| {
+        let loc = p.pen_loc;
         draw_line(p, loc.h, loc.v, h, v);
-        (*p).pen_loc = Point { v, h };
-    }
+        p.pen_loc = Point { v, h };
+    });
 }
 
 pub(crate) fn Line(dh: i16, dv: i16) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        let loc = (*p).pen_loc;
+    with_port(|p| {
+        let loc = p.pen_loc;
         let h = loc.h.wrapping_add(dh);
         let v = loc.v.wrapping_add(dv);
         draw_line(p, loc.h, loc.v, h, v);
-        (*p).pen_loc = Point { v, h };
-    }
+        p.pen_loc = Point { v, h };
+    });
 }
 
 pub(crate) fn PenSize(width: i16, height: i16) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        (*p).pen_size = Point {
+    with_port(|p| {
+        p.pen_size = Point {
             h: width.max(1),
             v: height.max(1),
-        };
-    }
+        }
+    });
 }
 
 pub(crate) fn PenMode(mode: i16) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        (*p).pen_mode = mode;
-    }
+    with_port(|p| p.pen_mode = mode);
 }
 
 pub(crate) fn PenNormal() {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        (*p).pen_size = Point { v: 1, h: 1 };
-        (*p).pen_mode = PAT_COPY;
-    }
+    with_port(|p| {
+        p.pen_size = Point { v: 1, h: 1 };
+        p.pen_mode = PAT_COPY;
+    });
 }
 
 fn color_num_to_index(color: i16) -> u8 {
@@ -908,37 +881,21 @@ fn color_num_to_index(color: i16) -> u8 {
 }
 
 pub(crate) fn ForeColor(color: i16) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        (*p).fore_index = color_num_to_index(color);
-    }
+    with_port(|p| p.fore_index = color_num_to_index(color));
 }
 
 pub(crate) fn BackColor(color: i16) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        (*p).back_index = color_num_to_index(color);
-    }
+    with_port(|p| p.back_index = color_num_to_index(color));
 }
 
 pub(crate) fn RGBForeColor(c: &RGBColor) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        (*p).fore_index = rgb_to_index(
+    with_port(|p| {
+        p.fore_index = rgb_to_index(
             (c.red >> 8) as u8,
             (c.green >> 8) as u8,
             (c.blue >> 8) as u8,
-        );
-    }
+        )
+    });
 }
 
 pub(crate) fn Index2Color(index: i16) -> RGBColor {
@@ -971,25 +928,17 @@ pub(crate) fn SectRect(src1: &Rect, src2: &Rect) -> Option<Rect> {
 // ---------------------------------------------------------------------------
 
 pub(crate) fn PaintRect(r: &Rect) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        let fore = (*p).fore_index;
+    with_port(|p| {
+        let fore = p.fore_index;
         fill_rect(&mut *p, r, fore);
-    }
+    });
 }
 
 pub(crate) fn EraseRect(r: &Rect) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        let back = (*p).back_index;
-        fill_rect(&mut *p, r, back);
-    }
+    with_port(|p| {
+        let back = p.back_index;
+        fill_rect(p, r, back);
+    });
 }
 
 fn frame_rect(port: *mut SapPort, r: &Rect) {
@@ -1026,30 +975,18 @@ fn clip_overflow_bound() -> i16 {
 }
 
 pub(crate) fn FrameRect(r: &Rect) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    frame_rect(p, r);
+    with_port(|p| frame_rect(p, r));
 }
 
 pub(crate) fn FrameRoundRect(r: &Rect, _ovalWidth: i16, _ovalHeight: i16) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    frame_rect(p, r);
+    with_port(|p| frame_rect(p, r));
 }
 
 pub(crate) fn ClipRect(r: &Rect) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        let b = (*p).bounds;
-        (*p).clip = r.intersect(&b);
-    }
+    with_port(|p| {
+        let b = p.bounds;
+        p.clip = r.intersect(&b);
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -1223,69 +1160,44 @@ pub(crate) fn NewRgn() -> RgnHandle {
 }
 
 pub(crate) fn OpenRgn() {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        (*p).open_rgn = 1;
-        (*p).open_acc = Rect::default();
-    }
+    with_port(|p| {
+        p.open_rgn = 1;
+        p.open_acc = Rect::default();
+    });
 }
 
 pub(crate) fn CloseRgn() -> Option<Rect> {
-    let p = cur();
-    if p.is_null() {
-        return None;
-    }
-    unsafe {
-        let acc = (*p).open_acc;
-        (*p).open_rgn = 0;
-        (*p).open_acc = Rect::default();
-        Some(acc)
-    }
+    with_port(|p| {
+        let acc = p.open_acc;
+        p.open_rgn = 0;
+        p.open_acc = Rect::default();
+        acc
+    })
 }
 
 pub(crate) fn GetClip() -> Option<Rect> {
-    let p = cur();
-    if p.is_null() {
-        return None;
-    }
-    unsafe { Some((*p).clip) }
+    with_port(|p| p.clip)
 }
 
 pub(crate) fn SetClip(rgn: &Rect) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        let b = (*p).bounds;
-        (*p).clip = (*(rgn as *const Rect)).intersect(&b);
-    }
+    with_port(|p| {
+        let b = p.bounds;
+        p.clip = rgn.intersect(&b);
+    });
 }
 
 pub(crate) fn EraseRgn(rgn: &Rect) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        let back = (*p).back_index;
-        fill_rect(&mut *p, rgn, back);
-    }
+    with_port(|p| {
+        let back = p.back_index;
+        fill_rect(p, rgn, back);
+    });
 }
 
 pub(crate) fn FrameRgn(rgn: &Rect) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    frame_rect(p, rgn);
+    with_port(|p| frame_rect(p, rgn));
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn DisposeRgn(rgn: RgnHandle) {
+pub(crate) fn DisposeRgn(rgn: RgnHandle) {
     if rgn.is_null() {
         return;
     }
