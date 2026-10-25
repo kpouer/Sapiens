@@ -941,16 +941,12 @@ impl Sapiens {
         self.sapglob.zj = 40;
         /*objets portes*/
         self.sapglob.liste1.taille = 9;
-        for i in 0..9 {
-            self.sapglob.liste1.elements[i] = self.sapglob.listdep[i];
-        }
+        self.sapglob.liste1.elements[..9].copy_from_slice(&self.sapglob.listdep);
         if self.IsEnreg() {
             self.sapglob.liste1.elements[0] = 22; /*Massue a la place de hache */
         }
-        for i in 0..4 {
-            self.sapglob.enetoi[i] = tenerv[i];
-            self.sapglob.tagress[i] = self.sapglob.agrdep[i];
-        }
+        self.sapglob.enetoi.copy_from_slice(&tenerv);
+        self.sapglob.tagress.copy_from_slice(&self.sapglob.agrdep);
         self.sapglob.destine[0].type_ = 1; /*regenere les 4 chefs*/
         self.sapglob.destine[1].type_ = 1;
         self.sapglob.destine[2].type_ = 1;
