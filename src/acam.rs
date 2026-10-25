@@ -941,30 +941,27 @@ pub(crate) fn EraseRect(r: &Rect) {
     });
 }
 
-fn frame_rect(port: *mut SapPort, r: &Rect) {
-    unsafe {
-        let p = &mut *port;
-        p.open_acc = p.open_acc.union(r);
-        if r.is_empty() {
-            return;
+fn frame_rect(p: &mut SapPort, r: &Rect) {
+    p.open_acc = p.open_acc.union(r);
+    if r.is_empty() {
+        return;
+    }
+    let c = p.fore_index;
+    let right = r.right.saturating_sub(1);
+    let bottom = r.bottom.saturating_sub(1);
+    for x in r.left..r.right {
+        if x > clip_overflow_bound() {
+            break;
         }
-        let c = p.fore_index;
-        let right = r.right.saturating_sub(1);
-        let bottom = r.bottom.saturating_sub(1);
-        for x in r.left..r.right {
-            if x > clip_overflow_bound() {
-                break;
-            }
-            plot(p, x, r.top, c);
-            if bottom >= r.top {
-                plot(p, x, bottom, c);
-            }
+        plot(p, x, r.top, c);
+        if bottom >= r.top {
+            plot(p, x, bottom, c);
         }
-        for y in r.top..r.bottom {
-            plot(p, r.left, y, c);
-            if right >= r.left {
-                plot(p, right, y, c);
-            }
+    }
+    for y in r.top..r.bottom {
+        plot(p, r.left, y, c);
+        if right >= r.left {
+            plot(p, right, y, c);
         }
     }
 }
