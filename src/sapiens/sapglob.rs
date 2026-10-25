@@ -59,8 +59,9 @@ pub(crate) static bestagress: [i8; 4] = [200u8 as i8, 180u8 as i8, 200u8 as i8, 
 pub(crate) static besthaut: [i8; 4] = [2, 1, 3, 3];
 pub(crate) static qtviande: [i8; 4] = [1, 2, 4, 8];
 
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, EnumIter)]
+#[derive(Debug, Copy, Clone, Default, Ord, PartialOrd, Eq, PartialEq, EnumIter)]
 pub(crate) enum ListeId {
+    #[default]
     Liste0,
     Liste1,
     Liste2,
@@ -77,8 +78,9 @@ pub(crate) enum ListeId {
     Zoneu,
 }
 
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, EnumIter)]
+#[derive(Debug, Copy, Clone, Default, Ord, PartialOrd, Eq, PartialEq, EnumIter)]
 pub(crate) enum SapId {
+    #[default]
     Sap1,
     Sap2,
     Sap3,

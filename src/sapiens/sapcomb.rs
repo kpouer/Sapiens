@@ -2036,9 +2036,8 @@ impl Sapiens {
                 } else if (self.sapglob.present[surqui as usize] as i16) < 5 {
                     /* Gestion du copain:Il y a-t-il une gestion de sap alors qu'il n'y a plus d'adversaire?*/
                     /*  homme*/
-                    if self.sapglob.sap3clav != 0 && surqui as usize == 2
-                    /*au clavier*/
-                    {
+                    if self.sapglob.sap3clav != 0 && surqui as usize == 2 {
+                        /*au clavier*/
                         if TesteClavier {
                             let keyboard_input = self.getkey(1);
                             self.clav(surqui, keyboard_input);

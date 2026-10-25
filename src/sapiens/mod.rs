@@ -151,7 +151,7 @@ impl Default for cellule {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub(crate) struct sap {
     pub(crate) colonne: i16,
     pub(crate) ligne: u8,
@@ -184,15 +184,6 @@ pub(crate) struct sap {
     pub(crate) cross: [u8; 8usize],
     pub(crate) adversaire: SapId,
     pub(crate) possession: ListeId,
-}
-impl Default for sap {
-    fn default() -> Self {
-        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
 }
 
 #[repr(C)]
