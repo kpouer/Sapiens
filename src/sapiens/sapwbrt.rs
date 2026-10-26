@@ -10,7 +10,7 @@ use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapgest::Sapgest;
 use crate::sapiens::saptxt::{CvtDefaultLangRess, CvtLangRess};
 use crate::sapiens::sapwind::{SapiensExit, ValideUpdate};
-use crate::sapiens::{ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalCoul};
+use crate::sapiens::{DEFAULT_PALCOUL, ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalCoul};
 use crate::shared::RGBColor as BRGBColor;
 use crate::shared::{CGrafPtr, Ptr, RGBColor, Rect, RgnHandle};
 use crate::stubs::{
@@ -235,7 +235,7 @@ impl Sapiens {
             let mut rgb = NewPtr(taille) as *mut BRGBColor;
             self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabRgb = rgb;
             self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabIndex =
-                NewPtr((n as i64) * (size_of::<i16>() as i64)) as *mut i16;
+                vec![0; n as usize];
             /* On memorise le nombre d'entrees de la PalCoul */
             for i in 0..n as usize {
                 if !Read(f, &mut r as *mut u8 as Ptr, 1) {
@@ -250,9 +250,8 @@ impl Sapiens {
                 (*rgb).red = ((r as u16) << 8) + r as u16;
                 (*rgb).green = ((g as u16) << 8) + g as u16;
                 (*rgb).blue = ((b as u16) << 8) + b as u16;
-                (*self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize]
-                    .tabIndex
-                    .add(i)) = SapColor2Index(&*rgb);
+                self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabIndex[i] =
+                    SapColor2Index(&*rgb);
                 rgb = rgb.add(1);
             }
             /* On charge les donnees de configuration */
@@ -313,38 +312,36 @@ impl Sapiens {
     a traiter
     <- ptr sur le tableau des index sur la palette (short *)
     ******************************************************************/
-    pub(crate) fn CalculePaletteAttenuee(&self, num: i16, coeff: f32, nbCoul: i16) -> *mut i16 {
+    pub(crate) fn CalculePaletteAttenuee(&self, num: i16, coeff: f32, nbCoul: i16) -> Vec<i16> {
         let coeffl = (256.0f32 * coeff) as i64;
         let mob = &self.sapwbrt.TabMob[num as usize];
         /* Palette associee a ce mob */
         let palette = &self.sapwbrt.TabPalette[mob.indexPalette as usize];
         /* On alloue un tableau d'index de taille identique */
-        let tabIndex =
-            NewPtr((size_of::<i16>() as i64) * (palette.nbEntrees.max(0) as i64)) as *mut i16;
+        let palette_length = palette.nbEntrees.max(0) as usize;
+        let mut tabIndex = Vec::with_capacity(palette_length);
         unsafe {
-            if !tabIndex.is_null() {
-                for i in 0..palette.nbEntrees.max(0) as usize {
-                    if (i as i16) < nbCoul {
-                        let mut rgb = palette.tabRgb.add(i).read();
-                        let mut val = ((coeffl * rgb.red as i64) >> 8) as i64;
-                        if val > 65535 {
-                            val = 65535;
-                        }
-                        rgb.red = val as u16;
-                        val = ((coeffl * rgb.green as i64) >> 8) as i64;
-                        if val > 65535 {
-                            val = 65535;
-                        }
-                        rgb.green = val as u16;
-                        val = ((coeffl * rgb.blue as i64) >> 8) as i64;
-                        if val > 65535 {
-                            val = 65535;
-                        }
-                        rgb.blue = val as u16;
-                        (*tabIndex.add(i)) = SapColor2Index(&rgb);
-                    } else {
-                        (*tabIndex.add(i)) = SapColor2Index(&*palette.tabRgb.add(i));
+            for i in 0..palette_length {
+                if (i as i16) < nbCoul {
+                    let mut rgb = palette.tabRgb.add(i).read();
+                    let mut val = ((coeffl * rgb.red as i64) >> 8) as i64;
+                    if val > 65535 {
+                        val = 65535;
                     }
+                    rgb.red = val as u16;
+                    val = ((coeffl * rgb.green as i64) >> 8) as i64;
+                    if val > 65535 {
+                        val = 65535;
+                    }
+                    rgb.green = val as u16;
+                    val = ((coeffl * rgb.blue as i64) >> 8) as i64;
+                    if val > 65535 {
+                        val = 65535;
+                    }
+                    rgb.blue = val as u16;
+                    tabIndex.push(SapColor2Index(&rgb));
+                } else {
+                    tabIndex.push(SapColor2Index(&*palette.tabRgb.add(i)));
                 }
             }
             tabIndex
@@ -356,15 +353,14 @@ impl Sapiens {
     Libere la memoire de toutes les donnees des mobs et palettes
     ******************************************************************/
     pub(crate) fn LibereDataMobs(&mut self) {
-        for i in 0..NB_MAX_MOB as usize {
-            if !self.sapwbrt.TabMob[i].datas.is_null() {
-                DisposePtr(self.sapwbrt.TabMob[i].datas);
+        for mob in &mut self.sapwbrt.TabMob {
+            if !mob.datas.is_null() {
+                DisposePtr(mob.datas);
             }
-            self.sapwbrt.TabMob[i].datas = std::ptr::null_mut();
+            mob.datas = std::ptr::null_mut();
         }
         for i in 0..self.sapwbrt.nbPalettes.max(0) as usize {
             DisposPtr(self.sapwbrt.TabPalette[i].tabRgb as Ptr);
-            DisposPtr(self.sapwbrt.TabPalette[i].tabIndex as Ptr);
         }
         self.sapwbrt.nbPalettes = 0;
     }
@@ -388,7 +384,7 @@ impl Sapiens {
                     Affmob3d
     Affiche un mob sur le port en cours
     *************************************************************************/
-    pub(crate) fn Affmob3d(&self, num: i16, mut mon_aire: Rect, tabIndex: *mut i16) {
+    pub(crate) fn Affmob3d(&self, num: i16, mut mon_aire: Rect, tabIndex: Option<&[i16]>) {
         let mob = &self.sapwbrt.TabMob[num as usize];
         unsafe {
             let tx: i16 = mob.nbcol;
@@ -396,10 +392,8 @@ impl Sapiens {
             let vide: u8 = mob.vide as u8;
             let mut p: *mut u8 = mob.datas;
             /* Palette associee a ce mob */
-            let mut tab_i: *mut i16 = tabIndex;
-            if tab_i.is_null() {
-                tab_i = self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex;
-            }
+            let tab_i =
+                tabIndex.unwrap_or(&self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex);
             /* Origine des donnees de l'ecran */
             let Some(info) = port::info(port::current()) else {
                 return;
@@ -453,7 +447,7 @@ impl Sapiens {
                     j != 0
                 } {
                     if *pdeb != vide {
-                        *ecr_deb = *tab_i.add(*pdeb as usize) as u8;
+                        *ecr_deb = tab_i[*pdeb as usize] as u8;
                     }
                     ecr_deb = ecr_deb.add(1);
                     rest_x += pas_x;
@@ -475,7 +469,7 @@ impl Sapiens {
     tableau des index de palette ou NULL si palette standard du Mob
     <= rien
     ******************************************************************/
-    pub(crate) fn Affmobbrt(&self, num: i16, x: i16, y: i16, sens: i16, tabIndex: *mut i16) {
+    pub(crate) fn Affmobbrt(&self, num: i16, x: i16, y: i16, sens: i16, tabIndex: Option<&[i16]>) {
         let mob = &self.sapwbrt.TabMob[num as usize];
         let mut x = ((x as i32) * (ECHELLE as i32)) as i16;
         let mut y = ((y as i32) * (ECHELLE as i32)) as i16;
@@ -483,10 +477,8 @@ impl Sapiens {
         let mut ty: i16 = mob.nbligne;
         let mut p: *mut u8 = mob.datas;
         /* Palette associee a ce mob */
-        let mut tab_i: *mut i16 = tabIndex;
-        if tab_i.is_null() {
-            tab_i = self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex;
-        }
+        let tab_i =
+            tabIndex.unwrap_or(&self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex);
         /* Origine des donnees de l'ecran */
         let Some(info) = port::info(port::current()) else {
             return;
@@ -576,7 +568,7 @@ impl Sapiens {
                     p = p.add(1);
                     /* Si egal a zéro alors couleur transparente */
                     if coul != vide {
-                        *pecr = *tab_i.add(coul as usize) as u8;
+                        *pecr = tab_i[coul as usize] as u8;
                     }
                     pecr = pecr.offset(dx as isize);
                 }
@@ -707,7 +699,7 @@ impl Sapiens {
         );
         let mut p: *mut u8 = mob.datas;
         /* Palette associee a ce mob */
-        let tab_i: *mut i16 = self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex;
+        let tab_i = &self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex;
         /* Origine des donnees de l'ecran */
         let Some(info) = port::info(port::current()) else {
             return;
@@ -747,7 +739,7 @@ impl Sapiens {
                             *pomb = self.sapwcvt.TabCvtCoulOmbre[*pomb as usize];
                         }
                         /* Conversion de l'index de couleur en index ST */
-                        *pecr = *tab_i.add(coul as usize) as u8;
+                        *pecr = tab_i[coul as usize] as u8;
                     }
                     pecr = pecr.add(1);
                     pomb = pomb.add(1);
@@ -1221,7 +1213,7 @@ impl Sapiens {
     *************************************************************************/
     pub(crate) fn Affmob(&self, mob: i16, y: i16, x: i16, inverse: i16) {
         let _g = port::on(self.sapwind.Ecran1);
-        self.Affmobbrt(mob, x, y, inverse, std::ptr::null_mut());
+        self.Affmobbrt(mob, x, y, inverse, None);
     }
     /*************************************************************************
                     AffmobConst
@@ -1230,9 +1222,9 @@ impl Sapiens {
     *************************************************************************/
     pub(crate) fn AffmobConst(&self, mob: i16, y: i16, x: i16, inverse: i16) {
         let _g = port::on(self.sapwind.Ecran1);
-        self.Affmobbrt(mob, x, y, inverse, std::ptr::null_mut());
+        self.Affmobbrt(mob, x, y, inverse, None);
         port::set(self.sapwind.Ecran2);
-        self.Affmobbrt(mob, x, y, inverse, std::ptr::null_mut());
+        self.Affmobbrt(mob, x, y, inverse, None);
     }
     /*************************************************************************
                     AffDebecr
@@ -1241,7 +1233,7 @@ impl Sapiens {
     *************************************************************************/
     pub(crate) fn AffDebecr(&self, mob: i16, y: i16, x: i16, transfere: i16) {
         let _g = port::on(self.sapwind.debecr);
-        self.Affmobbrt(mob, x, y, 0, std::ptr::null_mut());
+        self.Affmobbrt(mob, x, y, 0, None);
         if transfere != 0 {
             let r = self.CalculeAireMob(mob, x, y);
             self.TfrEcr(Some(&r));
@@ -1274,9 +1266,9 @@ impl Sapiens {
     Affiche un mob sur l'ecran virtuel, en entree on a en plus le tableau des
     index de couleurs a utiliser
     *************************************************************************/
-    pub(crate) fn AffmobPalette(&self, mob: i16, y: i16, x: i16, inverse: i16, tabIndex: *mut i16) {
+    pub(crate) fn AffmobPalette(&self, mob: i16, y: i16, x: i16, inverse: i16, tabIndex: &[i16]) {
         let _g = port::on(self.sapwind.Ecran1);
-        self.Affmobbrt(mob, x, y, inverse, tabIndex);
+        self.Affmobbrt(mob, x, y, inverse, Some(tabIndex));
     }
     /*************************************************************************
                     AffPalette
@@ -1367,7 +1359,7 @@ pub(crate) struct Sapwbrt {
 impl Default for Sapwbrt {
     fn default() -> Self {
         Self {
-            TabPalette: unsafe { std::mem::zeroed() },
+            TabPalette: [DEFAULT_PALCOUL; 16],
             nbPalettes: 0,
             TabMob: unsafe { std::mem::zeroed() },
         }

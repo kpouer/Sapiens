@@ -1,9 +1,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 #![allow(unsafe_op_in_unsafe_fn)]
-use crate::acam::DisposPtr;
 use crate::sapiens::sapw3d::{cosshort, sinshort};
-use crate::shared::Ptr;
 use crate::{Sapiens, port};
 
 pub(crate) struct Sapwarb {
@@ -14,7 +12,7 @@ pub(crate) struct Sapwarb {
     qutlgn: i16,
     densif: i16,
     fortou: [i16; 4],
-    TabIndexFeuilleNuit: *mut i16,
+    TabIndexFeuilleNuit: Option<Vec<i16>>,
 
     /* 9 valeurs initiales + 1 slot: SAPWBRT lit tabcoul[9], SAPW3D l'écrit */
     pub(crate) tabcoul: [i16; 10],
@@ -30,7 +28,7 @@ impl Default for Sapwarb {
             qutlgn: 0,
             densif: 0,
             fortou: [0; 4],
-            TabIndexFeuilleNuit: std::ptr::null_mut(),
+            TabIndexFeuilleNuit: None,
 
             /* 9 valeurs initiales + 1 slot: SAPWBRT lit tabcoul[9], SAPW3D l'écrit */
             tabcoul: [3, 4, 5, 6, 6, 5, 4, 3, 3, 0],
@@ -101,7 +99,7 @@ impl Sapiens {
                     x as i16,
                     y as i16,
                     sens,
-                    self.sapwarb.TabIndexFeuilleNuit,
+                    self.sapwarb.TabIndexFeuilleNuit.as_deref(),
                 );
             }
             forme += 1;
@@ -190,13 +188,13 @@ impl Sapiens {
         let _g = port::on(self.sapwind.Ecran1);
         /* La position du meteore varie de 74 a 0 puis de 0 a 74 */
         if self.sapglob.heure > 512 {
-            self.sapwarb.TabIndexFeuilleNuit = self.CalculePaletteAttenuee(
+            self.sapwarb.TabIndexFeuilleNuit = Some(self.CalculePaletteAttenuee(
                 crate::MOB_FEUILLE!(self.sapwind),
                 0.50 + (self.sapglob.metpos as f32) / 150.0,
                 999,
-            );
+            ));
         } else {
-            self.sapwarb.TabIndexFeuilleNuit = std::ptr::null_mut();
+            self.sapwarb.TabIndexFeuilleNuit = None;
         }
         self.sapwarb.niveau = 0;
         self.sapwarb.tabcoul[..tram_arbre.len()].copy_from_slice(&tram_arbre);
@@ -217,9 +215,6 @@ impl Sapiens {
         let largeur = (((self.random.rnd0() as i32 * 10) >> 8) + 10) as i16;
         self.sapwarb.largtronc = largeur;
         self.tracebranche(256, colonne, ligne, longueur, largeur);
-        if !self.sapwarb.TabIndexFeuilleNuit.is_null() {
-            DisposPtr(self.sapwarb.TabIndexFeuilleNuit as Ptr);
-        }
-        self.sapwarb.TabIndexFeuilleNuit = std::ptr::null_mut();
+        self.sapwarb.TabIndexFeuilleNuit = None;
     }
 }

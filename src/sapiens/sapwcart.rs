@@ -137,7 +137,7 @@ impl Sapiens {
                 if minyc == 32767 {
                     return;
                 }
-                self.Affmob3d(tab_elt_car[jmin].mob, tab_elt_car[jmin].aire, null_mut());
+                self.Affmob3d(tab_elt_car[jmin].mob, tab_elt_car[jmin].aire, None);
             }
             if let Some(tab_elt_car) = &mut self.sapwcart.tab_elt_car {
                 tab_elt_car[jmin].aire.bottom = 32767;

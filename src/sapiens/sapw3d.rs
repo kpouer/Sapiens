@@ -9,17 +9,14 @@
 // sol en lignes successives, pluie et éclairs, visualisation des montagnes.
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use std::ptr::{addr_of_mut, null_mut};
-
-use crate::acam::{DisposPtr, NewPtrClear, Random, TickCount};
+use crate::acam::{Random, TickCount};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapwbrt::RemplitZoneLignes;
 use crate::sapiens::{
     ECHELLE, FormeId, IndexColor, MontId, NB_DEGRADE_DISTANCE, NB_ETOILES, NB_LIGNES_CIEL,
-    NB_LIGNES_TERRE, NBREVTHEURE, h_chron,
+    NB_LIGNES_TERRE, h_chron,
 };
-use crate::shared::{Ptr, RGBColor, Rect};
-use crate::stubs::DisposePtr;
+use crate::shared::{RGBColor, Rect};
 use crate::{Sapiens, port};
 
 const LARGEUR_ECRAN: i32 = 512;
@@ -47,7 +44,7 @@ struct LigneSol {
 }
 
 pub(crate) struct Sapw3d {
-    TAB_PALETTE_DISTANCE: *mut *mut i16,
+    TAB_PALETTE_DISTANCE: Vec<Vec<i16>>,
     TAB_COULEURS_CIEL: [IndexColor; NB_LIGNES_CIEL],
     COULEUR_ORAGE_JOUR: i16,
     COULEUR_ORAGE_NUIT: i16,
@@ -65,7 +62,7 @@ pub(crate) struct Sapw3d {
 impl Default for Sapw3d {
     fn default() -> Self {
         Self {
-            TAB_PALETTE_DISTANCE: null_mut(),
+            TAB_PALETTE_DISTANCE: Vec::new(),
             TAB_COULEURS_CIEL: [IndexColor::default(); NB_LIGNES_CIEL],
             COULEUR_ORAGE_JOUR: 0,
             COULEUR_ORAGE_NUIT: 0,
@@ -220,7 +217,7 @@ Calcul des tableau de degrades du ciel
 const TAB_LIGN: [i16; 8] = [0, 41 * 2, 48 * 2, 53 * 2, 57 * 2, 59 * 2, 61 * 2, 64 * 2];
 
 impl Sapiens {
-    unsafe fn CalculeDegradeDuCiel(&self, palette: &[i16], tab_couleurs_ciel: &mut [IndexColor]) {
+    fn CalculeDegradeDuCiel(&mut self, index: usize) {
         let mut rgbDep = RGBColor::default();
         let mut j = 0;
         let mut incRed = 0;
@@ -231,6 +228,7 @@ impl Sapiens {
         for i in 0..NB_LIGNES_CIEL as i32 {
             /* Changement de ligne */
             if i == TAB_LIGN[j as usize] as i32 {
+                let palette = self.sapglob.tabheur[index].pal.borrow();
                 rgbDep = RGBColor::CvtCouleurStEnRgb(palette[j as usize]);
                 j += 1;
                 let rgbDest = RGBColor::CvtCouleurStEnRgb(palette[j as usize]);
@@ -242,7 +240,7 @@ impl Sapiens {
             rgbDep.red = (rgbDep.red as i64 + incRed) as u16;
             rgbDep.green = (rgbDep.green as i64 + incGreen) as u16;
             rgbDep.blue = (rgbDep.blue as i64 + incBlue) as u16;
-            let idx = &mut tab_couleurs_ciel[i as usize];
+            let idx = &mut self.sapglob.tabheur[index].TabCouleursCiel[i as usize];
             idx.rgb = rgbDep;
             idx.index = SapColor2Index(&rgbDep);
         }
@@ -253,9 +251,10 @@ impl Sapiens {
     Calcule le degrade des montagnes en fonction de la distance au joueur
     Le premier degrade est celui de premier plan, le dernier celui de l'horizon
     *****************************************************************************/
-    unsafe fn CalculeDegradeDistance(&self, h: i16, tab_palette_distance: *mut *mut i16) {
+    fn CalculeDegradeDistance(&mut self, index: usize) {
         let mut coeff: f32;
         let delta: f32;
+        let h = self.sapglob.tabheur[index].h;
         if h as i32 > 512 - 50 || (h as i32) < 50 {
             /* Nuit */
             let pos = if (h as i32) < 50 {
@@ -272,11 +271,7 @@ impl Sapiens {
             delta = (0.4 / NB_DEGRADE_DISTANCE as f64) as f32;
         }
         for i in 0..NB_DEGRADE_DISTANCE as i32 {
-            let prev = *tab_palette_distance.add(i as usize);
-            if !prev.is_null() {
-                DisposePtr(prev as Ptr);
-            }
-            *tab_palette_distance.add(i as usize) =
+            self.sapglob.tabheur[index].TabPaletteDistance[i as usize] =
                 self.CalculePaletteAttenuee(self.sapwind.mob3D + 1, coeff, 33);
             coeff -= delta;
             if coeff < 0.0 {
@@ -294,21 +289,13 @@ impl Sapiens {
 
         let _g = port::on(self.sapwind.Ecran1);
         /* Pour l'ensemble des evenements on calcule le degrade */
-        let t = addr_of_mut!(self.sapglob.tabheur) as *mut h_chron;
-        unsafe {
-            for i in 0..NBREVTHEURE as i32 {
-                let e = &mut *t.add(i as usize);
-                if e.q != 0 {
-                    if !e.TabPaletteDistance.is_null() {
-                        DisposPtr(e.TabPaletteDistance as Ptr);
-                    }
-                    e.TabCouleursCiel = [IndexColor::default(); NB_LIGNES_CIEL];
-                    e.TabPaletteDistance = NewPtrClear(
-                        (std::mem::size_of::<*mut i16>() as i64) * (NB_DEGRADE_DISTANCE as i64),
-                    ) as *mut *mut i16;
-                    self.CalculeDegradeDuCiel(e.pal.borrow().as_ref(), &mut e.TabCouleursCiel);
-                    self.CalculeDegradeDistance(e.h, e.TabPaletteDistance);
-                }
+        for i in 0..self.sapglob.tabheur.len() {
+            let e = &mut self.sapglob.tabheur[i];
+            if e.q != 0 {
+                e.TabCouleursCiel = [IndexColor::default(); NB_LIGNES_CIEL];
+                e.TabPaletteDistance = vec![Vec::new(); NB_DEGRADE_DISTANCE as usize];
+                self.CalculeDegradeDuCiel(i);
+                self.CalculeDegradeDistance(i);
             }
         }
         rgb.red = 20000;
@@ -405,7 +392,7 @@ impl Sapiens {
                         x / ECHELLE as i16,
                         self.sapw3d.Y_METEORE / ECHELLE as i16,
                         0,
-                        null_mut(),
+                        None,
                     );
                     self.sapw3d.METEORE = (self.sapw3d.METEORE as i32 - 1) as i16;
                     self.sapw3d.X_METEORE = (self.sapw3d.X_METEORE as i32 + 5) as i16;
@@ -419,7 +406,7 @@ impl Sapiens {
                 /* Etoile polaire */
                 let x = (((self.sapglob.dzeta as i32 * 2 + 512) % 2048) - 512 + 256) as i16;
                 let num = (self.sapwind.mob3D as i32 + self.random.myRandom(22, 24) as i32) as i16;
-                self.Affmobbrt(num, x / 2, 20, 0, null_mut());
+                self.Affmobbrt(num, x / 2, 20, 0, None);
             }
         }
     }
@@ -580,13 +567,11 @@ impl Sapiens {
             rdep = r;
             let mut k = 256 - offset as i32;
             while k < 512 {
-                unsafe {
-                    self.Affmob3d(
-                        self.sapwind.mob3D + 25,
-                        r,
-                        *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
-                    );
-                }
+                self.Affmob3d(
+                    self.sapwind.mob3D + 25,
+                    r,
+                    Some(&self.sapw3d.TAB_PALETTE_DISTANCE[numPalette as usize]),
+                );
                 r.OffsetRect(largeur as i16, 0);
                 k += largeur;
             }
@@ -594,13 +579,11 @@ impl Sapiens {
             k = 256 - offset as i32;
             while k > 0 {
                 r.OffsetRect(-largeur as i16, 0);
-                unsafe {
-                    self.Affmob3d(
-                        self.sapwind.mob3D + 25,
-                        r,
-                        *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
-                    );
-                }
+                self.Affmob3d(
+                    self.sapwind.mob3D + 25,
+                    r,
+                    Some(&self.sapw3d.TAB_PALETTE_DISTANCE[numPalette as usize]),
+                );
                 k -= largeur;
             }
             j -= HAUTEUR_MIN_BANDE;
@@ -641,13 +624,11 @@ impl Sapiens {
                 rdep = r;
                 let mut kk = 256 - offset;
                 while kk < 512 {
-                    unsafe {
-                        self.Affmob3d(
-                            nmob,
-                            r,
-                            *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
-                        );
-                    }
+                    self.Affmob3d(
+                        nmob,
+                        r,
+                        Some(&self.sapw3d.TAB_PALETTE_DISTANCE[numPalette as usize]),
+                    );
                     r.OffsetRect(largeur2 as i16, 0);
                     kk += largeur2;
                 }
@@ -655,13 +636,11 @@ impl Sapiens {
                 kk = 256 - offset;
                 while kk > 0 {
                     r.OffsetRect(-largeur2 as i16, 0);
-                    unsafe {
-                        self.Affmob3d(
-                            nmob,
-                            r,
-                            *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
-                        );
-                    }
+                    self.Affmob3d(
+                        nmob,
+                        r,
+                        Some(&self.sapw3d.TAB_PALETTE_DISTANCE[numPalette as usize]),
+                    );
                     kk -= largeur2;
                 }
             }
@@ -777,7 +756,7 @@ impl Sapiens {
             xmeteore as i16,
             ymeteore as i16,
             0,
-            null_mut(),
+            None,
         );
         if self.sap3d.FreqEclair < 1000 {
             if isLune != 0 {
@@ -867,9 +846,7 @@ impl Sapiens {
     Calcul et visualisation d'un objet 3d
     L'affichage se fait sur ecran 1
     ******************************************************************************************/
-    pub(crate) unsafe fn visu(&mut self) {
-        let mut rd: i16;
-
+    pub(crate) fn visu(&mut self) {
         let _g = port::on(self.sapwind.Ecran1);
         self.sapglob.zj =
             self.CalculeAltitude(self.sapglob.xj as i16, self.sapglob.yj as i16) as u16;
@@ -891,7 +868,7 @@ impl Sapiens {
                 m.posy as i64,
                 forme.hauteur as i64,
             ) {
-                rd = (forme.rayon as i64 * 2 * 256 / dist as i64) as i16;
+                let rd = (forme.rayon as i64 * 2 * 256 / dist as i64) as i16;
                 let hauteurDisque =
                     (m.ign as i64 * forme.nbrdisk as i64 * 256 / dist as i64) as i16;
                 let r = Rect::new(
@@ -921,7 +898,7 @@ impl Sapiens {
                     self.Affmob3d(
                         self.sapwind.mob3D + forme.numMob3d,
                         r,
-                        *self.sapw3d.TAB_PALETTE_DISTANCE.add(numPalette as usize),
+                        Some(&self.sapw3d.TAB_PALETTE_DISTANCE[numPalette as usize]),
                     );
                 }
             }

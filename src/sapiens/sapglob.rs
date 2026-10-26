@@ -1772,7 +1772,7 @@ fn hc(h: i16, q: i16, pal: [i16; 32]) -> h_chron {
         q,
         pal: Rc::new(RefCell::new(pal)),
         TabCouleursCiel: [IndexColor::default(); NB_LIGNES_CIEL],
-        TabPaletteDistance: null_mut(),
+        TabPaletteDistance: Vec::new(),
     }
 }
 

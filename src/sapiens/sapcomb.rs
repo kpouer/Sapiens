@@ -53,7 +53,7 @@ pub(crate) struct Sapcomb {
     herbe: [brin; NB_MAX_HERBE_AV_PLAN as usize],
     pub(crate) nbHerbes: i64,
     pub(crate) ModeJoueur2: i16,
-    TabIndexHerbeFond: *mut i16,
+    TabIndexHerbeFond: Option<Vec<i16>>,
 }
 
 impl Default for Sapcomb {
@@ -69,8 +69,8 @@ impl Default for Sapcomb {
                 sens: 0,
             }; NB_MAX_HERBE_AV_PLAN as usize],
             nbHerbes: 0,
-            ModeJoueur2: JOUEUR2_AUTONOME as i16,
-            TabIndexHerbeFond: core::ptr::null_mut(),
+            ModeJoueur2: JOUEUR2_AUTONOME,
+            TabIndexHerbeFond: None,
         }
     }
 }
@@ -2118,10 +2118,10 @@ impl Sapiens {
         let mut num: i16;
         let mut nb: i64;
         /* Premier passage */
-        if self.sapcomb.TabIndexHerbeFond.is_null() {
+        if self.sapcomb.TabIndexHerbeFond.is_none() {
             let _g = port::on(self.sapwind.Ecran1);
             self.sapcomb.TabIndexHerbeFond =
-                self.CalculePaletteAttenuee(MOB_HERBE!(self.sapwind), 0.75, 999);
+                Some(self.CalculePaletteAttenuee(MOB_HERBE!(self.sapwind), 0.75, 999));
         }
         /*on fixe le Rnd*/
         self.random.initrnd(
@@ -2168,7 +2168,16 @@ impl Sapiens {
                 as i16;
             let x = self.random.myRandom(0, 256) as i16;
             let inverse = self.random.rnd0() & 1;
-            self.AffmobPalette(num, y, x, inverse, self.sapcomb.TabIndexHerbeFond);
+            self.AffmobPalette(
+                num,
+                y,
+                x,
+                inverse,
+                self.sapcomb
+                    .TabIndexHerbeFond
+                    .as_deref()
+                    .expect("TabIndexHerbeFond must be Something when calling avplan"),
+            );
         }
         /*on remplit le tableau des herbes avplan*/
         for i in 0..self.sapcomb.NbHerbeAvPlan {

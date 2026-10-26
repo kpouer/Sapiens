@@ -5,7 +5,7 @@
                            D G le 30 Janvier 1987
 ***********************************************************************/
 use crate::Sapiens;
-use crate::acam::{DisposPtr, FAUX, ForeColor, Line, MoveTo, RGBForeColor, TickCount, VRAI};
+use crate::acam::{FAUX, ForeColor, Line, MoveTo, RGBForeColor, TickCount, VRAI};
 use crate::cbridge::{blackColor, fclose, fopen, getc, putc};
 use crate::exchange::{request_open_file, request_save_file};
 use crate::port;
@@ -1367,34 +1367,34 @@ impl Sapiens {
         i += 1;
         r.left = 80;
         r.right = r.left + 64;
-        self.Affmob3d(self.sapwind.mob3D + 7, r, null_mut()); //Nuage
+        self.Affmob3d(self.sapwind.mob3D + 7, r, None); //Nuage
 
         aire_zoom!(i);
         i += 1;
         r.left = 120;
         r.right = r.left + 16;
-        self.Affmob3d(self.sapwind.mob3D + 28, r, null_mut()); //Oiseau
+        self.Affmob3d(self.sapwind.mob3D + 28, r, None); //Oiseau
 
         aire_zoom!(i);
         i += 1;
         r.InsetRect(0, -2);
         r.left = 110;
         r.right = r.left + 26;
-        self.Affmob3d(self.sapwind.mob3D + 34, r, null_mut()); //Pierre
+        self.Affmob3d(self.sapwind.mob3D + 34, r, None); //Pierre
 
         aire_zoom!(i);
         i += 1;
         r.InsetRect(0, -4);
         r.left = 110;
         r.right = r.left + 32;
-        self.Affmob3d(self.sapwind.mob3D + 10, r, null_mut()); //Arbre
+        self.Affmob3d(self.sapwind.mob3D + 10, r, None); //Arbre
 
         aire_zoom!(i);
         i += 1;
         r.InsetRect(0, -4);
         r.left = 110;
         r.right = r.left + 32;
-        self.Affmob3d(self.sapwind.mobAvplan + MOB_HERBE_BASE, r, null_mut()); //Herbe
+        self.Affmob3d(self.sapwind.mobAvplan + MOB_HERBE_BASE, r, None); //Herbe
 
         self.AfficheSuite();
 
@@ -1740,10 +1740,7 @@ impl Sapiens {
         while coeff < 1.0 {
             self.GereInterface();
             let tab_index_palette = self.CalculePaletteAttenuee(quoi as i16, coeff, 999);
-            self.Affmobbrt(quoi as i16, 96, 1, 0, tab_index_palette);
-            if !tab_index_palette.is_null() {
-                DisposPtr(tab_index_palette as *mut u8);
-            }
+            self.Affmobbrt(quoi as i16, 96, 1, 0, Some(&tab_index_palette));
             self.tfrima();
             coeff += 0.05;
         }

@@ -61,22 +61,19 @@ impl Default for liste {
     }
 }
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct PalCoul {
     pub(crate) nbEntrees: i16,
-    pub(crate) tabIndex: *mut i16,
+    pub(crate) tabIndex: Vec<i16>,
     pub(crate) tabRgb: *mut RGBColor,
 }
-impl Default for PalCoul {
-    fn default() -> Self {
-        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
+
+const DEFAULT_PALCOUL: PalCoul = PalCoul {
+    nbEntrees: 0,
+    tabIndex: Vec::new(),
+    tabRgb: std::ptr::null_mut(),
+};
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Mob {
@@ -201,7 +198,7 @@ pub(crate) struct h_chron {
     pub(crate) q: i16,
     pub(crate) pal: Rc<RefCell<[i16; 32]>>,
     pub(crate) TabCouleursCiel: [IndexColor; NB_LIGNES_CIEL],
-    pub(crate) TabPaletteDistance: *mut *mut i16,
+    pub(crate) TabPaletteDistance: Vec<Vec<i16>>,
 }
 impl Default for h_chron {
     fn default() -> Self {
@@ -210,7 +207,7 @@ impl Default for h_chron {
             q: 0,
             pal: Rc::new(RefCell::new([0; 32])),
             TabCouleursCiel: [IndexColor::default(); NB_LIGNES_CIEL],
-            TabPaletteDistance: std::ptr::null_mut(),
+            TabPaletteDistance: Vec::new(),
         }
     }
 }
@@ -548,7 +545,7 @@ pub(crate) const STYLE_LISSAGE: u32 = 1;
 pub(crate) const STR_VRAC: u32 = 0;
 pub(crate) const SAGAIE: u32 = 23;
 pub(crate) const NB_MOTS_BKMOTS: u32 = 46;
-pub(crate) const NBREVTHEURE: u32 = 37;
+pub(crate) const NBREVTHEURE: usize = 37;
 pub(crate) const NB_LIGNES_CIEL: usize = 128;
 pub(crate) const NB_LIGNES_TERRE: u32 = 72;
 pub(crate) const NB_DEGRADE_DISTANCE: u32 = 72;
