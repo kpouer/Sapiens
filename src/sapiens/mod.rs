@@ -65,13 +65,13 @@ impl Default for liste {
 pub(crate) struct PalCoul {
     pub(crate) nbEntrees: i16,
     pub(crate) tabIndex: Vec<i16>,
-    pub(crate) tabRgb: *mut RGBColor,
+    pub(crate) tabRgb: Vec<RGBColor>,
 }
 
 const DEFAULT_PALCOUL: PalCoul = PalCoul {
     nbEntrees: 0,
     tabIndex: Vec::new(),
-    tabRgb: std::ptr::null_mut(),
+    tabRgb: Vec::new(),
 };
 
 #[repr(C)]

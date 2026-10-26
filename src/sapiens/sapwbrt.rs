@@ -1,8 +1,8 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 use crate::acam::{
-    BackColor, CopyBits, DisposPtr, EraseRect, ForeColor, FrameRect, MoveTo, NewPtr, PaintRect,
-    PenMode, PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect,
+    BackColor, CopyBits, EraseRect, ForeColor, FrameRect, MoveTo, NewPtr, PaintRect, PenMode,
+    PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect,
 };
 use crate::cbridge::{FILE, blackColor, fclose, fopen, getc, patOr, sprintf, srcCopy, whiteColor};
 use crate::langue::Langue::GB;
@@ -11,7 +11,6 @@ use crate::sapiens::sapgest::Sapgest;
 use crate::sapiens::saptxt::{CvtDefaultLangRess, CvtLangRess};
 use crate::sapiens::sapwind::{SapiensExit, ValideUpdate};
 use crate::sapiens::{DEFAULT_PALCOUL, ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalCoul};
-use crate::shared::RGBColor as BRGBColor;
 use crate::shared::{CGrafPtr, Ptr, RGBColor, Rect, RgnHandle};
 use crate::stubs::{
     CarboniseInvalRect, CarboniseSetPatGray, CarboniseValideUpdate, ConvertPNGFileToOffscreen,
@@ -20,7 +19,6 @@ use crate::stubs::{
 };
 use crate::text::{TextBox, TextSize};
 use crate::{Sapiens, cbridge, port};
-use std::mem::size_of;
 
 const TAILLE_TFR: u32 = 66;
 
@@ -230,12 +228,10 @@ impl Sapiens {
                 return -1;
             }
             let n = (r as i16) + 1;
-            self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].nbEntrees = n;
-            let taille = (n as i64) * (size_of::<BRGBColor>() as i64);
-            let mut rgb = NewPtr(taille) as *mut BRGBColor;
-            self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabRgb = rgb;
-            self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabIndex =
-                vec![0; n as usize];
+            let palette = &mut self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize];
+            palette.nbEntrees = n;
+            palette.tabRgb = vec![RGBColor::default(); n as usize];
+            palette.tabIndex = vec![0; n as usize];
             /* On memorise le nombre d'entrees de la PalCoul */
             for i in 0..n as usize {
                 if !Read(f, &mut r as *mut u8 as Ptr, 1) {
@@ -247,12 +243,11 @@ impl Sapiens {
                 if !Read(f, &mut b as *mut u8 as Ptr, 1) {
                     return -1;
                 }
-                (*rgb).red = ((r as u16) << 8) + r as u16;
-                (*rgb).green = ((g as u16) << 8) + g as u16;
-                (*rgb).blue = ((b as u16) << 8) + b as u16;
-                self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize].tabIndex[i] =
-                    SapColor2Index(&*rgb);
-                rgb = rgb.add(1);
+                let rgb = &mut palette.tabRgb[i];
+                rgb.red = ((r as u16) << 8) + r as u16;
+                rgb.green = ((g as u16) << 8) + g as u16;
+                rgb.blue = ((b as u16) << 8) + b as u16;
+                palette.tabIndex[i] = SapColor2Index(&rgb);
             }
             /* On charge les donnees de configuration */
             if !Read(f, &mut nb_objets as *mut i16 as Ptr, 2) {
@@ -320,32 +315,30 @@ impl Sapiens {
         /* On alloue un tableau d'index de taille identique */
         let palette_length = palette.nbEntrees.max(0) as usize;
         let mut tabIndex = Vec::with_capacity(palette_length);
-        unsafe {
-            for i in 0..palette_length {
-                if (i as i16) < nbCoul {
-                    let mut rgb = palette.tabRgb.add(i).read();
-                    let mut val = ((coeffl * rgb.red as i64) >> 8) as i64;
-                    if val > 65535 {
-                        val = 65535;
-                    }
-                    rgb.red = val as u16;
-                    val = ((coeffl * rgb.green as i64) >> 8) as i64;
-                    if val > 65535 {
-                        val = 65535;
-                    }
-                    rgb.green = val as u16;
-                    val = ((coeffl * rgb.blue as i64) >> 8) as i64;
-                    if val > 65535 {
-                        val = 65535;
-                    }
-                    rgb.blue = val as u16;
-                    tabIndex.push(SapColor2Index(&rgb));
-                } else {
-                    tabIndex.push(SapColor2Index(&*palette.tabRgb.add(i)));
+        for i in 0..palette_length {
+            if (i as i16) < nbCoul {
+                let mut rgb = palette.tabRgb[i]; // yes copy
+                let mut val = (coeffl * rgb.red as i64) >> 8;
+                if val > 65535 {
+                    val = 65535;
                 }
+                rgb.red = val as u16;
+                val = (coeffl * rgb.green as i64) >> 8;
+                if val > 65535 {
+                    val = 65535;
+                }
+                rgb.green = val as u16;
+                val = (coeffl * rgb.blue as i64) >> 8;
+                if val > 65535 {
+                    val = 65535;
+                }
+                rgb.blue = val as u16;
+                tabIndex.push(SapColor2Index(&rgb));
+            } else {
+                tabIndex.push(SapColor2Index(&palette.tabRgb[i]));
             }
-            tabIndex
         }
+        tabIndex
     }
 
     /******************************************************************
@@ -358,9 +351,6 @@ impl Sapiens {
                 DisposePtr(mob.datas);
             }
             mob.datas = std::ptr::null_mut();
-        }
-        for i in 0..self.sapwbrt.nbPalettes.max(0) as usize {
-            DisposPtr(self.sapwbrt.TabPalette[i].tabRgb as Ptr);
         }
         self.sapwbrt.nbPalettes = 0;
     }

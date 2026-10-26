@@ -3601,106 +3601,104 @@ impl Sapiens {
     L'affichage se fait sur l'écran1
     **********************************************************************/
     pub(crate) fn affich(&mut self, tfr: u16) {
-        unsafe {
-            let dzetabak: i16;
-            let vitesse = self.sap3d.VitesseDeplacementNuages as u16;
+        let dzetabak: i16;
+        let vitesse = self.sap3d.VitesseDeplacementNuages as u16;
 
-            dzetabak = self.sapglob.dzeta;
-            self.sapglob.dzeta = tfr as i16;
+        dzetabak = self.sapglob.dzeta;
+        self.sapglob.dzeta = tfr as i16;
 
-            /* On efface le fond */
-            self.eff3d(
-                self.sapglob.ciel,
-                self.sapglob.terre,
-                self.sapglob.metpos,
-                (tfr as i64 + 128 - self.sapglob.angsol as i64) as u16,
-                if (self.sapglob.heure & 0x200) == 0x200 {
-                    1
-                } else {
-                    0
-                },
-            );
-            /*met la fumée en place*/
-            FORMES.fumee.set_image(self.random.myRandom(18, 20) as i16);
-            FORMES.forme8.avance(30, 32);
-            FORMES.oiseau.avance(MOB_OISEAU, MOB_OISEAU + 2);
-            FORMES.homme.avance(MOB_HOMME, MOB_HOMME + 2);
-            /*déplace nuages vers l'ouest*/
-            for i in 0..self.sap3d.nbNuages {
-                let p = &mut self.sap3d.aigoual[i as usize];
-                p.posx = p.posx.wrapping_add(vitesse);
-            }
-            // Délai avant le premier éclair
-            if self.sap3d.FreqEclair > 1000 {
-                /* Pas d'orage en cours, on en génère un ? */
-                if self.random.myRandom(0, 10000) > self.sap3d.FreqOrage {
-                    self.sap3d.FreqEclair = 0;
-                }
+        /* On efface le fond */
+        self.eff3d(
+            self.sapglob.ciel,
+            self.sapglob.terre,
+            self.sapglob.metpos,
+            (tfr as i64 + 128 - self.sapglob.angsol as i64) as u16,
+            if (self.sapglob.heure & 0x200) == 0x200 {
+                1
             } else {
-                self.sap3d.FreqEclair += 4;
-            }
-            if let Some(id) = self.sap3d.ArbreFoudroye {
-                self.sap3d.aigoual[id as usize].forme = Some(FormeId::Foudroye);
-                self.sap3d.ArbreFoudroye = None;
-            }
-            let mut suivant = self.sap3d.PremEclair as usize;
-            for _ in 0..self.sap3d.nbEclairs {
-                /* Fin de l'éclair */
-                if self.sap3d.aigoual[suivant].ign != 0 {
-                    if self.sap3d.ArbreFoudroye.is_none() {
-                        let (x, y) = {
-                            let m = self.sap3d.aigoual[suivant];
-                            (m.posx, m.posy)
-                        };
-                        self.sap3d.ArbreFoudroye = self.FoudroieArbre(x, y);
-                    }
-                    self.sap3d.aigoual[suivant].ign = 0;
-                    #[cfg(debug_assertions)]
-                    {
-                        // if(suivant->ptrforme->numMob3d==7) Collapse("err");
-                        if self.sap3d.aigoual[suivant]
-                            .forme
-                            .is_some_and(|id| id.forme().numMob3d == 7)
-                        {
-                            self.Collapse("err");
-                        }
-                    }
-                } else if self.random.myRandom(0, 1000) > self.sap3d.FreqEclair
-                    && self.random.myRandom(0, 1000) > 910
-                {
-                    self.sap3d.aigoual[suivant].ign = 300; /* Demarre l'éclair */
-                }
-                /* on déplace toujours l'éclair de façon à ce qu'il soit collé au nuage */
-                self.sap3d.aigoual[suivant].posx =
-                    self.sap3d.aigoual[suivant].posx.wrapping_add(vitesse);
-                suivant += 1;
-            }
-            /* Déplace oiseaux vers le sud */
-            for i in 0..self.sap3d.nbOiseaux {
-                let p = &mut self.sap3d.aigoual[(self.sap3d.nbNuages + i) as usize];
-                p.posy = p.posy.wrapping_add(VITESSE_DEPLACEMENT_OISEAUX);
-            }
-
-            /*on trie les montagnes, les nuages, et les arbres*/
-            self.sap3d.aigoual[0].chaine = None; /* départ de la chaîne sur 1er elt */
-            for i in 1..self.sap3d.aigoual.len() {
-                self.ChaineObjet(i as MontId);
-            }
-            /* Deplacement des objets vivants */
-            //DeplaceHommes();
-            /*on affiche : visu lit lui-même la tête de chaîne dans l'élément 0*/
-            if self.sap3d.aigoual[0].chaine.is_some() {
-                self.visu();
-            }
-            /* On traite la pluie */
-            self.Pluie();
-            self.sapglob.dzeta = dzetabak;
+                0
+            },
+        );
+        /*met la fumée en place*/
+        FORMES.fumee.set_image(self.random.myRandom(18, 20) as i16);
+        FORMES.forme8.avance(30, 32);
+        FORMES.oiseau.avance(MOB_OISEAU, MOB_OISEAU + 2);
+        FORMES.homme.avance(MOB_HOMME, MOB_HOMME + 2);
+        /*déplace nuages vers l'ouest*/
+        for i in 0..self.sap3d.nbNuages {
+            let p = &mut self.sap3d.aigoual[i as usize];
+            p.posx = p.posx.wrapping_add(vitesse);
         }
+        // Délai avant le premier éclair
+        if self.sap3d.FreqEclair > 1000 {
+            /* Pas d'orage en cours, on en génère un ? */
+            if self.random.myRandom(0, 10000) > self.sap3d.FreqOrage {
+                self.sap3d.FreqEclair = 0;
+            }
+        } else {
+            self.sap3d.FreqEclair += 4;
+        }
+        if let Some(id) = self.sap3d.ArbreFoudroye {
+            self.sap3d.aigoual[id as usize].forme = Some(FormeId::Foudroye);
+            self.sap3d.ArbreFoudroye = None;
+        }
+        let mut suivant = self.sap3d.PremEclair as usize;
+        for _ in 0..self.sap3d.nbEclairs {
+            /* Fin de l'éclair */
+            if self.sap3d.aigoual[suivant].ign != 0 {
+                if self.sap3d.ArbreFoudroye.is_none() {
+                    let (x, y) = {
+                        let m = self.sap3d.aigoual[suivant];
+                        (m.posx, m.posy)
+                    };
+                    self.sap3d.ArbreFoudroye = self.FoudroieArbre(x, y);
+                }
+                self.sap3d.aigoual[suivant].ign = 0;
+                #[cfg(debug_assertions)]
+                {
+                    // if(suivant->ptrforme->numMob3d==7) Collapse("err");
+                    if self.sap3d.aigoual[suivant]
+                        .forme
+                        .is_some_and(|id| id.forme().numMob3d == 7)
+                    {
+                        self.Collapse("err");
+                    }
+                }
+            } else if self.random.myRandom(0, 1000) > self.sap3d.FreqEclair
+                && self.random.myRandom(0, 1000) > 910
+            {
+                self.sap3d.aigoual[suivant].ign = 300; /* Demarre l'éclair */
+            }
+            /* on déplace toujours l'éclair de façon à ce qu'il soit collé au nuage */
+            self.sap3d.aigoual[suivant].posx =
+                self.sap3d.aigoual[suivant].posx.wrapping_add(vitesse);
+            suivant += 1;
+        }
+        /* Déplace oiseaux vers le sud */
+        for i in 0..self.sap3d.nbOiseaux {
+            let p = &mut self.sap3d.aigoual[(self.sap3d.nbNuages + i) as usize];
+            p.posy = p.posy.wrapping_add(VITESSE_DEPLACEMENT_OISEAUX);
+        }
+
+        /*on trie les montagnes, les nuages, et les arbres*/
+        self.sap3d.aigoual[0].chaine = None; /* départ de la chaîne sur 1er elt */
+        for i in 1..self.sap3d.aigoual.len() {
+            self.ChaineObjet(i as MontId);
+        }
+        /* Deplacement des objets vivants */
+        //DeplaceHommes();
+        /*on affiche : visu lit lui-même la tête de chaîne dans l'élément 0*/
+        if self.sap3d.aigoual[0].chaine.is_some() {
+            self.visu();
+        }
+        /* On traite la pluie */
+        self.Pluie();
+        self.sapglob.dzeta = dzetabak;
     }
 }
 
 impl Sapiens {
-    pub(crate) unsafe extern "C" fn clav3d(&mut self) {
+    pub(crate) fn clav3d(&mut self) {
         unsafe {
             let mut car: i16;
             let mut cptemps: i16 = 1;
