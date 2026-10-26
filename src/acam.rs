@@ -161,74 +161,6 @@ pub(crate) fn NewPtr(size: i64) -> Ptr {
     alloc_pixels(size.max(0) as usize)
 }
 
-#[deprecated]
-pub(crate) fn NewPtrClear(size: i64) -> Ptr {
-    alloc_pixels(size.max(0) as usize)
-}
-
-#[deprecated]
-pub(crate) fn DisposPtr(p: Ptr) {
-    free_pixels(p);
-}
-
-pub(crate) fn NewHandle(size: i64) -> Handle {
-    let data: *mut c_void = if size > 0 {
-        alloc_pixels(size as usize) as *mut c_void
-    } else {
-        std::ptr::null_mut()
-    };
-    let outer = alloc_pixels(8) as *mut *mut c_void;
-    unsafe {
-        *outer = data;
-    }
-    outer
-}
-
-pub(crate) fn NewHandleClear(size: i64) -> Handle {
-    let h = NewHandle(size);
-    if !h.is_null() {
-        unsafe {
-            let inner = *h;
-            if !inner.is_null() {
-                let len = GetHandleSize(h);
-                std::ptr::write_bytes(inner as *mut u8, 0, len.max(0) as usize);
-            }
-        }
-    }
-    h
-}
-
-pub(crate) fn SetHandleSize(h: Handle, size: i64) {
-    if h.is_null() {
-        return;
-    }
-    unsafe {
-        let old = *h;
-        if size <= 0 {
-            if !old.is_null() {
-                free_pixels(old as *mut u8);
-            }
-            *h = std::ptr::null_mut();
-            return;
-        }
-        let nlen = size as usize;
-        let new_ = alloc_pixels(nlen) as *mut c_void;
-        if let Some((_, old_len)) = ALLOCS
-            .lock()
-            .unwrap()
-            .iter()
-            .find(|(a, _)| *a == old as usize)
-        {
-            let copy = (*old_len).min(nlen);
-            std::ptr::copy_nonoverlapping(old as *const u8, new_ as *mut u8, copy);
-        }
-        if !old.is_null() {
-            free_pixels(old as *mut u8);
-        }
-        *h = new_;
-    }
-}
-
 pub(crate) fn DisposHandle(h: Handle) {
     if h.is_null() {
         return;
@@ -239,25 +171,6 @@ pub(crate) fn DisposHandle(h: Handle) {
             free_pixels(inner as *mut u8);
         }
         free_pixels(h as *mut u8);
-    }
-}
-
-pub(crate) fn GetHandleSize(h: Handle) -> i64 {
-    if h.is_null() {
-        return 0;
-    }
-    unsafe {
-        let inner = *h;
-        if inner.is_null() {
-            return 0;
-        }
-        let allocs = ALLOCS.lock().unwrap();
-        for (a, l) in allocs.iter() {
-            if *a == inner as usize {
-                return *l as i64;
-            }
-        }
-        0
     }
 }
 
