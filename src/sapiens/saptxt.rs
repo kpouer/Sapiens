@@ -31,7 +31,7 @@ pub(crate) struct Saptxt {
     pub(crate) poschef: [i8; 4],
     pub(crate) maced: [i8; 52],
     #[allow(dead_code)]
-    pub(crate) traps: [*mut i8; 7],
+    pub(crate) traps: [&'static str; 7],
 }
 
 impl Default for Saptxt {
@@ -50,13 +50,7 @@ impl Default for Saptxt {
                 0x53, 0x4E, 0x49, 0x50, 0x48, 0x59, 0x47, 0x4C, 0x4F, 0x00,
             ],
             traps: [
-                c"CHAUVET".as_ptr() as *mut i8,
-                c"GROTTE".as_ptr() as *mut i8,
-                c"MUSICS".as_ptr() as *mut i8,
-                c"DETAIL".as_ptr() as *mut i8,
-                c"AUROCH".as_ptr() as *mut i8,
-                c"MYRIAD".as_ptr() as *mut i8,
-                c"CAT   ".as_ptr() as *mut i8,
+                "CHAUVET", "GROTTE", "MUSICS", "DETAIL", "AUROCH", "MYRIAD", "CAT   ",
             ],
         }
     }
