@@ -27,9 +27,11 @@ const ECHELLE: i16 = 2;
 ///
 /// # Safety
 /// `p` doit pointer sur une chaîne C valide terminée par 0, vivante pendant `'a`.
-unsafe fn cstr_slice<'a>(p: *const i8) -> &'a [i8] {
-    let len = std::ffi::CStr::from_ptr(p).to_bytes().len();
-    std::slice::from_raw_parts(p, len + 1)
+pub(crate) fn cstr_slice<'a>(p: *const i8) -> &'a [i8] {
+    unsafe {
+        let len = std::ffi::CStr::from_ptr(p).to_bytes().len();
+        std::slice::from_raw_parts(p, len + 1)
+    }
 }
 
 pub(crate) struct Saprel {
@@ -127,7 +129,7 @@ impl Sapiens {
         let car = debut[0] as u8 as i16;
         let ret = &debut[1..];
         if car > 128 {
-            let chaine = unsafe { cstr_slice(self.GetStrBkMot(car)) };
+            let chaine = cstr_slice(self.GetStrBkMot(car));
             let (tx, ty) = self.TailleChaine(chaine);
             taillex += tx;
             tailley += ty;
@@ -223,7 +225,7 @@ impl Sapiens {
         let scenme = self.sap_lang.GetScenme();
         self.effaceBulles();
         unsafe {
-            self.bulle(*scenme.add(quoi as usize) as Ptr, 1);
+            self.bulle_c(*scenme.add(quoi as usize) as Ptr, 1);
         }
     }
 
@@ -328,112 +330,118 @@ impl Sapiens {
         self.saprel.rBulleAdversaire = Rect::default();
     }
 
+    /// Comme `bulle`, à partir d'un pointeur sur une chaîne C.
+    ///
+    /// # Safety
+    /// `p` doit pointer sur une chaîne C valide terminée par 0.
+    #[deprecated]
+    pub(crate) fn bulle_c(&mut self, p: Ptr, qui: i16) {
+        self.bulle(cstr_slice(p as *const i8), qui);
+    }
+
     /**************************************************************************
                     Bulle:affiche une bulle avec un texte
     => message a afficher, qui le dit (0)== joueur (1)== adversaire
     *************************************************************************/
-    pub(crate) fn bulle(&mut self, debut: Ptr, qui: i16) {
-        unsafe {
-            let mut p: Ptr = debut;
-
-            let _g = port::on(self.sapwind.debecr);
-            /* Calcul de la taille de la chaine en pixel */
-            let (mut tx, ty) = self.TailleChaine(cstr_slice(p as *const i8));
-            if tx < 64 {
-                tx = 64;
-            }
-            let sap1 = &self.sapglob.sap1;
-            let mut r = if (qui ^ sap1.sens as i16) != 0 {
-                Rect::new(
-                    X_BULLE_GAUCHE,
-                    Y_BULLE - (ty + 2) * 12,
-                    X_BULLE_GAUCHE + tx + 16,
-                    Y_BULLE,
-                )
-            } else {
-                Rect::new(
-                    X_BULLE_DROITE - tx - 16,
-                    Y_BULLE - (ty + 2) * 12,
-                    X_BULLE_DROITE,
-                    Y_BULLE,
-                )
-            };
-            r.bottom += TAILLE_QUEUE;
-            let mut rbase = r;
-            /* On efface les bulles en cours */
-            if qui == 0 {
-                /* C'est le joueur */
-                self.effaceBulles();
-                self.saprel.rBulleJoueur = r;
-            } else {
-                /* C'est un adversaire ... */
-                /* deja un message dit ??? */
-                if !self.saprel.rBulleAdversaire.is_empty() {
-                    r.OffsetRect(
-                        0,
-                        self.saprel.rBulleAdversaire.bottom
-                            - self.saprel.rBulleAdversaire.top
-                            - TAILLE_QUEUE
-                            - 4,
-                    );
-                    self.saprel.rBulleAdversaire = self.saprel.rBulleAdversaire.union(&r);
-                    rbase = self.saprel.rBulleAdversaire;
-                } else {
-                    self.saprel.rBulleAdversaire = r;
-                }
-            }
-            r.bottom -= TAILLE_QUEUE;
-            OpenRgn();
-            FrameRoundRect(&r, 16, 16);
-            /* Bulle a gauche */
-            let sap1 = &self.sapglob.sap1;
-            if (qui ^ sap1.sens as i16) != 0 {
-                let x = r.left + 48;
-                let y = r.bottom;
-                DoMoveTo(x, y);
-                LineTo(x - TAILLE_QUEUE, y + TAILLE_QUEUE);
-                LineTo(x - 8, y);
-                LineTo(x, y);
-            } else {
-                let x = r.right - 48;
-                let y = r.bottom;
-                DoMoveTo(x, y);
-                LineTo(x + TAILLE_QUEUE, y + TAILLE_QUEUE);
-                LineTo(x + 8, y);
-                LineTo(x, y);
-            }
-            let rgn = CloseRgn().expect("A range !");
-            BackColor(whiteColor as i16);
-            EraseRgn(&rgn);
-            DoPenSize(1, 1);
-            FrameRgn(&rgn);
-            let rgnclip = GetClip().expect("a clip");
-            SetClip(&rgn);
-            let x = r.left + 8;
-            let mut y = r.top + 6;
-            self.sapwcar.GotoxyPixel(x, y);
-            while *p == b' ' {
-                p = p.add(1);
-            }
-            while *p != 0 {
-                if *p == b'\r' {
-                    y += 14;
-                    self.sapwcar.GotoxyPixel(x, y);
-                    loop {
-                        p = p.add(1);
-                        if *p != b' ' {
-                            break;
-                        }
-                    }
-                } else {
-                    self.affcar10(*p as i16);
-                    p = p.add(1);
-                }
-            }
-            SetClip(&rgnclip);
-            self.TfrEcr(Some(&rbase));
-            DoPenSize(1, 1);
+    pub(crate) fn bulle(&mut self, debut: &[i8], qui: i16) {
+        let _g = port::on(self.sapwind.debecr);
+        /* Calcul de la taille de la chaine en pixel */
+        let (mut tx, ty) = self.TailleChaine(debut);
+        if tx < 64 {
+            tx = 64;
         }
+        let sap1 = &self.sapglob.sap1;
+        let mut r = if (qui ^ sap1.sens as i16) != 0 {
+            Rect::new(
+                X_BULLE_GAUCHE,
+                Y_BULLE - (ty + 2) * 12,
+                X_BULLE_GAUCHE + tx + 16,
+                Y_BULLE,
+            )
+        } else {
+            Rect::new(
+                X_BULLE_DROITE - tx - 16,
+                Y_BULLE - (ty + 2) * 12,
+                X_BULLE_DROITE,
+                Y_BULLE,
+            )
+        };
+        r.bottom += TAILLE_QUEUE;
+        let mut rbase = r;
+        /* On efface les bulles en cours */
+        if qui == 0 {
+            /* C'est le joueur */
+            self.effaceBulles();
+            self.saprel.rBulleJoueur = r;
+        } else {
+            /* C'est un adversaire ... */
+            /* deja un message dit ??? */
+            if !self.saprel.rBulleAdversaire.is_empty() {
+                r.OffsetRect(
+                    0,
+                    self.saprel.rBulleAdversaire.bottom
+                        - self.saprel.rBulleAdversaire.top
+                        - TAILLE_QUEUE
+                        - 4,
+                );
+                self.saprel.rBulleAdversaire = self.saprel.rBulleAdversaire.union(&r);
+                rbase = self.saprel.rBulleAdversaire;
+            } else {
+                self.saprel.rBulleAdversaire = r;
+            }
+        }
+        r.bottom -= TAILLE_QUEUE;
+        OpenRgn();
+        FrameRoundRect(&r, 16, 16);
+        /* Bulle a gauche */
+        let sap1 = &self.sapglob.sap1;
+        if (qui ^ sap1.sens as i16) != 0 {
+            let x = r.left + 48;
+            let y = r.bottom;
+            DoMoveTo(x, y);
+            LineTo(x - TAILLE_QUEUE, y + TAILLE_QUEUE);
+            LineTo(x - 8, y);
+            LineTo(x, y);
+        } else {
+            let x = r.right - 48;
+            let y = r.bottom;
+            DoMoveTo(x, y);
+            LineTo(x + TAILLE_QUEUE, y + TAILLE_QUEUE);
+            LineTo(x + 8, y);
+            LineTo(x, y);
+        }
+        let rgn = CloseRgn().expect("A range !");
+        BackColor(whiteColor as i16);
+        EraseRgn(&rgn);
+        DoPenSize(1, 1);
+        FrameRgn(&rgn);
+        let rgnclip = GetClip().expect("a clip");
+        SetClip(&rgn);
+        let x = r.left + 8;
+        let mut y = r.top + 6;
+        self.sapwcar.GotoxyPixel(x, y);
+        let mut p = debut;
+        while p[0] == b' ' as i8 {
+            p = &p[1..];
+        }
+        while p[0] != 0 {
+            if p[0] == b'\r' as i8 {
+                y += 14;
+                self.sapwcar.GotoxyPixel(x, y);
+                loop {
+                    p = &p[1..];
+                    if p[0] != b' ' as i8 {
+                        break;
+                    }
+                }
+            } else {
+                self.affcar10(p[0] as i16);
+                p = &p[1..];
+            }
+        }
+        SetClip(&rgnclip);
+        self.TfrEcr(Some(&rbase));
+        DoPenSize(1, 1);
     }
 
     /***********************************************************************
@@ -544,7 +552,7 @@ impl Sapiens {
                 if !mess_add.is_null() {
                     strcat(chaine.as_mut_ptr(), mess_add);
                 }
-                self.bulle(chaine.as_mut_ptr() as Ptr, 1); /*affiche le commentaire*/
+                self.bulle_c(chaine.as_mut_ptr() as Ptr, 1); /*affiche le commentaire*/
             }
         }
     }
@@ -716,10 +724,10 @@ impl Sapiens {
                 self.effaceBulles();
                 let mescon = self.sap_lang.GetMesCon();
                 match self.sapglob.scenar {
-                    1 => self.bulle(mescon[81] as Ptr, 1),
-                    2 => self.bulle(mescon[82] as Ptr, 1),
-                    3 => self.bulle(mescon[83] as Ptr, 1),
-                    4 => self.bulle(mescon[83] as Ptr, 1),
+                    1 => self.bulle_c(mescon[81] as Ptr, 1),
+                    2 => self.bulle_c(mescon[82] as Ptr, 1),
+                    3 => self.bulle_c(mescon[83] as Ptr, 1),
+                    4 => self.bulle_c(mescon[83] as Ptr, 1),
                     _ => {}
                 }
                 self.sapglob.scenar += 1;
@@ -1005,7 +1013,7 @@ impl Sapiens {
                 } else {
                     /*il s'en va*/
                     /*bonne chasse*/
-                    self.bulle(mescon[72] as Ptr, 1);
+                    self.bulle_c(mescon[72] as Ptr, 1);
                     self.quitte();
                     self.inimen(0);
                     self.effaceBulles();
@@ -1035,7 +1043,7 @@ impl Sapiens {
                 sap3.vie = 200;
                 /*je suis avec toi*/
                 let mescon = self.sap_lang.GetMesCon();
-                self.bulle(mescon[99] as Ptr, 1);
+                self.bulle_c(mescon[99] as Ptr, 1);
                 self.sapglob.flagbadi = 0;
             } else {
                 self.excite(1500);
@@ -1043,7 +1051,7 @@ impl Sapiens {
         } else {
             /*je ne suis pas celle que vous croyez*/
             let mescon = self.sap_lang.GetMesCon();
-            self.bulle(mescon[98] as Ptr, 1);
+            self.bulle_c(mescon[98] as Ptr, 1);
             self.excite(2000);
         }
         self.sapglob.flgcharism = 1;
@@ -1063,7 +1071,7 @@ impl Sapiens {
             } else {
                 if self.sapglob.chef != 0 && self.sapglob.tribu == 1 {
                     self.sapglob.dquest = 0;
-                    self.bulle(*scenme.add((self.sapglob.scenar as usize) - 1) as Ptr, 1);
+                    self.bulle_c(*scenme.add((self.sapglob.scenar as usize) - 1) as Ptr, 1);
                 } else {
                     if self.sapglob.tribu == self.sapglob.scenar && self.sapglob.chef != 0 {
                         self.cause(
@@ -1092,7 +1100,7 @@ impl Sapiens {
                             );
                         } else {
                             /*rien !!!*/
-                            self.bulle(mescon[65] as Ptr, 1);
+                            self.bulle_c(mescon[65] as Ptr, 1);
                             self.excite(0);
                         }
                     }
@@ -1144,11 +1152,11 @@ impl Sapiens {
                     let mescon = self.sap_lang.GetMesCon();
                     if self.sapglob.enerv > 0x3400 {
                         /*c'est donc toi*/
-                        self.bulle(mescon[71] as Ptr, 1);
+                        self.bulle_c(mescon[71] as Ptr, 1);
                         self.excite(0);
                     } else {
                         /*bonjour*/
-                        self.bulle(mescon[70] as Ptr, 1);
+                        self.bulle_c(mescon[70] as Ptr, 1);
                     }
                 } else {
                     /*deja présenté*/
@@ -1180,7 +1188,7 @@ impl Sapiens {
                         if self.sapglob.fpress == 0 && self.sapglob.chef == 0 {
                             /*et toi??*/
                             let mescon = self.sap_lang.GetMesCon();
-                            self.bulle(mescon[64] as Ptr, 1);
+                            self.bulle_c(mescon[64] as Ptr, 1);
                             self.excite(200);
                         }
                     }
@@ -1200,7 +1208,7 @@ impl Sapiens {
                     {
                         /*rien...*/
                         let mescon = self.sap_lang.GetMesCon();
-                        self.bulle(mescon[65] as Ptr, 1);
+                        self.bulle_c(mescon[65] as Ptr, 1);
                         tfr = (self.sapglob.enerv as i32).wrapping_add(200) as i16;
                         if (self.sapglob.enerv as i32) < (tfr as i32) {
                             self.sapglob.enerv = tfr as u16;
@@ -1259,7 +1267,7 @@ impl Sapiens {
                             {
                                 self.saptxt.poschef[2] = (128 + 34) as i8;
                             }
-                            self.bulle(addr_of!(self.saptxt.poschef) as *mut i8 as Ptr, 1); /*affiche le commentaire*/
+                            self.bulle_c(addr_of!(self.saptxt.poschef) as *mut i8 as Ptr, 1); /*affiche le commentaire*/
                         }
                     }
                 }

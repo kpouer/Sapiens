@@ -1104,7 +1104,7 @@ impl Sapiens {
                         [self.sapglob.rega as usize]
                         - 1;
                     let ptr = &(refer.wrapping_add(index as usize)) as *const _ as Ptr;
-                    self.bulle(ptr, 0);
+                    self.bulle_c(ptr, 0);
                     self.trdire(self.sapglob.liste2.elements[self.sapglob.rega as usize] as u16); /*on envoie la phrase*/
                     self.ListAttendsFinBouton();
                 } else {
