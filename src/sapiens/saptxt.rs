@@ -73,7 +73,7 @@ qui choisissent la table selon `langue`.
 /* Remplit le char nomref[64] de `struct reference` depuis une chaine
 MacRoman, exactement comme le fait le C : zéro jusqu'au bout. */
 pub(crate) const fn nomref(s: &[u8]) -> [i8; 64] {
-    let mut out = [0 as i8; 64];
+    let mut out = [0; 64];
     let mut i = 0;
     while i < s.len() && i < 64 {
         out[i] = s[i] as i8;

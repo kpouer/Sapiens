@@ -372,7 +372,7 @@ impl Sapiens {
                                         self.sapglob.liste(self.saplist.sliste[1]).typeRef,
                                     );
 
-                                    self.affcar(' ' as u8 as i16);
+                                    self.affcar(b' ' as i16);
                                     let ref_ = refer.wrapping_add(
                                         (self.sapglob.liste(self.saplist.sliste[1]).elements
                                             [self.sapglob.rega as usize]
@@ -419,7 +419,7 @@ impl Sapiens {
 
                         r = Rect::new(
                             (32 * ECHELLE) as i16,
-                            (1 * ECHELLE) as i16,
+                            ECHELLE as i16,
                             ((32 + 255) * ECHELLE) as i16,
                             ((1 + 100) * ECHELLE) as i16,
                         );
@@ -582,7 +582,7 @@ impl Sapiens {
                 i = i.wrapping_sub(1);
                 self.affmot(debliste_id, travl2 as u16); /*on affiche le mot*/
                 travl2 = travl2.wrapping_add(1);
-                self.Gotoxy(self.sapglob.ccol as i16, (self.sapglob.linaff + 1) as i16);
+                self.Gotoxy(self.sapglob.ccol as i16, self.sapglob.linaff + 1);
             }
             /* On n'est pas en bas de la liste, fleche vers le bas */
             let taille = self.sapglob.liste(debliste_id).taille;
@@ -618,14 +618,7 @@ impl Sapiens {
         larg += ligne & 3;
 
         /* coin haut gauche vertical */
-        self.affomb(
-            MOB_CADRE!(self.sapwind) + 0,
-            ligne - 24,
-            colon - 8,
-            8,
-            8,
-            false,
-        );
+        self.affomb(MOB_CADRE!(self.sapwind), ligne - 24, colon - 8, 8, 8, false);
         /* coin haut droit vertical */
         self.affomb(
             MOB_CADRE!(self.sapwind) + 1,

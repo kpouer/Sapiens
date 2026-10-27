@@ -159,7 +159,7 @@ impl Sapiens {
             } else if Ancy > 0 {
                 /* Branche gauche */
                 let (mut ang, mut lr, mut lo) = self.calpar(largeur); /*Largeur longueur deltangle */
-                ang = ang + angle;
+                ang += angle;
                 if ang > 450 {
                     ang = 900 - ang;
                 }

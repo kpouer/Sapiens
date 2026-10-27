@@ -247,7 +247,7 @@ impl Sapiens {
                 rgb.red = ((r as u16) << 8) + r as u16;
                 rgb.green = ((g as u16) << 8) + g as u16;
                 rgb.blue = ((b as u16) << 8) + b as u16;
-                palette.tabIndex[i] = SapColor2Index(&rgb);
+                palette.tabIndex[i] = SapColor2Index(rgb);
             }
             /* On charge les donnees de configuration */
             if !Read(f, &mut nb_objets as *mut i16 as Ptr, 2) {
@@ -852,9 +852,8 @@ pub(crate) fn RemplitZoneLignes(y: i16, tab_couleur: &[IndexColor]) {
     let tailleLigne = info.row_bytes;
     unsafe {
         data = data.add((tailleLigne as i64 * y as i64) as usize);
-        let taille = tab_couleur.len();
-        for t in 0..taille {
-            std::ptr::write_bytes(data, tab_couleur[t].index as u8, tailleLigne as usize);
+        for tc in tab_couleur {
+            std::ptr::write_bytes(data, tc.index as u8, tailleLigne as usize);
             data = data.add(tailleLigne as usize);
         }
     }

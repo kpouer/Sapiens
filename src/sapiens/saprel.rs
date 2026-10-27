@@ -190,12 +190,12 @@ impl Sapiens {
             self.TfrEcr(None);
             if quoi == 6 {
                 /* Bravo tu as gagné */
-                let rdest = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
+                let rdest = Rect::new(0, 0, 255 * ECHELLE, 100 * ECHELLE);
                 let rsourc = Rect::new(
-                    (32 * ECHELLE) as i16,
-                    ECHELLE as i16,
-                    ((32 + 255) * ECHELLE) as i16,
-                    ((1 + 100) * ECHELLE) as i16,
+                    32 * ECHELLE,
+                    ECHELLE,
+                    (32 + 255) * ECHELLE,
+                    (1 + 100) * ECHELLE,
                 );
 
                 CopyOffscreen(self.sapwind.debecr, self.sapwind.Ecran1, &rsourc, &rdest);
@@ -661,14 +661,13 @@ impl Sapiens {
     unsigned short rangb;simule registre B [0,eltmax[
     **************************************************************************/
     pub(crate) fn trdonn(&mut self, rangb: u16) {
-        let objet: u8;
         let tfr: u8;
         let mut valeur: u16;
 
         if self.sapglob.fdialo == 0 {
             return; /*pas de dialogue alors rien*/
         }
-        objet = self.sapglob.liste1.elements[rangb as usize]; /*on prendsl'objet ds la liste*/
+        let objet = self.sapglob.liste1.elements[rangb as usize]; /*on prendsl'objet ds la liste*/
         self.sapglob.flefba = 0;
         unsafe {
             if self.sapglob.chef != 0 && self.sapglob.tribu == 1 {
@@ -676,7 +675,7 @@ impl Sapiens {
                 if self.sapglob.scenar != 1 {
                     /* on compare l'objet
                     l'objet desiré*/
-                    if objet != (self.sapglob.scenar as u8) + 40
+                    if objet != self.sapglob.scenar + 40
                     /*objet du scenario*/
                     {
                         self.SceveuBulle((self.sapglob.scenar - 1) as u16); /*on raffiche l'objet desire*/
@@ -684,7 +683,7 @@ impl Sapiens {
                     }
                 } else {
                     /*scenario = viande*/
-                    if objet < 35 || objet > 39 {
+                    if !(35..=39).contains(&objet) {
                         /*viande pourrie ou autre*/
                         self.SceveuBulle((self.sapglob.scenar - 1) as u16);
                         return;
@@ -883,7 +882,7 @@ impl Sapiens {
             i = 0;
             while i < 6 {
                 /*determine le nom*/
-                pos = (48 * self.random.Rnd() as i16 / 256) as u8;
+                pos = (48 * self.random.Rnd() / 256) as u8;
                 self.saptxt.nomadversaire[i as usize] = self.saptxt.maced[pos as usize];
                 i += 1;
                 pos += 1;
@@ -899,7 +898,7 @@ impl Sapiens {
         i = 0;
         while i < 6 {
             /*determine le nom*/
-            pos = (48 * self.random.Rnd() as i16 / 256) as u8;
+            pos = (48 * self.random.Rnd() / 256) as u8;
             self.saptxt.nomsecondaire[i as usize] = self.saptxt.maced[pos as usize];
             i += 1;
             pos += 1;
@@ -1322,7 +1321,6 @@ impl Sapiens {
                     }
                 } /*fin du switch*/
             }
-            return;
         }
     }
 
@@ -1425,7 +1423,7 @@ impl Sapiens {
         self.sapglob.dervue = Vue::PAYSAGE;
         /*affiche ecran n fois */
         /*avec chronos*/
-        self.sapglob.stock2 = self.sapglob.stock2 / 7;
+        self.sapglob.stock2 /= 7;
         while self.sapglob.stock2 != 0 {
             self.GereInterface();
             for _i in 0..9 {
@@ -1595,12 +1593,10 @@ impl Sapiens {
                         la densité probabiliste de la zone*/
                         if self.random.Rnd() >= (*dieu).rnd as i16 {
                             /* on affiche un message (l'evt n'a???*/
-                            if self.random.Rnd() > 240 {
-                                if okmess != 0 {
-                                    self.efbadi();
-                                    self.comment((*dieu).message as u16);
-                                    return 0;
-                                }
+                            if self.random.Rnd() > 240 && okmess != 0 {
+                                self.efbadi();
+                                self.comment((*dieu).message as u16);
+                                return 0;
                             }
                         } else {
                             if (*dieu).evt == 0
@@ -1723,16 +1719,8 @@ impl Sapiens {
             /*aucun evt n'est valide */
             if self.sapglob.scenar == 4 && self.sapglob.scenpr == 0 {
                 /* A la bonne position on trouve la Hache Scrée des Hyenes folles */
-                if ((if self.sapglob.derxj > 0xABE0 {
-                    self.sapglob.derxj - 0xABE0
-                } else {
-                    0xABE0 - self.sapglob.derxj
-                }) < 500)
-                    && ((if self.sapglob.deryj > 0xB2E0 {
-                        self.sapglob.deryj - 0xB2E0
-                    } else {
-                        0xB2E0 - self.sapglob.deryj
-                    }) < 500)
+                if (self.sapglob.derxj.abs_diff(0xABE0) < 500)
+                    && (self.sapglob.deryj.abs_diff(0xB2E0) < 500)
                 {
                     self.sapglob.liste4.taille = 1;
                     self.sapglob.tlpos[4] = 1;

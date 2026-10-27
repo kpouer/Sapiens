@@ -335,15 +335,15 @@ impl SapiensApp {
             }
         }
 
-        if let Some(response) = response {
-            if let Some(mut dialog) = self.active_dialog.take() {
-                let reply = match &mut dialog {
-                    ActiveDialog::Alert { reply, .. } => reply,
-                    ActiveDialog::Preferences { reply, .. } => reply,
-                };
-                if let Some(reply) = reply.take() {
-                    let _ = reply.send(response);
-                }
+        if let Some(response) = response
+            && let Some(mut dialog) = self.active_dialog.take()
+        {
+            let reply = match &mut dialog {
+                ActiveDialog::Alert { reply, .. } => reply,
+                ActiveDialog::Preferences { reply, .. } => reply,
+            };
+            if let Some(reply) = reply.take() {
+                let _ = reply.send(response);
             }
         }
     }
@@ -444,10 +444,10 @@ impl eframe::App for SapiensApp {
                 }
             });
         });
-        if self.active_dialog.is_none() {
-            if let Some(r) = command {
-                set_menu_command(r);
-            }
+        if self.active_dialog.is_none()
+            && let Some(r) = command
+        {
+            set_menu_command(r);
         }
 
         record_input(ctx);

@@ -25,10 +25,10 @@ fn absolute(path: std::path::PathBuf) -> std::path::PathBuf {
 }
 
 fn start_dir(last_dir: &Option<std::path::PathBuf>) -> std::path::PathBuf {
-    if let Some(dir) = last_dir {
-        if dir.is_dir() {
-            return dir.clone();
-        }
+    if let Some(dir) = last_dir
+        && dir.is_dir()
+    {
+        return dir.clone();
     }
     let dir = documents_dir();
     let _ = std::fs::create_dir_all(&dir);

@@ -125,7 +125,7 @@ static FORMES: Formes = Formes {
             9, 9, 6, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0,
         ],
-        num_mob: BASEMOB + 0,
+        num_mob: BASEMOB,
         numMob3d: MONT1,
     },
     forme2: Forme {
@@ -3113,14 +3113,14 @@ impl Sap3d {
 
     fn EstDansMontagne(&self, x: u16, y: u16) -> Boolean {
         for p in &self.aigoual {
-            if let Some(forme) = p.forme.map(FormeId::forme) {
-                if forme.hauteur == 0 {
-                    let dx = (p.posx as i64 - x as i64).abs();
-                    let dy = (p.posy as i64 - y as i64).abs();
-                    let dist = distance(dx as i64, dy as i64);
-                    if dist < forme.rayon as i16 {
-                        return VRAI;
-                    }
+            if let Some(forme) = p.forme.map(FormeId::forme)
+                && forme.hauteur == 0
+            {
+                let dx = (p.posx as i64 - x as i64).abs();
+                let dy = (p.posy as i64 - y as i64).abs();
+                let dist = distance(dx, dy);
+                if dist < forme.rayon as i16 {
+                    return VRAI;
                 }
             }
         }
@@ -3601,10 +3601,9 @@ impl Sapiens {
     L'affichage se fait sur l'écran1
     **********************************************************************/
     pub(crate) fn affich(&mut self, tfr: u16) {
-        let dzetabak: i16;
         let vitesse = self.sap3d.VitesseDeplacementNuages as u16;
 
-        dzetabak = self.sapglob.dzeta;
+        let dzetabak = self.sapglob.dzeta;
         self.sapglob.dzeta = tfr as i16;
 
         /* On efface le fond */
@@ -3642,8 +3641,7 @@ impl Sapiens {
             self.sap3d.aigoual[id as usize].forme = Some(FormeId::Foudroye);
             self.sap3d.ArbreFoudroye = None;
         }
-        let mut suivant = self.sap3d.PremEclair as usize;
-        for _ in 0..self.sap3d.nbEclairs {
+        for suivant in (self.sap3d.PremEclair as usize..).take(self.sap3d.nbEclairs as usize) {
             /* Fin de l'éclair */
             if self.sap3d.aigoual[suivant].ign != 0 {
                 if self.sap3d.ArbreFoudroye.is_none() {
@@ -3672,7 +3670,6 @@ impl Sapiens {
             /* on déplace toujours l'éclair de façon à ce qu'il soit collé au nuage */
             self.sap3d.aigoual[suivant].posx =
                 self.sap3d.aigoual[suivant].posx.wrapping_add(vitesse);
-            suivant += 1;
         }
         /* Déplace oiseaux vers le sud */
         for i in 0..self.sap3d.nbOiseaux {

@@ -161,20 +161,8 @@ fn CalcPoint3D(
     /* --- Calcule Y ecran --- */
     let yl = HAUTEUR_ECRAN as i64 / 2 - (HAUTEUR_ECRAN as i64 / 2) * zp / xp;
 
-    let mut xl = xl;
-    let mut yl = yl;
-    if xl < -32760 {
-        xl = -32760;
-    }
-    if xl > 32760 {
-        xl = 32760;
-    }
-    if yl < -32760 {
-        yl = -32760;
-    }
-    if yl > 32760 {
-        yl = 32760;
-    }
+    let xl = xl.clamp(-32760, 32760);
+    let yl = yl.clamp(-32760, 32760);
     let x = xl as i16;
     let y = yl as i16;
 
@@ -190,22 +178,12 @@ impl Sapiens {
     ************************************************************************/
     #[unsafe(no_mangle)]
     pub(crate) unsafe extern "C" fn sapdep(&mut self, angle: i16, vitesse: i16) {
-        let mut tmp = self.sapglob.xj as i64 + (((cosshort(angle) as i64) * (vitesse as i64)) >> 8);
-        if tmp < 0 {
-            tmp = 0;
-        }
-        if tmp > 65535 {
-            tmp = 65535;
-        }
-        self.sapglob.xj = tmp as u16;
-        tmp = self.sapglob.yj as i64 + (((sinshort(angle) as i64) * (vitesse as i64)) >> 8);
-        if tmp < 0 {
-            tmp = 0;
-        }
-        if tmp > 65535 {
-            tmp = 65535;
-        }
-        self.sapglob.yj = tmp as u16;
+        self.sapglob.xj = (self.sapglob.xj as i64
+            + (((cosshort(angle) as i64) * (vitesse as i64)) >> 8))
+            .clamp(0, 65535) as u16;
+        self.sapglob.yj = (self.sapglob.yj as i64
+            + (((sinshort(angle) as i64) * (vitesse as i64)) >> 8))
+            .clamp(0, 65535) as u16;
         self.AvanceSol(vitesse);
     }
 }
@@ -370,7 +348,7 @@ impl Sapiens {
                     if p.magnitude <= magnitude {
                         let x = (((self.sapglob.dzeta as i32 * 2 - p.x as i32 - 512) & 2047) - 512
                             + 256) as i16;
-                        if x >= 0 && x < 512 {
+                        if (0..512).contains(&x) {
                             let y = p.y as i32;
                             let off = (y as i64 * tailleLigne as i64 + x as i64) as isize;
                             let coul = if self.random.Rnd() > 127 {
@@ -513,9 +491,6 @@ impl Sapiens {
         let mut i: i32;
         let mut numPalette: i32;
         let numMob: i16;
-        let ymax: i32;
-        let largeur: i32;
-        let RandSeedBak: i64;
 
         self.AvanceSol(0);
         self.CalculeDimensionsLignes();
@@ -528,13 +503,13 @@ impl Sapiens {
         }
 
         /* On trace toutes les lignes au loin */
-        if i < NB_INTERV as i32 {
-            ymax = self.sapw3d.TAB_LIGNE_SOL[i as usize].y as i32 + NB_LIGNES_CIEL as i32;
+        let ymax = if i < NB_INTERV as i32 {
+            self.sapw3d.TAB_LIGNE_SOL[i as usize].y as i32 + NB_LIGNES_CIEL as i32
         } else {
-            ymax = NB_LIGNES_CIEL as i32 + NB_LIGNES_TERRE as i32;
-        }
-        largeur = HAUTEUR_MIN_BANDE * LARGEUR_MOB as i32 * 4 / HAUTEUR_MOB as i32;
-        RandSeedBak = self.random.CarboniseGetRandSeed();
+            NB_LIGNES_CIEL as i32 + NB_LIGNES_TERRE as i32
+        };
+        let largeur = HAUTEUR_MIN_BANDE * LARGEUR_MOB as i32 * 4 / HAUTEUR_MOB as i32;
+        let RandSeedBak = self.random.CarboniseGetRandSeed();
         self.random.CarboniseSetRandSeed(self.sapw3d.SOL_RAND_SEED);
         let mut j = ymax;
         while j > NB_LIGNES_CIEL as i32 {
@@ -825,16 +800,16 @@ impl Sapiens {
         let mut z: i32 = 40;
 
         for mont in &self.sap3d.aigoual {
-            if let Some(forme) = mont.forme.map(FormeId::forme) {
-                if forme.hauteur == 0 {
-                    let d = distance(
-                        self.sapglob.xj as i64 - mont.posx as i64,
-                        self.sapglob.yj as i64 - mont.posy as i64,
-                    );
-                    let r = forme.rayon as i64;
-                    if (d as i64) < r {
-                        z += ((r - d as i64) * forme.nbrdisk as i64 * mont.ign as i64 / r) as i32;
-                    }
+            if let Some(forme) = mont.forme.map(FormeId::forme)
+                && forme.hauteur == 0
+            {
+                let d = distance(
+                    self.sapglob.xj as i64 - mont.posx as i64,
+                    self.sapglob.yj as i64 - mont.posy as i64,
+                );
+                let r = forme.rayon as i64;
+                if (d as i64) < r {
+                    z += ((r - d as i64) * forme.nbrdisk as i64 * mont.ign as i64 / r) as i32;
                 }
             }
         }
@@ -850,7 +825,7 @@ impl Sapiens {
         let _g = port::on(self.sapwind.Ecran1);
         self.sapglob.zj =
             self.CalculeAltitude(self.sapglob.xj as i16, self.sapglob.yj as i16) as u16;
-        let angle = ((self.sapglob.dzeta as f32) * (3.1415927 as f32)) as f64 / 512.0;
+        let angle = ((self.sapglob.dzeta as f32) * (3.1415927_f32)) as f64 / 512.0;
         let ca = (-angle).cos() as f32;
         let sa = (-angle).sin() as f32;
 

@@ -131,7 +131,7 @@ pub(crate) fn resize(p: CGrafPtr, bounds: Rect) {
         let copy_w = (bounds.right - info.bounds.left).min(info.bounds.right - info.bounds.left);
         let copy_h = (bounds.bottom - info.bounds.top).min(info.bounds.bottom - info.bounds.top);
         for y in 0..copy_h.max(0) as usize {
-            let src = info.pixels.add(y as usize * info.row_bytes.max(0) as usize);
+            let src = info.pixels.add(y * info.row_bytes.max(0) as usize);
             let dst = pixels.add(y * w);
             std::ptr::copy_nonoverlapping(src, dst, copy_w.max(0) as usize);
         }

@@ -340,22 +340,19 @@ impl Sapiens {
     Dessine un nucleus brut sur l'ecran 1
     ***********************************************************************/
     fn FabriqueNucleus(&mut self) {
-        let mut y: i16;
         let mut x: i16;
-        let mut delta1: i16;
         let mut pos1: i16;
         let mut pos2: i16;
-        let kk: i16;
         let mut couleur: i16;
         let mut posTheo: i16;
 
         /* Palette du silex */
         self.effima(COULEUR_FOND_NUCLEUS);
-        delta1 = 60;
+        let mut delta1: i16 = 60;
         /* TIRAGE DU COEFF KK DE LA PIERRE DE 3 A 15 */
-        kk = self.random.myRandom(3, 16) as i16;
+        let kk = self.random.myRandom(3, 16) as i16;
         /* Pour l'ensemble des lignes du silex */
-        y = 0;
+        let mut y = 0;
         while y < NB_LIGNE_SILEX {
             delta1 = delta1.wrapping_add(self.random.myRandom(-1, 2) as i16);
             if delta1 < 0 {
@@ -439,15 +436,12 @@ impl Sapiens {
     <= Bruit a jouer
     ***********************************************************************/
     fn AppliqueImpact(&mut self, mut posxf_l: i16, mut posyf_l: i16, forcef: i16) -> i16 {
-        let penet: i16;
         let posimp: i16;
         let mut onde: u16;
         let mut yact: u16;
         let mut calc: u16;
-        let distcb: u16;
         let mut tfr: u16;
         let mut cass: u16;
-        let senson: u16;
         let mut okbruit: u16 = 0;
         let mut trav1: u16;
         let paslec: i16;
@@ -463,12 +457,12 @@ impl Sapiens {
             return okbruit as i16;
         }
         /* Sens de l'ondex : coup a gauche ou a droite */
-        senson = (posxf_l < (NB_COL_SILEX / 2)) as u16; /*vrai si gauche faux si droite*/
+        let senson = (posxf_l < (NB_COL_SILEX / 2)) as u16; /*vrai si gauche faux si droite*/
         /* Tfr varie de 0 à 15*/
         tfr = (forcef / 16) as u16;
         /* Penet varie de 0 à 50 */
-        penet = ((forcef * 50) / 256) as i16;
-        if senson != 0 {
+        let penet = (forcef * 50) / 256;
+        let distcb = if senson != 0 {
             /*gauche*/
             tfr = tfr.wrapping_add(posxf_l as u16); /*le coup porte vers l'interieur*/
             if tfr < penet as u16 {
@@ -480,7 +474,7 @@ impl Sapiens {
             }
             posimp = tfr as i16 - penet;
             /* Distance maximale */
-            distcb = penet as u16 + (posimp - self.tabgau(posyf_l)) as u16;
+            penet as u16 + (posimp - self.tabgau(posyf_l)) as u16
         } else {
             /*droite*/
             tfr = posxf_l as u16 - tfr;
@@ -488,8 +482,8 @@ impl Sapiens {
                 cass = cass.wrapping_add(1); /*depasse le milieu casse*/
             }
             posimp = tfr as i16 + penet;
-            distcb = penet as u16 - (posimp - self.tabdrt(posyf_l)) as u16;
-        }
+            penet as u16 - (posimp - self.tabdrt(posyf_l)) as u16
+        };
         if (((forcef - 1) * 48 / 256) as u16) > distcb {
             /*force suffisante*/
             if cass != 0 {
@@ -499,7 +493,7 @@ impl Sapiens {
                 if posyf_l < NB_LIGNE_SILEX / 2 {
                     /* On casse le haut du silex */
                     let mut i: i16 = posyf_l + 4;
-                    while i >= 0 && i < NB_LIGNE_SILEX {
+                    while (0..NB_LIGNE_SILEX).contains(&i) {
                         if a < 0 {
                             a = 0;
                         }
@@ -513,7 +507,7 @@ impl Sapiens {
                     }
                 } else {
                     let mut i: i16 = posyf_l - 5;
-                    while i >= 0 && i < NB_LIGNE_SILEX {
+                    while (0..NB_LIGNE_SILEX).contains(&i) {
                         if a < 0 {
                             a = 0;
                         }
@@ -544,9 +538,9 @@ impl Sapiens {
                             posimp - (formonde[onde as usize] as i16 * forcef) / 256
                         };
                         if senson != 0 {
-                            distact = a - self.tabgau(yact as i16) as i16;
+                            distact = a - self.tabgau(yact as i16);
                         } else {
-                            distact = self.tabdrt(yact as i16) as i16 - a;
+                            distact = self.tabdrt(yact as i16) - a;
                         }
                         if distact > 0 {
                             let mut pas: i16 = if senson != 0 {
@@ -583,9 +577,9 @@ impl Sapiens {
                             posimp - (formonde[onde as usize] as i16 * forcef) / 256
                         };
                         if senson != 0 {
-                            distact = a - self.tabgau(calc as i16) as i16;
+                            distact = a - self.tabgau(calc as i16);
                         } else {
-                            distact = self.tabdrt(calc as i16) as i16 - a;
+                            distact = self.tabdrt(calc as i16) - a;
                         }
                         if distact > 0 {
                             let mut pas: i16 = if senson != 0 {
@@ -789,15 +783,15 @@ impl Sapiens {
         let mut pos: i16 = 0;
         let mut car: i16;
 
+        while self.litclav() != 0 {
+            //Purge
+        }
+        let mut i = 0;
+        while i < taille {
+            self.sapglob.zoneu.elements[i as usize] = 32; /*on vide la zone*/
+            i += 1;
+        }
         unsafe {
-            while self.litclav() != 0 {
-                //Purge
-            }
-            let mut i: i16 = 0;
-            while i < taille {
-                self.sapglob.zoneu.elements[i as usize] = 32; /*on vide la zone*/
-                i += 1;
-            }
             loop {
                 /* On affiche le commentaire */
                 self.efbadi();
@@ -817,10 +811,10 @@ impl Sapiens {
                 }
                 if car == 13 {
                     /* Validation : test des trapsures */
-                    for t in 0..7usize {
+                    for (t, trap_array) in TRAPS.iter().enumerate() {
                         let mut oktrap: i16 = 1;
-                        for j in 0..6usize {
-                            if (TRAPS[t][j] & 223) != (self.sapglob.zoneu.elements[j] & 223) {
+                        for (j, trap) in trap_array.iter().enumerate() {
+                            if (trap & 223) != (self.sapglob.zoneu.elements[j] & 223) {
                                 oktrap = 0;
                             }
                         }
@@ -858,7 +852,7 @@ impl Sapiens {
 
     /***********************************************************************
                             DebutAventure
-    Initialise decor 3d, et afiche le copyright
+    Initialise decor 3d, et affiche le copyright
     ***********************************************************************/
     pub(crate) extern "C" fn DebutAventure(&mut self, isFirst: Boolean) {
         self.FixeMenusReduit();
@@ -1680,8 +1674,8 @@ impl Sapiens {
                             fclose(fichier);
                             return;
                         }
-                        checksum = checksum.wrapping_add(car as i16);
-                        car = car ^ self.random.rnd0();
+                        checksum = checksum.wrapping_add(car);
+                        car ^= self.random.rnd0();
                         *ptr = car as u8;
                         ptr = ptr.add(1);
                         i += 1;
@@ -1724,7 +1718,7 @@ impl Sapiens {
             car = (self.litclav() & 223) as u8;
         }
         if car as char >= 'A' && car as char <= 'C' {
-            quel_synthe((car - ('A' as u8)) as i16);
+            quel_synthe((car - b'A') as i16);
         }
     }
 

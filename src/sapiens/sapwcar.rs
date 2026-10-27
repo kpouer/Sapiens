@@ -74,10 +74,10 @@ impl Sapiens {
     #[unsafe(no_mangle)]
     pub(crate) unsafe extern "C" fn InitCouleurFontes(&mut self) {
         let _g = port::on(self.sapwind.Ecran1);
-        self.sapwcar.index_white = SapColor2Index(&rgbWhite) as i16;
-        self.sapwcar.index_black = SapColor2Index(&rgbBlack) as i16;
-        self.sapwcar.index_brown = SapColor2Index(&rgbBrown) as i16;
-        self.sapwcar.index_gray = SapColor2Index(&rgbGray) as i16;
+        self.sapwcar.index_white = SapColor2Index(&rgbWhite);
+        self.sapwcar.index_black = SapColor2Index(&rgbBlack);
+        self.sapwcar.index_brown = SapColor2Index(&rgbBrown);
+        self.sapwcar.index_gray = SapColor2Index(&rgbGray);
     }
 
     /*************************************************************************

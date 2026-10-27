@@ -56,7 +56,7 @@ pub(crate) extern "C" fn VerifNumSerie(str: *mut i8) -> Boolean {
     if clef != n {
         return false;
     }
-    if str[8] != 'S' as u8 {
+    if str[8] != b'S' {
         return false;
     }
     true

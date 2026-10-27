@@ -92,10 +92,11 @@ impl Sapiens {
         set_langue(l_pref.into());
         // Une valeur illisible (ancien format tronqué, zoom hors bornes) est
         // ignorée : on garde le zoom initial choisi selon la taille de l'écran.
-        if let Some(z) = zoom {
-            if z.is_finite() && (1.0..=4.0).contains(&z) {
-                self.sapwind.set_zoom(z);
-            }
+        if let Some(z) = zoom
+            && z.is_finite()
+            && (1.0..=4.0).contains(&z)
+        {
+            self.sapwind.set_zoom(z);
         }
         false
     }

@@ -29,7 +29,7 @@ pub(crate) static tenerv: [u16; 4] = [256, 4864, 25600, 40960]; /*enervement tri
 
 /*liste initialisee par init_glob*/
 const fn elems<const N: usize>(v: [u8; N]) -> [u8; 30] {
-    let mut out = [0 as u8; 30];
+    let mut out = [0; 30];
     let mut i = 0;
     while i < N {
         out[i] = v[i];
@@ -1757,7 +1757,7 @@ impl<'a> Iterator for PeupleIter<'a> {
 
 /* Heure,ciel,terre */
 const fn pal_s<const N: usize>(v: [i16; N]) -> [i16; 32] {
-    let mut out = [0 as i16; 32];
+    let mut out = [0; 32];
     let mut i = 0;
     while i < N {
         out[i] = v[i];

@@ -867,7 +867,7 @@ impl Sapiens {
             /* Affichage des autres commentaires */
             strcpy(
                 &raw mut chaine as *mut i8,
-                c"Copyright Didier & Olivier Guillion, 1986,1996,2005,2017".as_ptr() as *const i8,
+                c"Copyright Didier & Olivier Guillion, 1986,1996,2005,2017".as_ptr(),
             );
             self.sapwind.AffStr(
                 &raw mut chaine as *mut i8,

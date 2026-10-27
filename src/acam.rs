@@ -439,17 +439,15 @@ pub(crate) fn GetMHandle(menuID: i16) -> MenuHandle {
             .menus
             .iter()
             .find(|menu| menu.id == menuID)
-            .map(|menu| menu_handle_ptr(menu))
+            .map(menu_handle_ptr)
             .unwrap_or(std::ptr::null_mut()),
         None => std::ptr::null_mut(),
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SetMenuBar(_menuBar: Handle) {}
+pub(crate) fn SetMenuBar(_menuBar: Handle) {}
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn DrawMenuBar() {}
+pub(crate) fn DrawMenuBar() {}
 
 fn find_menu<'a>(menus: &'a mut [Menu], handle: MenuHandle) -> Option<&'a mut Menu> {
     if handle.is_null() {
@@ -499,7 +497,7 @@ pub(crate) fn DisableItem(menu: MenuHandle, item: i16) {
     }
 }
 
-pub(crate) extern "C" fn EnableItem(menu: MenuHandle, item: i16) {
+pub(crate) fn EnableItem(menu: MenuHandle, item: i16) {
     if let Some(m) = &mut *MENU_MODEL.lock().unwrap() {
         if let Some(menu) = find_menu(&mut m.menus, menu) {
             if item == 0 {
@@ -511,8 +509,7 @@ pub(crate) extern "C" fn EnableItem(menu: MenuHandle, item: i16) {
     }
 }
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn CheckItem(menu: MenuHandle, item: i16, checked: Boolean) {
+pub(crate) fn CheckItem(menu: MenuHandle, item: i16, checked: Boolean) {
     if let Some(m) = &mut *MENU_MODEL.lock().unwrap() {
         if let Some(menu) = find_menu(&mut m.menus, menu) {
             if let Some(it) = menu.items.get_mut((item - 1) as usize) {
@@ -524,8 +521,7 @@ pub(crate) extern "C" fn CheckItem(menu: MenuHandle, item: i16, checked: Boolean
 
 /// `GetItem` remplit le tampon Pascal avec le libellé courant de l'item
 /// (`SAPWIND.C` l'utilise pour les noms de desk accessory de l'Apple menu).
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetItem(menu: MenuHandle, item: i16, text: StringPtr) {
+pub(crate) fn GetItem(menu: MenuHandle, item: i16, text: StringPtr) {
     let blank = |text: StringPtr| unsafe {
         *text = 0;
     };
