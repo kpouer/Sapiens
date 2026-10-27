@@ -23,6 +23,15 @@ use crate::shared::{Ptr, Rect};
 
 const ECHELLE: i16 = 2;
 
+/// Vue sur une chaîne C terminée par 0 (le 0 final est inclus).
+///
+/// # Safety
+/// `p` doit pointer sur une chaîne C valide terminée par 0, vivante pendant `'a`.
+unsafe fn cstr_slice<'a>(p: *const i8) -> &'a [i8] {
+    let len = std::ffi::CStr::from_ptr(p).to_bytes().len();
+    std::slice::from_raw_parts(p, len + 1)
+}
+
 pub(crate) struct Saprel {
     LastObsv: i16,
     rBulleJoueur: Rect,
@@ -87,45 +96,45 @@ impl Sapiens {
     => Chaine a traiter
     @= taille maximale en colonne x, nbre de lignes t
     **************************************************************************/
-    fn TailleChaine(&self, mut debut: *mut i8) -> (i16, i16) {
+    fn TailleChaine(&self, mut debut: &[i8]) -> (i16, i16) {
         let mut x = 0;
         let mut taillex = 0;
         let mut y = 0;
 
         let mut ty = 0;
-        unsafe {
-            while *debut != 0 {
-                if *debut == b'\r' as i8 {
-                    ty += 1;
-                    x = 0;
-                    debut = debut.add(1);
-                } else {
-                    (x, y) = self.TailleCarMess(&mut debut, x, y);
-                    if x > taillex {
-                        taillex = x;
-                    }
-                    ty += y;
+        while debut[0] != 0 {
+            if debut[0] == b'\r' as i8 {
+                ty += 1;
+                x = 0;
+                debut = &debut[1..];
+            } else {
+                (debut, x, y) = self.TailleCarMess(debut, x, y);
+                if x > taillex {
+                    taillex = x;
                 }
+                ty += y;
             }
         }
         (taillex, ty)
     }
 
-    fn TailleCarMess(&self, debut: *mut *mut i8, mut taillex: i16, mut tailley: i16) -> (i16, i16) {
-        unsafe {
-            let p = *debut;
-            let car = *p as u8 as i16;
-            *debut = p.add(1);
-            if car > 128 {
-                let chaine = self.GetStrBkMot(car);
-                let (tx, ty) = self.TailleChaine(chaine);
-                taillex += tx;
-                tailley += ty;
-            } else {
-                taillex += self.TailleCar(car, 10);
-            }
+    fn TailleCarMess<'a>(
+        &self,
+        debut: &'a [i8],
+        mut taillex: i16,
+        mut tailley: i16,
+    ) -> (&'a [i8], i16, i16) {
+        let car = debut[0] as u8 as i16;
+        let ret = &debut[1..];
+        if car > 128 {
+            let chaine = unsafe { cstr_slice(self.GetStrBkMot(car)) };
+            let (tx, ty) = self.TailleChaine(chaine);
+            taillex += tx;
+            tailley += ty;
+        } else {
+            taillex += self.TailleCar(car, 10);
         }
-        (taillex, tailley)
+        (ret, taillex, tailley)
     }
 
     /***********************************************************************
@@ -329,7 +338,7 @@ impl Sapiens {
 
             let _g = port::on(self.sapwind.debecr);
             /* Calcul de la taille de la chaine en pixel */
-            let (mut tx, ty) = self.TailleChaine(p as *mut i8);
+            let (mut tx, ty) = self.TailleChaine(cstr_slice(p as *const i8));
             if tx < 64 {
                 tx = 64;
             }

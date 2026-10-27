@@ -563,16 +563,14 @@ impl Sapiens {
         };
         /* on a atteint le sol */
         if flg_mort == 0 {
-            if self.sapglob.presence == -1
-            /* on va baiser Juge*/
-            {
+            if self.sapglob.presence == -1 {
+                /* on va baiser Juge*/
                 self.sapglob.sap2.vie = self.sapglob.sap3.vie;
                 self.sapglob.sap3.vie = 0;
             }
             if sap_id == SapId::Sap3 {
-                if self.sapglob.presence == -1
-                /*c'est moi qui le frappe */
-                {
+                if self.sapglob.presence == -1 {
+                    /*c'est moi qui le frappe */
                     self.sapglob.viecopain = 0;
                     self.sapglob.chef = 0; /*On met le chef a zéro pour le scenar 4*/
                     if self.sapglob.charisme > 10 {
