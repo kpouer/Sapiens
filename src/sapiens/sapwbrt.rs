@@ -1032,14 +1032,7 @@ pub(crate) fn CopyOffscreen(source: CGrafPtr, dest: CGrafPtr, rsourceIn: &Rect, 
             let _g = port::on(dest);
             BackColor(whiteColor as i16);
             ForeColor(blackColor as i16);
-            CopyBits(
-                source,
-                dest,
-                &realSource,
-                &realDest,
-                srcCopy as i16,
-                std::ptr::null_mut(),
-            );
+            CopyBits(source, dest, &realSource, &realDest, srcCopy as i16);
         } else {
             /* Copie entre deux offscreen avec palette identique */
             let Some(infoSource) = port::info(source) else {
@@ -1316,14 +1309,7 @@ pub(crate) fn AffichePictDansAire(sapgest: &Sapgest, num: i16, r: &Rect) {
             if !offscreen.is_null() {
                 BackColor(whiteColor as i16);
                 ForeColor(blackColor as i16);
-                CopyBits(
-                    offscreen,
-                    port::current(),
-                    &rpng,
-                    &rDest,
-                    srcCopy as i16,
-                    std::ptr::null_mut(),
-                );
+                CopyBits(offscreen, port::current(), &rpng, &rDest, srcCopy as i16);
                 port::close(offscreen);
             }
         } else {

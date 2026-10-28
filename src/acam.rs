@@ -894,7 +894,6 @@ pub(crate) fn CopyBits(
     srcRect: *const Rect,
     dstRect: *const Rect,
     mode: i16,
-    _maskRgn: RgnHandle,
 ) {
     if srcBits.is_null() || dstBits.is_null() || srcRect.is_null() || dstRect.is_null() {
         return;
@@ -1034,7 +1033,6 @@ pub(crate) fn ScrollRect(r: &Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
                 &clipped,
                 &clipped,
                 0,
-                std::ptr::null_mut(),
             );
         }
         if !updateRgn.is_null() {
@@ -1111,7 +1109,6 @@ mod tests {
             &Rect::new(0, 0, 640, 400),
             &Rect::new(0, 0, 1280, 800),
             0,
-            std::ptr::null_mut(),
         );
 
         unsafe {

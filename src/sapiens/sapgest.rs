@@ -1748,7 +1748,7 @@ impl Sapiens {
         self.sapglob.flefba = 0;
         self.clrbadi();
         /*recherche si silex */
-        let mut i: i8 = self.sapglob.liste1.taille as i8 - 1;
+        let mut i = self.sapglob.liste1.taille as i8 - 1;
         while i >= 0 && self.sapglob.liste1.elements[i as usize] != 19 {
             i -= 1;
         }
@@ -1783,7 +1783,7 @@ impl Sapiens {
                 self.sapglob.liste1.elements[i as usize] = 21; /*hache*/
                 self.bravo((self.sapwind.mobSilex + MOB_SILEX_HACHE_BASE) as u16);
             }
-            self.comment(85); /*tu pssede une nll arme*/
+            self.comment(85); /*tu possèdes une nouvelle arme*/
         }
         attends_bruit();
         bande(0);
