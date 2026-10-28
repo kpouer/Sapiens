@@ -38,7 +38,6 @@ use std::ffi::c_void;
 use std::process::exit;
 
 /******************** Constantes (SAPIENS.H / acam.h) *******************/
-const VERS: i64 = 0x76657273; /* 'vers' */
 const ALRT_VERSION: i16 = 133;
 const noGrowDocProc: i16 = 0;
 
@@ -635,10 +634,10 @@ impl Sapiens {
                                  AfficheFond
 Affiche le tramage de fond de la fenetre
 ***********************************************************************************/
-unsafe fn AfficheFond(gfx: CGrafPtr) {
+fn AfficheFond(gfx: CGrafPtr) {
     let _g = port::on(gfx);
     let portRect = port::bounds(gfx);
-    /* Le fond au dessus de l'awale */
+    /* Le fond au-dessus de l'awale */
     let picMotif: PicHandle = GetPicture(128) as PicHandle;
     let mut y: i16 = 0;
     while y < portRect.bottom {
@@ -830,14 +829,14 @@ impl Sapiens {
             set_langue((Alert(ALRT_VERSION, core::ptr::null_mut()) - 1).into());
             SetCursor(GetCursor(watchCursor as i16));
         }
+        self.sapglob.init_and_check_texts();
+        self.sapwind.InitMainWindow();
+        self.FixeTitreMainWindow();
+        port::set(self.sapwind.mainWindow);
+        AfficheFond(self.sapwind.mainWindow);
+        /* On affiche le logo centre */
+        let pict = GetPicture(134) as PicHandle;
         unsafe {
-            self.sapglob.init_and_check_texts();
-            self.sapwind.InitMainWindow();
-            self.FixeTitreMainWindow();
-            port::set(self.sapwind.mainWindow);
-            AfficheFond(self.sapwind.mainWindow);
-            /* On affiche le logo centre */
-            let pict = GetPicture(134) as PicHandle;
             if !pict.is_null() {
                 r = (**pict).picFrame;
                 r.OffsetRect(
