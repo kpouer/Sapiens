@@ -8,7 +8,7 @@ use crate::acam::{
     Alert, BackColor, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle,
     DrawMenuBar, EnableItem, FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle,
     GetNewMBar, NewCWindow, ParamText, PenNormal, PtoCstr, Random, SetCursor, SetMenuBar,
-    SetWTitle, TickCount, VRAI,
+    SetWTitle, TickCount, VRAI, c_string,
 };
 use crate::audio;
 use crate::cbridge::{
@@ -23,7 +23,7 @@ use crate::sapiens::saptxt::CvtDefaultLangRess;
 use crate::sapiens::sapwbrt::{
     DoFrameRect, DoMoveTo, DoPenSize, DoTextSize, DoZoomRect, SapiensCreeOffscreen, SetPathInData,
 };
-use crate::sapiens::{ECHELLE, STR_VRAC, TAILLE_STR_MESS_FORMATE, Vue};
+use crate::sapiens::{ECHELLE, STR_VRAC, Vue};
 use crate::shared::{Boolean, CGrafPtr, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr};
 use crate::stubs::{
     AddResMenu, BeginUpdate, CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseValideUpdate,
@@ -174,22 +174,19 @@ impl Sapiens {
     => Message à afficher
     <= rien
     ***********************************************************************************/
-    pub(crate) fn Collapse(&self, message: &str) {
+    pub(crate) fn Collapse<T: Into<String>>(&self, message: T) {
         let _g = port::preserve();
         if !self.sapwind.mainWindow.is_null() {
             port::set(self.sapwind.mainWindow);
         }
 
         /* On fixe la zone à la zone de secours de l'interface */
-        let mut chaine: [i8; TAILLE_STR_MESS_FORMATE as usize] = [0; 512];
-        copie_chaine(&mut chaine, message);
         CarboniseSetCursorArrow();
-        CtoPstr(chaine.as_mut_ptr());
         ParamText(
-            &raw mut chaine as *mut u8,
-            TRANS_VIDE.as_ptr() as *mut u8,
-            TRANS_VIDE.as_ptr() as *mut u8,
-            TRANS_VIDE.as_ptr() as *mut u8,
+            message.into(),
+            c_string(TRANS_VIDE.as_ptr() as *mut u8),
+            c_string(TRANS_VIDE.as_ptr() as *mut u8),
+            c_string(TRANS_VIDE.as_ptr() as *mut u8),
         );
         self.DoAlertSapiens(CvtDefaultLangRess(134)); /* ALRT_COLLAPSE */
     }
@@ -371,14 +368,11 @@ impl Sapiens {
                                     DoInfo
     ******************************************************************************************/
     pub(crate) fn DoInfo(&self) {
-        let mut str_: [i8; 255] = [0; 255];
-        copie_chaine(&mut str_, &GetVersionSapiens());
-        CtoPstr(str_.as_mut_ptr());
         ParamText(
-            &raw mut str_ as *mut u8,
-            TRANS_VIDE.as_ptr() as *mut u8,
-            TRANS_VIDE.as_ptr() as *mut u8,
-            TRANS_VIDE.as_ptr() as *mut u8,
+            GetVersionSapiens(),
+            c_string(TRANS_VIDE.as_ptr() as *mut u8),
+            c_string(TRANS_VIDE.as_ptr() as *mut u8),
+            c_string(TRANS_VIDE.as_ptr() as *mut u8),
         );
         self.DoAlertSapiens(CvtDefaultLangRess(2)); /* ALRT_INFO */
     }
@@ -913,7 +907,7 @@ impl Sapiens {
             if !FixeMenu(CvtDefaultLangRess(0)) {
                 /* MENU_BAR */
                 let x = self.sapwind.GetStr(11);
-                self.Collapse(&std::ffi::CStr::from_ptr(x).to_string_lossy());
+                self.Collapse(c_string(x as *mut u8));
                 SapiensExit(-1);
             }
             self.FixeMenusReduit();
@@ -940,7 +934,7 @@ impl Sapiens {
             /* On charge les mobs */
             if !self.InitMobs() {
                 let x = self.sapwind.GetStr(11);
-                self.Collapse(&std::ffi::CStr::from_ptr(x).to_string_lossy());
+                self.Collapse(c_string(x as *mut u8));
                 SapiensExit(-1);
             }
             self.InitCouleurFontes();

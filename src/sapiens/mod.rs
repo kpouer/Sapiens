@@ -538,7 +538,6 @@ pub(crate) const NB_ARBRES_LATERAL_MAX: u32 = 20;
 pub(crate) const NB_MAX_HERBE_AV_PLAN: u32 = 100;
 pub(crate) const NB_MAX_HERBE_AR_PLAN: u32 = 100;
 pub(crate) const ECHELLE: u32 = 2;
-pub(crate) const TAILLE_STR_MESS_FORMATE: u32 = 512;
 pub(crate) const NB_MAX_MOB: u32 = 640;
 pub(crate) const POLICE_LISSAGE: u32 = 2;
 pub(crate) const STYLE_LISSAGE: u32 = 1;

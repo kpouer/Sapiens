@@ -223,7 +223,7 @@ pub(crate) fn GetIndString(s: StringPtr, _id: i16, _index: i16) {
 static PARAM_TEXT: Mutex<[String; 4]> =
     Mutex::new([String::new(), String::new(), String::new(), String::new()]);
 
-fn c_string(p: StringPtr) -> String {
+pub(crate) fn c_string(p: StringPtr) -> String {
     if p.is_null() {
         return String::new();
     }
@@ -235,18 +235,16 @@ fn c_string(p: StringPtr) -> String {
 }
 
 /// Substitution des quatre zones `^0`..`^3` des alertes (Toolbox Mac).
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn ParamText(p1: StringPtr, p2: StringPtr, p3: StringPtr, p4: StringPtr) {
+pub(crate) fn ParamText(p1: String, p2: String, p3: String, p4: String) {
     let mut g = PARAM_TEXT.lock().unwrap();
-    g[0] = c_string(p1);
-    g[1] = c_string(p2);
-    g[2] = c_string(p3);
-    g[3] = c_string(p4);
+    g[0] = p1;
+    g[1] = p2;
+    g[2] = p3;
+    g[3] = p4;
 }
 
 /// Affiche une alerte via egui et attend l'item choisi. Bloquant côté C.
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn Alert(alert_id: i16, _filter: *mut c_void) -> i16 {
+pub(crate) fn Alert(alert_id: i16, _filter: *mut c_void) -> i16 {
     let params = PARAM_TEXT.lock().unwrap().clone();
     request_alert(alert_id, params)
 }
