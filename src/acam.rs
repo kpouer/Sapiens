@@ -891,18 +891,16 @@ pub(crate) fn ClipRect(r: &Rect) {
 pub(crate) fn CopyBits(
     srcBits: *const c_void,
     dstBits: *const c_void,
-    srcRect: *const Rect,
-    dstRect: *const Rect,
+    sr: &Rect,
+    dr: &Rect,
     mode: i16,
 ) {
-    if srcBits.is_null() || dstBits.is_null() || srcRect.is_null() || dstRect.is_null() {
+    if srcBits.is_null() || dstBits.is_null() {
         return;
     }
     let src = srcBits as *mut SapPort;
     let dst = dstBits as *mut SapPort;
     unsafe {
-        let sr = &*srcRect;
-        let dr = &*dstRect;
         let dp = &mut *dst;
         dp.open_acc = dp.open_acc.union(dr);
         let dclip = dr.intersect(&dp.clip);
