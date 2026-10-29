@@ -39,7 +39,6 @@ use std::process::exit;
 
 /******************** Constantes (SAPIENS.H / acam.h) *******************/
 const ALRT_VERSION: i16 = 133;
-const noGrowDocProc: i16 = 0;
 
 /******************* Constantes menus (SAPWIND.C) *******************/
 const itemInformation: i16 = 1;
@@ -790,16 +789,7 @@ impl SapWind {
                     / 2,
         );
         /* On crée la fenetre principale */
-        self.mainWindow = NewCWindow(
-            core::ptr::null_mut(),
-            &raw const rect,
-            core::ptr::null_mut(),
-            VRAI,
-            noGrowDocProc,
-            -1isize as WindowPtr,
-            FAUX,
-            0,
-        );
+        self.mainWindow = NewCWindow(&rect);
         /* La fenêtre porte l'échelle courante (menu « Échelle »). */
         port::set_window_zoom(self.SapZoom);
     }

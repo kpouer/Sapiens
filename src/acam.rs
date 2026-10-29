@@ -253,25 +253,11 @@ pub(crate) fn Alert(alert_id: i16, _filter: *mut c_void) -> i16 {
 // Fenêtre principale
 // ---------------------------------------------------------------------------
 
-pub(crate) fn NewCWindow(
-    _storage: *mut c_void,
-    bounds: *const Rect,
-    _title: StringPtr,
-    _visible: Boolean,
-    _procID: i16,
-    _behind: WindowPtr,
-    _goAwayFlag: Boolean,
-    _refCon: i64,
-) -> WindowPtr {
+pub(crate) fn NewCWindow(b: &Rect) -> WindowPtr {
     let existing = port::window();
     if !existing.is_null() {
         return existing;
     }
-    let b = if bounds.is_null() {
-        port::SCREEN
-    } else {
-        unsafe { *bounds }
-    };
     /* Le positionnement global de la fenêtre est géré par egui : le port de
     dessin travaille en coordonnées locales (0,0)-(largeur,hauteur). */
     let local = Rect::new(0, 0, b.right - b.left, b.bottom - b.top);
