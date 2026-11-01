@@ -220,7 +220,6 @@ pub(crate) fn resize(p: &mut SapPort, bounds: Rect) {
 // ---------------------------------------------------------------------------
 
 /// Ce qu'il faut pour lire ou écrire dans le tampon d'un port.
-#[derive(Clone, Copy)]
 pub(crate) struct PortInfo {
     /// Premier pixel, en indices 0..255 de la LUT système.
     pub(crate) pixels: Ptr,
