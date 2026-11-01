@@ -24,10 +24,10 @@ use crate::sapiens::sapwbrt::SetPathInData;
 use crate::sapiens::{ECHELLE, STR_VRAC, Vue};
 use crate::shared::{Boolean, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr};
 use crate::stubs::{
-    AddResMenu, BeginUpdate, CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseValideUpdate,
-    DragWindow, DrawPicture, EndUpdate, FindWindow, FrontWindow, GetNextEvent, GetPicture,
-    HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc, PopPath,
-    PushPath, ReleaseResource, SelectWindow, SystemClick, SystemTask,
+    AddResMenu, CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseValideUpdate, DragWindow,
+    DrawPicture, FindWindow, FrontWindow, GetNextEvent, GetPicture, HiliteMenu,
+    InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc, PopPath, PushPath,
+    ReleaseResource, SelectWindow, SystemClick, SystemTask,
 };
 use crate::{Sapiens, cbridge};
 use cbridge::*;

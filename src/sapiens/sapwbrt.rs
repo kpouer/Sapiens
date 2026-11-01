@@ -1190,22 +1190,7 @@ impl Sapiens {
                 .CopyOffscreen(PortId::Debecr, PortId::MainWindow, r, &r);
         }
     }
-    /*************************************************************************
-                    AffmobPalette
-    Affiche un mob sur l'ecran virtuel, en entree on a en plus le tableau des
-    index de couleurs a utiliser
-    *************************************************************************/
-    pub(crate) fn AffmobPalette(
-        &mut self,
-        mob: i16,
-        y: i16,
-        x: i16,
-        inverse: i16,
-        tabIndex: &[i16],
-    ) {
-        let _g = self.sapwind.ports.on(PortId::Ecran1);
-        self.Affmobbrt(mob, x, y, inverse, Some(tabIndex));
-    }
+
     /*************************************************************************
                     AffPalette
     Affiche la palette en cours

@@ -165,7 +165,7 @@ impl Sapiens {
             self.sapwind.ports.TextFont(POLICE_LISSAGE as i16);
             self.sapwind.ports.TextSize(taille);
             self.sapwind.ports.TextFace(STYLE_LISSAGE as i16);
-            let info = self.sapwind.ports.GetFontInfo().unwrap_or_default();
+            let info = self.sapwind.ports.GetFontInfo();
             SetColorFont(self, couleurOmbre);
             self.sapwind.ports.MoveTo(
                 self.sapwcar.pt_ecr_car.h + dx,
@@ -330,7 +330,7 @@ impl Sapiens {
     **************************************************************************/
     pub(crate) fn affcarmess(&mut self, car: i16) {
         let _g = self.sapwind.ports.on(PortId::Debecr);
-        let rgn = self.sapwind.ports.GetClip().expect("Clip");
+        let rgn = self.sapwind.ports.GetClip();
         self.sapwind.ports.ClipRect(&self.sapwmess.rMess);
         /* Effacement et affichage curseur */
         if car < 32 {

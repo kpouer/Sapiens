@@ -118,7 +118,7 @@ impl Sapiens {
         fraichement dessine (clignotement). */
         {
             let _g = self.sapwind.ports.on(PortId::MainWindow);
-            let rgnClip = self.sapwind.ports.GetClip().expect("clip");
+            let rgnClip = self.sapwind.ports.GetClip();
             for band in difference_rects(&oldRect, &self.sapwclav.rsouris) {
                 if band.is_empty() {
                     continue;

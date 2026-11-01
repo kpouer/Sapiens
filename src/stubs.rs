@@ -51,8 +51,6 @@ pub(crate) extern "C" fn FindWindow(_pt: Point, _window: *mut WindowPtr) -> i16 
 }
 pub(crate) extern "C" fn SystemClick(_event: *const EventRecord, _w: WindowPtr) {}
 pub(crate) extern "C" fn SystemTask() {}
-pub(crate) extern "C" fn BeginUpdate(_w: WindowPtr) {}
-pub(crate) extern "C" fn EndUpdate(_w: WindowPtr) {}
 pub(crate) extern "C" fn DragWindow(_w: WindowPtr, _pt: Point, _bounds: *const Rect) {}
 
 impl Ports {

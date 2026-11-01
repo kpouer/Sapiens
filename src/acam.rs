@@ -689,41 +689,38 @@ impl Ports {
     }
 
     pub(crate) fn LineTo(&mut self, h: i16, v: i16) {
-        self.with_port(|p| {
-            let loc = p.pen_loc;
-            draw_line(p, loc.h, loc.v, h, v);
-            p.pen_loc = Point { v, h };
-        });
+        let p = self.current_mut();
+        let loc = p.pen_loc;
+        draw_line(p, loc.h, loc.v, h, v);
+        p.pen_loc = Point { v, h };
     }
 
     pub(crate) fn Line(&mut self, dh: i16, dv: i16) {
-        self.with_port(|p| {
-            let loc = p.pen_loc;
-            let h = loc.h.wrapping_add(dh);
-            let v = loc.v.wrapping_add(dv);
-            draw_line(p, loc.h, loc.v, h, v);
-            p.pen_loc = Point { v, h };
-        });
+        let p = self.current_mut();
+        let loc = p.pen_loc;
+        let h = loc.h.wrapping_add(dh);
+        let v = loc.v.wrapping_add(dv);
+        draw_line(p, loc.h, loc.v, h, v);
+        p.pen_loc = Point { v, h };
     }
 
     pub(crate) fn PenSize(&mut self, width: i16, height: i16) {
-        self.with_port(|p| {
-            p.pen_size = Point {
-                h: width.max(1),
-                v: height.max(1),
-            }
-        });
+        let p = self.current_mut();
+        p.pen_size = Point {
+            h: width.max(1),
+            v: height.max(1),
+        }
     }
 
     pub(crate) fn PenMode(&mut self, mode: i16) {
-        self.with_port(|p| p.pen_mode = mode);
+        let p = self.current_mut();
+        p.pen_mode = mode;
     }
 
     pub(crate) fn PenNormal(&mut self) {
-        self.with_port(|p| {
-            p.pen_size = Point { v: 1, h: 1 };
-            p.pen_mode = PAT_COPY;
-        });
+        let p = self.current_mut();
+        p.pen_size = Point { v: 1, h: 1 };
+        p.pen_mode = PAT_COPY;
     }
 }
 
@@ -741,21 +738,22 @@ fn color_num_to_index(color: i16) -> u8 {
 
 impl Ports {
     pub(crate) fn ForeColor(&mut self, color: i16) {
-        self.with_port(|p| p.fore_index = color_num_to_index(color));
+        let p = self.current_mut();
+        p.fore_index = color_num_to_index(color);
     }
 
     pub(crate) fn BackColor(&mut self, color: i16) {
-        self.with_port(|p| p.back_index = color_num_to_index(color));
+        let p = self.current_mut();
+        p.back_index = color_num_to_index(color);
     }
 
     pub(crate) fn RGBForeColor(&mut self, c: &RGBColor) {
-        self.with_port(|p| {
-            p.fore_index = rgb_to_index(
-                (c.red >> 8) as u8,
-                (c.green >> 8) as u8,
-                (c.blue >> 8) as u8,
-            )
-        });
+        let p = self.current_mut();
+        p.fore_index = rgb_to_index(
+            (c.red >> 8) as u8,
+            (c.green >> 8) as u8,
+            (c.blue >> 8) as u8,
+        )
     }
 }
 
@@ -790,17 +788,15 @@ pub(crate) fn SectRect(src1: &Rect, src2: &Rect) -> Option<Rect> {
 
 impl Ports {
     pub(crate) fn PaintRect(&mut self, r: &Rect) {
-        self.with_port(|p| {
-            let fore = p.fore_index;
-            fill_rect(&mut *p, r, fore);
-        });
+        let p = self.current_mut();
+        let fore = p.fore_index;
+        fill_rect(&mut *p, r, fore);
     }
 
     pub(crate) fn EraseRect(&mut self, r: &Rect) {
-        self.with_port(|p| {
-            let back = p.back_index;
-            fill_rect(p, r, back);
-        });
+        let p = self.current_mut();
+        let back = p.back_index;
+        fill_rect(p, r, back);
     }
 }
 
@@ -836,18 +832,19 @@ fn clip_overflow_bound() -> i16 {
 
 impl Ports {
     pub(crate) fn FrameRect(&mut self, r: &Rect) {
-        self.with_port(|p| frame_rect(p, r));
+        let p = self.current_mut();
+        frame_rect(p, r);
     }
 
     pub(crate) fn FrameRoundRect(&mut self, r: &Rect, _ovalWidth: i16, _ovalHeight: i16) {
-        self.with_port(|p| frame_rect(p, r));
+        let p = self.current_mut();
+        frame_rect(p, r);
     }
 
     pub(crate) fn ClipRect(&mut self, r: &Rect) {
-        self.with_port(|p| {
-            let b = p.bounds;
-            p.clip = r.intersect(&b);
-        });
+        let p = self.current_mut();
+        let b = p.bounds;
+        p.clip = r.intersect(&b);
     }
 }
 
@@ -1034,41 +1031,39 @@ impl Ports {
     // Régions (approximation rectangulaire)
     // ---------------------------------------------------------------------------
     pub(crate) fn OpenRgn(&mut self) {
-        self.with_port(|p| {
-            p.open_rgn = 1;
-            p.open_acc = Rect::default();
-        });
+        let p = self.current_mut();
+        p.open_rgn = 1;
+        p.open_acc = Rect::default();
     }
 
-    pub(crate) fn CloseRgn(&mut self) -> Option<Rect> {
-        self.with_port(|p| {
-            let acc = p.open_acc;
-            p.open_rgn = 0;
-            p.open_acc = Rect::default();
-            acc
-        })
+    pub(crate) fn CloseRgn(&mut self) -> Rect {
+        let p = self.current_mut();
+        let acc = p.open_acc;
+        p.open_rgn = 0;
+        p.open_acc = Rect::default();
+        acc
     }
 
-    pub(crate) fn GetClip(&mut self) -> Option<Rect> {
-        self.with_port(|p| p.clip)
+    pub(crate) fn GetClip(&mut self) -> Rect {
+        let p = self.current();
+        p.clip
     }
 
     pub(crate) fn SetClip(&mut self, rgn: &Rect) {
-        self.with_port(|p| {
-            let b = p.bounds;
-            p.clip = rgn.intersect(&b);
-        });
+        let p = self.current_mut();
+        let b = p.bounds;
+        p.clip = rgn.intersect(&b);
     }
 
     pub(crate) fn EraseRgn(&mut self, rgn: &Rect) {
-        self.with_port(|p| {
-            let back = p.back_index;
-            fill_rect(p, rgn, back);
-        });
+        let p = self.current_mut();
+        let back = p.back_index;
+        fill_rect(p, rgn, back);
     }
 
     pub(crate) fn FrameRgn(&mut self, rgn: &Rect) {
-        self.with_port(|p| frame_rect(p, rgn));
+        let p = self.current_mut();
+        frame_rect(p, rgn);
     }
 }
 

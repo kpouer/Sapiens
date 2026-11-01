@@ -412,12 +412,12 @@ impl Sapiens {
             self.sapwind.ports.LineTo(x + 8, y);
             self.sapwind.ports.LineTo(x, y);
         }
-        let rgn = self.sapwind.ports.CloseRgn().expect("A range !");
+        let rgn = self.sapwind.ports.CloseRgn();
         self.sapwind.ports.BackColor(whiteColor as i16);
         self.sapwind.ports.EraseRgn(&rgn);
         self.sapwind.ports.DoPenSize(1, 1);
         self.sapwind.ports.FrameRgn(&rgn);
-        let rgnclip = self.sapwind.ports.GetClip().expect("a clip");
+        let rgnclip = self.sapwind.ports.GetClip();
         self.sapwind.ports.SetClip(&rgn);
         let x = r.left + 8;
         let mut y = r.top + 6;
