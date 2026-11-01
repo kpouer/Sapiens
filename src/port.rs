@@ -13,8 +13,7 @@ use crate::acam::NewCWindow;
 use crate::sapiens::ECHELLE;
 use crate::sapiens::sapwbrt::SapiensCreeOffscreen;
 use crate::sapiens::sapwcart::Sapwcart;
-use crate::shared::free_pixels;
-use crate::shared::{Ptr, Rect, SapPort, alloc_pixels};
+use crate::shared::{Ptr, Rect, SapPort};
 use std::cell::Cell;
 use std::rc::Rc;
 use strum::Display;
@@ -170,8 +169,7 @@ pub(crate) fn create(bounds: Rect, depth: i16) -> SapPort {
         bounds,
         row_bytes: w as i16,
         depth,
-        pixels: alloc_pixels(w * h),
-        pixel_len: w * h,
+        pixels: vec![0; w * h],
         pen_loc: crate::shared::Point { v: 0, h: 0 },
         pen_size: crate::shared::Point { v: 1, h: 1 },
         pen_mode: crate::shared::PAT_COPY,
@@ -190,35 +188,31 @@ pub(crate) fn create(bounds: Rect, depth: i16) -> SapPort {
 impl SapPort {
     /// Libère un port hors-écran. Le port de la fenêtre est laissé en place.
     pub(crate) fn close(&mut self) {
-        free_pixels(self.pixels);
+        self.pixels = Vec::new();
     }
 }
 
 /// Redimensionne le tampon de `p` sur `bounds`, en préservant le contenu
 /// commun aux deux aires (l'aire en haut à gauche). Le clip suit l'aire.
 pub(crate) fn resize(p: &mut SapPort, bounds: Rect) {
-    let info = p.info();
     let w = (bounds.right - bounds.left).max(0) as usize;
     let h = (bounds.bottom - bounds.top).max(0) as usize;
     if w == 0 || h == 0 {
         return;
     }
-    let pixels = alloc_pixels(w * h);
-    unsafe {
-        let copy_w = (bounds.right - info.bounds.left).min(info.bounds.right - info.bounds.left);
-        let copy_h = (bounds.bottom - info.bounds.top).min(info.bounds.bottom - info.bounds.top);
-        for y in 0..copy_h.max(0) as usize {
-            let src = info.pixels.add(y * info.row_bytes.max(0) as usize);
-            let dst = pixels.add(y * w);
-            std::ptr::copy_nonoverlapping(src, dst, copy_w.max(0) as usize);
-        }
-        free_pixels(p.pixels);
-        p.pixels = pixels;
-        p.pixel_len = w * h;
-        p.bounds = bounds;
-        p.row_bytes = w as i16;
-        p.clip = bounds;
+    let mut pixels = vec![0; w * h];
+    let old = p.bounds;
+    let old_row = p.row_bytes.max(0) as usize;
+    let copy_w = (bounds.right - old.left).min(old.right - old.left).max(0) as usize;
+    let copy_h = (bounds.bottom - old.top).min(old.bottom - old.top).max(0) as usize;
+    for y in 0..copy_h {
+        let src = &p.pixels[y * old_row..y * old_row + copy_w];
+        pixels[y * w..y * w + copy_w].copy_from_slice(src);
     }
+    p.pixels = pixels;
+    p.bounds = bounds;
+    p.row_bytes = w as i16;
+    p.clip = bounds;
 }
 
 // ---------------------------------------------------------------------------
@@ -236,17 +230,11 @@ pub(crate) struct PortInfo {
     pub(crate) row_bytes: i16,
 }
 
-/// Description du tampon de `p`, ou `None` si le port n'existe pas.
-#[deprecated]
-pub(crate) fn info(p: &SapPort) -> Option<PortInfo> {
-    Some(p.info())
-}
-
 impl SapPort {
     /// Description du tampon de `p`, ou `None` si le port n'existe pas.
     pub(crate) fn info(&self) -> PortInfo {
         PortInfo {
-            pixels: self.pixels,
+            pixels: self.pixels.as_ptr() as Ptr,
             bounds: self.bounds,
             row_bytes: self.row_bytes,
         }
@@ -388,9 +376,7 @@ mod tests {
             },
             8,
         );
-        unsafe {
-            *p.pixels.add(5) = 42; // (x=1, y=1)
-        }
+        p.pixels[5] = 42; // (x=1, y=1)
         resize(
             &mut p,
             Rect {
@@ -400,13 +386,10 @@ mod tests {
                 right: 8,
             },
         );
-        let i = p.info();
-        assert_eq!(i.bounds.bottom, 8);
-        assert_eq!(i.row_bytes, 8);
-        unsafe {
-            assert_eq!(*i.pixels.add(8 + 1), 42);
-            // Le coin nouveau est à zéro.
-            assert_eq!(*i.pixels.add(7 * 8 + 7), 0);
-        }
+        assert_eq!(p.bounds.bottom, 8);
+        assert_eq!(p.row_bytes, 8);
+        assert_eq!(p.pixels[8 + 1], 42);
+        // Le coin nouveau est à zéro.
+        assert_eq!(p.pixels[7 * 8 + 7], 0);
     }
 }

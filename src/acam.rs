@@ -598,23 +598,21 @@ pub(crate) fn menus_snapshot() -> Vec<MenuSnapshot> {
 /// Trace un pixel plein (`mode` tenu en compte), avec clip.
 #[inline]
 pub(crate) fn plot(p: &mut SapPort, x: i16, y: i16, c: u8) {
-    unsafe {
-        if x < p.clip.left || x >= p.clip.right || y < p.clip.top || y >= p.clip.bottom {
-            return;
-        }
-        let w = p.row_bytes as usize;
-        let off = (y as usize) * w + (x as usize);
-        if off >= p.pixel_len {
-            return;
-        }
-        let d = p.pixels.add(off);
-        *d = match p.pen_mode {
-            PAT_OR => *d | c,
-            PAT_XOR => *d ^ c,
-            PAT_BIC => *d & !c,
-            _ => c,
-        };
+    if x < p.clip.left || x >= p.clip.right || y < p.clip.top || y >= p.clip.bottom {
+        return;
     }
+    let w = p.row_bytes as usize;
+    let off = (y as usize) * w + (x as usize);
+    let mode = p.pen_mode;
+    let Some(d) = p.pixels.get_mut(off) else {
+        return;
+    };
+    *d = match mode {
+        PAT_OR => *d | c,
+        PAT_XOR => *d ^ c,
+        PAT_BIC => *d & !c,
+        _ => c,
+    };
 }
 
 /// Remplit un rectangle (respecte clip), et accumule dans la région ouverte.
@@ -625,7 +623,7 @@ fn fill_rect(p: &mut SapPort, r: &Rect, color: u8) {
         return;
     }
     let w = p.row_bytes as usize;
-    let base = p.pixels;
+    let base = p.pixels.as_mut_ptr();
     if p.pen_mode == PAT_COPY {
         let wpx = (c.right - c.left) as usize;
         unsafe {
@@ -932,7 +930,8 @@ impl Ports {
             let ws = src_id.unwrap_or(self).row_bytes as usize;
             let ob = dst_id.unwrap_or(self).bounds;
             let sb = src_id.unwrap_or(self).bounds;
-            if src_id.unwrap_or(self).pixels.is_null() || dst_id.unwrap_or(self).pixels.is_null() {
+            if src_id.unwrap_or(self).pixels.is_empty() || dst_id.unwrap_or(self).pixels.is_empty()
+            {
                 return;
             }
 
@@ -964,10 +963,12 @@ impl Ports {
                     let srcrow = src_id
                         .unwrap_or(self)
                         .pixels
+                        .as_ptr()
                         .add((srcy as usize) * ws + (srcx - sb.left) as usize);
                     let dstrow = dst_id
-                        .unwrap_or(self)
+                        .unwrap_mut_or(self)
                         .pixels
+                        .as_mut_ptr()
                         .add((dsty as usize) * wd + (start - ob.left) as usize);
                     if mode == 10 {
                         for k in 0..n {
@@ -1003,8 +1004,16 @@ impl Ports {
                 if dsty < 0 || dsty as i32 >= (ob.bottom - ob.top) as i32 {
                     continue;
                 }
-                let srcrow = src_id.unwrap_or(self).pixels.add((srcy as usize) * ws);
-                let dstrow = dst_id.unwrap_mut_or(self).pixels.add((dsty as usize) * wd);
+                let srcrow = src_id
+                    .unwrap_or(self)
+                    .pixels
+                    .as_ptr()
+                    .add((srcy as usize) * ws);
+                let dstrow = dst_id
+                    .unwrap_mut_or(self)
+                    .pixels
+                    .as_mut_ptr()
+                    .add((dsty as usize) * wd);
                 for dx in dclip.left..dclip.right {
                     let sx = sr.left
                         + (((dx as i32 - dr.left as i32) * sw as i32) / dw.max(1) as i32) as i16;
@@ -1099,37 +1108,35 @@ mod tests {
 
     #[test]
     fn copybits_agrandit_sans_perdre_la_derniere_ligne() {
-        let src = port::create(Rect::new(0, 0, 640, 400), 8);
+        let mut src = port::create(Rect::new(0, 0, 640, 400), 8);
         let mut dst = port::create(Rect::new(0, 0, 1280, 800), 8);
-        let si = src.info();
-        let di = dst.info();
-        unsafe {
-            for y in 0..400usize {
-                for x in 0..640usize {
-                    *si.pixels.add(y * 640 + x) = ((x * 7 + y * 13) & 0xFF) as u8;
-                }
+        for y in 0..400usize {
+            for x in 0..640usize {
+                src.pixels[y * 640 + x] = ((x * 7 + y * 13) & 0xFF) as u8;
             }
-            std::ptr::write_bytes(di.pixels, 0xAA, 1280 * 800);
         }
+        dst.pixels.fill(0xAA);
+        // Les ports passés par valeur seraient libérés par CopyBits : on les
+        // range dans `Ports` pour relire la destination ensuite.
         let mut ports = Ports::default();
+        ports.mainWindow = src;
+        ports.debecr = dst;
         ports.CopyBits(
-            src,
-            dst,
+            PortId::MainWindow,
+            PortId::debecr,
             &Rect::new(0, 0, 640, 400),
             &Rect::new(0, 0, 1280, 800),
             0,
         );
 
-        unsafe {
-            for y in 0..800usize {
-                for x in 0..1280usize {
-                    let expected = (((x / 2) * 7 + (y / 2) * 13) & 0xFF) as u8;
-                    assert_eq!(
-                        *di.pixels.add(y * 1280 + x),
-                        expected,
-                        "pixel ({x}, {y}) mal mis à l'échelle"
-                    );
-                }
+        for y in 0..800usize {
+            for x in 0..1280usize {
+                let expected = (((x / 2) * 7 + (y / 2) * 13) & 0xFF) as u8;
+                assert_eq!(
+                    ports.debecr.pixels[y * 1280 + x],
+                    expected,
+                    "pixel ({x}, {y}) mal mis à l'échelle"
+                );
             }
         }
     }

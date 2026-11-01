@@ -158,14 +158,12 @@ pub(crate) fn publish_window_frame(port: &SapPort, force: bool) {
     let w = (port.bounds.right - port.bounds.left).max(0) as usize;
     let h = (port.bounds.bottom - port.bounds.top).max(0) as usize;
     let row = port.row_bytes.max(0) as usize;
-    if port.pixels.is_null() || w == 0 || h == 0 || row < w {
+    if w == 0 || h == 0 || row < w || port.pixels.len() < (h - 1) * row + w {
         return;
     }
     let mut pixels = Vec::with_capacity(w * h);
     for y in 0..h {
-        // SAFETY: le port fenêtre possède `h` lignes de `row_bytes` octets.
-        let line = unsafe { std::slice::from_raw_parts(port.pixels.add(y * row), w) };
-        pixels.extend_from_slice(line);
+        pixels.extend_from_slice(&port.pixels[y * row..y * row + w]);
     }
     *WINDOW_FRAME.lock().unwrap() = Some(WindowFrame { w, h, pixels });
 }

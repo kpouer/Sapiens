@@ -176,8 +176,7 @@ pub(crate) struct SapPort {
     pub(crate) bounds: Rect, // top, left, bottom, right
     pub(crate) row_bytes: i16,
     pub(crate) depth: i16,
-    pub(crate) pixels: *mut u8,
-    pub(crate) pixel_len: usize,
+    pub(crate) pixels: Vec<u8>,
     pub(crate) pen_loc: Point,  // v, h : position du crayon
     pub(crate) pen_size: Point, // h = largeur, v = hauteur
     pub(crate) pen_mode: i16,

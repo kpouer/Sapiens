@@ -601,14 +601,11 @@ mod tests {
 
     struct TestPort {
         port: Box<SapPort>,
-        buf: Vec<u8>,
     }
 
     impl TestPort {
         fn new(w: usize, h: usize) -> Self {
-            let buf = vec![0u8; w * h];
-            let t = TestPort {
-                buf,
+            TestPort {
                 port: Box::new(SapPort {
                     bounds: Rect {
                         top: 0,
@@ -618,8 +615,7 @@ mod tests {
                     },
                     row_bytes: w as i16,
                     depth: 8,
-                    pixels: std::ptr::null_mut(),
-                    pixel_len: w * h,
+                    pixels: vec![0u8; w * h],
                     pen_loc: Point { v: 0, h: 0 },
                     pen_size: Point { v: 1, h: 1 },
                     pen_mode: PAT_COPY,
@@ -638,19 +634,15 @@ mod tests {
                     tx_face: 0,
                     zoom: 1.0,
                 }),
-            };
-            // le pointeur de tampon est posé après la construction (self.buf
-            // doit être stabilisé) ; on y accède via le champ `buf` ci-dessous.
-            t
+            }
         }
 
         fn port_ptr(&mut self) -> *mut SapPort {
-            self.port.pixels = self.buf.as_mut_ptr();
             &mut *self.port
         }
 
         fn count(&self) -> usize {
-            self.buf.iter().filter(|&&v| v != 0).count()
+            self.port.pixels.iter().filter(|&&v| v != 0).count()
         }
     }
 
@@ -760,7 +752,7 @@ mod tests {
         let w = 200usize;
         let mut half = 0;
         let mut all = 0;
-        for (i, &v) in t.buf.iter().enumerate() {
+        for (i, &v) in t.port.pixels.iter().enumerate() {
             let y = i / w;
             if y >= 30 {
                 half += (v != 0) as usize;
