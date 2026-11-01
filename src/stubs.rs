@@ -65,14 +65,14 @@ impl Ports {
     ) {
         /* Un `WindowPtr` est ici un `SapPort` : redimensionner la fenêtre revient à
         reallouer son tampon (menu « Échelle », `FixeTailleMainWindow`). */
-        let old = self.port(port_id).info();
+        let old = self.port(port_id).bounds;
         port::resize(
             self.port_mut(port_id),
             Rect {
-                top: old.bounds.top,
-                left: old.bounds.left,
-                bottom: old.bounds.top + wHeight,
-                right: old.bounds.left + wWidth,
+                top: old.top,
+                left: old.left,
+                bottom: old.top + wHeight,
+                right: old.left + wWidth,
             },
         );
     }

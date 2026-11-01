@@ -13,7 +13,7 @@ use crate::acam::NewCWindow;
 use crate::sapiens::ECHELLE;
 use crate::sapiens::sapwbrt::SapiensCreeOffscreen;
 use crate::sapiens::sapwcart::Sapwcart;
-use crate::shared::{Ptr, Rect, SapPort};
+use crate::shared::{Rect, SapPort};
 use std::cell::Cell;
 use std::rc::Rc;
 use strum::Display;
@@ -218,27 +218,6 @@ pub(crate) fn resize(p: &mut SapPort, bounds: Rect) {
 // ---------------------------------------------------------------------------
 // Contenu d'un port
 // ---------------------------------------------------------------------------
-
-/// Ce qu'il faut pour lire ou écrire dans le tampon d'un port.
-pub(crate) struct PortInfo {
-    /// Premier pixel, en indices 0..255 de la LUT système.
-    pub(crate) pixels: Ptr,
-    /// Aire du port.
-    pub(crate) bounds: Rect,
-    /// Octets par ligne (`row_bytes`).
-    pub(crate) row_bytes: i16,
-}
-
-impl SapPort {
-    /// Description du tampon de `p`, ou `None` si le port n'existe pas.
-    pub(crate) fn info(&self) -> PortInfo {
-        PortInfo {
-            pixels: self.pixels.as_ptr() as Ptr,
-            bounds: self.bounds,
-            row_bytes: self.row_bytes,
-        }
-    }
-}
 
 impl SapPort {
     /// Aire du port `p`, ou un rect vide.

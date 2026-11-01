@@ -17,7 +17,7 @@ use crate::sapiens::{
     ECHELLE, FormeId, IndexColor, MontId, NB_DEGRADE_DISTANCE, NB_ETOILES, NB_LIGNES_CIEL,
     NB_LIGNES_TERRE, h_chron,
 };
-use crate::shared::{RGBColor, Rect};
+use crate::shared::{Ptr, RGBColor, Rect};
 
 const LARGEUR_ECRAN: i32 = 512;
 const HAUTEUR_ECRAN: i32 = 256;
@@ -332,9 +332,9 @@ impl Sapiens {
         unsafe {
             if self.sapglob.heure as i32 > 480 || (self.sapglob.heure as i32) < 20 {
                 /* Nuit */
-                let info = self.sapwind.ports.current().info();
-                let data = info.pixels;
-                let tailleLigne = info.row_bytes;
+                let port = self.sapwind.ports.current();
+                let data = port.pixels.as_ptr() as Ptr;
+                let tailleLigne = port.row_bytes;
                 let magnitude: i16 = if (self.sapglob.heure as i32) < MAX_MAGNITUDE {
                     (MAX_MAGNITUDE - self.sapglob.heure as i32) as i16
                 } else if (self.sapglob.heure as i32) < 480 + MAX_MAGNITUDE {
@@ -629,9 +629,9 @@ impl Ports {
     ******************************************************************/
     fn TrameCielOrage(&self, index: i16) {
         /* Origine des données de l'ecran */
-        let info = self.current().info();
-        let data = info.pixels;
-        let tailleLigne = info.row_bytes;
+        let port = self.current();
+        let data = port.pixels.as_ptr() as Ptr;
+        let tailleLigne = port.row_bytes;
         let mut d = data;
         let mut i = NB_LIGNES_CIEL as i32 / 2;
         unsafe {
@@ -654,9 +654,9 @@ impl Ports {
     ******************************************************************/
     fn Flou(&self) {
         /* Origine des données de l'ecran */
-        let info = self.current().info();
-        let data = info.pixels;
-        let tailleLigne = info.row_bytes;
+        let port = self.current();
+        let data = port.pixels.as_ptr() as Ptr;
+        let tailleLigne = port.row_bytes;
         unsafe {
             for y in 0..200 {
                 let mut p = data.add((tailleLigne as i64 * y) as usize);
@@ -679,9 +679,9 @@ impl Ports {
             self.Flou();
         }
         /* Origine des données de l'ecran */
-        let info = self.current().info();
-        let data = info.pixels;
-        let tailleLigne = info.row_bytes;
+        let port = self.current();
+        let data = port.pixels.as_ptr() as Ptr;
+        let tailleLigne = port.row_bytes;
         let mut n = n as i32;
         unsafe {
             while n > 0 {

@@ -373,10 +373,10 @@ impl Sapiens {
             let tab_i =
                 tabIndex.unwrap_or(&self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex);
             /* Origine des donnees de l'ecran */
-            let info = self.sapwind.ports.current().info();
-            let mut data = info.pixels;
-            let tailleLigne = info.row_bytes;
-            let rPort = info.bounds;
+            let port = self.sapwind.ports.current();
+            let mut data = port.pixels.as_ptr() as Ptr;
+            let tailleLigne = port.row_bytes;
+            let rPort = port.bounds;
             /* Calcul des pas en X et en Y */
             let mut i = mon_aire.right as i32 - mon_aire.left as i32;
             let mut j = mon_aire.bottom as i32 - mon_aire.top as i32;
@@ -456,10 +456,10 @@ impl Sapiens {
         let tab_i =
             tabIndex.unwrap_or(&self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex);
         /* Origine des donnees de l'ecran */
-        let info = self.sapwind.ports.current().info();
-        let data = info.pixels;
-        let tailleLigne = info.row_bytes;
-        let rPort = info.bounds;
+        let port = self.sapwind.ports.current();
+        let data = port.pixels.as_ptr() as Ptr;
+        let tailleLigne = port.row_bytes;
+        let rPort = port.bounds;
         /* Test de sortie du mob */
         /* Sortie Haut */
         unsafe {
@@ -566,10 +566,10 @@ impl Sapiens {
         let mut x = x;
         let mut y = y;
         /* Origine des donnees de l'ecran */
-        let info = self.sapwind.ports.current().info();
-        let data = info.pixels;
-        let tailleLigne = info.row_bytes;
-        let rPort = info.bounds;
+        let port = self.sapwind.ports.current();
+        let data = port.pixels.as_ptr() as Ptr;
+        let tailleLigne = port.row_bytes;
+        let rPort = port.bounds;
         /* Test de sortie du mob */
         /* Sortie Haut */
         unsafe {
@@ -673,9 +673,9 @@ impl Sapiens {
         /* Palette associee a ce mob */
         let tab_i = &self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex;
         /* Origine des donnees de l'ecran */
-        let info = self.sapwind.ports.current().info();
-        let data = info.pixels;
-        let tailleLigne = info.row_bytes;
+        let port = self.sapwind.ports.current();
+        let data = port.pixels.as_ptr() as Ptr;
+        let tailleLigne = port.row_bytes;
         /* Position d'affichage sur l'ecran */
         unsafe {
             let mut pdeb = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
@@ -726,9 +726,8 @@ impl SapPort {
     => x (0-640) ,y(0-200), index de la couleur systeme
     ******************************************************************/
     pub(crate) fn PlotIndexPixBrt(&self, x: i16, y: i16, coul: i16) {
-        let info = self.info();
-        let data = info.pixels;
-        let tailleLigne = info.row_bytes;
+        let data = self.pixels.as_ptr() as Ptr;
+        let tailleLigne = self.row_bytes;
         /* Position d'affichage sur l'ecran */
         unsafe {
             let p = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
@@ -744,9 +743,8 @@ impl SapPort {
     <= couleur
     ******************************************************************/
     pub(crate) fn GetIndexPixBrt(&self, x: i16, y: i16) -> i16 {
-        let info = self.info();
-        let data = info.pixels;
-        let tailleLigne = info.row_bytes;
+        let data = self.pixels.as_ptr() as Ptr;
+        let tailleLigne = self.row_bytes;
         /* Position d'affichage sur l'ecran */
         unsafe {
             let p = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
@@ -759,9 +757,8 @@ impl SapPort {
     dans un rectangle du port en entree swappe deux couleurs
     ******************************************************************/
     pub(crate) fn SwapCouleur(&self, r: &Rect, coul1: i16, coul2: i16) {
-        let info = self.info();
-        let data = info.pixels;
-        let tailleLigne = info.row_bytes;
+        let data = self.pixels.as_ptr() as Ptr;
+        let tailleLigne = self.row_bytes;
         let mut y = r.top;
         unsafe {
             while y < r.bottom {
@@ -793,10 +790,10 @@ impl Sapiens {
         if r.is_empty() {
             return;
         }
-        let info = self.sapwind.ports.port(port_id).info();
-        let aire = info.bounds;
-        let tailleLigne = info.row_bytes;
-        let mut data = info.pixels;
+        let port = self.sapwind.ports.port(port_id);
+        let aire = port.bounds;
+        let tailleLigne = port.row_bytes;
+        let mut data = port.pixels.as_ptr() as Ptr;
         unsafe {
             if let Some(aire) = SectRect(r, &aire) {
                 let couleur = self.sapwcvt.TabCvtCoul[couleur as usize];
@@ -822,9 +819,9 @@ impl Ports {
     => ligne debut (pixel ecran reel), nbre de lignes, Tableau de couleurs
     ******************************************************************/
     pub(crate) fn RemplitZoneLignes(&self, y: i16, tab_couleur: &[IndexColor]) {
-        let info = self.current().info();
-        let mut data = info.pixels;
-        let tailleLigne = info.row_bytes;
+        let port = self.current();
+        let mut data = port.pixels.as_ptr() as Ptr;
+        let tailleLigne = port.row_bytes;
         unsafe {
             data = data.add((tailleLigne as i64 * y as i64) as usize);
             for tc in tab_couleur {
@@ -896,9 +893,9 @@ impl Sapiens {
             {
                 let mut fy: i32 = 0;
                 if *dy > 0 && epaisseur > 0 {
-                    let info = self.sapwind.ports.current().info();
-                    let data = info.pixels;
-                    let tailleLigne = info.row_bytes;
+                    let port = self.sapwind.ports.current();
+                    let data = port.pixels.as_ptr() as Ptr;
+                    let tailleLigne = port.row_bytes;
                     fy = *dy as i32 * ECHELLE as i32;
                     let mut ep = epaisseur as i32 * ECHELLE as i32;
                     let mut x1: i64 = ((*dg as i64) << 16) * (ECHELLE as i64);
@@ -1017,14 +1014,14 @@ impl Ports {
                 self.CopyBits(source, dest, &realSource, &realDest, srcCopy as i16);
             } else {
                 /* Copie entre deux offscreen avec palette identique */
-                let infoSource = self.port(source).info();
-                let infoDest = self.port(dest).info();
-                let boundSource = infoSource.bounds;
-                let mut boundDest = infoDest.bounds;
-                let tailleLigneSource = infoSource.row_bytes;
-                let tailleLigneDest = infoDest.row_bytes;
-                let mut dataSource = infoSource.pixels;
-                let mut dataDest = infoDest.pixels;
+                let src = self.port(source);
+                let dst = self.port(dest);
+                let boundSource = src.bounds;
+                let mut boundDest = dst.bounds;
+                let tailleLigneSource = src.row_bytes;
+                let tailleLigneDest = dst.row_bytes;
+                let mut dataSource = src.pixels.as_ptr() as Ptr;
+                let mut dataDest = dst.pixels.as_ptr() as Ptr;
                 /* Par defaut, le rectangle a transferer est la source */
                 let rtfrs = realSource;
                 /* On passe le bound destination dans le repere de la source */
@@ -1254,9 +1251,9 @@ impl Sapiens {
     pub(crate) fn AffPalette(&mut self) {
         unsafe {
             let _g = self.sapwind.ports.on(PortId::debecr);
-            let info = self.sapwind.ports.current().info();
-            let data = info.pixels;
-            let tailleLigne = info.row_bytes;
+            let port = self.sapwind.ports.current();
+            let data = port.pixels.as_ptr() as Ptr;
+            let tailleLigne = port.row_bytes;
             const TAILLE_CARRE: i64 = 16;
             for i in 0..16i16 {
                 for j in 0..16i16 {
