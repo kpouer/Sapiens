@@ -15,6 +15,7 @@ use crate::sapiens::sapwbrt::SapiensCreeOffscreen;
 use crate::sapiens::sapwcart::Sapwcart;
 use crate::shared::{Rect, SapPort};
 use std::cell::Cell;
+use std::ops::{Index, IndexMut};
 use std::rc::Rc;
 use strum::Display;
 
@@ -265,6 +266,24 @@ impl SapPort {
             bottom: f(r.bottom),
             right: f(r.right),
         }
+    }
+}
+
+/// Pixel à l'offset linéaire `idx` du tampon. Panique hors tampon : réservé
+/// aux accès bornés par construction, sinon utiliser [`SapPort::put`].
+impl Index<usize> for SapPort {
+    type Output = u8;
+
+    #[inline]
+    fn index(&self, idx: usize) -> &u8 {
+        &self.pixels[idx]
+    }
+}
+
+impl IndexMut<usize> for SapPort {
+    #[inline]
+    fn index_mut(&mut self, idx: usize) -> &mut u8 {
+        &mut self.pixels[idx]
     }
 }
 

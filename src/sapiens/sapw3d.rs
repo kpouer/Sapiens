@@ -630,12 +630,12 @@ impl Ports {
     fn TrameCielOrage(&mut self, index: i16) {
         /* Origine des données de l'ecran */
         let port = self.current_mut();
-        let tailleLigne = port.row_bytes as isize;
-        let mut d: isize = 0;
-        for _ in 0..NB_LIGNES_CIEL as i32 / 2 {
+        let tailleLigne = port.row_bytes as usize;
+        let mut d = 0;
+        for _ in 0..NB_LIGNES_CIEL / 2 {
             for _ in 0..tailleLigne / 2 {
-                port.put(d, index as u8);
-                port.put(d + tailleLigne + 1, index as u8);
+                port[d] = index as u8;
+                port[d + tailleLigne + 1] = index as u8;
                 d += 2;
             }
             d += tailleLigne;
