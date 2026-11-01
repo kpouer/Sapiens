@@ -3791,7 +3791,7 @@ impl Sapiens {
                     break;
                 }
             }
-            /* On transfère l'écran1 sur debecr */
+            /* On transfère l'écran1 sur Debecr */
             self.tfrvirt();
             /* Une présence humaine ? */
             if self.sapglob.presence != 0 && self.sapglob.presence <= 4 {

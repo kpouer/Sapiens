@@ -270,7 +270,7 @@ impl Sapiens {
                             InitGenerique
     ***********************************************************************/
     pub(crate) fn InitGenerique(&mut self) {
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         /* on balaye les quatre sapiens*/
         for id in SapId::iter() {
             let l = self.sapglob.peuple(id).poslcoeur;

@@ -320,7 +320,7 @@ impl Sapiens {
     Affiche le nucleus et la forme ideale du silex par dessus
     ***********************************************************************/
     fn TraceSilex(&mut self) {
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         /* on efface la souris */
         self.eff_sour();
         /*dessin du noyau*/
@@ -645,7 +645,7 @@ impl Sapiens {
 
         /* On calcule les index de couleurs */
         {
-            let _g = self.sapwind.ports.on(PortId::debecr);
+            let _g = self.sapwind.ports.on(PortId::Debecr);
             i = 0;
             while i < NB_COUL_SILEX {
                 self.sapgest.palSilex[i as usize] =
@@ -995,11 +995,11 @@ impl Sapiens {
 
     /***********************************************************************
                             JAUGE:
-    Trace une jauge dans debecr
+    Trace une jauge dans Debecr
     => numero de la jauge, indeicateur de transfert sur le reel
     ***********************************************************************/
     pub(crate) extern "C" fn jauge(&mut self, i: i16, tfr: Boolean) {
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         let rval = self.AireValJauge(i);
         self.AfficheCadreJauge(i);
         self.boxf(rval.top, rval.left, rval.bottom, rval.right, 2);
@@ -1307,7 +1307,7 @@ impl Sapiens {
 
 /***********************************************************************
                         AIREJAUGE3d:
-Trace une jauge dans debecr
+Trace une jauge dans Debecr
 => numero de la jauge, indeicateur de transfert sur le reel
 ***********************************************************************/
 const CAR_UTILE: i16 = 180;
@@ -1318,7 +1318,7 @@ const fn AIREJAUGE3d(i: i16) -> Rect {
 
 /***********************************************************************
                         JAUGE3d:
-Trace une jauge dans debecr
+Trace une jauge dans Debecr
 => numero de la jauge, indeicateur de transfert sur le reel
 ***********************************************************************/
 const NB_JAUGES_3D: i16 = 5;
@@ -1345,16 +1345,16 @@ impl Sapiens {
 
     /***********************************************************************
                             JAUGES3D
-    Trace une jauge dans debecr
+    Trace une jauge dans Debecr
     => numero de la jauge, indeicateur de transfert sur le reel
     ***********************************************************************/
     fn JAUGES3D(&mut self) {
         let mut i = 0;
         let mut r;
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         self.boxf(0, 32, 101, 287, 5);
 
-        /* La jauge est tracee dans debecr (hors-ecran, echelle 1) : la mise a
+        /* La jauge est tracee dans Debecr (hors-ecran, echelle 1) : la mise a
         l'echelle se fait plus tard, au recopie vers l'ecran. */
         macro_rules! aire_zoom {
             ($i:expr) => {{

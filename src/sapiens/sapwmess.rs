@@ -25,7 +25,7 @@ impl Default for Sapwmess {
 
 impl Sapiens {
     pub(crate) fn framebadass(&mut self) {
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         let mut r = self.sapwmess.rMess;
         r.InsetRect(-1, -1);
         self.sapwind.ports.DoEraseRect(&r);
@@ -35,12 +35,12 @@ impl Sapiens {
 
     /****************************************************************************
                 TfrBadAss
-    Le message s'affiche sur debecr, on le transfere sur le reel
+    Le message s'affiche sur Debecr, on le transfere sur le reel
     *****************************************************************************/
     pub(crate) fn TfrBadAss(&mut self) {
         self.eff_sour();
         self.sapwind.ports.CopyOffscreen(
-            PortId::debecr,
+            PortId::Debecr,
             PortId::MainWindow,
             self.sapwmess.rMess,
             &self.sapwmess.rMess,
@@ -52,7 +52,7 @@ impl Sapiens {
                 Effacement du message
     *****************************************************************************/
     pub(crate) fn efbadass(&mut self) {
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         self.sapwind.ports.DoEraseRect(&self.sapwmess.rMess);
     }
 

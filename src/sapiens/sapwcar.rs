@@ -284,7 +284,7 @@ impl Sapiens {
     **************************************************************************/
     pub(crate) fn affcar(&mut self, car: i16) {
         self.AffCarBank(
-            PortId::debecr,
+            PortId::Debecr,
             car,
             self.sapwcar.index_black,
             self.sapwcar.index_brown,
@@ -299,7 +299,7 @@ impl Sapiens {
     **************************************************************************/
     pub(crate) fn affcar10(&mut self, car: i16) {
         self.AffCarBank(
-            PortId::debecr,
+            PortId::Debecr,
             car,
             self.sapwcar.index_black,
             self.sapwcar.index_gray,
@@ -310,11 +310,11 @@ impl Sapiens {
     /*************************************************************************
                         Car2
     Affiche un caractere blanc sur une ombre noire
-    Le caractere est affiché sur debecr et n'est pas transféré
+    Le caractere est affiché sur Debecr et n'est pas transféré
     **************************************************************************/
     pub(crate) fn car2(&mut self, car: i16) {
         self.AffCarBank(
-            PortId::debecr,
+            PortId::Debecr,
             car,
             self.sapwcar.index_white,
             self.sapwcar.index_black,
@@ -326,10 +326,10 @@ impl Sapiens {
                         affcarmess
     Affiche le caractere demandé à la position courante
     Les caracteres >128 sont des macros substitions
-    Le caractere est affiche sur debecr
+    Le caractere est affiche sur Debecr
     **************************************************************************/
     pub(crate) fn affcarmess(&mut self, car: i16) {
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         let rgn = self.sapwind.ports.GetClip().expect("Clip");
         self.sapwind.ports.ClipRect(&self.sapwmess.rMess);
         /* Effacement et affichage curseur */
@@ -349,7 +349,7 @@ impl Sapiens {
             }
         } else {
             self.AffCarBank(
-                PortId::debecr,
+                PortId::Debecr,
                 car,
                 self.sapwcar.index_black,
                 self.sapwcar.index_gray,

@@ -650,7 +650,7 @@ impl Ports {
 impl Sapiens {
     /***********************************************************************************
                             RedessineFenetre
-    Repeint toute la fenêtre principale depuis le décor (debecr) et, en vue
+    Repeint toute la fenêtre principale depuis le décor (Debecr) et, en vue
     latérale, depuis l'écran virtuel (Ecran1). Utilisé quand la zone visible
     change de taille (menu « Échelle ») ou après une mise à jour système.
     ***********************************************************************************/
@@ -680,7 +680,7 @@ impl Sapiens {
     => etat 1 actif
     *****************************************************************************/
     pub(crate) fn Frame3d(&mut self, etat: i16) {
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         let r = Rect::new(62, 0, 640 - 64, 204);
         if etat != 0 {
             self.sapwind.ports.ForeColor(blackColor as i16);
@@ -911,8 +911,8 @@ impl Sapiens {
             MessInit(self.sapwind.GetStr(21)); /* Initialsations des palettes */
             /* Fabrique les luts */
             self.sapwcvt.FabriqueLuts();
-            self.sapwind.ports.set(PortId::debecr);
-            self.sapwind.ports.AfficheFond(PortId::debecr);
+            self.sapwind.ports.set(PortId::Debecr);
+            self.sapwind.ports.AfficheFond(PortId::Debecr);
             /* Buffer de la souris*/
             MessInit(self.sapwind.GetStr(22)); /*Chargement des graphismes */
             /* On charge les mobs */

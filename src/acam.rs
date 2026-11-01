@@ -1093,7 +1093,7 @@ mod tests {
         ports.debecr = dst;
         ports.CopyBits(
             PortId::MainWindow,
-            PortId::debecr,
+            PortId::Debecr,
             &Rect::new(0, 0, 640, 400),
             &Rect::new(0, 0, 1280, 800),
             0,

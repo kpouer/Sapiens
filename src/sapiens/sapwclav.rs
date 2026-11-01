@@ -60,12 +60,12 @@ impl Sapiens {
 /*************************************************************************
             Eff_sour
 Efface la souris graphique menus
-Pour effacer le souris on recopie debecr sur l'aire de la souris
+Pour effacer le souris on recopie Debecr sur l'aire de la souris
 **************************************************************************/
 impl Sapiens {
     pub(crate) fn eff_sour(&mut self) {
         self.sapwind.ports.CopyOffscreen(
-            PortId::debecr,
+            PortId::Debecr,
             PortId::MainWindow,
             self.sapwclav.rsouris,
             &self.sapwclav.rsouris,
@@ -91,7 +91,7 @@ impl Sapiens {
         /* Le mob s'affiche sur l'ecran virtuel : on saisie ce qu'il y a
         sur l'ecran */
         self.sapwind.ports.CopyOffscreen(
-            PortId::debecr,
+            PortId::Debecr,
             PortId::BuffMouse,
             self.sapwclav.rsouris,
             &rsource,
@@ -127,7 +127,7 @@ impl Sapiens {
                 self.sapwind.ports.SetClip(&rgn);
                 self.sapwind
                     .ports
-                    .CopyOffscreen(PortId::debecr, PortId::MainWindow, band, &band);
+                    .CopyOffscreen(PortId::Debecr, PortId::MainWindow, band, &band);
             }
             self.sapwind.ports.SetClip(&rgnClip);
         }

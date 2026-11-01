@@ -62,13 +62,13 @@ impl Sapiens {
             ((117 + TAILLE_Y_CARTE) * ECHELLE) as i16,
         );
         self.sapwind.ports.CopyOffscreen(
-            PortId::ecr_carte,
-            PortId::debecr,
+            PortId::EcrCarte,
+            PortId::Debecr,
             self.sapwind.ports.sapwcart.aire_carte,
             &rdest,
         );
         self.sapwind.ports.CopyOffscreen(
-            PortId::ecr_carte,
+            PortId::EcrCarte,
             PortId::MainWindow,
             self.sapwind.ports.sapwcart.aire_carte,
             &rdest,
@@ -160,7 +160,7 @@ impl Sapiens {
             (TAILLE_X_CARTE * ECHELLE) as i16,
             (TAILLE_Y_CARTE * ECHELLE) as i16,
         );
-        self.BoxFill(PortId::ecr_carte, &mut r, 0x050); /* palhaute[3]*/
+        self.BoxFill(PortId::EcrCarte, &mut r, 0x050); /* palhaute[3]*/
     }
 
     /***********************************************************************
@@ -168,7 +168,7 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn carte(&mut self) {
         let mut r = Rect::default();
-        let _g = self.sapwind.ports.on(PortId::ecr_carte);
+        let _g = self.sapwind.ports.on(PortId::EcrCarte);
         self.sapglob.smenu[1] = 111;
         /* efface carte */
         self.EffCarte();

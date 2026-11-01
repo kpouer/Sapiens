@@ -58,9 +58,9 @@ impl Ports {
             PortId::MainWindow => &self.mainWindow,
             PortId::Ecran1 => &self.Ecran1,
             PortId::Ecran2 => &self.Ecran2,
-            PortId::debecr => &self.debecr,
+            PortId::Debecr => &self.debecr,
             PortId::BuffMouse => &self.BuffMouse,
-            PortId::ecr_carte => &self.sapwcart.ecr_carte,
+            PortId::EcrCarte => &self.sapwcart.ecr_carte,
         }
     }
 
@@ -69,9 +69,9 @@ impl Ports {
             PortId::MainWindow => &mut self.mainWindow,
             PortId::Ecran1 => &mut self.Ecran1,
             PortId::Ecran2 => &mut self.Ecran2,
-            PortId::debecr => &mut self.debecr,
+            PortId::Debecr => &mut self.debecr,
             PortId::BuffMouse => &mut self.BuffMouse,
-            PortId::ecr_carte => &mut self.sapwcart.ecr_carte,
+            PortId::EcrCarte => &mut self.sapwcart.ecr_carte,
         }
     }
 
@@ -99,7 +99,7 @@ impl Ports {
     ///
     /// ```ignore
     /// let _g = self.sapwind.ports.on(PortId::Debecr);
-    /// // ... dessin dans debecr ...
+    /// // ... dessin dans Debecr ...
     /// ```
     pub(crate) fn on(&self, p: PortId) -> Guard {
         let g = self.preserve();
@@ -138,9 +138,9 @@ pub(crate) enum PortId {
     MainWindow,
     Ecran1,
     Ecran2,
-    debecr,
+    Debecr,
     BuffMouse,
-    ecr_carte,
+    EcrCarte,
 }
 
 /// Garde de restoration du port courant (voir [`Ports::on`]).
@@ -344,13 +344,13 @@ mod tests {
         let ports = Ports::default();
         ports.set(PortId::Ecran1);
         {
-            let _g = ports.on(PortId::debecr);
-            assert!(ports.current_id() == PortId::debecr);
+            let _g = ports.on(PortId::Debecr);
+            assert!(ports.current_id() == PortId::Debecr);
             {
                 let _g2 = ports.preserve();
                 ports.set(PortId::MainWindow);
             }
-            assert!(ports.current_id() == PortId::debecr);
+            assert!(ports.current_id() == PortId::Debecr);
         }
         assert!(ports.current_id() == PortId::Ecran1);
     }

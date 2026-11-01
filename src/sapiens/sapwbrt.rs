@@ -1044,7 +1044,7 @@ impl Sapiens {
 
     /*************************************************************************
                     effvirt
-    Efface la zone de la vue 3d sur debecr
+    Efface la zone de la vue 3d sur Debecr
     => Couleur RVB St
     *************************************************************************/
     pub(crate) fn effvirt(&mut self, couleur: i16) {
@@ -1054,14 +1054,14 @@ impl Sapiens {
             ((32 + 255) * ECHELLE) as i16,
             (101 * ECHELLE) as i16,
         );
-        self.BoxFill(PortId::debecr, &mut r, couleur);
+        self.BoxFill(PortId::Debecr, &mut r, couleur);
     }
 
     /*************************************************************************
                     tfrvirt
     Transfere l'aire de la vue 3d de l'ecran de travail vers l'ecran
-    debecr virtuel
-    Transfere d'Ecran (premiere partie) vers debecr
+    Debecr virtuel
+    Transfere d'Ecran (premiere partie) vers Debecr
     *************************************************************************/
     pub(crate) fn tfrvirt(&mut self) {
         let rsourc = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
@@ -1073,7 +1073,7 @@ impl Sapiens {
         );
         self.sapwind
             .ports
-            .CopyOffscreen(PortId::Ecran1, PortId::debecr, rsourc, &rdest);
+            .CopyOffscreen(PortId::Ecran1, PortId::Debecr, rsourc, &rdest);
     }
 
     /*************************************************************************
@@ -1090,7 +1090,7 @@ impl Sapiens {
         if etat != 0 {
             self.sapwind
                 .ports
-                .CopyOffscreen(PortId::debecr, PortId::MainWindow, r, &r);
+                .CopyOffscreen(PortId::Debecr, PortId::MainWindow, r, &r);
         } else {
             let _g = self.sapwind.ports.on(PortId::MainWindow);
             CarboniseSetPatGray();
@@ -1118,19 +1118,19 @@ impl Sapiens {
     }
     /*************************************************************************
                     TfrEcr
-    Transfere une aire de debecr vers la fenetre visible
-    Transfere de debecr vers MainWindow
+    Transfere une aire de Debecr vers la fenetre visible
+    Transfere de Debecr vers MainWindow
     *************************************************************************/
     pub(crate) fn TfrEcr(&mut self, r: Option<Rect>) {
         if let Some(r) = &r {
             self.sapwind
                 .ports
-                .CopyOffscreen(PortId::debecr, PortId::MainWindow, *r, r);
+                .CopyOffscreen(PortId::Debecr, PortId::MainWindow, *r, r);
         } else {
             let r2 = Rect::new(0, 0, (320 * ECHELLE) as i16, (200 * ECHELLE) as i16);
             self.sapwind
                 .ports
-                .CopyOffscreen(PortId::debecr, PortId::MainWindow, r2, &r2);
+                .CopyOffscreen(PortId::Debecr, PortId::MainWindow, r2, &r2);
         }
     }
     /*************************************************************************
@@ -1155,11 +1155,11 @@ impl Sapiens {
     }
     /*************************************************************************
                     AffDebecr
-    Affiche un mob sur l'ecran debecr
+    Affiche un mob sur l'ecran Debecr
     => Numero du mob, position y (0-200) ,position x (0-320), transfert
     *************************************************************************/
     pub(crate) fn AffDebecr(&mut self, mob: i16, y: i16, x: i16, transfere: i16) {
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         self.Affmobbrt(mob, x, y, 0, None);
         if transfere != 0 {
             let r = self.CalculeAireMob(mob, x, y);
@@ -1168,7 +1168,7 @@ impl Sapiens {
     }
     /*************************************************************************
                     affomb
-    Affiche un mob sur l'ecran de travail (debecr) et le recopie sur le reel
+    Affiche un mob sur l'ecran de travail (Debecr) et le recopie sur le reel
     => Coordonnees en 320x200
     *************************************************************************/
     pub(crate) fn affomb(
@@ -1182,12 +1182,12 @@ impl Sapiens {
     ) {
         let mut r = Rect::default();
 
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         self.Affmobbrtomb(mob, colonne, ligne, deltah, deltav, &mut r);
         if recopie {
             self.sapwind
                 .ports
-                .CopyOffscreen(PortId::debecr, PortId::MainWindow, r, &r);
+                .CopyOffscreen(PortId::Debecr, PortId::MainWindow, r, &r);
         }
     }
     /*************************************************************************
@@ -1211,7 +1211,7 @@ impl Sapiens {
     Affiche la palette en cours
     *************************************************************************/
     pub(crate) fn AffPalette(&mut self) {
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         let port = self.sapwind.ports.current_mut();
         let tailleLigne = port.row_bytes as usize;
         const TAILLE_CARRE: usize = 16;

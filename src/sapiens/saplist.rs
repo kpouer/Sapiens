@@ -542,7 +542,7 @@ impl Sapiens {
         let _j: i16 = 0;
         let mut r;
 
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         if self.sapglob.s_menu == self.saplist.inverse_option.LastMenuInvers {
             self.saplist.inverse_option.LastMenuInvers = -1;
         }
@@ -565,7 +565,7 @@ impl Sapiens {
             (self.sapglob.colaff + self.sapglob.cncol as i16) * 6 * ECHELLE as i16,
             (self.sapglob.linaff + self.sapglob.cnlin as i16) * 7 * ECHELLE as i16,
         );
-        self.BoxFill(PortId::debecr, &mut r, 0x542);
+        self.BoxFill(PortId::Debecr, &mut r, 0x542);
         /* On affiche tous les mots */
         let taille = self.sapglob.liste(debliste_id).taille;
         if taille != 0 {

@@ -173,7 +173,7 @@ impl Sapiens {
             let mut p = *scenme.add((quoi - 1) as usize);
             let mut car = *p as u8;
             p = p.add(1);
-            /* On affiche sur debecr */
+            /* On affiche sur Debecr */
             while car != 0 {
                 self.car2(car as i16);
                 loop {
@@ -193,7 +193,7 @@ impl Sapiens {
                     attends_bruit();
                 }
             }
-            /* Transfert debecr vers reel */
+            /* Transfert Debecr vers reel */
             self.TfrEcr(None);
             if quoi == 6 {
                 /* Bravo tu as gagné */
@@ -207,7 +207,7 @@ impl Sapiens {
 
                 self.sapwind
                     .ports
-                    .CopyOffscreen(PortId::debecr, PortId::Ecran1, rsourc, &rdest);
+                    .CopyOffscreen(PortId::Debecr, PortId::Ecran1, rsourc, &rdest);
                 self.delai(15 * 60);
                 self.Final();
             }
@@ -310,7 +310,7 @@ impl Sapiens {
         self.tfrvirt();
         if !self.saprel.rBulleJoueur.is_empty() {
             self.sapwind.ports.CopyOffscreen(
-                PortId::debecr,
+                PortId::Debecr,
                 PortId::MainWindow,
                 self.saprel.rBulleJoueur,
                 &self.saprel.rBulleJoueur,
@@ -319,7 +319,7 @@ impl Sapiens {
         self.saprel.rBulleJoueur = Rect::default();
         if !self.saprel.rBulleAdversaire.is_empty() {
             self.sapwind.ports.CopyOffscreen(
-                PortId::debecr,
+                PortId::Debecr,
                 PortId::MainWindow,
                 self.saprel.rBulleAdversaire,
                 &self.saprel.rBulleAdversaire,
@@ -342,7 +342,7 @@ impl Sapiens {
     => message a afficher, qui le dit (0)== joueur (1)== adversaire
     *************************************************************************/
     pub(crate) fn bulle(&mut self, debut: &[i8], qui: i16) {
-        let _g = self.sapwind.ports.on(PortId::debecr);
+        let _g = self.sapwind.ports.on(PortId::Debecr);
         /* Calcul de la taille de la chaine en pixel */
         let (mut tx, ty) = self.TailleChaine(debut);
         if tx < 64 {
