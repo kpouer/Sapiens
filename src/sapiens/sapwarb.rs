@@ -95,7 +95,8 @@ impl Sapiens {
             x += 16;
             if x < 256 {
                 let sens = self.random.rnd0() & 1;
-                self.Affmobbrt(
+                self.sapwbrt.Affmobbrt(
+                    self.sapwind.ports.current_mut(),
                     crate::MOB_FEUILLE!(self.sapwind) + self.sapwarb.numfeu + forme,
                     x as i16,
                     y as i16,

@@ -153,7 +153,7 @@ impl Sapiens {
                              EffCarte
     Efface le fond de la carte
     ***********************************************************************/
-    fn EffCarte(&self) {
+    fn EffCarte(&mut self) {
         let mut r = Rect::new(
             0,
             0,

@@ -362,80 +362,9 @@ impl Sapiens {
                     Affmob3d
     Affiche un mob sur le port en cours
     *************************************************************************/
-    pub(crate) fn Affmob3d(&self, num: i16, mut mon_aire: Rect, tabIndex: Option<&[i16]>) {
-        let mob = &self.sapwbrt.TabMob[num as usize];
-        unsafe {
-            let tx: i16 = mob.nbcol;
-            let ty: i16 = mob.nbligne;
-            let vide: u8 = mob.vide as u8;
-            let mut p: *mut u8 = mob.datas;
-            /* Palette associee a ce mob */
-            let tab_i =
-                tabIndex.unwrap_or(&self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex);
-            /* Origine des donnees de l'ecran */
-            let port = self.sapwind.ports.current();
-            let mut data = port.pixels.as_ptr() as Ptr;
-            let tailleLigne = port.row_bytes;
-            let rPort = port.bounds;
-            /* Calcul des pas en X et en Y */
-            let mut i = mon_aire.right as i32 - mon_aire.left as i32;
-            let mut j = mon_aire.bottom as i32 - mon_aire.top as i32;
-            /* Trop petit */
-            if i <= 0 || j <= 0 {
-                return;
-            }
-            let pas_x: i64 = ((tx as i64) << 16) / (i as i64);
-            let pas_y: i64 = ((ty as i64) << 16) / (j as i64);
-            /* Calcul des sorties */
-            if mon_aire.left < 0 {
-                let off = ((-(mon_aire.left as i32)) as f32 * (pas_x as f32) / 65536.0) as i64;
-                p = p.add(off as usize);
-                mon_aire.left = 0;
-            }
-            if mon_aire.top < 0 {
-                let off = ((-(mon_aire.top as i32)) as f32 * (pas_y as f32) / 65536.0) as i64;
-                p = p.add((off * tx as i64) as usize);
-                mon_aire.top = 0;
-            }
-            if mon_aire.right > rPort.right {
-                mon_aire.right = rPort.right;
-            }
-            if mon_aire.bottom > rPort.bottom {
-                mon_aire.bottom = rPort.bottom;
-            }
-            if mon_aire.is_empty() {
-                return;
-            }
-            data = data
-                .add((mon_aire.top as i64 * tailleLigne as i64 + mon_aire.left as i64) as usize);
-            let mut rest_y: i64 = 0;
-            i = mon_aire.bottom as i32 - mon_aire.top as i32 + 1;
-            while {
-                i -= 1;
-                i != 0
-            } {
-                let mut ecr_deb = data;
-                let mut pdeb = p;
-                let mut rest_x: i64 = 0;
-                j = mon_aire.right as i32 - mon_aire.left as i32 + 1;
-                while {
-                    j -= 1;
-                    j != 0
-                } {
-                    if *pdeb != vide {
-                        *ecr_deb = tab_i[*pdeb as usize] as u8;
-                    }
-                    ecr_deb = ecr_deb.add(1);
-                    rest_x += pas_x;
-                    pdeb = pdeb.add((rest_x >> 16) as usize);
-                    rest_x &= 0xFFFF;
-                }
-                rest_y += pas_y;
-                p = p.add(((rest_y >> 16) * tx as i64) as usize);
-                rest_y &= 0xFFFF;
-                data = data.add(tailleLigne as usize);
-            }
-        }
+    pub(crate) fn Affmob3d(&mut self, num: i16, mon_aire: Rect, tabIndex: Option<&[i16]>) {
+        self.sapwbrt
+            .Affmob3d(self.sapwind.ports.current_mut(), num, mon_aire, tabIndex);
     }
 
     /******************************************************************
@@ -445,111 +374,16 @@ impl Sapiens {
     tableau des index de palette ou NULL si palette standard du Mob
     <= rien
     ******************************************************************/
-    pub(crate) fn Affmobbrt(&self, num: i16, x: i16, y: i16, sens: i16, tabIndex: Option<&[i16]>) {
-        let mob = &self.sapwbrt.TabMob[num as usize];
-        let mut x = ((x as i32) * (ECHELLE as i32)) as i16;
-        let mut y = ((y as i32) * (ECHELLE as i32)) as i16;
-        let mut tx: i16 = mob.nbcol;
-        let mut ty: i16 = mob.nbligne;
-        let mut p: *mut u8 = mob.datas;
-        /* Palette associee a ce mob */
-        let tab_i =
-            tabIndex.unwrap_or(&self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex);
-        /* Origine des donnees de l'ecran */
-        let port = self.sapwind.ports.current();
-        let data = port.pixels.as_ptr() as Ptr;
-        let tailleLigne = port.row_bytes;
-        let rPort = port.bounds;
-        /* Test de sortie du mob */
-        /* Sortie Haut */
-        unsafe {
-            if y < 0 {
-                /* Entierment hors ecran */
-                if (y as i32 + ty as i32) < rPort.top as i32 {
-                    return;
-                }
-                ty = (ty as i32 + y as i32) as i16;
-                p = p.add(((-(y as i32)) * tx as i32) as usize);
-                y = 0;
-            }
-            /* Sortie basse */
-            if y as i32 + ty as i32 >= rPort.bottom as i32 {
-                if y >= rPort.bottom {
-                    return;
-                }
-                ty = (rPort.bottom as i32 - y as i32) as i16;
-            }
-            let dx: i16;
-            let mut delttx: i16 = 0;
-            if sens != 0 {
-                dx = -1;
-                /* Sortie droite */
-                if x >= rPort.right {
-                    if x as i32 - tx as i32 >= rPort.right as i32 {
-                        return;
-                    }
-                    delttx = (x as i32 - rPort.right as i32) as i16;
-                    x = rPort.right;
-                    p = p.add(delttx as usize);
-                }
-                /* Sortie gauche */
-                if (x as i32 - tx as i32) < 0 {
-                    if x < 0 {
-                        return;
-                    }
-                    delttx = (tx as i32 - x as i32) as i16;
-                }
-            } else {
-                dx = 1;
-                /* Sortie droite */
-                if x as i32 + tx as i32 >= rPort.right as i32 {
-                    if x >= rPort.right {
-                        return;
-                    }
-                    delttx = (x as i32 + tx as i32 - rPort.right as i32) as i16;
-                }
-                /* Sortie gauche */
-                if x < 0 {
-                    if x as i32 + tx as i32 <= 0 {
-                        return;
-                    }
-                    delttx = (-(x as i32)) as i16;
-                    p = p.add(delttx as usize);
-                    x = 0;
-                }
-            }
-            tx = (tx as i32 - delttx as i32) as i16;
-            /* Position d'affichage sur l'ecran */
-            let mut pdeb = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
-            /* Couleur transparente */
-            let vide: u8 = mob.vide as u8;
-            /* Nombre de lignes a tracer */
-            let mut j = ty as i32 + 1;
-            while {
-                j -= 1;
-                j != 0
-            } {
-                /* Debut de  ligne */
-                let mut pecr = pdeb;
-                pdeb = pdeb.add(tailleLigne as usize);
-                let mut i = tx as i32 + 1;
-                while {
-                    i -= 1;
-                    i != 0
-                } {
-                    /* l'index de la couleur est extrait */
-                    let coul = *p;
-                    p = p.add(1);
-                    /* Si egal a zéro alors couleur transparente */
-                    if coul != vide {
-                        *pecr = tab_i[coul as usize] as u8;
-                    }
-                    pecr = pecr.offset(dx as isize);
-                }
-                /* Donnees perdues si le mob est coupe en colonne */
-                p = p.add(delttx as usize);
-            }
-        }
+    pub(crate) fn Affmobbrt(
+        &mut self,
+        num: i16,
+        x: i16,
+        y: i16,
+        sens: i16,
+        tabIndex: Option<&[i16]>,
+    ) {
+        self.sapwbrt
+            .Affmobbrt(self.sapwind.ports.current_mut(), num, x, y, sens, tabIndex);
     }
 
     /******************************************************************
@@ -558,85 +392,75 @@ impl Sapiens {
     => Numero du mob, position x, position y, couleur
     <= rien
     ******************************************************************/
-    pub(crate) fn AffmobCar(&self, num: i16, x: i16, y: i16, couleur: i16) {
+    pub(crate) fn AffmobCar(&mut self, num: i16, x: i16, y: i16, couleur: i16) {
         let mob = &self.sapwbrt.TabMob[num as usize];
+        let src = mob.data();
         let mut tx: i16 = mob.nbcol;
         let mut ty: i16 = mob.nbligne;
-        let mut p: *mut u8 = mob.datas;
+        let mut p: usize = 0;
         let mut x = x;
         let mut y = y;
         /* Origine des donnees de l'ecran */
-        let port = self.sapwind.ports.current();
-        let data = port.pixels.as_ptr() as Ptr;
-        let tailleLigne = port.row_bytes;
+        let port = self.sapwind.ports.current_mut();
+        let tailleLigne = port.row_bytes as isize;
         let rPort = port.bounds;
         /* Test de sortie du mob */
         /* Sortie Haut */
-        unsafe {
-            if y < 0 {
-                /* Entierment hors ecran */
-                if (y as i32 + ty as i32) < rPort.top as i32 {
-                    return;
-                }
-                ty = (ty as i32 + y as i32) as i16;
-                p = p.add(((-(y as i32)) * tx as i32) as usize);
-                y = 0;
+        if y < 0 {
+            /* Entierment hors ecran */
+            if (y as i32 + ty as i32) < rPort.top as i32 {
+                return;
             }
-            /* Sortie basse */
-            if y as i32 + ty as i32 >= rPort.bottom as i32 {
-                if y >= rPort.bottom {
-                    return;
-                }
-                ty = (rPort.bottom as i32 - y as i32) as i16;
+            ty = (ty as i32 + y as i32) as i16;
+            p += ((-(y as i32)) * tx as i32) as usize;
+            y = 0;
+        }
+        /* Sortie basse */
+        if y as i32 + ty as i32 >= rPort.bottom as i32 {
+            if y >= rPort.bottom {
+                return;
             }
-            let mut delttx: i16 = 0;
-            /* Sortie droite */
-            if x as i32 + tx as i32 >= rPort.right as i32 {
-                if x >= rPort.right {
-                    return;
-                }
-                delttx = (x as i32 + tx as i32 - rPort.right as i32) as i16;
+            ty = (rPort.bottom as i32 - y as i32) as i16;
+        }
+        let mut delttx: i16 = 0;
+        /* Sortie droite */
+        if x as i32 + tx as i32 >= rPort.right as i32 {
+            if x >= rPort.right {
+                return;
             }
-            /* Sortie gauche */
-            if x < 0 {
-                if x as i32 + tx as i32 <= 0 {
-                    return;
-                }
-                delttx = (-(x as i32)) as i16;
-                p = p.add(delttx as usize);
-                x = 0;
+            delttx = (x as i32 + tx as i32 - rPort.right as i32) as i16;
+        }
+        /* Sortie gauche */
+        if x < 0 {
+            if x as i32 + tx as i32 <= 0 {
+                return;
             }
-            tx = (tx as i32 - delttx as i32) as i16;
-            /* Position d'affichage sur l'ecran */
-            let mut pdeb = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
-            /* Couleur transparente */
-            let vide: u8 = mob.vide as u8;
-            /* Nombre de lignes a tracer */
-            let mut j = ty as i32 + 1;
-            while {
-                j -= 1;
-                j != 0
-            } {
-                /* Debut de  ligne */
-                let mut pecr = pdeb;
-                pdeb = pdeb.add(tailleLigne as usize);
-                let mut i = tx as i32 + 1;
-                while {
-                    i -= 1;
-                    i != 0
-                } {
-                    /* l'index de la couleur est extrait */
-                    let coul = *p;
-                    p = p.add(1);
-                    /* Si egal a zéro alors couleur transparente */
-                    if coul != vide {
-                        *pecr = couleur as u8;
-                    }
-                    pecr = pecr.add(1);
+            delttx = (-(x as i32)) as i16;
+            p += delttx as usize;
+            x = 0;
+        }
+        tx = (tx as i32 - delttx as i32) as i16;
+        /* Position d'affichage sur l'ecran */
+        let mut pdeb = y as isize * tailleLigne + x as isize;
+        /* Couleur transparente */
+        let vide: u8 = mob.vide as u8;
+        /* Nombre de lignes a tracer */
+        for _ in 0..ty.max(0) {
+            /* Debut de  ligne */
+            let mut pecr = pdeb;
+            pdeb += tailleLigne;
+            for _ in 0..tx.max(0) {
+                /* l'index de la couleur est extrait */
+                let coul = src[p];
+                p += 1;
+                /* Si egal a zéro alors couleur transparente */
+                if coul != vide {
+                    port.put(pecr, couleur as u8);
                 }
-                /* Donnees perdues si le mob est coupe en colonne */
-                p = p.add(delttx as usize);
+                pecr += 1;
             }
+            /* Donnees perdues si le mob est coupe en colonne */
+            p += delttx as usize;
         }
     }
 
@@ -647,7 +471,7 @@ impl Sapiens {
     @= Aire du mob
     ******************************************************************/
     pub(crate) fn Affmobbrtomb(
-        &self,
+        &mut self,
         num: i16,
         x: i16,
         y: i16,
@@ -656,6 +480,7 @@ impl Sapiens {
         r: &mut Rect,
     ) {
         let mob = &self.sapwbrt.TabMob[num as usize];
+        let src = mob.data();
         let tx: i16 = mob.nbcol;
         let ty: i16 = mob.nbligne;
         /* Conversion des coordonnees */
@@ -669,52 +494,229 @@ impl Sapiens {
             (x as i32 + tx as i32 + deltah as i32) as i16,
             (y as i32 + ty as i32 + deltav as i32) as i16,
         );
-        let mut p: *mut u8 = mob.datas;
+        let mut p: usize = 0;
         /* Palette associee a ce mob */
         let tab_i = &self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex;
+        let tab_ombre = &self.sapwcvt.TabCvtCoulOmbre;
         /* Origine des donnees de l'ecran */
-        let port = self.sapwind.ports.current();
-        let data = port.pixels.as_ptr() as Ptr;
-        let tailleLigne = port.row_bytes;
+        let port = self.sapwind.ports.current_mut();
+        let tailleLigne = port.row_bytes as isize;
         /* Position d'affichage sur l'ecran */
-        unsafe {
-            let mut pdeb = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
-            /* Couleur transparente */
-            let vide: u8 = mob.vide as u8;
-            /* Pour l'ensemble des lignes */
-            let mut j = ty as i32;
-            let mut yc = y as i32;
-            while j != 0 {
-                j -= 1;
-                yc += 1;
-                /* Debut de  ligne */
-                let mut pecr = pdeb;
-                let mut pomb =
-                    pdeb.add((deltav as i64 * tailleLigne as i64 + deltah as i64) as usize);
-                pdeb = pdeb.add(tailleLigne as usize);
-                let mut i = 0i32;
-                while {
-                    let cur = i;
-                    i += 1;
-                    cur < tx as i32
-                } {
-                    /* l'index de la couleur est extrait dans le mob */
-                    let coul = *p;
-                    p = p.add(1);
-                    /* Si egal a zéro alors couleur transparente */
-                    if coul != vide {
-                        /* Dans l'ecran */
-                        if (yc + deltav as i32) < (200 * ECHELLE as i32) {
-                            /* Lecture de l'ecran pour extraire la couleur RVB */
-                            *pomb = self.sapwcvt.TabCvtCoulOmbre[*pomb as usize];
+        let mut pdeb = y as isize * tailleLigne + x as isize;
+        let delta_ombre = deltav as isize * tailleLigne + deltah as isize;
+        /* Couleur transparente */
+        let vide: u8 = mob.vide as u8;
+        /* Pour l'ensemble des lignes */
+        let mut yc = y as i32;
+        for _ in 0..ty.max(0) {
+            yc += 1;
+            /* Debut de  ligne */
+            let mut pecr = pdeb;
+            pdeb += tailleLigne;
+            for _ in 0..tx.max(0) {
+                /* l'index de la couleur est extrait dans le mob */
+                let coul = src[p];
+                p += 1;
+                /* Si egal a zéro alors couleur transparente */
+                if coul != vide {
+                    /* Dans l'ecran */
+                    if (yc + deltav as i32) < (200 * ECHELLE as i32) {
+                        /* Lecture de l'ecran pour extraire la couleur RVB */
+                        if let Some(d) = port.px_mut(pecr + delta_ombre) {
+                            *d = tab_ombre[*d as usize];
                         }
-                        /* Conversion de l'index de couleur en index ST */
-                        *pecr = tab_i[coul as usize] as u8;
                     }
-                    pecr = pecr.add(1);
-                    pomb = pomb.add(1);
+                    /* Conversion de l'index de couleur en index ST */
+                    port.put(pecr, tab_i[coul as usize] as u8);
                 }
+                pecr += 1;
             }
+        }
+    }
+}
+
+impl Sapwbrt {
+    /*************************************************************************
+                    Affmob3d
+    Affiche un mob sur `port`
+    *************************************************************************/
+    pub(crate) fn Affmob3d(
+        &self,
+        port: &mut SapPort,
+        num: i16,
+        mut mon_aire: Rect,
+        tabIndex: Option<&[i16]>,
+    ) {
+        let mob = &self.TabMob[num as usize];
+        let src = mob.data();
+        let tx = mob.nbcol as i64;
+        let ty = mob.nbligne as i64;
+        let vide: u8 = mob.vide as u8;
+        /* Palette associee a ce mob */
+        let tab_i = tabIndex.unwrap_or(&self.TabPalette[mob.indexPalette as usize].tabIndex);
+        /* Origine des donnees de l'ecran */
+        let tailleLigne = port.row_bytes as usize;
+        let rPort = port.bounds;
+        /* Calcul des pas en X et en Y */
+        let i = mon_aire.right as i32 - mon_aire.left as i32;
+        let j = mon_aire.bottom as i32 - mon_aire.top as i32;
+        /* Trop petit */
+        if i <= 0 || j <= 0 {
+            return;
+        }
+        let pas_x: i64 = (tx << 16) / (i as i64);
+        let pas_y: i64 = (ty << 16) / (j as i64);
+        let mut p: i64 = 0;
+        /* Calcul des sorties */
+        if mon_aire.left < 0 {
+            let off = ((-(mon_aire.left as i32)) as f32 * (pas_x as f32) / 65536.0) as i64;
+            p += off;
+            mon_aire.left = 0;
+        }
+        if mon_aire.top < 0 {
+            let off = ((-(mon_aire.top as i32)) as f32 * (pas_y as f32) / 65536.0) as i64;
+            p += off * tx;
+            mon_aire.top = 0;
+        }
+        if mon_aire.right > rPort.right {
+            mon_aire.right = rPort.right;
+        }
+        if mon_aire.bottom > rPort.bottom {
+            mon_aire.bottom = rPort.bottom;
+        }
+        if mon_aire.is_empty() {
+            return;
+        }
+        let largeur = (mon_aire.right - mon_aire.left) as usize;
+        let mut data = mon_aire.top as usize * tailleLigne + mon_aire.left as usize;
+        let mut rest_y: i64 = 0;
+        for _ in mon_aire.top..mon_aire.bottom {
+            let mut pdeb = p;
+            let mut rest_x: i64 = 0;
+            for ecr in &mut port.pixels[data..data + largeur] {
+                if let Some(&c) = usize::try_from(pdeb).ok().and_then(|k| src.get(k))
+                    && c != vide
+                {
+                    *ecr = tab_i[c as usize] as u8;
+                }
+                rest_x += pas_x;
+                pdeb += rest_x >> 16;
+                rest_x &= 0xFFFF;
+            }
+            rest_y += pas_y;
+            p += (rest_y >> 16) * tx;
+            rest_y &= 0xFFFF;
+            data += tailleLigne;
+        }
+    }
+
+    /******************************************************************
+                        Affmobbrt
+    Affiche un mob en 256 couleurs sur `port`
+    => Numero du mob, position x (0-320),position y (0-200), sens (0-1),
+    tableau des index de palette ou NULL si palette standard du Mob
+    <= rien
+    ******************************************************************/
+    pub(crate) fn Affmobbrt(
+        &self,
+        port: &mut SapPort,
+        num: i16,
+        x: i16,
+        y: i16,
+        sens: i16,
+        tabIndex: Option<&[i16]>,
+    ) {
+        let mob = &self.TabMob[num as usize];
+        let src = mob.data();
+        let mut x = ((x as i32) * (ECHELLE as i32)) as i16;
+        let mut y = ((y as i32) * (ECHELLE as i32)) as i16;
+        let mut tx: i16 = mob.nbcol;
+        let mut ty: i16 = mob.nbligne;
+        let mut p: usize = 0;
+        /* Palette associee a ce mob */
+        let tab_i = tabIndex.unwrap_or(&self.TabPalette[mob.indexPalette as usize].tabIndex);
+        /* Origine des donnees de l'ecran */
+        let tailleLigne = port.row_bytes as isize;
+        let rPort = port.bounds;
+        /* Test de sortie du mob */
+        /* Sortie Haut */
+        if y < 0 {
+            /* Entierment hors ecran */
+            if (y as i32 + ty as i32) < rPort.top as i32 {
+                return;
+            }
+            ty = (ty as i32 + y as i32) as i16;
+            p += ((-(y as i32)) * tx as i32) as usize;
+            y = 0;
+        }
+        /* Sortie basse */
+        if y as i32 + ty as i32 >= rPort.bottom as i32 {
+            if y >= rPort.bottom {
+                return;
+            }
+            ty = (rPort.bottom as i32 - y as i32) as i16;
+        }
+        let dx: isize;
+        let mut delttx: i16 = 0;
+        if sens != 0 {
+            dx = -1;
+            /* Sortie droite */
+            if x >= rPort.right {
+                if x as i32 - tx as i32 >= rPort.right as i32 {
+                    return;
+                }
+                delttx = (x as i32 - rPort.right as i32) as i16;
+                x = rPort.right;
+                p += delttx as usize;
+            }
+            /* Sortie gauche */
+            if (x as i32 - tx as i32) < 0 {
+                if x < 0 {
+                    return;
+                }
+                delttx = (tx as i32 - x as i32) as i16;
+            }
+        } else {
+            dx = 1;
+            /* Sortie droite */
+            if x as i32 + tx as i32 >= rPort.right as i32 {
+                if x >= rPort.right {
+                    return;
+                }
+                delttx = (x as i32 + tx as i32 - rPort.right as i32) as i16;
+            }
+            /* Sortie gauche */
+            if x < 0 {
+                if x as i32 + tx as i32 <= 0 {
+                    return;
+                }
+                delttx = (-(x as i32)) as i16;
+                p += delttx as usize;
+                x = 0;
+            }
+        }
+        tx = (tx as i32 - delttx as i32) as i16;
+        /* Position d'affichage sur l'ecran */
+        let mut pdeb = y as isize * tailleLigne + x as isize;
+        /* Couleur transparente */
+        let vide: u8 = mob.vide as u8;
+        /* Nombre de lignes a tracer */
+        for _ in 0..ty.max(0) {
+            /* Debut de  ligne */
+            let mut pecr = pdeb;
+            pdeb += tailleLigne;
+            for _ in 0..tx.max(0) {
+                /* l'index de la couleur est extrait */
+                let coul = src[p];
+                p += 1;
+                /* Si egal a zéro alors couleur transparente */
+                if coul != vide {
+                    port.put(pecr, tab_i[coul as usize] as u8);
+                }
+                pecr += dx;
+            }
+            /* Donnees perdues si le mob est coupe en colonne */
+            p += delttx as usize;
         }
     }
 }
@@ -725,14 +727,9 @@ impl SapPort {
     Ecrit le pixel en coordonnée x, y de couleur systeme coul
     => x (0-640) ,y(0-200), index de la couleur systeme
     ******************************************************************/
-    pub(crate) fn PlotIndexPixBrt(&self, x: i16, y: i16, coul: i16) {
-        let data = self.pixels.as_ptr() as Ptr;
-        let tailleLigne = self.row_bytes;
-        /* Position d'affichage sur l'ecran */
-        unsafe {
-            let p = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
-            *p = coul as u8;
-        }
+    pub(crate) fn PlotIndexPixBrt(&mut self, x: i16, y: i16, coul: i16) {
+        let idx = y as isize * self.row_bytes as isize + x as isize;
+        self.put(idx, coul as u8);
     }
 
     /******************************************************************
@@ -743,37 +740,27 @@ impl SapPort {
     <= couleur
     ******************************************************************/
     pub(crate) fn GetIndexPixBrt(&self, x: i16, y: i16) -> i16 {
-        let data = self.pixels.as_ptr() as Ptr;
-        let tailleLigne = self.row_bytes;
-        /* Position d'affichage sur l'ecran */
-        unsafe {
-            let p = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
-            *p as i16
-        }
+        let idx = y as isize * self.row_bytes as isize + x as isize;
+        self.px(idx).unwrap_or(0) as i16
     }
 
     /******************************************************************
                         SwapCouleur
     dans un rectangle du port en entree swappe deux couleurs
     ******************************************************************/
-    pub(crate) fn SwapCouleur(&self, r: &Rect, coul1: i16, coul2: i16) {
-        let data = self.pixels.as_ptr() as Ptr;
-        let tailleLigne = self.row_bytes;
-        let mut y = r.top;
-        unsafe {
-            while y < r.bottom {
-                let mut p = data.add((y as i64 * tailleLigne as i64 + r.left as i64) as usize);
-                let mut x = r.right - r.left;
-                while x != 0 {
-                    x -= 1;
-                    if *p == coul1 as u8 {
-                        *p = coul2 as u8;
-                    } else if *p == coul2 as u8 {
-                        *p = coul1 as u8;
+    pub(crate) fn SwapCouleur(&mut self, r: &Rect, coul1: i16, coul2: i16) {
+        let tailleLigne = self.row_bytes as isize;
+        let (c1, c2) = (coul1 as u8, coul2 as u8);
+        for y in r.top..r.bottom {
+            let deb = y as isize * tailleLigne + r.left as isize;
+            for k in 0..(r.right - r.left).max(0) as isize {
+                if let Some(d) = self.px_mut(deb + k) {
+                    if *d == c1 {
+                        *d = c2;
+                    } else if *d == c2 {
+                        *d = c1;
                     }
-                    p = p.add(1);
                 }
-                y += 1;
             }
         }
     }
@@ -786,26 +773,20 @@ impl Sapiens {
     Les  coordonnees sont donnees en ecran ST 320x200
     (C) Ligne dep,Col dep,Ligne fin,col.fin,couleur ST
     ***************************************************************************/
-    pub(crate) fn BoxFill(&self, port_id: PortId, r: &mut Rect, couleur: i16) {
+    pub(crate) fn BoxFill(&mut self, port_id: PortId, r: &mut Rect, couleur: i16) {
         if r.is_empty() {
             return;
         }
-        let port = self.sapwind.ports.port(port_id);
-        let aire = port.bounds;
-        let tailleLigne = port.row_bytes;
-        let mut data = port.pixels.as_ptr() as Ptr;
-        unsafe {
-            if let Some(aire) = SectRect(r, &aire) {
-                let couleur = self.sapwcvt.TabCvtCoul[couleur as usize];
-                let mut ty = aire.bottom as i32 - aire.top as i32;
-                let tx = aire.right as i32 - aire.left as i32;
-                /* Position d'affichage sur l'ecran */
-                data = data.add((tailleLigne as i64 * aire.top as i64 + aire.left as i64) as usize);
-                while ty != 0 {
-                    ty -= 1;
-                    std::ptr::write_bytes(data, couleur, tx as usize);
-                    data = data.add(tailleLigne as usize);
-                }
+        let couleur = self.sapwcvt.TabCvtCoul[couleur as usize];
+        let port = self.sapwind.ports.port_mut(port_id);
+        let tailleLigne = port.row_bytes as usize;
+        if let Some(aire) = SectRect(r, &port.bounds) {
+            let tx = (aire.right - aire.left) as usize;
+            /* Position d'affichage sur l'ecran */
+            let mut data = tailleLigne * aire.top as usize + aire.left as usize;
+            for _ in aire.top..aire.bottom {
+                port.pixels[data..data + tx].fill(couleur);
+                data += tailleLigne;
             }
         }
     }
@@ -818,16 +799,12 @@ impl Ports {
     Remplit la zone  avec le tableau de couleur  donne
     => ligne debut (pixel ecran reel), nbre de lignes, Tableau de couleurs
     ******************************************************************/
-    pub(crate) fn RemplitZoneLignes(&self, y: i16, tab_couleur: &[IndexColor]) {
-        let port = self.current();
-        let mut data = port.pixels.as_ptr() as Ptr;
-        let tailleLigne = port.row_bytes;
-        unsafe {
-            data = data.add((tailleLigne as i64 * y as i64) as usize);
-            for tc in tab_couleur {
-                std::ptr::write_bytes(data, tc.index as u8, tailleLigne as usize);
-                data = data.add(tailleLigne as usize);
-            }
+    pub(crate) fn RemplitZoneLignes(&mut self, y: i16, tab_couleur: &[IndexColor]) {
+        let port = self.current_mut();
+        let tailleLigne = port.row_bytes as usize;
+        let deb = tailleLigne * y as usize;
+        for (ligne, tc) in port.pixels[deb..].chunks_mut(tailleLigne).zip(tab_couleur) {
+            ligne.fill(tc.index as u8);
         }
     }
 }
@@ -881,90 +858,77 @@ impl Sapiens {
     ;
     ***************************************************************************/
     pub(crate) fn TraceDisque(
-        &self,
-        dg: *mut i16,
-        dd: *mut i16,
-        dy: *mut i16,
+        &mut self,
+        dg: &mut i16,
+        dd: &mut i16,
+        dy: &mut i16,
         fg: i16,
         fd: i16,
         epaisseur: i16,
     ) {
-        unsafe {
-            {
-                let mut fy: i32 = 0;
-                if *dy > 0 && epaisseur > 0 {
-                    let port = self.sapwind.ports.current();
-                    let data = port.pixels.as_ptr() as Ptr;
-                    let tailleLigne = port.row_bytes;
-                    fy = *dy as i32 * ECHELLE as i32;
-                    let mut ep = epaisseur as i32 * ECHELLE as i32;
-                    let mut x1: i64 = ((*dg as i64) << 16) * (ECHELLE as i64);
-                    let mut x2: i64 = ((*dd as i64) << 16) * (ECHELLE as i64);
-                    let dx1: i64 =
-                        ((ECHELLE as i64) * ((fg as i64 - *dg as i64) << 16)) / (ep as i64);
-                    let dx2: i64 =
-                        ((ECHELLE as i64) * ((fd as i64 - *dd as i64) << 16)) / (ep as i64);
-                    while fy != 0 && ep != 0 {
-                        ep -= 1;
-                        if fy < 200 {
-                            let delta = (x2 - x1) >> 16;
-                            let mut sx1: i16 = (x1 >> 16) as i16;
-                            let tcole = &self.sapwarb.tabcoul;
-                            for i in 0..8 {
-                                let index1 = self.sapwcvt.TabCvtCoul
-                                    [self.sapglob.palhaute.borrow()[i] as usize];
-                                let index2 = self.sapwcvt.TabCvtCoul[self.sapglob.palhaute.borrow()
-                                    [tcole[i + 1] as usize]
-                                    as usize];
-                                let sx2: i16 =
-                                    ((x1 >> 16) + ((delta * tabpourc[i] as i64) >> 16)) as i16;
-                                let mut sx1c = sx1;
-                                let mut sx2c = sx2;
-                                if sx1c < 0 {
-                                    sx1c = 0;
-                                }
-                                if sx2c > 511 {
-                                    sx2c = 511;
-                                }
-                                /* On a sx1 sx2 debut et fin en colonne du morceau de  ligne */
-                                if sx1c < 512 && sx2c > 0 && sx1c != sx2c {
-                                    /* Pointeur sur l'ecran */
-                                    let mut p = data.add(
-                                        (tailleLigne as i64 * fy as i64 + sx1c as i64) as usize,
-                                    );
-                                    let tsx = sx2c - sx1c;
-                                    let degrade = DebDeg[((if tsx > 32 { 31i16 } else { tsx - 1 })
-                                        + (fy as i16 & 3))
-                                        as usize];
-                                    let mut dg2 = degrade;
-                                    let mut ts = tsx as i64;
-                                    while ts != 0 {
-                                        ts -= 1;
-                                        if dg2 & 0x8000_0000 != 0 {
-                                            *p = index1;
-                                        } else {
-                                            *p = index2;
-                                        }
-                                        p = p.add(1);
-                                        dg2 <<= 1;
-                                    }
-                                }
-                                sx1 = sx2c;
+        let mut fy: i32 = 0;
+        if *dy > 0 && epaisseur > 0 {
+            let palhaute = self.sapglob.palhaute.borrow();
+            let tcole = &self.sapwarb.tabcoul;
+            let cvt = &self.sapwcvt.TabCvtCoul;
+            let port = self.sapwind.ports.current_mut();
+            let tailleLigne = port.row_bytes as isize;
+            fy = *dy as i32 * ECHELLE as i32;
+            let mut ep = epaisseur as i32 * ECHELLE as i32;
+            let mut x1: i64 = ((*dg as i64) << 16) * (ECHELLE as i64);
+            let mut x2: i64 = ((*dd as i64) << 16) * (ECHELLE as i64);
+            let dx1: i64 = ((ECHELLE as i64) * ((fg as i64 - *dg as i64) << 16)) / (ep as i64);
+            let dx2: i64 = ((ECHELLE as i64) * ((fd as i64 - *dd as i64) << 16)) / (ep as i64);
+            while fy != 0 && ep != 0 {
+                ep -= 1;
+                if fy < 200 {
+                    let delta = (x2 - x1) >> 16;
+                    let mut sx1: i16 = (x1 >> 16) as i16;
+                    for i in 0..8 {
+                        let index1 = cvt[palhaute[i] as usize];
+                        let index2 = cvt[palhaute[tcole[i + 1] as usize] as usize];
+                        let sx2: i16 = ((x1 >> 16) + ((delta * tabpourc[i] as i64) >> 16)) as i16;
+                        let mut sx1c = sx1;
+                        let mut sx2c = sx2;
+                        if sx1c < 0 {
+                            sx1c = 0;
+                        }
+                        if sx2c > 511 {
+                            sx2c = 511;
+                        }
+                        /* On a sx1 sx2 debut et fin en colonne du morceau de  ligne */
+                        if sx1c < 512 && sx2c > 0 && sx1c != sx2c {
+                            /* Pointeur sur l'ecran */
+                            let p = tailleLigne * fy as isize + sx1c as isize;
+                            let tsx = sx2c - sx1c;
+                            let degrade = DebDeg[((if tsx > 32 { 31i16 } else { tsx - 1 })
+                                + (fy as i16 & 3))
+                                as usize];
+                            let mut dg2 = degrade;
+                            for k in 0..tsx.max(0) as isize {
+                                let c = if dg2 & 0x8000_0000 != 0 {
+                                    index1
+                                } else {
+                                    index2
+                                };
+                                port.put(p + k, c);
+                                dg2 <<= 1;
                             }
                         }
-                        x1 += dx1;
-                        x2 += dx2;
-                        fy -= 1;
+                        sx1 = sx2c;
                     }
                 }
-                *dg = fg;
-                *dd = fd;
-                if fy <= 0 {
-                    *dy = 0;
-                } else {
-                    *dy = (fy / (ECHELLE as i32)) as i16;
-                }
+                x1 += dx1;
+                x2 += dx2;
+                fy -= 1;
             }
+        }
+        *dg = fg;
+        *dd = fd;
+        if fy <= 0 {
+            *dy = 0;
+        } else {
+            *dy = (fy / (ECHELLE as i32)) as i16;
         }
     }
 }
@@ -1005,55 +969,46 @@ impl Ports {
         uniquement s'il est adressé à la fenêtre. */
         let realSource = self.port(source).zoomed(&rsourceIn);
         let realDest = self.port(dest).zoomed(rdestIn);
-        unsafe {
-            // Sur ecran
-            if self.is_window(dest) {
-                let _g = self.on(dest);
-                self.BackColor(whiteColor as i16);
-                self.ForeColor(blackColor as i16);
-                self.CopyBits(source, dest, &realSource, &realDest, srcCopy as i16);
-            } else {
-                /* Copie entre deux offscreen avec palette identique */
-                let src = self.port(source);
-                let dst = self.port(dest);
-                let boundSource = src.bounds;
-                let mut boundDest = dst.bounds;
-                let tailleLigneSource = src.row_bytes;
-                let tailleLigneDest = dst.row_bytes;
-                let mut dataSource = src.pixels.as_ptr() as Ptr;
-                let mut dataDest = dst.pixels.as_ptr() as Ptr;
-                /* Par defaut, le rectangle a transferer est la source */
-                let rtfrs = realSource;
-                /* On passe le bound destination dans le repere de la source */
-                boundDest.OffsetRect(
-                    realSource.left - realDest.left,
-                    realSource.top - realDest.top,
-                );
-                /* On intersecte les 3 rectangles */
-                let Some(rtfrs) =
-                    SectRect(&rtfrs, &boundSource).and_then(|r| SectRect(&r, &boundDest))
-                else {
-                    return;
-                };
-                /* On recalcule le rectangle destination */
-                let mut rtfrd = rtfrs;
-                rtfrd.OffsetRect(
-                    realDest.left - realSource.left,
-                    realDest.top - realSource.top,
-                );
-                dataSource = dataSource.add(
-                    (tailleLigneSource as i64 * rtfrs.top as i64 + rtfrs.left as i64) as usize,
-                );
-                dataDest = dataDest
-                    .add((tailleLigneDest as i64 * rtfrd.top as i64 + rtfrd.left as i64) as usize);
-                let mut ty = rtfrs.bottom as i32 - rtfrs.top as i32;
-                let tx = rtfrs.right as i32 - rtfrs.left as i32;
-                while ty != 0 {
-                    ty -= 1;
-                    std::ptr::copy(dataSource as *const u8, dataDest, tx as usize);
-                    dataSource = dataSource.add(tailleLigneSource as usize);
-                    dataDest = dataDest.add(tailleLigneDest as usize);
-                }
+        // Sur ecran
+        if self.is_window(dest) {
+            let _g = self.on(dest);
+            self.BackColor(whiteColor as i16);
+            self.ForeColor(blackColor as i16);
+            self.CopyBits(source, dest, &realSource, &realDest, srcCopy as i16);
+        } else {
+            /* Copie entre deux offscreen avec palette identique */
+            let boundSource = self.port(source).bounds;
+            let mut boundDest = self.port(dest).bounds;
+            let tailleLigneSource = self.port(source).row_bytes as usize;
+            let tailleLigneDest = self.port(dest).row_bytes as usize;
+            /* Par defaut, le rectangle a transferer est la source */
+            let rtfrs = realSource;
+            /* On passe le bound destination dans le repere de la source */
+            boundDest.OffsetRect(
+                realSource.left - realDest.left,
+                realSource.top - realDest.top,
+            );
+            /* On intersecte les 3 rectangles */
+            let Some(rtfrs) = SectRect(&rtfrs, &boundSource).and_then(|r| SectRect(&r, &boundDest))
+            else {
+                return;
+            };
+            /* On recalcule le rectangle destination */
+            let mut rtfrd = rtfrs;
+            rtfrd.OffsetRect(
+                realDest.left - realSource.left,
+                realDest.top - realSource.top,
+            );
+            let mut dataSource = tailleLigneSource * rtfrs.top as usize + rtfrs.left as usize;
+            let mut dataDest = tailleLigneDest * rtfrd.top as usize + rtfrd.left as usize;
+            let tx = (rtfrs.right - rtfrs.left) as usize;
+            /* La source peut être la destination : on passe par un tampon. */
+            let mut ligne = vec![0u8; tx];
+            for _ in rtfrs.top..rtfrs.bottom {
+                ligne.copy_from_slice(&self.port(source).pixels[dataSource..dataSource + tx]);
+                self.port_mut(dest).pixels[dataDest..dataDest + tx].copy_from_slice(&ligne);
+                dataSource += tailleLigneSource;
+                dataDest += tailleLigneDest;
             }
         }
     }
@@ -1082,7 +1037,7 @@ impl Sapiens {
     Efface l'ecran virtuel Ecran en entier
     => couleur ST d'effacement
     *************************************************************************/
-    pub(crate) fn effima(&self, couleur: i16) {
+    pub(crate) fn effima(&mut self, couleur: i16) {
         let mut r = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
         self.BoxFill(PortId::Ecran1, &mut r, couleur);
     }
@@ -1092,7 +1047,7 @@ impl Sapiens {
     Efface la zone de la vue 3d sur debecr
     => Couleur RVB St
     *************************************************************************/
-    pub(crate) fn effvirt(&self, couleur: i16) {
+    pub(crate) fn effvirt(&mut self, couleur: i16) {
         let mut r = Rect::new(
             (32 * ECHELLE) as i16,
             ECHELLE as i16,
@@ -1183,7 +1138,7 @@ impl Sapiens {
     Affiche un mob sur l'ecran virtuel
     => Numero du mob, position y (0-200) ,position x (0-320), sens
     *************************************************************************/
-    pub(crate) fn Affmob(&self, mob: i16, y: i16, x: i16, inverse: i16) {
+    pub(crate) fn Affmob(&mut self, mob: i16, y: i16, x: i16, inverse: i16) {
         let _g = self.sapwind.ports.on(PortId::Ecran1);
         self.Affmobbrt(mob, x, y, inverse, None);
     }
@@ -1240,7 +1195,14 @@ impl Sapiens {
     Affiche un mob sur l'ecran virtuel, en entree on a en plus le tableau des
     index de couleurs a utiliser
     *************************************************************************/
-    pub(crate) fn AffmobPalette(&self, mob: i16, y: i16, x: i16, inverse: i16, tabIndex: &[i16]) {
+    pub(crate) fn AffmobPalette(
+        &mut self,
+        mob: i16,
+        y: i16,
+        x: i16,
+        inverse: i16,
+        tabIndex: &[i16],
+    ) {
         let _g = self.sapwind.ports.on(PortId::Ecran1);
         self.Affmobbrt(mob, x, y, inverse, Some(tabIndex));
     }
@@ -1249,30 +1211,21 @@ impl Sapiens {
     Affiche la palette en cours
     *************************************************************************/
     pub(crate) fn AffPalette(&mut self) {
-        unsafe {
-            let _g = self.sapwind.ports.on(PortId::debecr);
-            let port = self.sapwind.ports.current();
-            let data = port.pixels.as_ptr() as Ptr;
-            let tailleLigne = port.row_bytes;
-            const TAILLE_CARRE: i64 = 16;
-            for i in 0..16i16 {
-                for j in 0..16i16 {
-                    let mut p = data.add(
-                        (i as i64 * TAILLE_CARRE * tailleLigne as i64
-                            + j as i64 * TAILLE_CARRE
-                            + 32) as usize,
-                    );
-                    let coul = i as i32 * 16 + j as i32;
-                    for _k in 0..TAILLE_CARRE {
-                        for l in 0..TAILLE_CARRE {
-                            *p.add(l as usize) = coul as u8;
-                        }
-                        p = p.add(tailleLigne as usize);
-                    }
+        let _g = self.sapwind.ports.on(PortId::debecr);
+        let port = self.sapwind.ports.current_mut();
+        let tailleLigne = port.row_bytes as usize;
+        const TAILLE_CARRE: usize = 16;
+        for i in 0..16usize {
+            for j in 0..16usize {
+                let coul = (i * 16 + j) as u8;
+                let mut p = i * TAILLE_CARRE * tailleLigne + j * TAILLE_CARRE + 32;
+                for _k in 0..TAILLE_CARRE {
+                    port.pixels[p..p + TAILLE_CARRE].fill(coul);
+                    p += tailleLigne;
                 }
             }
-            self.TfrEcr(None);
         }
+        self.TfrEcr(None);
     }
 
     /***********************************************************************

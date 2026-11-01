@@ -17,7 +17,7 @@ use crate::sapiens::{
     ECHELLE, FormeId, IndexColor, MontId, NB_DEGRADE_DISTANCE, NB_ETOILES, NB_LIGNES_CIEL,
     NB_LIGNES_TERRE, h_chron,
 };
-use crate::shared::{Ptr, RGBColor, Rect};
+use crate::shared::{RGBColor, Rect};
 
 const LARGEUR_ECRAN: i32 = 512;
 const HAUTEUR_ECRAN: i32 = 256;
@@ -329,61 +329,57 @@ impl Sapiens {
     Affiche les etoiles sur le ciel
     *****************************************************************************/
     pub(crate) fn AfficheEtoiles(&mut self) {
-        unsafe {
-            if self.sapglob.heure as i32 > 480 || (self.sapglob.heure as i32) < 20 {
-                /* Nuit */
-                let port = self.sapwind.ports.current();
-                let data = port.pixels.as_ptr() as Ptr;
-                let tailleLigne = port.row_bytes;
-                let magnitude: i16 = if (self.sapglob.heure as i32) < MAX_MAGNITUDE {
-                    (MAX_MAGNITUDE - self.sapglob.heure as i32) as i16
-                } else if (self.sapglob.heure as i32) < 480 + MAX_MAGNITUDE {
-                    (self.sapglob.heure as i32 - (480 + MAX_MAGNITUDE)) as i16
-                } else {
-                    MAX_MAGNITUDE as i16
-                };
-                for p in &mut self.sapw3d.TAB_ETOILES {
-                    if p.magnitude <= magnitude {
-                        let x = (((self.sapglob.dzeta as i32 * 2 - p.x as i32 - 512) & 2047) - 512
-                            + 256) as i16;
-                        if (0..512).contains(&x) {
-                            let y = p.y as i32;
-                            let off = (y as i64 * tailleLigne as i64 + x as i64) as isize;
-                            let coul = if self.random.Rnd() > 127 {
-                                self.sapw3d.COUL_PULSE
-                            } else {
-                                p.couleur
-                            };
-                            *data.offset(off) = coul as u8;
-                        }
+        if self.sapglob.heure as i32 > 480 || (self.sapglob.heure as i32) < 20 {
+            /* Nuit */
+            let port = self.sapwind.ports.current_mut();
+            let tailleLigne = port.row_bytes;
+            let magnitude: i16 = if (self.sapglob.heure as i32) < MAX_MAGNITUDE {
+                (MAX_MAGNITUDE - self.sapglob.heure as i32) as i16
+            } else if (self.sapglob.heure as i32) < 480 + MAX_MAGNITUDE {
+                (self.sapglob.heure as i32 - (480 + MAX_MAGNITUDE)) as i16
+            } else {
+                MAX_MAGNITUDE as i16
+            };
+            for p in &mut self.sapw3d.TAB_ETOILES {
+                if p.magnitude <= magnitude {
+                    let x = (((self.sapglob.dzeta as i32 * 2 - p.x as i32 - 512) & 2047) - 512
+                        + 256) as i16;
+                    if (0..512).contains(&x) {
+                        let y = p.y as i32;
+                        let off = (y as i64 * tailleLigne as i64 + x as i64) as isize;
+                        let coul = if self.random.Rnd() > 127 {
+                            self.sapw3d.COUL_PULSE
+                        } else {
+                            p.couleur
+                        };
+                        port.put(off, coul as u8);
                     }
                 }
-                if self.sapw3d.METEORE != 0 {
-                    let x = (((self.sapglob.dzeta as i32 * 2 - self.sapw3d.X_METEORE as i32 - 512)
-                        & 2047)
-                        - 512
-                        + 256) as i16;
-                    self.Affmobbrt(
-                        self.sapwind.mob3D + 21,
-                        x / ECHELLE as i16,
-                        self.sapw3d.Y_METEORE / ECHELLE as i16,
-                        0,
-                        None,
-                    );
-                    self.sapw3d.METEORE = (self.sapw3d.METEORE as i32 - 1) as i16;
-                    self.sapw3d.X_METEORE = (self.sapw3d.X_METEORE as i32 + 5) as i16;
-                    self.sapw3d.Y_METEORE = (self.sapw3d.Y_METEORE as i32 + 5) as i16;
-                } else if self.random.myRandom(0, 1000) > 990 {
-                    self.sapw3d.X_METEORE = self.random.myRandom(0, AIRE_X_ETOILE as i64) as i16;
-                    self.sapw3d.Y_METEORE =
-                        self.random.myRandom(0, (AIRE_Y_ETOILE / 2) as i64) as i16;
-                    self.sapw3d.METEORE = self.random.myRandom(3, 6) as i16;
-                }
-                /* Etoile polaire */
-                let x = (((self.sapglob.dzeta as i32 * 2 + 512) % 2048) - 512 + 256) as i16;
-                let num = (self.sapwind.mob3D as i32 + self.random.myRandom(22, 24) as i32) as i16;
-                self.Affmobbrt(num, x / 2, 20, 0, None);
             }
+            if self.sapw3d.METEORE != 0 {
+                let x = (((self.sapglob.dzeta as i32 * 2 - self.sapw3d.X_METEORE as i32 - 512)
+                    & 2047)
+                    - 512
+                    + 256) as i16;
+                self.Affmobbrt(
+                    self.sapwind.mob3D + 21,
+                    x / ECHELLE as i16,
+                    self.sapw3d.Y_METEORE / ECHELLE as i16,
+                    0,
+                    None,
+                );
+                self.sapw3d.METEORE = (self.sapw3d.METEORE as i32 - 1) as i16;
+                self.sapw3d.X_METEORE = (self.sapw3d.X_METEORE as i32 + 5) as i16;
+                self.sapw3d.Y_METEORE = (self.sapw3d.Y_METEORE as i32 + 5) as i16;
+            } else if self.random.myRandom(0, 1000) > 990 {
+                self.sapw3d.X_METEORE = self.random.myRandom(0, AIRE_X_ETOILE as i64) as i16;
+                self.sapw3d.Y_METEORE = self.random.myRandom(0, (AIRE_Y_ETOILE / 2) as i64) as i16;
+                self.sapw3d.METEORE = self.random.myRandom(3, 6) as i16;
+            }
+            /* Etoile polaire */
+            let x = (((self.sapglob.dzeta as i32 * 2 + 512) % 2048) - 512 + 256) as i16;
+            let num = (self.sapwind.mob3D as i32 + self.random.myRandom(22, 24) as i32) as i16;
+            self.Affmobbrt(num, x / 2, 20, 0, None);
         }
     }
 
@@ -540,7 +536,8 @@ impl Sapiens {
             rdep = r;
             let mut k = 256 - offset as i32;
             while k < 512 {
-                self.Affmob3d(
+                self.sapwbrt.Affmob3d(
+                    self.sapwind.ports.current_mut(),
                     self.sapwind.mob3D + 25,
                     r,
                     Some(&self.sapw3d.TAB_PALETTE_DISTANCE[numPalette as usize]),
@@ -552,7 +549,8 @@ impl Sapiens {
             k = 256 - offset as i32;
             while k > 0 {
                 r.OffsetRect(-largeur as i16, 0);
-                self.Affmob3d(
+                self.sapwbrt.Affmob3d(
+                    self.sapwind.ports.current_mut(),
                     self.sapwind.mob3D + 25,
                     r,
                     Some(&self.sapw3d.TAB_PALETTE_DISTANCE[numPalette as usize]),
@@ -597,7 +595,8 @@ impl Sapiens {
                 rdep = r;
                 let mut kk = 256 - offset;
                 while kk < 512 {
-                    self.Affmob3d(
+                    self.sapwbrt.Affmob3d(
+                        self.sapwind.ports.current_mut(),
                         nmob,
                         r,
                         Some(&self.sapw3d.TAB_PALETTE_DISTANCE[numPalette as usize]),
@@ -609,7 +608,8 @@ impl Sapiens {
                 kk = 256 - offset;
                 while kk > 0 {
                     r.OffsetRect(-largeur2 as i16, 0);
-                    self.Affmob3d(
+                    self.sapwbrt.Affmob3d(
+                        self.sapwind.ports.current_mut(),
                         nmob,
                         r,
                         Some(&self.sapw3d.TAB_PALETTE_DISTANCE[numPalette as usize]),
@@ -627,44 +627,33 @@ impl Ports {
     /******************************************************************
                         TrameCielOrage
     ******************************************************************/
-    fn TrameCielOrage(&self, index: i16) {
+    fn TrameCielOrage(&mut self, index: i16) {
         /* Origine des données de l'ecran */
-        let port = self.current();
-        let data = port.pixels.as_ptr() as Ptr;
-        let tailleLigne = port.row_bytes;
-        let mut d = data;
-        let mut i = NB_LIGNES_CIEL as i32 / 2;
-        unsafe {
-            while i > 0 {
-                i -= 1;
-                let mut j = tailleLigne as i32 / 2;
-                while j > 0 {
-                    j -= 1;
-                    *d = index as u8;
-                    *d.offset((tailleLigne as i64 + 1) as isize) = index as u8;
-                    d = d.add(2);
-                }
-                d = d.add(tailleLigne as usize);
+        let port = self.current_mut();
+        let tailleLigne = port.row_bytes as isize;
+        let mut d: isize = 0;
+        for _ in 0..NB_LIGNES_CIEL as i32 / 2 {
+            for _ in 0..tailleLigne / 2 {
+                port.put(d, index as u8);
+                port.put(d + tailleLigne + 1, index as u8);
+                d += 2;
             }
+            d += tailleLigne;
         }
     }
 
     /******************************************************************
                         Flou
     ******************************************************************/
-    fn Flou(&self) {
+    fn Flou(&mut self) {
         /* Origine des données de l'ecran */
-        let port = self.current();
-        let data = port.pixels.as_ptr() as Ptr;
-        let tailleLigne = port.row_bytes;
-        unsafe {
-            for y in 0..200 {
-                let mut p = data.add((tailleLigne as i64 * y) as usize);
-                let mut x = 0;
-                while x < tailleLigne as i32 {
-                    *p = *p.add(1);
-                    p = p.add(3);
-                    x += 3;
+        let port = self.current_mut();
+        let tailleLigne = port.row_bytes as isize;
+        for y in 0..200 {
+            let deb = tailleLigne * y;
+            for x in (0..tailleLigne).step_by(3) {
+                if let Some(v) = port.px(deb + x + 1) {
+                    port.put(deb + x, v);
                 }
             }
         }
@@ -674,27 +663,20 @@ impl Ports {
                         TracePluie
     => index de la couleur, nombre de gouttes
     ******************************************************************/
-    fn TracePluie(&self, random: &mut Random, index: i16, n: i16) {
+    fn TracePluie(&mut self, random: &mut Random, index: i16, n: i16) {
         if random.myRandom(0, 1000) > 500 {
             self.Flou();
         }
         /* Origine des données de l'ecran */
-        let port = self.current();
-        let data = port.pixels.as_ptr() as Ptr;
-        let tailleLigne = port.row_bytes;
-        let mut n = n as i32;
-        unsafe {
-            while n > 0 {
-                n -= 1;
-                let x = random.myRandom(0, tailleLigne as i64) as i16;
-                let y = random.myRandom(0, 150) as i16;
-                let mut j = 50;
-                let mut p = data.add((tailleLigne as i64 * y as i64 + x as i64) as usize);
-                while j > 0 {
-                    j -= 1;
-                    *p = index as u8;
-                    p = p.add((tailleLigne as i64 - 1) as usize);
-                }
+        let port = self.current_mut();
+        let tailleLigne = port.row_bytes as isize;
+        for _ in 0..n.max(0) {
+            let x = random.myRandom(0, tailleLigne as i64) as isize;
+            let y = random.myRandom(0, 150) as isize;
+            let mut p = tailleLigne * y + x;
+            for _ in 0..50 {
+                port.put(p, index as u8);
+                p += tailleLigne - 1;
             }
         }
     }
@@ -878,7 +860,8 @@ impl Sapiens {
                     if numPalette < 0 {
                         numPalette = 0;
                     }
-                    self.Affmob3d(
+                    self.sapwbrt.Affmob3d(
+                        self.sapwind.ports.current_mut(),
                         self.sapwind.mob3D + forme.numMob3d,
                         r,
                         Some(&self.sapw3d.TAB_PALETTE_DISTANCE[numPalette as usize]),

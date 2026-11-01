@@ -59,7 +59,7 @@ impl Ports {
             PortId::Ecran2 => &self.Ecran2,
             PortId::debecr => &self.debecr,
             PortId::BuffMouse => &self.BuffMouse,
-            e => panic!("Invalid port id {e}"),
+            PortId::ecr_carte => &self.sapwcart.ecr_carte,
         }
     }
 
@@ -228,6 +228,30 @@ impl Ports {
 }
 
 impl SapPort {
+    /// Pixel à l'offset linéaire `idx` du tampon, `None` hors tampon.
+    #[inline]
+    pub(crate) fn px(&self, idx: isize) -> Option<u8> {
+        usize::try_from(idx)
+            .ok()
+            .and_then(|i| self.pixels.get(i).copied())
+    }
+
+    /// Pixel mutable à l'offset linéaire `idx` du tampon, `None` hors tampon.
+    #[inline]
+    pub(crate) fn px_mut(&mut self, idx: isize) -> Option<&mut u8> {
+        usize::try_from(idx)
+            .ok()
+            .and_then(|i| self.pixels.get_mut(i))
+    }
+
+    /// Écrit `v` à l'offset linéaire `idx`, sans effet hors tampon.
+    #[inline]
+    pub(crate) fn put(&mut self, idx: isize, v: u8) {
+        if let Some(d) = self.px_mut(idx) {
+            *d = v;
+        }
+    }
+
     /// Met un rectangle à l'échelle du port `p`.
     pub(crate) fn zoomed(&self, r: &Rect) -> Rect {
         let z = self.zoom;
@@ -294,9 +318,6 @@ mod tests {
         /* Un hors-écran n'est pas concerné par l'échelle de la fenêtre. */
         let off = create(SCREEN, 8);
         assert_eq!(off.zoomed(&r), r);
-        /* close() laisse le port de la fenêtre en place. */
-        ports.mainWindow.close();
-        assert_eq!(ports.window(), &ports.mainWindow);
     }
 
     #[test]

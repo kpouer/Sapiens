@@ -623,30 +623,16 @@ fn fill_rect(p: &mut SapPort, r: &Rect, color: u8) {
         return;
     }
     let w = p.row_bytes as usize;
-    let base = p.pixels.as_mut_ptr();
-    if p.pen_mode == PAT_COPY {
-        let wpx = (c.right - c.left) as usize;
-        unsafe {
-            for y in c.top..c.bottom {
-                let row = base.add((y as usize) * w + (c.left as usize));
-                std::ptr::write_bytes(row, color, wpx);
-            }
-        }
-    } else {
-        for y in c.top..c.bottom {
-            unsafe {
-                let row = base.add((y as usize) * w);
-                for x in c.left..c.right {
-                    let d = row.add((x - c.left) as usize);
-                    let v = match p.pen_mode {
-                        PAT_OR => *d | color,
-                        PAT_XOR => *d ^ color,
-                        PAT_BIC => *d & !color,
-                        _ => color,
-                    };
-                    *d = v;
-                }
-            }
+    let mode = p.pen_mode;
+    let (l, r) = (c.left as usize, c.right as usize);
+    for y in c.top..c.bottom {
+        let start = (y as usize) * w;
+        let row = &mut p.pixels[start + l..start + r];
+        match mode {
+            PAT_OR => row.iter_mut().for_each(|d| *d |= color),
+            PAT_XOR => row.iter_mut().for_each(|d| *d ^= color),
+            PAT_BIC => row.iter_mut().for_each(|d| *d &= !color),
+            _ => row.fill(color),
         }
     }
 }
@@ -912,126 +898,110 @@ impl Ports {
     ) {
         let src_id = src_id.into();
         let mut dst_id = dst_id.into();
-        unsafe {
-            let dclip = {
-                let dp = dst_id.unwrap_mut_or(self);
-                dp.open_acc = dp.open_acc.union(dr);
-                let dclip = dr.intersect(&dp.clip);
-                if sr.is_empty() || dclip.is_empty() {
-                    return;
-                }
-                dclip
-            };
-            let sw = sr.right - sr.left;
-            let sh = sr.bottom - sr.top;
-            let dw = dr.right - dr.left;
-            let dh = dr.bottom - dr.top;
-            let wd = dst_id.unwrap_or(self).row_bytes as usize;
-            let ws = src_id.unwrap_or(self).row_bytes as usize;
-            let ob = dst_id.unwrap_or(self).bounds;
-            let sb = src_id.unwrap_or(self).bounds;
-            if src_id.unwrap_or(self).pixels.is_empty() || dst_id.unwrap_or(self).pixels.is_empty()
-            {
+        let dclip = {
+            let dp = dst_id.unwrap_mut_or(self);
+            dp.open_acc = dp.open_acc.union(dr);
+            let dclip = dr.intersect(&dp.clip);
+            if sr.is_empty() || dclip.is_empty() {
                 return;
             }
-
-            // Cas identiques : copie par lignes (pointer overlap-safe).
-            if sw == dw && sh == dh {
-                for dy in dclip.top..dclip.bottom {
-                    let sy = sr.top + (dy - dr.top);
-                    if sy < sr.top || sy >= sr.bottom {
-                        continue;
-                    }
-                    if sy < sb.top || sy >= sb.bottom {
-                        continue;
-                    }
-                    let start = dclip.left.max(dr.left);
-                    let end = dclip.right.min(dr.right);
-                    if start >= end {
-                        continue;
-                    }
-                    let srcx = sr.left + (start - dr.left);
-                    if srcx < sb.left || srcx + (end - start) > sb.right {
-                        continue;
-                    }
-                    let dsty = dy - ob.top;
-                    let srcy = sy - sb.top;
-                    if dsty < 0 {
-                        continue;
-                    }
-                    let n = (end - start) as usize;
-                    let srcrow = src_id
-                        .unwrap_or(self)
-                        .pixels
-                        .as_ptr()
-                        .add((srcy as usize) * ws + (srcx - sb.left) as usize);
-                    let dstrow = dst_id
-                        .unwrap_mut_or(self)
-                        .pixels
-                        .as_mut_ptr()
-                        .add((dsty as usize) * wd + (start - ob.left) as usize);
-                    if mode == 10 {
-                        for k in 0..n {
-                            *dstrow.add(k) ^= *srcrow.add(k);
-                        }
-                    } else if mode == 9 {
-                        for k in 0..n {
-                            *dstrow.add(k) |= *srcrow.add(k);
-                        }
-                    } else if mode == 11 {
-                        for k in 0..n {
-                            *dstrow.add(k) &= !*srcrow.add(k);
-                        }
-                    } else {
-                        std::ptr::copy(srcrow, dstrow, n);
-                    }
-                }
-                return;
+            dclip
+        };
+        let sw = sr.right - sr.left;
+        let sh = sr.bottom - sr.top;
+        let dw = dr.right - dr.left;
+        let dh = dr.bottom - dr.top;
+        let wd = dst_id.unwrap_or(self).row_bytes as usize;
+        let ws = src_id.unwrap_or(self).row_bytes as usize;
+        let ob = dst_id.unwrap_or(self).bounds;
+        let sb = src_id.unwrap_or(self).bounds;
+        if src_id.unwrap_or(self).pixels.is_empty() || dst_id.unwrap_or(self).pixels.is_empty() {
+            return;
+        }
+        /* La source peut être la destination (ScrollRect) : chaque ligne source
+        est d'abord recopiée dans un tampon. */
+        let mut tmp: Vec<u8> = Vec::new();
+        let combine = |d: &mut u8, v: u8| {
+            *d = match mode {
+                10 => *d ^ v,
+                9 => *d | v,
+                11 => *d & !v,
+                _ => v,
             }
+        };
 
-            // Mise à l'échelle (nearest).
+        // Cas identiques : copie par lignes.
+        if sw == dw && sh == dh {
             for dy in dclip.top..dclip.bottom {
-                let sy =
-                    sr.top + (((dy as i32 - dr.top as i32) * sh as i32) / dh.max(1) as i32) as i16;
+                let sy = sr.top + (dy - dr.top);
                 if sy < sr.top || sy >= sr.bottom {
                     continue;
                 }
                 if sy < sb.top || sy >= sb.bottom {
                     continue;
                 }
-                let dsty = dy - ob.top;
-                let srcy = sy - sb.top;
-                if dsty < 0 || dsty as i32 >= (ob.bottom - ob.top) as i32 {
+                let start = dclip.left.max(dr.left);
+                let end = dclip.right.min(dr.right);
+                if start >= end {
                     continue;
                 }
-                let srcrow = src_id
-                    .unwrap_or(self)
-                    .pixels
-                    .as_ptr()
-                    .add((srcy as usize) * ws);
-                let dstrow = dst_id
-                    .unwrap_mut_or(self)
-                    .pixels
-                    .as_mut_ptr()
-                    .add((dsty as usize) * wd);
-                for dx in dclip.left..dclip.right {
-                    let sx = sr.left
-                        + (((dx as i32 - dr.left as i32) * sw as i32) / dw.max(1) as i32) as i16;
-                    if sx < sr.left || sx >= sr.right {
-                        continue;
-                    }
-                    if sx < sb.left || sx >= sb.right {
-                        continue;
-                    }
-                    let v = *srcrow.add((sx - sb.left) as usize);
-                    let d = dstrow.add((dx - ob.left) as usize);
-                    *d = match mode {
-                        10 => *d ^ v,
-                        9 => *d | v,
-                        11 => *d & !v,
-                        _ => v,
-                    };
+                let srcx = sr.left + (start - dr.left);
+                if srcx < sb.left || srcx + (end - start) > sb.right {
+                    continue;
                 }
+                let dsty = dy - ob.top;
+                let srcy = sy - sb.top;
+                if dsty < 0 {
+                    continue;
+                }
+                let n = (end - start) as usize;
+                let so = (srcy as usize) * ws + (srcx - sb.left) as usize;
+                tmp.clear();
+                tmp.extend_from_slice(&src_id.unwrap_or(self).pixels[so..so + n]);
+                let doff = (dsty as usize) * wd + (start - ob.left) as usize;
+                let dstrow = &mut dst_id.unwrap_mut_or(self).pixels[doff..doff + n];
+                if mode == 10 || mode == 9 || mode == 11 {
+                    dstrow
+                        .iter_mut()
+                        .zip(&tmp)
+                        .for_each(|(d, &v)| combine(d, v));
+                } else {
+                    dstrow.copy_from_slice(&tmp);
+                }
+            }
+            return;
+        }
+
+        // Mise à l'échelle (nearest).
+        for dy in dclip.top..dclip.bottom {
+            let sy = sr.top + (((dy as i32 - dr.top as i32) * sh as i32) / dh.max(1) as i32) as i16;
+            if sy < sr.top || sy >= sr.bottom {
+                continue;
+            }
+            if sy < sb.top || sy >= sb.bottom {
+                continue;
+            }
+            let dsty = dy - ob.top;
+            let srcy = sy - sb.top;
+            if dsty < 0 || dsty as i32 >= (ob.bottom - ob.top) as i32 {
+                continue;
+            }
+            let so = (srcy as usize) * ws;
+            tmp.clear();
+            tmp.extend_from_slice(&src_id.unwrap_or(self).pixels[so..so + ws]);
+            let doff = (dsty as usize) * wd;
+            let dstrow = &mut dst_id.unwrap_mut_or(self).pixels[doff..doff + wd];
+            for dx in dclip.left..dclip.right {
+                let sx = sr.left
+                    + (((dx as i32 - dr.left as i32) * sw as i32) / dw.max(1) as i32) as i16;
+                if sx < sr.left || sx >= sr.right {
+                    continue;
+                }
+                if sx < sb.left || sx >= sb.right {
+                    continue;
+                }
+                let v = tmp[(sx - sb.left) as usize];
+                combine(&mut dstrow[(dx - ob.left) as usize], v);
             }
         }
     }

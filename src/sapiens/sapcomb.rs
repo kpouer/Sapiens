@@ -2152,15 +2152,19 @@ impl Sapiens {
                 as i16;
             let x = self.random.myRandom(0, 256) as i16;
             let inverse = self.random.rnd0() & 1;
-            self.AffmobPalette(
+            let _g = self.sapwind.ports.on(PortId::Ecran1);
+            self.sapwbrt.Affmobbrt(
+                self.sapwind.ports.current_mut(),
                 num,
-                y,
                 x,
+                y,
                 inverse,
-                self.sapcomb
-                    .TabIndexHerbeFond
-                    .as_deref()
-                    .expect("TabIndexHerbeFond must be Something when calling avplan"),
+                Some(
+                    self.sapcomb
+                        .TabIndexHerbeFond
+                        .as_deref()
+                        .expect("TabIndexHerbeFond must be Something when calling avplan"),
+                ),
             );
         }
         /*on remplit le tableau des herbes avplan*/

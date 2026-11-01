@@ -198,8 +198,8 @@ impl Sapiens {
     Ecrit un point coloré dans le silex
     => ligne (0-400) ,colonne (0-640),couleur 0-NB_COUL_SILEX
     ***********************************************************************/
-    fn ecrit_sil(&self, y: i16, x: i16, couleur: i16) {
-        self.sapwind.ports.port(PortId::Ecran1).PlotIndexPixBrt(
+    fn ecrit_sil(&mut self, y: i16, x: i16, couleur: i16) {
+        self.sapwind.ports.port_mut(PortId::Ecran1).PlotIndexPixBrt(
             x + 106,
             y,
             self.sapgest.palSilex[couleur as usize] as i16,
@@ -1324,7 +1324,7 @@ Trace une jauge dans debecr
 const NB_JAUGES_3D: i16 = 5;
 
 impl Sapiens {
-    fn JAUGE3d(&self, i: i16, val: f32) {
+    fn JAUGE3d(&mut self, i: i16, val: f32) {
         let r = AIREJAUGE3d(i);
         self.boxf(r.top - 1, r.left - 1, r.bottom + 1, r.right + 1, 16);
         self.boxf(

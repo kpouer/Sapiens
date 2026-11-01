@@ -84,6 +84,19 @@ pub(crate) struct Mob {
     pub(crate) datas: Ptr,
 }
 
+impl Mob {
+    /// Données du mob (`nbcol * nbligne` index de couleur), vide si non chargé.
+    pub(crate) fn data(&self) -> &[u8] {
+        if self.datas.is_null() {
+            return &[];
+        }
+        let len = (self.nbcol.max(0) as usize) * (self.nbligne.max(0) as usize);
+        // SAFETY: `datas` est alloué par `NewPtr(nbcol * nbligne)` au chargement
+        // et reste valide jusqu'au `DisposePtr` qui le remet à null.
+        unsafe { std::slice::from_raw_parts(self.datas, len) }
+    }
+}
+
 impl Default for Mob {
     fn default() -> Self {
         let mut s = ::std::mem::MaybeUninit::<Self>::uninit();

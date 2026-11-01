@@ -263,18 +263,22 @@ impl Sapiens {
     Les  coordonnées sont données en ecran ST 320x200
     (C) Ligne dep,Col dep,Ligne fin,col.fin,index couleur ST
     ***************************************************************************/
-    pub(crate) fn boxf(&self, lignedep: i16, coldep: i16, lignefin: i16, colfin: i16, index: i16) {
+    pub(crate) fn boxf(
+        &mut self,
+        lignedep: i16,
+        coldep: i16,
+        lignefin: i16,
+        colfin: i16,
+        index: i16,
+    ) {
         let mut aire = Rect::new(
             coldep * ECHELLE as i16,
             lignedep * ECHELLE as i16,
             colfin * ECHELLE as i16,
             lignefin * ECHELLE as i16,
         );
-        self.BoxFill(
-            self.sapwind.ports.current_id(),
-            &mut aire,
-            self.sapglob.palhaute.borrow()[index as usize],
-        );
+        let couleur = self.sapglob.palhaute.borrow()[index as usize];
+        self.BoxFill(self.sapwind.ports.current_id(), &mut aire, couleur);
     }
 }
 
