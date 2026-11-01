@@ -11,15 +11,14 @@
 #![allow(non_snake_case)]
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use crate::cbridge::{MenuHandle, WindowPtr, watchCursor};
+use crate::cbridge::{MenuHandle, watchCursor};
 use crate::exchange::{CursorShape, request_alert, set_cursor_shape, set_title};
 use crate::langue::{Langue, langue};
 use crate::port;
+use crate::port::{PortId, Ports};
 use crate::shared::*;
-use crate::text::with_port;
 use std::ffi::c_void;
 use std::sync::Mutex;
-use std::sync::atomic::Ordering;
 use std::time::Instant;
 
 pub(crate) const VRAI: bool = true;
@@ -253,23 +252,18 @@ pub(crate) fn Alert(alert_id: i16, _filter: *mut c_void) -> i16 {
 // Fenêtre principale
 // ---------------------------------------------------------------------------
 
-pub(crate) fn NewCWindow(b: &Rect) -> WindowPtr {
-    let existing = port::window();
-    if !existing.is_null() {
-        return existing;
-    }
+pub(crate) fn NewCWindow(b: &Rect) -> SapPort {
     /* Le positionnement global de la fenêtre est géré par egui : le port de
     dessin travaille en coordonnées locales (0,0)-(largeur,hauteur). */
     let local = Rect::new(0, 0, b.right - b.left, b.bottom - b.top);
     let p = port::create(local, 8);
-    WINDOW_PORT.store(p as *mut SapPort, Ordering::SeqCst);
     p
 }
 
 /// `SetWTitle` : le titre (chaîne Pascal MacRoman) part par le pont
 /// `exchange.rs` ; c'est le thread egui qui l'applique à la fenêtre native
 /// (`ViewportCommand::Title`), une seule fenêtre étant créée par `NewCWindow`.
-pub(crate) fn SetWTitle(_w: WindowPtr, title: String) {
+pub(crate) fn SetWTitle(_w: &SapPort, title: String) {
     set_title(title);
 }
 
@@ -601,11 +595,6 @@ pub(crate) fn menus_snapshot() -> Vec<MenuSnapshot> {
 // Primitives graphiques
 // ---------------------------------------------------------------------------
 
-#[inline]
-pub(crate) fn cur() -> *mut SapPort {
-    port::current() as *mut SapPort
-}
-
 /// Trace un pixel plein (`mode` tenu en compte), avec clip.
 #[inline]
 pub(crate) fn plot(p: &mut SapPort, x: i16, y: i16, c: u8) {
@@ -710,46 +699,48 @@ fn draw_line(port: *mut SapPort, x0: i16, y0: i16, x1: i16, y1: i16) {
     }
 }
 
-pub(crate) fn MoveTo(h: i16, v: i16) {
-    with_port(|p| p.pen_loc = Point { v, h });
-}
+impl Ports {
+    pub(crate) fn MoveTo(&mut self, h: i16, v: i16) {
+        self.current_mut().pen_loc = Point { v, h };
+    }
 
-pub(crate) fn LineTo(h: i16, v: i16) {
-    with_port(|p| {
-        let loc = p.pen_loc;
-        draw_line(p, loc.h, loc.v, h, v);
-        p.pen_loc = Point { v, h };
-    });
-}
+    pub(crate) fn LineTo(&mut self, h: i16, v: i16) {
+        self.with_port(|p| {
+            let loc = p.pen_loc;
+            draw_line(p, loc.h, loc.v, h, v);
+            p.pen_loc = Point { v, h };
+        });
+    }
 
-pub(crate) fn Line(dh: i16, dv: i16) {
-    with_port(|p| {
-        let loc = p.pen_loc;
-        let h = loc.h.wrapping_add(dh);
-        let v = loc.v.wrapping_add(dv);
-        draw_line(p, loc.h, loc.v, h, v);
-        p.pen_loc = Point { v, h };
-    });
-}
+    pub(crate) fn Line(&mut self, dh: i16, dv: i16) {
+        self.with_port(|p| {
+            let loc = p.pen_loc;
+            let h = loc.h.wrapping_add(dh);
+            let v = loc.v.wrapping_add(dv);
+            draw_line(p, loc.h, loc.v, h, v);
+            p.pen_loc = Point { v, h };
+        });
+    }
 
-pub(crate) fn PenSize(width: i16, height: i16) {
-    with_port(|p| {
-        p.pen_size = Point {
-            h: width.max(1),
-            v: height.max(1),
-        }
-    });
-}
+    pub(crate) fn PenSize(&mut self, width: i16, height: i16) {
+        self.with_port(|p| {
+            p.pen_size = Point {
+                h: width.max(1),
+                v: height.max(1),
+            }
+        });
+    }
 
-pub(crate) fn PenMode(mode: i16) {
-    with_port(|p| p.pen_mode = mode);
-}
+    pub(crate) fn PenMode(&mut self, mode: i16) {
+        self.with_port(|p| p.pen_mode = mode);
+    }
 
-pub(crate) fn PenNormal() {
-    with_port(|p| {
-        p.pen_size = Point { v: 1, h: 1 };
-        p.pen_mode = PAT_COPY;
-    });
+    pub(crate) fn PenNormal(&mut self) {
+        self.with_port(|p| {
+            p.pen_size = Point { v: 1, h: 1 };
+            p.pen_mode = PAT_COPY;
+        });
+    }
 }
 
 fn color_num_to_index(color: i16) -> u8 {
@@ -764,22 +755,24 @@ fn color_num_to_index(color: i16) -> u8 {
     }
 }
 
-pub(crate) fn ForeColor(color: i16) {
-    with_port(|p| p.fore_index = color_num_to_index(color));
-}
+impl Ports {
+    pub(crate) fn ForeColor(&mut self, color: i16) {
+        self.with_port(|p| p.fore_index = color_num_to_index(color));
+    }
 
-pub(crate) fn BackColor(color: i16) {
-    with_port(|p| p.back_index = color_num_to_index(color));
-}
+    pub(crate) fn BackColor(&mut self, color: i16) {
+        self.with_port(|p| p.back_index = color_num_to_index(color));
+    }
 
-pub(crate) fn RGBForeColor(c: &RGBColor) {
-    with_port(|p| {
-        p.fore_index = rgb_to_index(
-            (c.red >> 8) as u8,
-            (c.green >> 8) as u8,
-            (c.blue >> 8) as u8,
-        )
-    });
+    pub(crate) fn RGBForeColor(&mut self, c: &RGBColor) {
+        self.with_port(|p| {
+            p.fore_index = rgb_to_index(
+                (c.red >> 8) as u8,
+                (c.green >> 8) as u8,
+                (c.blue >> 8) as u8,
+            )
+        });
+    }
 }
 
 pub(crate) fn Index2Color(index: i16) -> RGBColor {
@@ -811,18 +804,20 @@ pub(crate) fn SectRect(src1: &Rect, src2: &Rect) -> Option<Rect> {
 // Remplissage / contour
 // ---------------------------------------------------------------------------
 
-pub(crate) fn PaintRect(r: &Rect) {
-    with_port(|p| {
-        let fore = p.fore_index;
-        fill_rect(&mut *p, r, fore);
-    });
-}
+impl Ports {
+    pub(crate) fn PaintRect(&mut self, r: &Rect) {
+        self.with_port(|p| {
+            let fore = p.fore_index;
+            fill_rect(&mut *p, r, fore);
+        });
+    }
 
-pub(crate) fn EraseRect(r: &Rect) {
-    with_port(|p| {
-        let back = p.back_index;
-        fill_rect(p, r, back);
-    });
+    pub(crate) fn EraseRect(&mut self, r: &Rect) {
+        self.with_port(|p| {
+            let back = p.back_index;
+            fill_rect(p, r, back);
+        });
+    }
 }
 
 fn frame_rect(p: &mut SapPort, r: &Rect) {
@@ -855,217 +850,247 @@ fn clip_overflow_bound() -> i16 {
     32760
 }
 
-pub(crate) fn FrameRect(r: &Rect) {
-    with_port(|p| frame_rect(p, r));
-}
+impl Ports {
+    pub(crate) fn FrameRect(&mut self, r: &Rect) {
+        self.with_port(|p| frame_rect(p, r));
+    }
 
-pub(crate) fn FrameRoundRect(r: &Rect, _ovalWidth: i16, _ovalHeight: i16) {
-    with_port(|p| frame_rect(p, r));
-}
+    pub(crate) fn FrameRoundRect(&mut self, r: &Rect, _ovalWidth: i16, _ovalHeight: i16) {
+        self.with_port(|p| frame_rect(p, r));
+    }
 
-pub(crate) fn ClipRect(r: &Rect) {
-    with_port(|p| {
-        let b = p.bounds;
-        p.clip = r.intersect(&b);
-    });
+    pub(crate) fn ClipRect(&mut self, r: &Rect) {
+        self.with_port(|p| {
+            let b = p.bounds;
+            p.clip = r.intersect(&b);
+        });
+    }
 }
 
 // ---------------------------------------------------------------------------
 // CopyBits / ScrollRect
 // ---------------------------------------------------------------------------
+pub(crate) enum PortKind {
+    PortId(PortId),
+    Raw(SapPort),
+}
 
-pub(crate) fn CopyBits(
-    srcBits: *const c_void,
-    dstBits: *const c_void,
-    sr: &Rect,
-    dr: &Rect,
-    mode: i16,
-) {
-    if srcBits.is_null() || dstBits.is_null() {
-        return;
+impl From<PortId> for PortKind {
+    fn from(id: PortId) -> Self {
+        Self::PortId(id)
     }
-    let src = srcBits as *mut SapPort;
-    let dst = dstBits as *mut SapPort;
-    unsafe {
-        let dp = &mut *dst;
-        dp.open_acc = dp.open_acc.union(dr);
-        let dclip = dr.intersect(&dp.clip);
-        if sr.is_empty() || dclip.is_empty() {
-            return;
-        }
-        let sw = sr.right - sr.left;
-        let sh = sr.bottom - sr.top;
-        let dw = dr.right - dr.left;
-        let dh = dr.bottom - dr.top;
-        let sp = &*src;
-        let wd = dp.row_bytes as usize;
-        let ws = sp.row_bytes as usize;
-        let ob = dp.bounds;
-        let sb = sp.bounds;
-        if sp.pixels.is_null() || dp.pixels.is_null() {
-            return;
-        }
+}
 
-        // Cas identiques : copie par lignes (pointer overlap-safe).
-        if sw == dw && sh == dh {
+impl From<SapPort> for PortKind {
+    fn from(sap_port: SapPort) -> Self {
+        Self::Raw(sap_port)
+    }
+}
+
+impl PortKind {
+    pub fn unwrap_or<'a>(&'a self, ports: &'a Ports) -> &'a SapPort {
+        match self {
+            PortKind::Raw(x) => &x,
+            PortKind::PortId(id) => ports.port(*id),
+        }
+    }
+
+    pub fn unwrap_mut_or<'a>(&'a mut self, ports: &'a mut Ports) -> &'a mut SapPort {
+        match self {
+            PortKind::Raw(x) => x,
+            PortKind::PortId(id) => ports.port_mut(*id),
+        }
+    }
+}
+
+impl Ports {
+    pub(crate) fn CopyBits<'a, S: Into<PortKind>, D: Into<PortKind>>(
+        &mut self,
+        src_id: S,
+        dst_id: D,
+        sr: &Rect,
+        dr: &Rect,
+        mode: i16,
+    ) {
+        let src_id = src_id.into();
+        let mut dst_id = dst_id.into();
+        unsafe {
+            let dclip = {
+                let dp = dst_id.unwrap_mut_or(self);
+                dp.open_acc = dp.open_acc.union(dr);
+                let dclip = dr.intersect(&dp.clip);
+                if sr.is_empty() || dclip.is_empty() {
+                    return;
+                }
+                dclip
+            };
+            let sw = sr.right - sr.left;
+            let sh = sr.bottom - sr.top;
+            let dw = dr.right - dr.left;
+            let dh = dr.bottom - dr.top;
+            let wd = dst_id.unwrap_or(self).row_bytes as usize;
+            let ws = src_id.unwrap_or(self).row_bytes as usize;
+            let ob = dst_id.unwrap_or(self).bounds;
+            let sb = src_id.unwrap_or(self).bounds;
+            if src_id.unwrap_or(self).pixels.is_null() || dst_id.unwrap_or(self).pixels.is_null() {
+                return;
+            }
+
+            // Cas identiques : copie par lignes (pointer overlap-safe).
+            if sw == dw && sh == dh {
+                for dy in dclip.top..dclip.bottom {
+                    let sy = sr.top + (dy - dr.top);
+                    if sy < sr.top || sy >= sr.bottom {
+                        continue;
+                    }
+                    if sy < sb.top || sy >= sb.bottom {
+                        continue;
+                    }
+                    let start = dclip.left.max(dr.left);
+                    let end = dclip.right.min(dr.right);
+                    if start >= end {
+                        continue;
+                    }
+                    let srcx = sr.left + (start - dr.left);
+                    if srcx < sb.left || srcx + (end - start) > sb.right {
+                        continue;
+                    }
+                    let dsty = dy - ob.top;
+                    let srcy = sy - sb.top;
+                    if dsty < 0 {
+                        continue;
+                    }
+                    let n = (end - start) as usize;
+                    let srcrow = src_id
+                        .unwrap_or(self)
+                        .pixels
+                        .add((srcy as usize) * ws + (srcx - sb.left) as usize);
+                    let dstrow = dst_id
+                        .unwrap_or(self)
+                        .pixels
+                        .add((dsty as usize) * wd + (start - ob.left) as usize);
+                    if mode == 10 {
+                        for k in 0..n {
+                            *dstrow.add(k) ^= *srcrow.add(k);
+                        }
+                    } else if mode == 9 {
+                        for k in 0..n {
+                            *dstrow.add(k) |= *srcrow.add(k);
+                        }
+                    } else if mode == 11 {
+                        for k in 0..n {
+                            *dstrow.add(k) &= !*srcrow.add(k);
+                        }
+                    } else {
+                        std::ptr::copy(srcrow, dstrow, n);
+                    }
+                }
+                return;
+            }
+
+            // Mise à l'échelle (nearest).
             for dy in dclip.top..dclip.bottom {
-                let sy = sr.top + (dy - dr.top);
+                let sy =
+                    sr.top + (((dy as i32 - dr.top as i32) * sh as i32) / dh.max(1) as i32) as i16;
                 if sy < sr.top || sy >= sr.bottom {
                     continue;
                 }
                 if sy < sb.top || sy >= sb.bottom {
                     continue;
                 }
-                let start = dclip.left.max(dr.left);
-                let end = dclip.right.min(dr.right);
-                if start >= end {
-                    continue;
-                }
-                let srcx = sr.left + (start - dr.left);
-                if srcx < sb.left || srcx + (end - start) > sb.right {
-                    continue;
-                }
                 let dsty = dy - ob.top;
                 let srcy = sy - sb.top;
-                if dsty < 0 {
+                if dsty < 0 || dsty as i32 >= (ob.bottom - ob.top) as i32 {
                     continue;
                 }
-                let n = (end - start) as usize;
-                let srcrow = sp
-                    .pixels
-                    .add((srcy as usize) * ws + (srcx - sb.left) as usize);
-                let dstrow = dp
-                    .pixels
-                    .add((dsty as usize) * wd + (start - ob.left) as usize);
-                if mode == 10 {
-                    for k in 0..n {
-                        *dstrow.add(k) ^= *srcrow.add(k);
+                let srcrow = src_id.unwrap_or(self).pixels.add((srcy as usize) * ws);
+                let dstrow = dst_id.unwrap_mut_or(self).pixels.add((dsty as usize) * wd);
+                for dx in dclip.left..dclip.right {
+                    let sx = sr.left
+                        + (((dx as i32 - dr.left as i32) * sw as i32) / dw.max(1) as i32) as i16;
+                    if sx < sr.left || sx >= sr.right {
+                        continue;
                     }
-                } else if mode == 9 {
-                    for k in 0..n {
-                        *dstrow.add(k) |= *srcrow.add(k);
+                    if sx < sb.left || sx >= sb.right {
+                        continue;
                     }
-                } else if mode == 11 {
-                    for k in 0..n {
-                        *dstrow.add(k) &= !*srcrow.add(k);
-                    }
-                } else {
-                    std::ptr::copy(srcrow, dstrow, n);
+                    let v = *srcrow.add((sx - sb.left) as usize);
+                    let d = dstrow.add((dx - ob.left) as usize);
+                    *d = match mode {
+                        10 => *d ^ v,
+                        9 => *d | v,
+                        11 => *d & !v,
+                        _ => v,
+                    };
                 }
-            }
-            return;
-        }
-
-        // Mise à l'échelle (nearest).
-        for dy in dclip.top..dclip.bottom {
-            let sy = sr.top + (((dy as i32 - dr.top as i32) * sh as i32) / dh.max(1) as i32) as i16;
-            if sy < sr.top || sy >= sr.bottom {
-                continue;
-            }
-            if sy < sb.top || sy >= sb.bottom {
-                continue;
-            }
-            let dsty = dy - ob.top;
-            let srcy = sy - sb.top;
-            if dsty < 0 || dsty as i32 >= (ob.bottom - ob.top) as i32 {
-                continue;
-            }
-            let srcrow = sp.pixels.add((srcy as usize) * ws);
-            let dstrow = dp.pixels.add((dsty as usize) * wd);
-            for dx in dclip.left..dclip.right {
-                let sx = sr.left
-                    + (((dx as i32 - dr.left as i32) * sw as i32) / dw.max(1) as i32) as i16;
-                if sx < sr.left || sx >= sr.right {
-                    continue;
-                }
-                if sx < sb.left || sx >= sb.right {
-                    continue;
-                }
-                let v = *srcrow.add((sx - sb.left) as usize);
-                let d = dstrow.add((dx - ob.left) as usize);
-                *d = match mode {
-                    10 => *d ^ v,
-                    9 => *d | v,
-                    11 => *d & !v,
-                    _ => v,
-                };
             }
         }
     }
-}
 
-pub(crate) fn ScrollRect(r: &Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
-    let p = cur();
-    if p.is_null() {
-        return;
-    }
-    unsafe {
-        let src = *r;
-        if src.is_empty() {
-            return;
-        }
-        let mut dst = src;
-        dst.left = dst.left.wrapping_add(dh);
-        dst.right = dst.right.wrapping_add(dh);
-        dst.top = dst.top.wrapping_add(dv);
-        dst.bottom = dst.bottom.wrapping_add(dv);
-        let clipped = src.intersect(&dst);
-        if !clipped.is_empty() {
-            CopyBits(
-                p as *const c_void,
-                p as *const c_void,
-                &clipped,
-                &clipped,
-                0,
-            );
-        }
-        if !updateRgn.is_null() {
-            let union_ = src.union(&dst);
-            *(updateRgn as *mut Rect) = union_;
-            // Région non vide
+    pub(crate) fn ScrollRect(&mut self, r: &Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
+        let p = self.current_id();
+        unsafe {
+            let src = *r;
+            if src.is_empty() {
+                return;
+            }
+            let mut dst = src;
+            dst.left = dst.left.wrapping_add(dh);
+            dst.right = dst.right.wrapping_add(dh);
+            dst.top = dst.top.wrapping_add(dv);
+            dst.bottom = dst.bottom.wrapping_add(dv);
+            let clipped = src.intersect(&dst);
+            if !clipped.is_empty() {
+                self.CopyBits(p, p, &clipped, &clipped, 0);
+            }
+            if !updateRgn.is_null() {
+                let union_ = src.union(&dst);
+                *(updateRgn as *mut Rect) = union_;
+                // Région non vide
+            }
         }
     }
-}
 
-// ---------------------------------------------------------------------------
-// Régions (approximation rectangulaire)
-// ---------------------------------------------------------------------------
-pub(crate) fn OpenRgn() {
-    with_port(|p| {
-        p.open_rgn = 1;
-        p.open_acc = Rect::default();
-    });
-}
+    // ---------------------------------------------------------------------------
+    // Régions (approximation rectangulaire)
+    // ---------------------------------------------------------------------------
+    pub(crate) fn OpenRgn(&mut self) {
+        self.with_port(|p| {
+            p.open_rgn = 1;
+            p.open_acc = Rect::default();
+        });
+    }
 
-pub(crate) fn CloseRgn() -> Option<Rect> {
-    with_port(|p| {
-        let acc = p.open_acc;
-        p.open_rgn = 0;
-        p.open_acc = Rect::default();
-        acc
-    })
-}
+    pub(crate) fn CloseRgn(&mut self) -> Option<Rect> {
+        self.with_port(|p| {
+            let acc = p.open_acc;
+            p.open_rgn = 0;
+            p.open_acc = Rect::default();
+            acc
+        })
+    }
 
-pub(crate) fn GetClip() -> Option<Rect> {
-    with_port(|p| p.clip)
-}
+    pub(crate) fn GetClip(&mut self) -> Option<Rect> {
+        self.with_port(|p| p.clip)
+    }
 
-pub(crate) fn SetClip(rgn: &Rect) {
-    with_port(|p| {
-        let b = p.bounds;
-        p.clip = rgn.intersect(&b);
-    });
-}
+    pub(crate) fn SetClip(&mut self, rgn: &Rect) {
+        self.with_port(|p| {
+            let b = p.bounds;
+            p.clip = rgn.intersect(&b);
+        });
+    }
 
-pub(crate) fn EraseRgn(rgn: &Rect) {
-    with_port(|p| {
-        let back = p.back_index;
-        fill_rect(p, rgn, back);
-    });
-}
+    pub(crate) fn EraseRgn(&mut self, rgn: &Rect) {
+        self.with_port(|p| {
+            let back = p.back_index;
+            fill_rect(p, rgn, back);
+        });
+    }
 
-pub(crate) fn FrameRgn(rgn: &Rect) {
-    with_port(|p| frame_rect(p, rgn));
+    pub(crate) fn FrameRgn(&mut self, rgn: &Rect) {
+        self.with_port(|p| frame_rect(p, rgn));
+    }
 }
 
 #[cfg(test)]
@@ -1075,9 +1100,9 @@ mod tests {
     #[test]
     fn copybits_agrandit_sans_perdre_la_derniere_ligne() {
         let src = port::create(Rect::new(0, 0, 640, 400), 8);
-        let dst = port::create(Rect::new(0, 0, 1280, 800), 8);
-        let si = port::info(src).unwrap();
-        let di = port::info(dst).unwrap();
+        let mut dst = port::create(Rect::new(0, 0, 1280, 800), 8);
+        let si = src.info();
+        let di = dst.info();
         unsafe {
             for y in 0..400usize {
                 for x in 0..640usize {
@@ -1086,8 +1111,8 @@ mod tests {
             }
             std::ptr::write_bytes(di.pixels, 0xAA, 1280 * 800);
         }
-
-        CopyBits(
+        let mut ports = Ports::default();
+        ports.CopyBits(
             src,
             dst,
             &Rect::new(0, 0, 640, 400),
@@ -1107,8 +1132,5 @@ mod tests {
                 }
             }
         }
-
-        port::close(src);
-        port::close(dst);
     }
 }

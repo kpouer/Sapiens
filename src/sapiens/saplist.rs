@@ -7,15 +7,13 @@
 
 use crate::acam::{FAUX, TickCount, VRAI};
 use crate::langue::langue;
-use crate::port;
+use crate::port::PortId;
 use crate::sapiens::sapglob::{
     ListeId, SapId, Sapglob, tccol, tclin, tcncol, tcnlin, tcolcdr, tposcur,
 };
-use crate::sapiens::sapwbrt::{AffichePictDansAire, SwapCouleur};
 use crate::sapiens::sapwind::{cadreg, hires};
 use crate::sapiens::{ECHELLE, Vue, geminterv, gemnbrecad};
 use crate::shared::{Ptr, Rect};
-use crate::stubs::GetMouse;
 use crate::{DOWN, INCONNU, MOB_CADRE, SELECT, Sapiens, UP};
 use log::warn;
 use std::cell::RefCell;
@@ -49,13 +47,12 @@ impl Sapiens {
     pub(crate) fn InverseOption(&mut self, menusel: i16, n: i16) {
         self.eff_sour();
         if self.saplist.inverse_option.LastMenuInvers >= 0 {
-            SwapCouleur(
-                self.sapwind.debecr,
+            self.sapwind.ports.debecr.SwapCouleur(
                 &self.saplist.inverse_option.rInvert,
                 self.sapwcvt.TabCvtCoul[self.sapglob.palbasse.borrow()[4] as usize] as i16,
                 self.sapwcvt.TabCvtCoul[self.sapglob.palbasse.borrow()[1] as usize] as i16,
             );
-            self.TfrEcr(Some(&self.saplist.inverse_option.rInvert));
+            self.TfrEcr(Some(self.saplist.inverse_option.rInvert));
             self.saplist.inverse_option.LastMenuInvers = -1;
         }
         if menusel >= 0 {
@@ -78,13 +75,12 @@ impl Sapiens {
                     * ECHELLE as i16
                     - 1,
             );
-            SwapCouleur(
-                self.sapwind.debecr,
+            self.sapwind.ports.debecr.SwapCouleur(
                 &self.saplist.inverse_option.rInvert,
                 self.sapwcvt.TabCvtCoul[self.sapglob.palbasse.borrow()[4] as usize] as i16,
                 self.sapwcvt.TabCvtCoul[self.sapglob.palbasse.borrow()[1] as usize] as i16,
             );
-            self.TfrEcr(Some(&self.saplist.inverse_option.rInvert));
+            self.TfrEcr(Some(self.saplist.inverse_option.rInvert));
         }
         self.saplist.inverse_option.LastMenuInvers = menusel;
         self.saplist.inverse_option.Lastn = n;
@@ -415,7 +411,11 @@ impl Sapiens {
                     } else if self.sapglob.icone == 0 {
                         /* La souris est dans la partie haute de l'ecran */
                         /* Bouton et pas d'icone */
-                        let pt = GetMouse().zoom(port::window_zoom());
+                        let pt = self
+                            .sapwind
+                            .ports
+                            .GetMouse()
+                            .zoom(self.sapwind.ports.window_zoom());
 
                         r = Rect::new(
                             (32 * ECHELLE) as i16,
@@ -542,7 +542,7 @@ impl Sapiens {
         let _j: i16 = 0;
         let mut r;
 
-        let _g = port::on(self.sapwind.debecr);
+        let _g = self.sapwind.ports.on(PortId::debecr);
         if self.sapglob.s_menu == self.saplist.inverse_option.LastMenuInvers {
             self.saplist.inverse_option.LastMenuInvers = -1;
         }
@@ -565,7 +565,7 @@ impl Sapiens {
             (self.sapglob.colaff + self.sapglob.cncol as i16) * 6 * ECHELLE as i16,
             (self.sapglob.linaff + self.sapglob.cnlin as i16) * 7 * ECHELLE as i16,
         );
-        self.BoxFill(self.sapwind.debecr, &mut r, 0x542);
+        self.BoxFill(PortId::debecr, &mut r, 0x542);
         /* On affiche tous les mots */
         let taille = self.sapglob.liste(debliste_id).taille;
         if taille != 0 {
@@ -599,13 +599,13 @@ impl Sapiens {
         }
         /* Transfert de la liste sur l'ecran */
         r.InsetRect(-48, -48);
-        self.TfrEcr(Some(&r));
+        self.TfrEcr(Some(r));
     }
 
     /***********************************************************************
                             ENCADRE:dessine le cadre
     ***********************************************************************/
-    pub(crate) fn encadre(&self, ligne: u16, colon: u16, haut: u16, larg: u16) {
+    pub(crate) fn encadre(&mut self, ligne: u16, colon: u16, haut: u16, larg: u16) {
         /* passage au pixel */
         let mut ligne = (ligne * 7) as i16;
         let mut colon = (colon * 6) as i16;
@@ -1030,7 +1030,7 @@ impl Sapiens {
     /***********************************************************************
                             D032AYDE
     ***********************************************************************/
-    pub(crate) fn DoAide(&self) {
+    pub(crate) fn DoAide(&mut self) {
         if !crate::dialogs::open_manual(langue()) {
             self.Collapse("Can't open manual.");
         }
@@ -1040,14 +1040,14 @@ impl Sapiens {
                    AffichePictAide
     => 0 vue laterale, 1 paysage
     ***********************************************************************/
-    pub(crate) fn AffichePictAide(&self, mode: i16) {
-        let _g = port::on(self.sapwind.mainWindow);
+    pub(crate) fn AffichePictAide(&mut self, mode: i16) {
+        let _g = self.sapwind.ports.on(PortId::MainWindow);
         let (num, r) = if mode == 0 {
             (131, Rect::new(320 - 125, 230, 320 + 125, 230 + 160))
         } else {
             (132, Rect::new(32, 230, 32 + 250, 230 + 160))
         };
-        AffichePictDansAire(&self.sapgest, num, &r);
+        self.AffichePictDansAire(num, &r);
     }
 
     /***********************************************************************
@@ -1098,7 +1098,7 @@ impl Sapiens {
                         .sap_lang
                         .GetRefer(self.sapglob.liste(self.saplist.sliste[1]).typeRef);
                     if self.sapglob.dervue != Vue::LATERALE {
-                        self.tfrima();
+                        self.sapwind.ports.tfrima();
                     }
                     let index = self.sapglob.liste(self.saplist.sliste[1]).elements
                         [self.sapglob.rega as usize]

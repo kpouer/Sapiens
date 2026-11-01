@@ -1,23 +1,20 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
-use crate::acam::{
-    BackColor, CopyBits, EraseRect, ForeColor, FrameRect, MoveTo, NewPtr, PaintRect, PenMode,
-    PenNormal, PenSize, RGBForeColor, ScrollRect, SectRect,
-};
-use crate::cbridge::{FILE, blackColor, fclose, fopen, getc, patOr, sprintf, srcCopy, whiteColor};
+use crate::acam::{NewPtr, SectRect};
+use crate::cbridge::{FILE, blackColor, fclose, fopen, getc, patOr, srcCopy, whiteColor};
 use crate::langue::Langue::GB;
+use crate::port::{PortId, Ports};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapgest::Sapgest;
 use crate::sapiens::saptxt::{CvtDefaultLangRess, CvtLangRess};
 use crate::sapiens::sapwind::{SapiensExit, ValideUpdate};
 use crate::sapiens::{DEFAULT_PALCOUL, ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalCoul};
-use crate::shared::{CGrafPtr, Ptr, RGBColor, Rect, RgnHandle};
+use crate::shared::{Ptr, RGBColor, Rect, RgnHandle, SapPort};
 use crate::stubs::{
     CarboniseInvalRect, CarboniseSetPatGray, CarboniseValideUpdate, ConvertPNGFileToOffscreen,
     DisposePtr, DrawPicture, FixeCheminRelatif, GetPicture, GetRectFilePng, PopPath, PushPath,
     SaisitChemin,
 };
-use crate::text::{TextBox, TextSize};
 use crate::{Sapiens, cbridge, port};
 
 const TAILLE_TFR: u32 = 66;
@@ -39,14 +36,14 @@ pub(crate) fn SetPathInData(sapgest: &Sapgest, name: *mut i8) {
     FixeCheminRelatif(vol, path, name);
 }
 
-impl Sapiens {
+impl Ports {
     /*************************************************************************
                     tfrima
     Vue latérale:
     Transfere le virtuel Ecran sur le reel mainWindow
     Transfert des 100 premiere ligne de Ecran vers mainWindow
     *************************************************************************/
-    pub(crate) fn tfrima(&self) {
+    pub(crate) fn tfrima(&mut self) {
         let rsourc = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
         let rdest = Rect::new(
             (32 * ECHELLE) as i16,
@@ -54,12 +51,7 @@ impl Sapiens {
             ((32 + 255) * ECHELLE) as i16,
             ((1 + 100) * ECHELLE) as i16,
         );
-        CopyOffscreen(
-            self.sapwind.Ecran1,
-            self.sapwind.mainWindow,
-            &rsourc,
-            &rdest,
-        );
+        self.CopyOffscreen(PortId::Ecran1, PortId::MainWindow, rsourc, &rdest);
         CarboniseValideUpdate();
     }
 
@@ -69,7 +61,7 @@ impl Sapiens {
     Transfere la partie du virtuel ou se trace les personnages
     sur le reel
     *************************************************************************/
-    pub(crate) fn tfrdemi(&self) {
+    pub(crate) fn tfrdemi(&mut self) {
         let rsourc = Rect::new(
             0,
             (32 * ECHELLE) as i16,
@@ -82,85 +74,81 @@ impl Sapiens {
             ((32 + 255) * ECHELLE) as i16,
             ((33 + TAILLE_TFR) * ECHELLE) as i16,
         );
-        CopyOffscreen(
-            self.sapwind.Ecran1,
-            self.sapwind.mainWindow,
-            &rsourc,
-            &rdest,
-        );
+        self.CopyOffscreen(PortId::Ecran1, PortId::MainWindow, rsourc, &rdest);
+    }
+
+    /****************************************************************************
+                DoZoomRect
+    *****************************************************************************/
+    pub(crate) fn DoZoomRect(&self, rs: &Rect) -> Rect {
+        self.current().zoomed(rs)
+    }
+
+    /****************************************************************************
+                DoEraseRect
+    *****************************************************************************/
+    pub(crate) fn DoEraseRect(&mut self, aire: &Rect) {
+        let r = self.DoZoomRect(aire);
+        self.EraseRect(&r);
+    }
+
+    /****************************************************************************
+                DoFrameRect
+    *****************************************************************************/
+    pub(crate) fn DoFrameRect(&mut self, aire: &Rect) {
+        let r = self.DoZoomRect(aire);
+        self.FrameRect(&r);
+    }
+    /****************************************************************************
+                DoPaintRect
+    *****************************************************************************/
+    pub(crate) fn DoPaintRect(&mut self, aire: &Rect) {
+        let r = self.DoZoomRect(aire);
+        self.PaintRect(&r);
+    }
+    /****************************************************************************
+                DoPenSize
+    *****************************************************************************/
+    pub(crate) fn DoPenSize(&mut self, x: i16, y: i16) {
+        let z = self.zoom();
+        self.PenSize((x as f32 * z) as i16, (y as f32 * z) as i16);
+    }
+    /****************************************************************************
+                DoMoveTo
+    *****************************************************************************/
+    pub(crate) fn DoMoveTo(&mut self, x: i16, y: i16) {
+        let z = self.zoom();
+        self.MoveTo((x as f32 * z) as i16, (y as f32 * z) as i16);
+    }
+
+    /****************************************************************************
+                DoTextSize
+    *****************************************************************************/
+    pub(crate) fn DoTextSize(&mut self, x: i16) {
+        let z = self.zoom();
+        self.TextSize((x as f32 * z) as i16);
+    }
+    /****************************************************************************
+                DoTextBox
+    *****************************************************************************/
+    pub(crate) fn DoTextBox(&mut self, text: &[u8], box_: &Rect, just: i16) {
+        let dest = self.DoZoomRect(box_);
+        self.TextBox(text, &dest, just);
+    }
+    /****************************************************************************
+                DoScrollRect
+    *****************************************************************************/
+    pub(crate) fn DoScrollRect(&mut self, r: &Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
+        let z = self.zoom();
+        let dest = self.DoZoomRect(r);
+        let bdh = (dh as f32 * z) as i16;
+        let bdv = (dv as f32 * z) as i16;
+        self.ScrollRect(&dest, bdh, bdv, updateRgn);
+        CarboniseInvalRect(r);
+        ValideUpdate();
     }
 }
 
-/****************************************************************************
-            DoZoomRect
-*****************************************************************************/
-pub(crate) fn DoZoomRect(rs: &Rect) -> Rect {
-    port::zoomed(port::current(), rs)
-}
-
-/****************************************************************************
-            DoEraseRect
-*****************************************************************************/
-pub(crate) fn DoEraseRect(aire: &Rect) {
-    let r = DoZoomRect(aire);
-    EraseRect(&r);
-}
-
-/****************************************************************************
-            DoFrameRect
-*****************************************************************************/
-pub(crate) fn DoFrameRect(aire: &Rect) {
-    let r = DoZoomRect(aire);
-    FrameRect(&r);
-}
-/****************************************************************************
-            DoPaintRect
-*****************************************************************************/
-pub(crate) fn DoPaintRect(aire: &Rect) {
-    let r = DoZoomRect(aire);
-    PaintRect(&r);
-}
-/****************************************************************************
-            DoPenSize
-*****************************************************************************/
-pub(crate) fn DoPenSize(x: i16, y: i16) {
-    let z = port::zoom();
-    PenSize((x as f32 * z) as i16, (y as f32 * z) as i16);
-}
-/****************************************************************************
-            DoMoveTo
-*****************************************************************************/
-pub(crate) fn DoMoveTo(x: i16, y: i16) {
-    let z = port::zoom();
-    MoveTo((x as f32 * z) as i16, (y as f32 * z) as i16);
-}
-
-/****************************************************************************
-            DoTextSize
-*****************************************************************************/
-pub(crate) fn DoTextSize(x: i16) {
-    let z = port::zoom();
-    TextSize((x as f32 * z) as i16);
-}
-/****************************************************************************
-            DoTextBox
-*****************************************************************************/
-pub(crate) fn DoTextBox(text: &[u8], box_: &Rect, just: i16) {
-    let dest = DoZoomRect(box_);
-    TextBox(text, &dest, just);
-}
-/****************************************************************************
-            DoScrollRect
-*****************************************************************************/
-pub(crate) fn DoScrollRect(r: &Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
-    let z = port::zoom();
-    let dest = DoZoomRect(r);
-    let bdh = (dh as f32 * z) as i16;
-    let bdv = (dv as f32 * z) as i16;
-    ScrollRect(&dest, bdh, bdv, updateRgn);
-    CarboniseInvalRect(r);
-    ValideUpdate();
-}
 /******************************************************************************************
                                 Read
 => Lecture d'une zone
@@ -385,9 +373,7 @@ impl Sapiens {
             let tab_i =
                 tabIndex.unwrap_or(&self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex);
             /* Origine des donnees de l'ecran */
-            let Some(info) = port::info(port::current()) else {
-                return;
-            };
+            let info = self.sapwind.ports.current().info();
             let mut data = info.pixels;
             let tailleLigne = info.row_bytes;
             let rPort = info.bounds;
@@ -470,9 +456,7 @@ impl Sapiens {
         let tab_i =
             tabIndex.unwrap_or(&self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex);
         /* Origine des donnees de l'ecran */
-        let Some(info) = port::info(port::current()) else {
-            return;
-        };
+        let info = self.sapwind.ports.current().info();
         let data = info.pixels;
         let tailleLigne = info.row_bytes;
         let rPort = info.bounds;
@@ -582,9 +566,7 @@ impl Sapiens {
         let mut x = x;
         let mut y = y;
         /* Origine des donnees de l'ecran */
-        let Some(info) = port::info(port::current()) else {
-            return;
-        };
+        let info = self.sapwind.ports.current().info();
         let data = info.pixels;
         let tailleLigne = info.row_bytes;
         let rPort = info.bounds;
@@ -691,9 +673,7 @@ impl Sapiens {
         /* Palette associee a ce mob */
         let tab_i = &self.sapwbrt.TabPalette[mob.indexPalette as usize].tabIndex;
         /* Origine des donnees de l'ecran */
-        let Some(info) = port::info(port::current()) else {
-            return;
-        };
+        let info = self.sapwind.ports.current().info();
         let data = info.pixels;
         let tailleLigne = info.row_bytes;
         /* Position d'affichage sur l'ecran */
@@ -739,67 +719,65 @@ impl Sapiens {
     }
 }
 
-/******************************************************************
-                    PlotIndexPixBrt
-Ecrit le pixel en coordonnée x, y de couleur systeme coul
-=> x (0-640) ,y(0-200), index de la couleur systeme
-******************************************************************/
-pub(crate) fn PlotIndexPixBrt(gfx: CGrafPtr, x: i16, y: i16, coul: i16) {
-    let Some(info) = port::info(gfx) else {
-        return;
-    };
-    let data = info.pixels;
-    let tailleLigne = info.row_bytes;
-    /* Position d'affichage sur l'ecran */
-    unsafe {
-        let p = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
-        *p = coul as u8;
+impl SapPort {
+    /******************************************************************
+                        PlotIndexPixBrt
+    Ecrit le pixel en coordonnée x, y de couleur systeme coul
+    => x (0-640) ,y(0-200), index de la couleur systeme
+    ******************************************************************/
+    pub(crate) fn PlotIndexPixBrt(&self, x: i16, y: i16, coul: i16) {
+        let info = self.info();
+        let data = info.pixels;
+        let tailleLigne = info.row_bytes;
+        /* Position d'affichage sur l'ecran */
+        unsafe {
+            let p = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
+            *p = coul as u8;
+        }
     }
-}
-/******************************************************************
-                    GetIndexPixBrt
-Retourne l'index de la couleur dans la palette systeme
-correspondant a un point dans le port courrant
-=> x,y
-<= couleur
-******************************************************************/
-pub(crate) fn GetIndexPixBrt(gfx: CGrafPtr, x: i16, y: i16) -> i16 {
-    let Some(info) = port::info(gfx) else {
-        return -1;
-    };
-    let data = info.pixels;
-    let tailleLigne = info.row_bytes;
-    /* Position d'affichage sur l'ecran */
-    unsafe {
-        let p = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
-        *p as i16
+
+    /******************************************************************
+                        GetIndexPixBrt
+    Retourne l'index de la couleur dans la palette systeme
+    correspondant a un point dans le port courrant
+    => x,y
+    <= couleur
+    ******************************************************************/
+    pub(crate) fn GetIndexPixBrt(&self, x: i16, y: i16) -> i16 {
+        let info = self.info();
+        let data = info.pixels;
+        let tailleLigne = info.row_bytes;
+        /* Position d'affichage sur l'ecran */
+        unsafe {
+            let p = data.add((y as i64 * tailleLigne as i64 + x as i64) as usize);
+            *p as i16
+        }
     }
-}
-/******************************************************************
-                    SwapCouleur
-dans un rectangle du port en entree swappe deux couleurs
-******************************************************************/
-pub(crate) fn SwapCouleur(gfx: CGrafPtr, r: &Rect, coul1: i16, coul2: i16) {
-    let Some(info) = port::info(gfx) else {
-        return;
-    };
-    let data = info.pixels;
-    let tailleLigne = info.row_bytes;
-    let mut y = r.top;
-    unsafe {
-        while y < r.bottom {
-            let mut p = data.add((y as i64 * tailleLigne as i64 + r.left as i64) as usize);
-            let mut x = r.right - r.left;
-            while x != 0 {
-                x -= 1;
-                if *p == coul1 as u8 {
-                    *p = coul2 as u8;
-                } else if *p == coul2 as u8 {
-                    *p = coul1 as u8;
+
+    /******************************************************************
+                        SwapCouleur
+    dans un rectangle du port en entree swappe deux couleurs
+    ******************************************************************/
+    pub(crate) fn SwapCouleur(&self, r: &Rect, coul1: i16, coul2: i16) {
+        let info = self.info();
+        let data = info.pixels;
+        let tailleLigne = info.row_bytes;
+        let mut y = r.top;
+        unsafe {
+            while y < r.bottom {
+                let mut p = data.add((y as i64 * tailleLigne as i64 + r.left as i64) as usize);
+                let mut x = r.right - r.left;
+                while x != 0 {
+                    x -= 1;
+                    if *p == coul1 as u8 {
+                        *p = coul2 as u8;
+                    } else if *p == coul2 as u8 {
+                        *p = coul1 as u8;
+                    }
+                    p = p.add(1);
                 }
-                p = p.add(1);
+                y += 1;
             }
-            y += 1;
         }
     }
 }
@@ -811,13 +789,11 @@ impl Sapiens {
     Les  coordonnees sont donnees en ecran ST 320x200
     (C) Ligne dep,Col dep,Ligne fin,col.fin,couleur ST
     ***************************************************************************/
-    pub(crate) fn BoxFill(&self, gfx: CGrafPtr, r: &mut Rect, couleur: i16) {
+    pub(crate) fn BoxFill(&self, port_id: PortId, r: &mut Rect, couleur: i16) {
         if r.is_empty() {
             return;
         }
-        let Some(info) = port::info(gfx) else {
-            return;
-        };
+        let info = self.sapwind.ports.port(port_id).info();
         let aire = info.bounds;
         let tailleLigne = info.row_bytes;
         let mut data = info.pixels;
@@ -838,26 +814,27 @@ impl Sapiens {
     }
 }
 
-/******************************************************************
-                    RemplitZoneLignes
-                    Travaille sur le port courrant
-Remplit la zone  avec le tableau de couleur  donne
-=> ligne debut (pixel ecran reel), nbre de lignes, Tableau de couleurs
-******************************************************************/
-pub(crate) fn RemplitZoneLignes(y: i16, tab_couleur: &[IndexColor]) {
-    let Some(info) = port::info(port::current()) else {
-        return;
-    };
-    let mut data = info.pixels;
-    let tailleLigne = info.row_bytes;
-    unsafe {
-        data = data.add((tailleLigne as i64 * y as i64) as usize);
-        for tc in tab_couleur {
-            std::ptr::write_bytes(data, tc.index as u8, tailleLigne as usize);
-            data = data.add(tailleLigne as usize);
+impl Ports {
+    /******************************************************************
+                        RemplitZoneLignes
+                        Travaille sur le port courrant
+    Remplit la zone  avec le tableau de couleur  donne
+    => ligne debut (pixel ecran reel), nbre de lignes, Tableau de couleurs
+    ******************************************************************/
+    pub(crate) fn RemplitZoneLignes(&self, y: i16, tab_couleur: &[IndexColor]) {
+        let info = self.current().info();
+        let mut data = info.pixels;
+        let tailleLigne = info.row_bytes;
+        unsafe {
+            data = data.add((tailleLigne as i64 * y as i64) as usize);
+            for tc in tab_couleur {
+                std::ptr::write_bytes(data, tc.index as u8, tailleLigne as usize);
+                data = data.add(tailleLigne as usize);
+            }
         }
     }
 }
+
 static DebDeg: [u32; 35] = [
     0x8000_0000,
     0xC000_0000,
@@ -919,9 +896,7 @@ impl Sapiens {
             {
                 let mut fy: i32 = 0;
                 if *dy > 0 && epaisseur > 0 {
-                    let Some(info) = port::info(port::current()) else {
-                        return;
-                    };
+                    let info = self.sapwind.ports.current().info();
                     let data = info.pixels;
                     let tailleLigne = info.row_bytes;
                     fy = *dy as i32 * ECHELLE as i32;
@@ -1002,7 +977,7 @@ Cree un offscreen de taille donnee, compatible avec le MaxDevice
 => fenetre d'affichage, taille X offscreen, taille Y offscreen
 <= pointeur sur CGrafPort ou NULL si erreur
 **************************************************************************/
-pub(crate) fn SapiensCreeOffscreen(taillex: i16, tailley: i16) -> CGrafPtr {
+pub(crate) fn SapiensCreeOffscreen(taillex: i16, tailley: i16) -> SapPort {
     port::create(
         Rect {
             top: 0,
@@ -1014,68 +989,74 @@ pub(crate) fn SapiensCreeOffscreen(taillex: i16, tailley: i16) -> CGrafPtr {
     )
 }
 
-/**************************************************************************
-                        CopyOffscreen
-Copy un rectangle entre la source et la destination
-**************************************************************************/
-pub(crate) fn CopyOffscreen(source: CGrafPtr, dest: CGrafPtr, rsourceIn: &Rect, rdestIn: &Rect) {
-    if rsourceIn.is_empty() {
-        return;
-    }
-    /* Chaque port porte son échelle : un rectangle est mis à l'échelle
-    uniquement s'il est adressé à la fenêtre. */
-    let realSource = port::zoomed(source, rsourceIn);
-    let realDest = port::zoomed(dest, rdestIn);
-    unsafe {
-        // Sur ecran
-        if port::is_window(dest) {
-            let _g = port::on(dest);
-            BackColor(whiteColor as i16);
-            ForeColor(blackColor as i16);
-            CopyBits(source, dest, &realSource, &realDest, srcCopy as i16);
-        } else {
-            /* Copie entre deux offscreen avec palette identique */
-            let Some(infoSource) = port::info(source) else {
-                return;
-            };
-            let Some(infoDest) = port::info(dest) else {
-                return;
-            };
-            let boundSource = infoSource.bounds;
-            let mut boundDest = infoDest.bounds;
-            let tailleLigneSource = infoSource.row_bytes;
-            let tailleLigneDest = infoDest.row_bytes;
-            let mut dataSource = infoSource.pixels;
-            let mut dataDest = infoDest.pixels;
-            /* Par defaut, le rectangle a transferer est la source */
-            let rtfrs = realSource;
-            /* On passe le bound destination dans le repere de la source */
-            boundDest.OffsetRect(
-                realSource.left - realDest.left,
-                realSource.top - realDest.top,
-            );
-            /* On intersecte les 3 rectangles */
-            let Some(rtfrs) = SectRect(&rtfrs, &boundSource).and_then(|r| SectRect(&r, &boundDest))
-            else {
-                return;
-            };
-            /* On recalcule le rectangle destination */
-            let mut rtfrd = rtfrs;
-            rtfrd.OffsetRect(
-                realDest.left - realSource.left,
-                realDest.top - realSource.top,
-            );
-            dataSource = dataSource
-                .add((tailleLigneSource as i64 * rtfrs.top as i64 + rtfrs.left as i64) as usize);
-            dataDest = dataDest
-                .add((tailleLigneDest as i64 * rtfrd.top as i64 + rtfrd.left as i64) as usize);
-            let mut ty = rtfrs.bottom as i32 - rtfrs.top as i32;
-            let tx = rtfrs.right as i32 - rtfrs.left as i32;
-            while ty != 0 {
-                ty -= 1;
-                std::ptr::copy(dataSource as *const u8, dataDest, tx as usize);
-                dataSource = dataSource.add(tailleLigneSource as usize);
-                dataDest = dataDest.add(tailleLigneDest as usize);
+impl Ports {
+    /**************************************************************************
+                            CopyOffscreen
+    Copy un rectangle entre la source et la destination
+    **************************************************************************/
+    pub(crate) fn CopyOffscreen(
+        &mut self,
+        source: PortId,
+        dest: PortId,
+        rsourceIn: Rect,
+        rdestIn: &Rect,
+    ) {
+        if rsourceIn.is_empty() {
+            return;
+        }
+        /* Chaque port porte son échelle : un rectangle est mis à l'échelle
+        uniquement s'il est adressé à la fenêtre. */
+        let realSource = self.port(source).zoomed(&rsourceIn);
+        let realDest = self.port(dest).zoomed(rdestIn);
+        unsafe {
+            // Sur ecran
+            if self.is_window(dest) {
+                let _g = self.on(dest);
+                self.BackColor(whiteColor as i16);
+                self.ForeColor(blackColor as i16);
+                self.CopyBits(source, dest, &realSource, &realDest, srcCopy as i16);
+            } else {
+                /* Copie entre deux offscreen avec palette identique */
+                let infoSource = self.port(source).info();
+                let infoDest = self.port(dest).info();
+                let boundSource = infoSource.bounds;
+                let mut boundDest = infoDest.bounds;
+                let tailleLigneSource = infoSource.row_bytes;
+                let tailleLigneDest = infoDest.row_bytes;
+                let mut dataSource = infoSource.pixels;
+                let mut dataDest = infoDest.pixels;
+                /* Par defaut, le rectangle a transferer est la source */
+                let rtfrs = realSource;
+                /* On passe le bound destination dans le repere de la source */
+                boundDest.OffsetRect(
+                    realSource.left - realDest.left,
+                    realSource.top - realDest.top,
+                );
+                /* On intersecte les 3 rectangles */
+                let Some(rtfrs) =
+                    SectRect(&rtfrs, &boundSource).and_then(|r| SectRect(&r, &boundDest))
+                else {
+                    return;
+                };
+                /* On recalcule le rectangle destination */
+                let mut rtfrd = rtfrs;
+                rtfrd.OffsetRect(
+                    realDest.left - realSource.left,
+                    realDest.top - realSource.top,
+                );
+                dataSource = dataSource.add(
+                    (tailleLigneSource as i64 * rtfrs.top as i64 + rtfrs.left as i64) as usize,
+                );
+                dataDest = dataDest
+                    .add((tailleLigneDest as i64 * rtfrd.top as i64 + rtfrd.left as i64) as usize);
+                let mut ty = rtfrs.bottom as i32 - rtfrs.top as i32;
+                let tx = rtfrs.right as i32 - rtfrs.left as i32;
+                while ty != 0 {
+                    ty -= 1;
+                    std::ptr::copy(dataSource as *const u8, dataDest, tx as usize);
+                    dataSource = dataSource.add(tailleLigneSource as usize);
+                    dataDest = dataDest.add(tailleLigneDest as usize);
+                }
             }
         }
     }
@@ -1087,14 +1068,16 @@ impl Sapiens {
     Efface a partir du virtuel ou se trace les personnages en
     recopiant la premiere partie de l'ecran virtuel sur la deuxieme
     *************************************************************************/
-    pub(crate) fn effdemi(&self) {
+    pub(crate) fn effdemi(&mut self) {
         let rsourc = Rect::new(
             0,
             (32 * ECHELLE) as i16,
             (255 * ECHELLE) as i16,
             ((32 + TAILLE_TFR) * ECHELLE) as i16,
         );
-        CopyOffscreen(self.sapwind.Ecran2, self.sapwind.Ecran1, &rsourc, &rsourc);
+        self.sapwind
+            .ports
+            .CopyOffscreen(PortId::Ecran2, PortId::Ecran1, rsourc, &rsourc);
     }
 
     /*************************************************************************
@@ -1104,7 +1087,7 @@ impl Sapiens {
     *************************************************************************/
     pub(crate) fn effima(&self, couleur: i16) {
         let mut r = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
-        self.BoxFill(self.sapwind.Ecran1, &mut r, couleur);
+        self.BoxFill(PortId::Ecran1, &mut r, couleur);
     }
 
     /*************************************************************************
@@ -1119,7 +1102,7 @@ impl Sapiens {
             ((32 + 255) * ECHELLE) as i16,
             (101 * ECHELLE) as i16,
         );
-        self.BoxFill(self.sapwind.debecr, &mut r, couleur);
+        self.BoxFill(PortId::debecr, &mut r, couleur);
     }
 
     /*************************************************************************
@@ -1128,7 +1111,7 @@ impl Sapiens {
     debecr virtuel
     Transfere d'Ecran (premiere partie) vers debecr
     *************************************************************************/
-    pub(crate) fn tfrvirt(&self) {
+    pub(crate) fn tfrvirt(&mut self) {
         let rsourc = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
         let rdest = Rect::new(
             (32 * ECHELLE) as i16,
@@ -1136,14 +1119,16 @@ impl Sapiens {
             ((32 + 255) * ECHELLE) as i16,
             ((1 + 100) * ECHELLE) as i16,
         );
-        CopyOffscreen(self.sapwind.Ecran1, self.sapwind.debecr, &rsourc, &rdest);
+        self.sapwind
+            .ports
+            .CopyOffscreen(PortId::Ecran1, PortId::debecr, rsourc, &rdest);
     }
 
     /*************************************************************************
                     tfrmenufenetre
     => actif, inactif
     *************************************************************************/
-    pub(crate) fn tfrmenufenetre(&self, etat: i16) {
+    pub(crate) fn tfrmenufenetre(&mut self, etat: i16) {
         let r = Rect::new(
             0,
             (113 * ECHELLE) as i16,
@@ -1151,9 +1136,11 @@ impl Sapiens {
             (200 * ECHELLE) as i16,
         );
         if etat != 0 {
-            CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, &r, &r);
+            self.sapwind
+                .ports
+                .CopyOffscreen(PortId::debecr, PortId::MainWindow, r, &r);
         } else {
-            let _g = port::on(self.sapwind.mainWindow);
+            let _g = self.sapwind.ports.on(PortId::MainWindow);
             CarboniseSetPatGray();
             let rgb = RGBColor {
                 red: 15000,
@@ -1161,31 +1148,37 @@ impl Sapiens {
                 blue: 2000,
             };
 
-            RGBForeColor(&rgb);
-            PenMode(patOr as i16);
-            DoPaintRect(&r);
-            ForeColor(blackColor as i16);
-            PenNormal();
+            self.sapwind.ports.RGBForeColor(&rgb);
+            self.sapwind.ports.PenMode(patOr as i16);
+            self.sapwind.ports.DoPaintRect(&r);
+            self.sapwind.ports.ForeColor(blackColor as i16);
+            self.sapwind.ports.PenNormal();
         }
     }
     /*************************************************************************
                     CopyEcran1Sur2
     *************************************************************************/
-    pub(crate) fn CopyEcran1Sur2(&self) {
+    pub(crate) fn CopyEcran1Sur2(&mut self) {
         let rsourc = Rect::new(0, 0, (255 * ECHELLE) as i16, (100 * ECHELLE) as i16);
-        CopyOffscreen(self.sapwind.Ecran1, self.sapwind.Ecran2, &rsourc, &rsourc);
+        self.sapwind
+            .ports
+            .CopyOffscreen(PortId::Ecran1, PortId::Ecran2, rsourc, &rsourc);
     }
     /*************************************************************************
                     TfrEcr
     Transfere une aire de debecr vers la fenetre visible
     Transfere de debecr vers MainWindow
     *************************************************************************/
-    pub(crate) fn TfrEcr(&self, r: Option<&Rect>) {
-        if let Some(r) = r {
-            CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, r, r);
+    pub(crate) fn TfrEcr(&mut self, r: Option<Rect>) {
+        if let Some(r) = &r {
+            self.sapwind
+                .ports
+                .CopyOffscreen(PortId::debecr, PortId::MainWindow, *r, r);
         } else {
             let r2 = Rect::new(0, 0, (320 * ECHELLE) as i16, (200 * ECHELLE) as i16);
-            CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, &r2, &r2);
+            self.sapwind
+                .ports
+                .CopyOffscreen(PortId::debecr, PortId::MainWindow, r2, &r2);
         }
     }
     /*************************************************************************
@@ -1194,7 +1187,7 @@ impl Sapiens {
     => Numero du mob, position y (0-200) ,position x (0-320), sens
     *************************************************************************/
     pub(crate) fn Affmob(&self, mob: i16, y: i16, x: i16, inverse: i16) {
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
         self.Affmobbrt(mob, x, y, inverse, None);
     }
     /*************************************************************************
@@ -1202,10 +1195,10 @@ impl Sapiens {
     Affiche un mob sur l'ecran virtuel constant et l'ecran virtuel volatile
     => Numero du mob, position y (0-200) ,position x (0-320), sens
     *************************************************************************/
-    pub(crate) fn AffmobConst(&self, mob: i16, y: i16, x: i16, inverse: i16) {
-        let _g = port::on(self.sapwind.Ecran1);
+    pub(crate) fn AffmobConst(&mut self, mob: i16, y: i16, x: i16, inverse: i16) {
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
         self.Affmobbrt(mob, x, y, inverse, None);
-        port::set(self.sapwind.Ecran2);
+        self.sapwind.ports.set(PortId::Ecran2);
         self.Affmobbrt(mob, x, y, inverse, None);
     }
     /*************************************************************************
@@ -1213,12 +1206,12 @@ impl Sapiens {
     Affiche un mob sur l'ecran debecr
     => Numero du mob, position y (0-200) ,position x (0-320), transfert
     *************************************************************************/
-    pub(crate) fn AffDebecr(&self, mob: i16, y: i16, x: i16, transfere: i16) {
-        let _g = port::on(self.sapwind.debecr);
+    pub(crate) fn AffDebecr(&mut self, mob: i16, y: i16, x: i16, transfere: i16) {
+        let _g = self.sapwind.ports.on(PortId::debecr);
         self.Affmobbrt(mob, x, y, 0, None);
         if transfere != 0 {
             let r = self.CalculeAireMob(mob, x, y);
-            self.TfrEcr(Some(&r));
+            self.TfrEcr(Some(r));
         }
     }
     /*************************************************************************
@@ -1227,7 +1220,7 @@ impl Sapiens {
     => Coordonnees en 320x200
     *************************************************************************/
     pub(crate) fn affomb(
-        &self,
+        &mut self,
         mob: i16,
         ligne: i16,
         colonne: i16,
@@ -1237,10 +1230,12 @@ impl Sapiens {
     ) {
         let mut r = Rect::default();
 
-        let _g = port::on(self.sapwind.debecr);
+        let _g = self.sapwind.ports.on(PortId::debecr);
         self.Affmobbrtomb(mob, colonne, ligne, deltah, deltav, &mut r);
         if recopie {
-            CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, &r, &r);
+            self.sapwind
+                .ports
+                .CopyOffscreen(PortId::debecr, PortId::MainWindow, r, &r);
         }
     }
     /*************************************************************************
@@ -1249,19 +1244,17 @@ impl Sapiens {
     index de couleurs a utiliser
     *************************************************************************/
     pub(crate) fn AffmobPalette(&self, mob: i16, y: i16, x: i16, inverse: i16, tabIndex: &[i16]) {
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
         self.Affmobbrt(mob, x, y, inverse, Some(tabIndex));
     }
     /*************************************************************************
                     AffPalette
     Affiche la palette en cours
     *************************************************************************/
-    pub(crate) fn AffPalette(&self) {
+    pub(crate) fn AffPalette(&mut self) {
         unsafe {
-            let _g = port::on(self.sapwind.debecr);
-            let Some(info) = port::info(port::current()) else {
-                return;
-            };
+            let _g = self.sapwind.ports.on(PortId::debecr);
+            let info = self.sapwind.ports.current().info();
             let data = info.pixels;
             let tailleLigne = info.row_bytes;
             const TAILLE_CARRE: i64 = 16;
@@ -1284,33 +1277,30 @@ impl Sapiens {
             self.TfrEcr(None);
         }
     }
-}
 
-/***********************************************************************
-               AffichePictDansAire
-=> id de la picture,aire
-***********************************************************************/
-pub(crate) fn AffichePictDansAire(sapgest: &Sapgest, num: i16, r: &Rect) {
-    let mut nom = [0i8; 255];
-
-    let rDest = DoZoomRect(r);
-    unsafe {
+    /***********************************************************************
+                   AffichePictDansAire
+    => id de la picture,aire
+    ***********************************************************************/
+    pub(crate) fn AffichePictDansAire(&mut self, num: i16, r: &Rect) {
+        let rDest = self.sapwind.ports.DoZoomRect(r);
         PushPath();
         /* recherche de la picture en fichier */
-        sprintf(
-            nom.as_mut_ptr(),
-            c"image_%d.png".as_ptr(),
-            CvtDefaultLangRess(num) as i32,
-        );
-        SetPathInData(sapgest, c"images".as_ptr() as *mut i8);
+        let nom = format!("image_{}.png", CvtDefaultLangRess(num),);
+        SetPathInData(&self.sapgest, c"images".as_ptr() as *mut i8);
         let mut rpng = Rect::default();
-        if GetRectFilePng(nom.as_mut_ptr(), &mut rpng) {
-            let offscreen = ConvertPNGFileToOffscreen(nom.as_mut_ptr());
-            if !offscreen.is_null() {
-                BackColor(whiteColor as i16);
-                ForeColor(blackColor as i16);
-                CopyBits(offscreen, port::current(), &rpng, &rDest, srcCopy as i16);
-                port::close(offscreen);
+        if GetRectFilePng(&nom, &mut rpng) {
+            let offscreen = ConvertPNGFileToOffscreen(&nom);
+            if let Some(offscreen) = offscreen {
+                self.sapwind.ports.BackColor(whiteColor as i16);
+                self.sapwind.ports.ForeColor(blackColor as i16);
+                self.sapwind.ports.CopyBits(
+                    offscreen,
+                    self.sapwind.ports.current_id(),
+                    &rpng,
+                    &rDest,
+                    srcCopy as i16,
+                );
             }
         } else {
             let mut pict = GetPicture(CvtDefaultLangRess(num));

@@ -10,14 +10,11 @@
 use std::sync::atomic::{AtomicI16, Ordering};
 
 use crate::Sapiens;
-use crate::acam::{
-    CarboniseSetCursorArrow, CtoPstr, FAUX, GetCursor, RGBForeColor, SetCursor, TickCount, VRAI,
-};
+use crate::acam::{CarboniseSetCursorArrow, CtoPstr, FAUX, GetCursor, SetCursor, TickCount, VRAI};
 use crate::cbridge::watchCursor;
 use crate::cbridge::{FILE, feof, fprintf, fscanf, strcmp, strcpy};
-use crate::port;
+use crate::port::PortId;
 use crate::sapiens::sapw3d::distance;
-use crate::sapiens::sapwbrt::{DoMoveTo, DoTextSize};
 use crate::sapiens::sapwind::ValideUpdate;
 use crate::sapiens::{
     BASEMOB, DIST_MIN_FOUDROIE, FREQ_ORAGE, Forme, FormeId, Mont, MontId, NB_ARBRES, NB_ARBRES_MAX,
@@ -25,7 +22,6 @@ use crate::sapiens::{
     NB_OISEAUX_MAX, NB_ROCHERS, NB_ROCHERS_MAX,
 };
 use crate::shared::{Boolean, RGBColor, StringPtr};
-use crate::text::{DrawString, StringWidth, TextFont};
 
 const VITESSE_DEPLACEMENT_OISEAUX: u16 = 10;
 const MONT1: i16 = 1;
@@ -3360,7 +3356,7 @@ impl Sapiens {
                     self.AvanceSol(1);
                     self.sapglob.heure = self.random.myRandom(0, 90) as u16;
                     self.affich(self.sapglob.dzeta as u16);
-                    self.tfrima();
+                    self.sapwind.ports.tfrima();
                     self.delai(0);
                     WaitTick(5);
                 }
@@ -3419,7 +3415,7 @@ impl Sapiens {
                     self.sapglob.heure = self.random.myRandom(0, 90) as u16;
                     self.AvanceSol(1);
                     self.affich(self.sapglob.dzeta as u16);
-                    self.tfrima();
+                    self.sapwind.ports.tfrima();
                     self.delai(0);
                     WaitTick(5);
                 }
@@ -3452,7 +3448,7 @@ impl Sapiens {
                 self.sap3d.aigoual.push(mont);
                 self.sapglob.heure = self.random.myRandom(0, 90) as u16;
                 self.affich(self.sapglob.dzeta as u16);
-                self.tfrima();
+                self.sapwind.ports.tfrima();
                 self.delai(0);
                 self.chrono(1);
                 WaitTick(5);
@@ -3461,17 +3457,22 @@ impl Sapiens {
             for _ in 0..400 {
                 self.sapglob.yj = self.sapglob.yj.wrapping_sub(30);
                 self.affich(self.sapglob.dzeta as u16);
-                self.tfrima();
+                self.sapwind.ports.tfrima();
                 self.delai(0);
                 self.chrono(1);
                 WaitTick(2);
             }
-            port::set(self.sapwind.Ecran1);
-            TextFont(0); /* times */
-            DoTextSize(64);
+            self.sapwind.ports.set(PortId::Ecran1);
+            self.sapwind.ports.TextFont(0); /* times */
+            self.sapwind.ports.DoTextSize(64);
             strcpy(chaine.as_mut_ptr(), c"THE END".as_ptr());
             CtoPstr(chaine.as_mut_ptr());
-            dx = (512 - StringWidth(chaine.as_mut_ptr() as StringPtr) as i64) / 2;
+            dx = (512
+                - self
+                    .sapwind
+                    .ports
+                    .StringWidth(chaine.as_mut_ptr() as StringPtr) as i64)
+                / 2;
             for _ in 0..256 {
                 n += 256;
                 self.chrono(1);
@@ -3479,16 +3480,18 @@ impl Sapiens {
                 rgb.red = n as u16;
                 rgb.green = n as u16;
                 rgb.blue = n as u16;
-                RGBForeColor(&rgb);
-                DoMoveTo(dx as i16, 64);
+                self.sapwind.ports.RGBForeColor(&rgb);
+                self.sapwind.ports.DoMoveTo(dx as i16, 64);
                 self.affich(self.sapglob.dzeta as u16);
                 self.delai(0);
-                DrawString(chaine.as_mut_ptr() as StringPtr);
-                self.tfrima();
+                self.sapwind
+                    .ports
+                    .DrawString(chaine.as_mut_ptr() as StringPtr);
+                self.sapwind.ports.tfrima();
                 WaitTick(1);
             }
             CarboniseSetCursorArrow();
-            port::set(self.sapwind.mainWindow);
+            self.sapwind.ports.set(PortId::MainWindow);
         }
     }
 }
@@ -3509,9 +3512,9 @@ impl Sapiens {
             self.comment(134);
             for _ in 0..100 {
                 self.effima(0x077);
-                self.tfrima();
+                self.sapwind.ports.tfrima();
                 self.effima(0x000);
-                self.tfrima();
+                self.sapwind.ports.tfrima();
             }
             /* Le joueur est mort */
             self.sapglob.mort = 0;
@@ -3717,7 +3720,7 @@ impl Sapiens {
                 posTimer = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
                 //bouge_souris();
                 self.affich(self.sapglob.dzeta as u16);
-                self.tfrima();
+                self.sapwind.ports.tfrima();
                 if self.sap3d.okcarte != 0 {
                     if cpt_cart == 0 {
                         cpt_cart = 5;

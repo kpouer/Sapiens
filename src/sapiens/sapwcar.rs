@@ -1,17 +1,15 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 #![allow(unsafe_op_in_unsafe_fn)]
-use crate::acam::{ClipRect, GetClip, MoveTo, RGBForeColor, SetClip};
+use crate::Sapiens;
 use crate::langue::Langue::ES;
 use crate::langue::{Langue, langue};
+use crate::port::PortId;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtCar, CvtCarLissage};
-use crate::sapiens::sapwbrt::{DoEraseRect, DoPaintRect};
 use crate::sapiens::{NB_MOTS_BKMOTS, POLICE_LISSAGE, STYLE_LISSAGE};
-use crate::shared::{Boolean, CGrafPtr, Point, RGBColor, Rect};
+use crate::shared::{Boolean, Point, RGBColor, Rect};
 use crate::stubs::CarboniseSetPatBlack;
-use crate::text::{CharWidth, DrawChar, GetFontInfo, TextFace, TextFont, TextSize};
-use crate::{Sapiens, port};
 use std::ptr::addr_of;
 
 const ECHELLE: i16 = 2;
@@ -72,7 +70,7 @@ impl Sapiens {
                         InitCouleurFontes
     **************************************************************************/
     pub(crate) fn InitCouleurFontes(&mut self) {
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
         self.sapwcar.index_white = SapColor2Index(&rgbWhite);
         self.sapwcar.index_black = SapColor2Index(&rgbBlack);
         self.sapwcar.index_brown = SapColor2Index(&rgbBrown);
@@ -106,14 +104,14 @@ impl Sapiens {
     /*************************************************************************
                         TailleCar
     **************************************************************************/
-    pub(crate) fn TailleCar(&self, car: i16, taille: i16) -> i16 {
+    pub(crate) fn TailleCar(&mut self, car: i16, taille: i16) -> i16 {
         if self.sapwcar.lissage_police || langue() == ES {
             /* ES Pour les caracteres speciaux */
             let car = CvtCarLissage(car);
-            TextFont(POLICE_LISSAGE as i16);
-            TextSize(taille);
-            TextFace(STYLE_LISSAGE as i16);
-            CharWidth(car as i8)
+            self.sapwind.ports.TextFont(POLICE_LISSAGE as i16);
+            self.sapwind.ports.TextSize(taille);
+            self.sapwind.ports.TextFace(STYLE_LISSAGE as i16);
+            self.sapwind.ports.CharWidth(car as i8)
         } else {
             let car = CvtCar(car);
             if taille == 10 {
@@ -130,15 +128,15 @@ impl Sapiens {
 /*************************************************************************
                     SetColorFont
 **************************************************************************/
-fn SetColorFont(sapiens: &Sapiens, id: i16) {
+fn SetColorFont(sapiens: &mut Sapiens, id: i16) {
     if id == sapiens.sapwcar.index_white {
-        RGBForeColor(&rgbWhite);
+        sapiens.sapwind.ports.RGBForeColor(&rgbWhite);
     } else if id == sapiens.sapwcar.index_black {
-        RGBForeColor(&rgbBlack);
+        sapiens.sapwind.ports.RGBForeColor(&rgbBlack);
     } else if id == sapiens.sapwcar.index_brown {
-        RGBForeColor(&rgbBrown);
+        sapiens.sapwind.ports.RGBForeColor(&rgbBrown);
     } else if id == sapiens.sapwcar.index_gray {
-        RGBForeColor(&rgbGray);
+        sapiens.sapwind.ports.RGBForeColor(&rgbGray);
     } else {
         sapiens.Collapse(&format!("SetColorFont: {id} unknown"));
     }
@@ -164,23 +162,23 @@ impl Sapiens {
                 car = 0xC9;
                 dx -= 1;
             }
-            TextFont(POLICE_LISSAGE as i16);
-            TextSize(taille);
-            TextFace(STYLE_LISSAGE as i16);
-            let info = GetFontInfo().unwrap_or_default();
+            self.sapwind.ports.TextFont(POLICE_LISSAGE as i16);
+            self.sapwind.ports.TextSize(taille);
+            self.sapwind.ports.TextFace(STYLE_LISSAGE as i16);
+            let info = self.sapwind.ports.GetFontInfo().unwrap_or_default();
             SetColorFont(self, couleurOmbre);
-            MoveTo(
+            self.sapwind.ports.MoveTo(
                 self.sapwcar.pt_ecr_car.h + dx,
                 self.sapwcar.pt_ecr_car.v + 1 + info.ascent + dy + 1,
             );
-            DrawChar(car as i8);
+            self.sapwind.ports.DrawChar(car as i8);
             SetColorFont(self, couleur);
-            MoveTo(
+            self.sapwind.ports.MoveTo(
                 self.sapwcar.pt_ecr_car.h + dx,
                 self.sapwcar.pt_ecr_car.v + info.ascent + dy,
             );
-            DrawChar(car as i8);
-            self.sapwcar.pt_ecr_car.h += CharWidth(car as i8);
+            self.sapwind.ports.DrawChar(car as i8);
+            self.sapwcar.pt_ecr_car.h += self.sapwind.ports.CharWidth(car as i8);
         } else {
             let car = CvtCar(car);
             let num: i16;
@@ -263,8 +261,8 @@ impl Sapiens {
                         AffCarBank
     Affiche un caractere sur le port en entrée
     **************************************************************************/
-    fn AffCarBank(&mut self, port: CGrafPtr, car: i16, couleur1: i16, couleur2: i16, taille: i16) {
-        let _g = port::on(port);
+    fn AffCarBank(&mut self, port: PortId, car: i16, couleur1: i16, couleur2: i16, taille: i16) {
+        let _g = self.sapwind.ports.on(port);
         unsafe {
             if car > 128 {
                 let mut p = self.GetStrBkMot(car);
@@ -286,7 +284,7 @@ impl Sapiens {
     **************************************************************************/
     pub(crate) fn affcar(&mut self, car: i16) {
         self.AffCarBank(
-            self.sapwind.debecr,
+            PortId::debecr,
             car,
             self.sapwcar.index_black,
             self.sapwcar.index_brown,
@@ -301,7 +299,7 @@ impl Sapiens {
     **************************************************************************/
     pub(crate) fn affcar10(&mut self, car: i16) {
         self.AffCarBank(
-            self.sapwind.debecr,
+            PortId::debecr,
             car,
             self.sapwcar.index_black,
             self.sapwcar.index_gray,
@@ -316,7 +314,7 @@ impl Sapiens {
     **************************************************************************/
     pub(crate) fn car2(&mut self, car: i16) {
         self.AffCarBank(
-            self.sapwind.debecr,
+            PortId::debecr,
             car,
             self.sapwcar.index_white,
             self.sapwcar.index_black,
@@ -331,9 +329,9 @@ impl Sapiens {
     Le caractere est affiche sur debecr
     **************************************************************************/
     pub(crate) fn affcarmess(&mut self, car: i16) {
-        let _g = port::on(self.sapwind.debecr);
-        let rgn = GetClip().expect("Clip");
-        ClipRect(&self.sapwmess.rMess);
+        let _g = self.sapwind.ports.on(PortId::debecr);
+        let rgn = self.sapwind.ports.GetClip().expect("Clip");
+        self.sapwind.ports.ClipRect(&self.sapwmess.rMess);
         /* Effacement et affichage curseur */
         if car < 32 {
             let r = Rect::new(
@@ -344,21 +342,21 @@ impl Sapiens {
             );
             if car == 2 {
                 CarboniseSetPatBlack();
-                DoPaintRect(&r);
+                self.sapwind.ports.DoPaintRect(&r);
             }
             if car == 1 {
-                DoEraseRect(&r);
+                self.sapwind.ports.DoEraseRect(&r);
             }
         } else {
             self.AffCarBank(
-                self.sapwind.debecr,
+                PortId::debecr,
                 car,
                 self.sapwcar.index_black,
                 self.sapwcar.index_gray,
                 14,
             );
         }
-        SetClip(&rgn);
+        self.sapwind.ports.SetClip(&rgn);
     }
 
     /***********************************************************************

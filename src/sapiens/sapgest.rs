@@ -5,13 +5,12 @@
                            D G le 30 Janvier 1987
 ***********************************************************************/
 use crate::Sapiens;
-use crate::acam::{FAUX, ForeColor, Line, MoveTo, RGBForeColor, TickCount, VRAI};
+use crate::acam::{FAUX, TickCount, VRAI};
 use crate::cbridge::{blackColor, fclose, fopen, getc, putc};
 use crate::exchange::{request_open_file, request_save_file};
-use crate::port;
+use crate::port::PortId;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapglob::{ListeId, SapId, tenerv};
-use crate::sapiens::sapwbrt::{DoFrameRect, GetIndexPixBrt, PlotIndexPixBrt};
 use crate::sapiens::sapwind::{ValideUpdate, bande};
 use crate::sapiens::sapwmus::{attends_bruit, quel_synthe};
 use crate::sapiens::{
@@ -158,47 +157,54 @@ impl Sapiens {
     Ecrit un point coloré directement sur l'ecran
     => ligne,colonne ,couleur ST
     ***********************************************************************/
-    pub(crate) fn plot_ecr(&self, y: i16, x: i16, couleur: i16) {
+    pub(crate) fn plot_ecr(&mut self, y: i16, x: i16, couleur: i16) {
         let rgb =
             RGBColor::CvtCouleurStEnRgb(self.sapglob.palhaute.borrow().as_ref()[couleur as usize]);
-        RGBForeColor(&rgb);
-        MoveTo(x * ECHELLE as i16, y * ECHELLE as i16);
-        Line(ECHELLE as i16, 0);
-        ForeColor(blackColor as i16);
+        self.sapwind.ports.RGBForeColor(&rgb);
+        self.sapwind
+            .ports
+            .MoveTo(x * ECHELLE as i16, y * ECHELLE as i16);
+        self.sapwind.ports.Line(ECHELLE as i16, 0);
+        self.sapwind.ports.ForeColor(blackColor as i16);
     }
 }
 
-/***********************************************************************
-                    lit_sil
-Lit un point coloré dans le silex
-=> ligne,colonne
-<= couleur 0-NB_COUL_SILEX
-***********************************************************************/
-fn lit_sil(sapiens: &Sapiens, y: i16, x: i16) -> i16 {
-    let index = GetIndexPixBrt(sapiens.sapwind.Ecran1, x + 106, y);
-    let mut i: i16 = 0;
-    while i < NB_COUL_SILEX {
-        if sapiens.sapgest.palSilex[i as usize] as i16 == index {
-            return i;
+impl Sapiens {
+    /***********************************************************************
+                        lit_sil
+    Lit un point coloré dans le silex
+    => ligne,colonne
+    <= couleur 0-NB_COUL_SILEX
+    ***********************************************************************/
+    fn lit_sil(&mut self, y: i16, x: i16) -> i16 {
+        let index = self
+            .sapwind
+            .ports
+            .port(PortId::Ecran1)
+            .GetIndexPixBrt(x + 106, y);
+        let mut i: i16 = 0;
+        while i < NB_COUL_SILEX {
+            if self.sapgest.palSilex[i as usize] as i16 == index {
+                return i;
+            }
+            i += 1;
         }
-        i += 1;
+        self.Collapse("[Sapgest.lit_sil.1] Color not found");
+        0
     }
-    sapiens.Collapse("[Sapgest.lit_sil.1] Color not found");
-    0
-}
 
-/**********************************************************************
-                    ecrit_sil
-Ecrit un point coloré dans le silex
-=> ligne (0-400) ,colonne (0-640),couleur 0-NB_COUL_SILEX
-***********************************************************************/
-fn ecrit_sil(sapiens: &Sapiens, y: i16, x: i16, couleur: i16) {
-    PlotIndexPixBrt(
-        sapiens.sapwind.Ecran1,
-        x + 106,
-        y,
-        sapiens.sapgest.palSilex[couleur as usize] as i16,
-    );
+    /**********************************************************************
+                        ecrit_sil
+    Ecrit un point coloré dans le silex
+    => ligne (0-400) ,colonne (0-640),couleur 0-NB_COUL_SILEX
+    ***********************************************************************/
+    fn ecrit_sil(&self, y: i16, x: i16, couleur: i16) {
+        self.sapwind.ports.port(PortId::Ecran1).PlotIndexPixBrt(
+            x + 106,
+            y,
+            self.sapgest.palSilex[couleur as usize] as i16,
+        );
+    }
 }
 
 /***********************************************************************
@@ -238,11 +244,11 @@ impl Sapiens {
     /***********************************************************************
                             TABDRT: Etablit la position droite
     ***********************************************************************/
-    fn tabdrt(&self, pos: i16) -> i16 {
+    fn tabdrt(&mut self, pos: i16) -> i16 {
         let mut i: i16 = NB_COL_SILEX + 1;
         loop {
             i -= 1;
-            if lit_sil(self, pos, i) != 0 || i <= NB_COL_SILEX / 2 {
+            if self.lit_sil(pos, i) != 0 || i <= NB_COL_SILEX / 2 {
                 return i;
             }
         }
@@ -251,12 +257,12 @@ impl Sapiens {
     /***********************************************************************
                             TABGAU: Etablit la position gauche
     ***********************************************************************/
-    fn tabgau(&self, pos: i16) -> i16 {
+    fn tabgau(&mut self, pos: i16) -> i16 {
         let mut i: i16 = 0;
         loop {
             let courant = i;
             i += 1;
-            if lit_sil(self, pos, courant) != 0 || i >= NB_COL_SILEX / 2 {
+            if self.lit_sil(pos, courant) != 0 || i >= NB_COL_SILEX / 2 {
                 return i;
             }
         }
@@ -266,7 +272,7 @@ impl Sapiens {
                             VALSYL:
     Evalue l'erreur entre l'etat du nucleus et la forme theorique attendue
     ***********************************************************************/
-    fn valsyl(&self) -> u16 {
+    fn valsyl(&mut self) -> u16 {
         let mut i: i16 = 0;
         let mut ecart: u32 = 0;
         while i < NB_LIGNE_SILEX {
@@ -289,7 +295,7 @@ impl Sapiens {
                             AfficheSuite
     Affiche le mob suite
     ***********************************************************************/
-    fn AfficheSuite(&self) {
+    fn AfficheSuite(&mut self) {
         self.affomb(
             self.sapwind.mobFleches + 19,
             AIRE_SUITE.top,
@@ -314,7 +320,7 @@ impl Sapiens {
     Affiche le nucleus et la forme ideale du silex par dessus
     ***********************************************************************/
     fn TraceSilex(&mut self) {
-        let _g = port::on(self.sapwind.debecr);
+        let _g = self.sapwind.ports.on(PortId::debecr);
         /* on efface la souris */
         self.eff_sour();
         /*dessin du noyau*/
@@ -392,7 +398,7 @@ impl Sapiens {
                 if couleur >= NB_COUL_SILEX {
                     couleur = NB_COUL_SILEX - 1;
                 }
-                ecrit_sil(self, y, x, couleur);
+                self.ecrit_sil(y, x, couleur);
                 x += 1;
             }
             let _pas = if pos2 == (NB_COL_SILEX / 2) {
@@ -411,7 +417,7 @@ impl Sapiens {
                 if couleur >= NB_COUL_SILEX {
                     couleur = NB_COUL_SILEX - 1;
                 }
-                ecrit_sil(self, y, x, couleur);
+                self.ecrit_sil(y, x, couleur);
                 x -= 1;
             }
             y += 1;
@@ -423,9 +429,9 @@ impl Sapiens {
     Applique une nouvelle epaisseur si la nouvelle est inferieure a l'ancienne
     ***********************************************************************/
     fn AppliqueNlleEpaiss(&mut self, y: i16, x: i16, epaiss_loc: i16) {
-        let ancEpaiss = lit_sil(self, y, x);
+        let ancEpaiss = self.lit_sil(y, x);
         if ancEpaiss < epaiss_loc || epaiss_loc == 0 {
-            ecrit_sil(self, y, x, epaiss_loc);
+            self.ecrit_sil(y, x, epaiss_loc);
         }
     }
 
@@ -639,7 +645,7 @@ impl Sapiens {
 
         /* On calcule les index de couleurs */
         {
-            let _g = port::on(self.sapwind.debecr);
+            let _g = self.sapwind.ports.on(PortId::debecr);
             i = 0;
             while i < NB_COUL_SILEX {
                 self.sapgest.palSilex[i as usize] =
@@ -884,7 +890,7 @@ impl Sapiens {
             self.chrono(0);
             self.chrono(0);
             self.affich(self.sapglob.dzeta as u16);
-            self.tfrima();
+            self.sapwind.ports.tfrima();
             if (self.getkey(0) & (32 + 16)) > 0 {
                 i = 111;
             }
@@ -977,14 +983,14 @@ impl Sapiens {
     /***********************************************************************
                             AfficheCadreJauge
     ***********************************************************************/
-    pub(crate) fn AfficheCadreJauge(&self, i: i16) {
+    pub(crate) fn AfficheCadreJauge(&mut self, i: i16) {
         let mut r = self.AireJauge(i);
-        ForeColor(blackColor as i16);
+        self.sapwind.ports.ForeColor(blackColor as i16);
         r.left *= ECHELLE as i16;
         r.right *= ECHELLE as i16;
         r.top *= ECHELLE as i16;
         r.bottom *= ECHELLE as i16;
-        DoFrameRect(&r);
+        self.sapwind.ports.DoFrameRect(&r);
     }
 
     /***********************************************************************
@@ -992,8 +998,8 @@ impl Sapiens {
     Trace une jauge dans debecr
     => numero de la jauge, indeicateur de transfert sur le reel
     ***********************************************************************/
-    pub(crate) extern "C" fn jauge(&self, i: i16, tfr: Boolean) {
-        let _g = port::on(self.sapwind.debecr);
+    pub(crate) extern "C" fn jauge(&mut self, i: i16, tfr: Boolean) {
+        let _g = self.sapwind.ports.on(PortId::debecr);
         let rval = self.AireValJauge(i);
         self.AfficheCadreJauge(i);
         self.boxf(rval.top, rval.left, rval.bottom, rval.right, 2);
@@ -1013,7 +1019,7 @@ impl Sapiens {
             r.right *= ECHELLE as i16;
             r.top *= ECHELLE as i16;
             r.bottom *= ECHELLE as i16;
-            self.TfrEcr(Some(&r));
+            self.TfrEcr(Some(r));
         }
     }
 
@@ -1206,7 +1212,7 @@ impl Sapiens {
             self.prm(SapId::Sap1, -1);
             self.effima(0x050);
             self.tfrvirt();
-            self.tfrima();
+            self.sapwind.ports.tfrima();
             self.sapglob.flefba = 0;
             self.eff_sour();
             while cont != 0 {
@@ -1217,7 +1223,7 @@ impl Sapiens {
                 }
                 self.effima(0x050); //??
                 self.mvtsap(SapId::Sap1);
-                self.tfrdemi();
+                self.sapwind.ports.tfrdemi();
                 self.tfrvirt();
                 self.AfficheSuite();
 
@@ -1342,10 +1348,10 @@ impl Sapiens {
     Trace une jauge dans debecr
     => numero de la jauge, indeicateur de transfert sur le reel
     ***********************************************************************/
-    fn JAUGES3D(&self) {
-        let mut i: i16 = 0;
+    fn JAUGES3D(&mut self) {
+        let mut i = 0;
         let mut r;
-        let _g = port::on(self.sapwind.debecr);
+        let _g = self.sapwind.ports.on(PortId::debecr);
         self.boxf(0, 32, 101, 287, 5);
 
         /* La jauge est tracee dans debecr (hors-ecran, echelle 1) : la mise a
@@ -1353,7 +1359,7 @@ impl Sapiens {
         macro_rules! aire_zoom {
             ($i:expr) => {{
                 r = AIREJAUGE3d($i);
-                r = port::zoomed(port::current(), &r);
+                r = self.sapwind.ports.current().zoomed(&r);
             }};
         }
 
@@ -1406,7 +1412,7 @@ impl Sapiens {
             self.sapcomb.nbHerbes as f32 / (NB_MAX_HERBE_AV_PLAN as f32),
         );
         let r = Rect::new(0, 0, 600, 400);
-        self.TfrEcr(Some(&r));
+        self.TfrEcr(Some(r));
         let r = Rect::new(0, 0, 320 * ECHELLE as i16, 200 * ECHELLE as i16);
         CarboniseInvalRect(&raw const r);
         ValideUpdate();
@@ -1701,7 +1707,7 @@ impl Sapiens {
             self.chrono(0); /*pour couleur*/
             self.sapglob.jour_dsk = self.sapglob.jour_act;
             self.affich(self.sapglob.dzeta as u16);
-            self.tfrima();
+            self.sapwind.ports.tfrima();
             self.generique(VRAI);
             if self.sapglob.scenar == 6 {
                 self.sceveu(6); /* Ouaaais c'est lui !!!!!*/
@@ -1726,7 +1732,7 @@ impl Sapiens {
                           BRAVO:Affiche resultat de la taille
     ***********************************************************************/
     fn bravo(&mut self, quoi: u16) {
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
         self.eff_sour();
         /* Le fond est blanc */
         self.effima(COULEUR_FOND_NUCLEUS);
@@ -1735,7 +1741,7 @@ impl Sapiens {
             self.GereInterface();
             let tab_index_palette = self.CalculePaletteAttenuee(quoi as i16, coeff, 999);
             self.Affmobbrt(quoi as i16, 96, 1, 0, Some(&tab_index_palette));
-            self.tfrima();
+            self.sapwind.ports.tfrima();
             coeff += 0.05;
         }
     }

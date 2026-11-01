@@ -5,17 +5,15 @@
 Fixe l'aire dans laquelle il ne faut plus afficher la souris systeme
 **************************************************************************/
 use crate::Sapiens;
-use crate::acam::{CarboniseSetCursorArrow, FAUX, GetClip, SetClip, VRAI};
+use crate::acam::{CarboniseSetCursorArrow, FAUX, VRAI};
 use crate::exchange::set_cursor_hidden;
-use crate::port;
+use crate::port::PortId;
 use crate::sapiens::ECHELLE;
-use crate::sapiens::sapwbrt::CopyOffscreen;
 use crate::sapiens::sapwind::SapWind;
 use crate::shared::{Boolean, KeyMap, Rect};
-use crate::stubs::{Button, GetKeys, GetMouse};
+use crate::stubs::{Button, GetKeys};
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
-
 /* Globals de SAPWCLAV.C passes en champs (ex-`static mut`). */
 #[derive(Default)]
 pub(crate) struct Sapwclav {
@@ -66,10 +64,10 @@ Pour effacer le souris on recopie debecr sur l'aire de la souris
 **************************************************************************/
 impl Sapiens {
     pub(crate) fn eff_sour(&mut self) {
-        CopyOffscreen(
-            self.sapwind.debecr,
-            self.sapwind.mainWindow,
-            &self.sapwclav.rsouris,
+        self.sapwind.ports.CopyOffscreen(
+            PortId::debecr,
+            PortId::MainWindow,
+            self.sapwclav.rsouris,
             &self.sapwclav.rsouris,
         );
         self.sapwclav.rsouris = Rect::default();
@@ -92,24 +90,24 @@ impl Sapiens {
         rsource.bottom += 8;
         /* Le mob s'affiche sur l'ecran virtuel : on saisie ce qu'il y a
         sur l'ecran */
-        CopyOffscreen(
-            self.sapwind.debecr,
-            self.sapwind.BuffMouse,
-            &self.sapwclav.rsouris,
+        self.sapwind.ports.CopyOffscreen(
+            PortId::debecr,
+            PortId::BuffMouse,
+            self.sapwclav.rsouris,
             &rsource,
         );
         /* On copie egalement l'ecran physique sur le buffer de la souris */
         /* On affiche la souris */
         {
-            let _g = port::on(self.sapwind.BuffMouse);
+            let _g = self.sapwind.ports.on(PortId::BuffMouse);
             let mut r = Rect::default();
             self.Affmobbrtomb(mob, 0, 0, 4, 4, &mut r);
         }
         /* On le recopie sur le reel */
-        CopyOffscreen(
-            self.sapwind.BuffMouse,
-            self.sapwind.mainWindow,
-            &rsource,
+        self.sapwind.ports.CopyOffscreen(
+            PortId::BuffMouse,
+            PortId::MainWindow,
+            rsource,
             &self.sapwclav.rsouris,
         );
         /* On efface la difference (les deux rectangles sont sur l'ecran : ils
@@ -119,17 +117,19 @@ impl Sapiens {
         chevauchent, et effacer le rectangle entier recouvrirait le curseur
         fraichement dessine (clignotement). */
         {
-            let _g = port::on(self.sapwind.mainWindow);
-            let rgnClip = GetClip().expect("clip");
+            let _g = self.sapwind.ports.on(PortId::MainWindow);
+            let rgnClip = self.sapwind.ports.GetClip().expect("clip");
             for band in difference_rects(&oldRect, &self.sapwclav.rsouris) {
                 if band.is_empty() {
                     continue;
                 }
-                let rgn = port::zoomed(port::window(), &band);
-                SetClip(&rgn);
-                CopyOffscreen(self.sapwind.debecr, self.sapwind.mainWindow, &band, &band);
+                let rgn = self.sapwind.ports.window().zoomed(&band);
+                self.sapwind.ports.SetClip(&rgn);
+                self.sapwind
+                    .ports
+                    .CopyOffscreen(PortId::debecr, PortId::MainWindow, band, &band);
             }
-            SetClip(&rgnClip);
+            self.sapwind.ports.SetClip(&rgnClip);
         }
     }
 }
@@ -445,9 +445,13 @@ impl Souris {
 
 impl Sapiens {
     pub(crate) fn vq_mouse(&mut self) -> (i16, i16, i16) {
-        port::set(self.sapwind.mainWindow);
+        self.sapwind.ports.set(PortId::MainWindow);
         self.GereInterface();
-        let pt = GetMouse().zoom(port::window_zoom());
+        let pt = self
+            .sapwind
+            .ports
+            .GetMouse()
+            .zoom(self.sapwind.ports.window_zoom());
         if self.sapwclav.r_no_mouse.pt_in_rect(pt) {
             self.souris.CacheSouris();
         } else {

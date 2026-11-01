@@ -8,15 +8,11 @@ use std::rc::Rc;
 use std::sync::atomic::Ordering;
 
 use crate::Sapiens;
-use crate::acam::{
-    BackColor, CloseRgn, EraseRgn, FAUX, FrameRgn, FrameRoundRect, GetClip, LineTo, OpenRgn,
-    SetClip, TickCount, VRAI,
-};
+use crate::acam::{FAUX, TickCount, VRAI};
 use crate::cbridge::{strcat, strcpy, whiteColor};
-use crate::port;
+use crate::port::PortId;
 use crate::sapiens::sapglob::{ListeId, SapId, Sapglob, tabprf, tenerv, tobje};
 use crate::sapiens::sapw3d::distance;
-use crate::sapiens::sapwbrt::{CopyOffscreen, DoMoveTo, DoPenSize};
 use crate::sapiens::sapwmus::attends_bruit;
 use crate::sapiens::{NBREVTDESTINE, NBREVTHEURE, Vue, evt};
 use crate::shared::{Ptr, Rect};
@@ -98,7 +94,7 @@ impl Sapiens {
     => Chaine a traiter
     @= taille maximale en colonne x, nbre de lignes t
     **************************************************************************/
-    fn TailleChaine(&self, mut debut: &[i8]) -> (i16, i16) {
+    fn TailleChaine(&mut self, mut debut: &[i8]) -> (i16, i16) {
         let mut x = 0;
         let mut taillex = 0;
         let mut y = 0;
@@ -121,7 +117,7 @@ impl Sapiens {
     }
 
     fn TailleCarMess<'a>(
-        &self,
+        &mut self,
         debut: &'a [i8],
         mut taillex: i16,
         mut tailley: i16,
@@ -209,7 +205,9 @@ impl Sapiens {
                     (1 + 100) * ECHELLE,
                 );
 
-                CopyOffscreen(self.sapwind.debecr, self.sapwind.Ecran1, &rsourc, &rdest);
+                self.sapwind
+                    .ports
+                    .CopyOffscreen(PortId::debecr, PortId::Ecran1, rsourc, &rdest);
                 self.delai(15 * 60);
                 self.Final();
             }
@@ -311,19 +309,19 @@ impl Sapiens {
     pub(crate) fn effaceBulles(&mut self) {
         self.tfrvirt();
         if !self.saprel.rBulleJoueur.is_empty() {
-            CopyOffscreen(
-                self.sapwind.debecr,
-                self.sapwind.mainWindow,
-                &self.saprel.rBulleJoueur,
+            self.sapwind.ports.CopyOffscreen(
+                PortId::debecr,
+                PortId::MainWindow,
+                self.saprel.rBulleJoueur,
                 &self.saprel.rBulleJoueur,
             );
         }
         self.saprel.rBulleJoueur = Rect::default();
         if !self.saprel.rBulleAdversaire.is_empty() {
-            CopyOffscreen(
-                self.sapwind.debecr,
-                self.sapwind.mainWindow,
-                &self.saprel.rBulleAdversaire,
+            self.sapwind.ports.CopyOffscreen(
+                PortId::debecr,
+                PortId::MainWindow,
+                self.saprel.rBulleAdversaire,
                 &self.saprel.rBulleAdversaire,
             );
         }
@@ -344,7 +342,7 @@ impl Sapiens {
     => message a afficher, qui le dit (0)== joueur (1)== adversaire
     *************************************************************************/
     pub(crate) fn bulle(&mut self, debut: &[i8], qui: i16) {
-        let _g = port::on(self.sapwind.debecr);
+        let _g = self.sapwind.ports.on(PortId::debecr);
         /* Calcul de la taille de la chaine en pixel */
         let (mut tx, ty) = self.TailleChaine(debut);
         if tx < 64 {
@@ -391,32 +389,36 @@ impl Sapiens {
             }
         }
         r.bottom -= TAILLE_QUEUE;
-        OpenRgn();
-        FrameRoundRect(&r, 16, 16);
+        self.sapwind.ports.OpenRgn();
+        self.sapwind.ports.FrameRoundRect(&r, 16, 16);
         /* Bulle a gauche */
         let sap1 = &self.sapglob.sap1;
         if (qui ^ sap1.sens as i16) != 0 {
             let x = r.left + 48;
             let y = r.bottom;
-            DoMoveTo(x, y);
-            LineTo(x - TAILLE_QUEUE, y + TAILLE_QUEUE);
-            LineTo(x - 8, y);
-            LineTo(x, y);
+            self.sapwind.ports.DoMoveTo(x, y);
+            self.sapwind
+                .ports
+                .LineTo(x - TAILLE_QUEUE, y + TAILLE_QUEUE);
+            self.sapwind.ports.LineTo(x - 8, y);
+            self.sapwind.ports.LineTo(x, y);
         } else {
             let x = r.right - 48;
             let y = r.bottom;
-            DoMoveTo(x, y);
-            LineTo(x + TAILLE_QUEUE, y + TAILLE_QUEUE);
-            LineTo(x + 8, y);
-            LineTo(x, y);
+            self.sapwind.ports.DoMoveTo(x, y);
+            self.sapwind
+                .ports
+                .LineTo(x + TAILLE_QUEUE, y + TAILLE_QUEUE);
+            self.sapwind.ports.LineTo(x + 8, y);
+            self.sapwind.ports.LineTo(x, y);
         }
-        let rgn = CloseRgn().expect("A range !");
-        BackColor(whiteColor as i16);
-        EraseRgn(&rgn);
-        DoPenSize(1, 1);
-        FrameRgn(&rgn);
-        let rgnclip = GetClip().expect("a clip");
-        SetClip(&rgn);
+        let rgn = self.sapwind.ports.CloseRgn().expect("A range !");
+        self.sapwind.ports.BackColor(whiteColor as i16);
+        self.sapwind.ports.EraseRgn(&rgn);
+        self.sapwind.ports.DoPenSize(1, 1);
+        self.sapwind.ports.FrameRgn(&rgn);
+        let rgnclip = self.sapwind.ports.GetClip().expect("a clip");
+        self.sapwind.ports.SetClip(&rgn);
         let x = r.left + 8;
         let mut y = r.top + 6;
         self.sapwcar.GotoxyPixel(x, y);
@@ -439,9 +441,9 @@ impl Sapiens {
                 p = &p[1..];
             }
         }
-        SetClip(&rgnclip);
-        self.TfrEcr(Some(&rbase));
-        DoPenSize(1, 1);
+        self.sapwind.ports.SetClip(&rgnclip);
+        self.TfrEcr(Some(rbase));
+        self.sapwind.ports.DoPenSize(1, 1);
     }
 
     /***********************************************************************
@@ -1450,7 +1452,7 @@ impl Sapiens {
             let t = TickCount();
             while TickCount() < t + 10 { /* vide */ }
             self.affich(self.sapglob.dzeta as u16);
-            self.tfrima();
+            self.sapwind.ports.tfrima();
             self.sapglob.minute = 0;
             self.chrono(2);
             self.sapglob.stock2 -= 1;
@@ -1537,7 +1539,7 @@ impl Sapiens {
                 loop {
                     posTimer = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
                     self.affich(self.sapglob.dzeta as u16);
-                    self.tfrima();
+                    self.sapwind.ports.tfrima();
                     self.sapglob.dzeta = ((self.sapglob.dzeta as i32 + 16) & 0x3FF) as i16;
                     while posTimer
                         > self

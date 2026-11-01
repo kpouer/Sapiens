@@ -1,10 +1,10 @@
 /****************************************************************************
             Encadre et efface le message
 *****************************************************************************/
-use crate::sapiens::sapwbrt::{CopyOffscreen, DoEraseRect, DoFrameRect, DoPenSize, DoScrollRect};
+use crate::Sapiens;
+use crate::port::PortId;
 use crate::shared::Rect;
 use crate::stubs::CarboniseInvalRect;
-use crate::{Sapiens, port};
 
 pub(crate) struct Sapwmess {
     pub(crate) rMess: Rect,
@@ -24,13 +24,13 @@ impl Default for Sapwmess {
 }
 
 impl Sapiens {
-    pub(crate) fn framebadass(&self) {
-        let _g = port::on(self.sapwind.debecr);
+    pub(crate) fn framebadass(&mut self) {
+        let _g = self.sapwind.ports.on(PortId::debecr);
         let mut r = self.sapwmess.rMess;
         r.InsetRect(-1, -1);
-        DoEraseRect(&r);
-        DoFrameRect(&r);
-        DoPenSize(1, 1);
+        self.sapwind.ports.DoEraseRect(&r);
+        self.sapwind.ports.DoFrameRect(&r);
+        self.sapwind.ports.DoPenSize(1, 1);
     }
 
     /****************************************************************************
@@ -39,10 +39,10 @@ impl Sapiens {
     *****************************************************************************/
     pub(crate) fn TfrBadAss(&mut self) {
         self.eff_sour();
-        CopyOffscreen(
-            self.sapwind.debecr,
-            self.sapwind.mainWindow,
-            &self.sapwmess.rMess,
+        self.sapwind.ports.CopyOffscreen(
+            PortId::debecr,
+            PortId::MainWindow,
+            self.sapwmess.rMess,
             &self.sapwmess.rMess,
         );
         CarboniseInvalRect(&raw const self.sapwmess.rMess);
@@ -51,9 +51,9 @@ impl Sapiens {
     /****************************************************************************
                 Effacement du message
     *****************************************************************************/
-    pub(crate) fn efbadass(&self) {
-        let _g = port::on(self.sapwind.debecr);
-        DoEraseRect(&self.sapwmess.rMess);
+    pub(crate) fn efbadass(&mut self) {
+        let _g = self.sapwind.ports.on(PortId::debecr);
+        self.sapwind.ports.DoEraseRect(&self.sapwmess.rMess);
     }
 
     /****************************************************************************
@@ -62,7 +62,7 @@ impl Sapiens {
     pub(crate) fn scrollbadass(&mut self) {
         let mut i;
         self.eff_sour();
-        let _g = port::on(self.sapwind.mainWindow);
+        let _g = self.sapwind.ports.on(PortId::MainWindow);
         let reff = Rect::new(
             self.sapwmess.rMess.left,
             self.sapwmess.rMess.top,
@@ -71,8 +71,10 @@ impl Sapiens {
         );
         i = 0;
         while i < self.sapwmess.rMess.right - self.sapwmess.rMess.left {
-            DoScrollRect(&self.sapwmess.rMess, 8, 0, core::ptr::null_mut());
-            DoEraseRect(&reff);
+            self.sapwind
+                .ports
+                .DoScrollRect(&self.sapwmess.rMess, 8, 0, core::ptr::null_mut());
+            self.sapwind.ports.DoEraseRect(&reff);
             i += 8;
         }
         self.efbadass();

@@ -9,9 +9,9 @@
 use crate::cbridge::{MenuHandle, OSErr, SndChannelPtr, WindowPtr};
 use crate::exchange::INPUT;
 use crate::port;
+use crate::port::{PortId, Ports};
 use crate::shared::*;
 use std::ffi::c_void;
-use std::sync::atomic::Ordering;
 
 // ---------------------------------------------------------------------------
 // Gestion des fenetres / evenements
@@ -24,26 +24,21 @@ pub(crate) fn Button() -> Boolean {
     INPUT.lock().unwrap().button as Boolean
 }
 
-#[allow(non_snake_case)]
-pub(crate) fn GetMouse() -> Point {
-    let st = INPUT.lock().unwrap();
-    let (w, h) = unsafe {
-        let p = WINDOW_PORT.load(Ordering::SeqCst);
-        if p.is_null() {
-            (640.0_f64, 400.0_f64)
-        } else {
-            let b = (*p).bounds;
-            (
-                f64::from(b.right - b.left).max(1.0),
-                f64::from(b.bottom - b.top).max(1.0),
-            )
+impl Ports {
+    #[allow(non_snake_case)]
+    pub(crate) fn GetMouse(&self) -> Point {
+        let st = INPUT.lock().unwrap();
+        let p = &self.mainWindow;
+        let b = (*p).bounds;
+        let w = f64::from(b.right - b.left).max(1.0);
+        let h = f64::from(b.bottom - b.top).max(1.0);
+        Point {
+            h: (f64::from(st.mouse_h) * w) as i16,
+            v: (f64::from(st.mouse_v) * h) as i16,
         }
-    };
-    Point {
-        h: (f64::from(st.mouse_h) * w) as i16,
-        v: (f64::from(st.mouse_v) * h) as i16,
     }
 }
+
 pub(crate) extern "C" fn FrontWindow() -> WindowPtr {
     std::ptr::null_mut()
 }
@@ -59,22 +54,28 @@ pub(crate) extern "C" fn SystemTask() {}
 pub(crate) extern "C" fn BeginUpdate(_w: WindowPtr) {}
 pub(crate) extern "C" fn EndUpdate(_w: WindowPtr) {}
 pub(crate) extern "C" fn DragWindow(_w: WindowPtr, _pt: Point, _bounds: *const Rect) {}
-pub(crate) extern "C" fn SizeWindow(w: WindowPtr, wWidth: i16, wHeight: i16, _update: Boolean) {
-    /* Un `WindowPtr` est ici un `SapPort` : redimensionner la fenêtre revient à
-    reallouer son tampon (menu « Échelle », `FixeTailleMainWindow`). */
-    let p = w as CGrafPtr;
-    let Some(old) = port::info(p) else {
-        return;
-    };
-    port::resize(
-        p,
-        Rect {
-            top: old.bounds.top,
-            left: old.bounds.left,
-            bottom: old.bounds.top + wHeight,
-            right: old.bounds.left + wWidth,
-        },
-    );
+
+impl Ports {
+    pub(crate) fn SizeWindow(
+        &mut self,
+        port_id: PortId,
+        wWidth: i16,
+        wHeight: i16,
+        _update: Boolean,
+    ) {
+        /* Un `WindowPtr` est ici un `SapPort` : redimensionner la fenêtre revient à
+        reallouer son tampon (menu « Échelle », `FixeTailleMainWindow`). */
+        let old = self.port(port_id).info();
+        port::resize(
+            self.port_mut(port_id),
+            Rect {
+                top: old.bounds.top,
+                left: old.bounds.left,
+                bottom: old.bounds.top + wHeight,
+                right: old.bounds.left + wWidth,
+            },
+        );
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -108,7 +109,7 @@ pub(crate) fn GetPicture(_resID: i16) -> PicHandle {
     std::ptr::null_mut()
 }
 pub(crate) fn DrawPicture(_pic: PicHandle, _dstRect: &Rect) {}
-pub(crate) fn GetRectFilePng(_name: *mut i8, _r: &mut Rect) -> Boolean {
+pub(crate) fn GetRectFilePng(_name: &str, _r: &mut Rect) -> Boolean {
     false
 }
 
@@ -141,9 +142,8 @@ pub(crate) extern "C" fn SndPlay(_chan: SndChannelPtr, _snd: SndListHandle, _asy
 // Images offscreen (restants)
 // ---------------------------------------------------------------------------
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn ConvertPNGFileToOffscreen(_fileName: *mut i8) -> CGrafPtr {
-    std::ptr::null_mut()
+pub(crate) fn ConvertPNGFileToOffscreen(_fileName: &str) -> Option<SapPort> {
+    None
 }
 #[unsafe(no_mangle)]
 pub(crate) extern "C" fn CarboniseInvalRect(_r: *const Rect) {}

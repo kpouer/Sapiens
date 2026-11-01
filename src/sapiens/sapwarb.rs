@@ -1,8 +1,9 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 #![allow(unsafe_op_in_unsafe_fn)]
+use crate::Sapiens;
+use crate::port::PortId;
 use crate::sapiens::sapw3d::{cosshort, sinshort};
-use crate::{Sapiens, port};
 
 pub(crate) struct Sapwarb {
     niveau: i16,    /*niveau de recusrsivite*/
@@ -185,7 +186,7 @@ impl Sapiens {
     ***************************************************************************/
     #[unsafe(no_mangle)]
     pub(crate) extern "C" fn arbre(&mut self, ligne: i16, colonne: i16) {
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
         /* La position du meteore varie de 74 a 0 puis de 0 a 74 */
         if self.sapglob.heure > 512 {
             self.sapwarb.TabIndexFeuilleNuit = Some(self.CalculePaletteAttenuee(

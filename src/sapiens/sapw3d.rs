@@ -9,15 +9,15 @@
 // sol en lignes successives, pluie et éclairs, visualisation des montagnes.
 #![allow(unsafe_op_in_unsafe_fn)]
 
+use crate::Sapiens;
 use crate::acam::{Random, TickCount};
+use crate::port::{PortId, Ports};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
-use crate::sapiens::sapwbrt::RemplitZoneLignes;
 use crate::sapiens::{
     ECHELLE, FormeId, IndexColor, MontId, NB_DEGRADE_DISTANCE, NB_ETOILES, NB_LIGNES_CIEL,
     NB_LIGNES_TERRE, h_chron,
 };
 use crate::shared::{RGBColor, Rect};
-use crate::{Sapiens, port};
 
 const LARGEUR_ECRAN: i32 = 512;
 const HAUTEUR_ECRAN: i32 = 256;
@@ -202,7 +202,7 @@ impl Sapiens {
         let mut incGreen = 0;
         let mut incBlue = 0;
 
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
         for i in 0..NB_LIGNES_CIEL as i32 {
             /* Changement de ligne */
             if i == TAB_LIGN[j as usize] as i32 {
@@ -265,7 +265,7 @@ impl Sapiens {
     pub(crate) fn CalculeToutDegrades(&mut self) {
         let mut rgb = RGBColor::default();
 
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
         /* Pour l'ensemble des evenements on calcule le degrade */
         for i in 0..self.sapglob.tabheur.len() {
             let e = &mut self.sapglob.tabheur[i];
@@ -305,7 +305,7 @@ impl Sapiens {
     *****************************************************************************/
     pub(crate) fn CalculeEtoiles(&mut self) {
         let mut rgb = RGBColor::default();
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
 
         /* Couleur de l'etoile */
         self.sapw3d.TAB_ETOILES = [Etoile::default(); NB_ETOILES];
@@ -332,9 +332,7 @@ impl Sapiens {
         unsafe {
             if self.sapglob.heure as i32 > 480 || (self.sapglob.heure as i32) < 20 {
                 /* Nuit */
-                let Some(info) = port::info(port::current()) else {
-                    return;
-                };
+                let info = self.sapwind.ports.current().info();
                 let data = info.pixels;
                 let tailleLigne = info.row_bytes;
                 let magnitude: i16 = if (self.sapglob.heure as i32) < MAX_MAGNITUDE {
@@ -625,82 +623,78 @@ impl Sapiens {
     }
 }
 
-/******************************************************************
-                    TrameCielOrage
-******************************************************************/
-fn TrameCielOrage(index: i16) {
-    /* Origine des données de l'ecran */
-    let Some(info) = port::info(port::current()) else {
-        return;
-    };
-    let data = info.pixels;
-    let tailleLigne = info.row_bytes;
-    let mut d = data;
-    let mut i = NB_LIGNES_CIEL as i32 / 2;
-    unsafe {
-        while i > 0 {
-            i -= 1;
-            let mut j = tailleLigne as i32 / 2;
-            while j > 0 {
-                j -= 1;
-                *d = index as u8;
-                *d.offset((tailleLigne as i64 + 1) as isize) = index as u8;
-                d = d.add(2);
-            }
-            d = d.add(tailleLigne as usize);
-        }
-    }
-}
-
-/******************************************************************
-                    Flou
-******************************************************************/
-fn Flou() {
-    /* Origine des données de l'ecran */
-    let Some(info) = port::info(port::current()) else {
-        return;
-    };
-    let data = info.pixels;
-    let tailleLigne = info.row_bytes;
-    unsafe {
-        for y in 0..200 {
-            let mut p = data.add((tailleLigne as i64 * y) as usize);
-            let mut x = 0;
-            while x < tailleLigne as i32 {
-                *p = *p.add(1);
-                p = p.add(3);
-                x += 3;
+impl Ports {
+    /******************************************************************
+                        TrameCielOrage
+    ******************************************************************/
+    fn TrameCielOrage(&self, index: i16) {
+        /* Origine des données de l'ecran */
+        let info = self.current().info();
+        let data = info.pixels;
+        let tailleLigne = info.row_bytes;
+        let mut d = data;
+        let mut i = NB_LIGNES_CIEL as i32 / 2;
+        unsafe {
+            while i > 0 {
+                i -= 1;
+                let mut j = tailleLigne as i32 / 2;
+                while j > 0 {
+                    j -= 1;
+                    *d = index as u8;
+                    *d.offset((tailleLigne as i64 + 1) as isize) = index as u8;
+                    d = d.add(2);
+                }
+                d = d.add(tailleLigne as usize);
             }
         }
     }
-}
 
-/******************************************************************
-                    TracePluie
-=> index de la couleur, nombre de gouttes
-******************************************************************/
-fn TracePluie(random: &mut Random, index: i16, n: i16) {
-    if random.myRandom(0, 1000) > 500 {
-        Flou();
+    /******************************************************************
+                        Flou
+    ******************************************************************/
+    fn Flou(&self) {
+        /* Origine des données de l'ecran */
+        let info = self.current().info();
+        let data = info.pixels;
+        let tailleLigne = info.row_bytes;
+        unsafe {
+            for y in 0..200 {
+                let mut p = data.add((tailleLigne as i64 * y) as usize);
+                let mut x = 0;
+                while x < tailleLigne as i32 {
+                    *p = *p.add(1);
+                    p = p.add(3);
+                    x += 3;
+                }
+            }
+        }
     }
-    /* Origine des données de l'ecran */
-    let Some(info) = port::info(port::current()) else {
-        return;
-    };
-    let data = info.pixels;
-    let tailleLigne = info.row_bytes;
-    let mut n = n as i32;
-    unsafe {
-        while n > 0 {
-            n -= 1;
-            let x = random.myRandom(0, tailleLigne as i64) as i16;
-            let y = random.myRandom(0, 150) as i16;
-            let mut j = 50;
-            let mut p = data.add((tailleLigne as i64 * y as i64 + x as i64) as usize);
-            while j > 0 {
-                j -= 1;
-                *p = index as u8;
-                p = p.add((tailleLigne as i64 - 1) as usize);
+
+    /******************************************************************
+                        TracePluie
+    => index de la couleur, nombre de gouttes
+    ******************************************************************/
+    fn TracePluie(&self, random: &mut Random, index: i16, n: i16) {
+        if random.myRandom(0, 1000) > 500 {
+            self.Flou();
+        }
+        /* Origine des données de l'ecran */
+        let info = self.current().info();
+        let data = info.pixels;
+        let tailleLigne = info.row_bytes;
+        let mut n = n as i32;
+        unsafe {
+            while n > 0 {
+                n -= 1;
+                let x = random.myRandom(0, tailleLigne as i64) as i16;
+                let y = random.myRandom(0, 150) as i16;
+                let mut j = 50;
+                let mut p = data.add((tailleLigne as i64 * y as i64 + x as i64) as usize);
+                while j > 0 {
+                    j -= 1;
+                    *p = index as u8;
+                    p = p.add((tailleLigne as i64 - 1) as usize);
+                }
             }
         }
     }
@@ -719,11 +713,13 @@ impl Sapiens {
         xmeteore: u16,
         isLune: u16,
     ) {
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
 
         /* Le degrade du ciel */
         /* Un orage est en cours */
-        RemplitZoneLignes(0, &self.sapw3d.TAB_COULEURS_CIEL);
+        self.sapwind
+            .ports
+            .RemplitZoneLignes(0, &self.sapw3d.TAB_COULEURS_CIEL);
         self.AfficheEtoiles();
         /* Le meteore */
         self.Affmobbrt(
@@ -735,9 +731,13 @@ impl Sapiens {
         );
         if self.sap3d.FreqEclair < 1000 {
             if isLune != 0 {
-                TrameCielOrage(self.sapw3d.COULEUR_ORAGE_NUIT);
+                self.sapwind
+                    .ports
+                    .TrameCielOrage(self.sapw3d.COULEUR_ORAGE_NUIT);
             } else {
-                TrameCielOrage(self.sapw3d.COULEUR_ORAGE_JOUR);
+                self.sapwind
+                    .ports
+                    .TrameCielOrage(self.sapw3d.COULEUR_ORAGE_JOUR);
             }
         }
         /* Le sol */
@@ -748,7 +748,7 @@ impl Sapiens {
                                      Pluie
     ***************************************************************************************/
     pub(crate) fn Pluie(&mut self) {
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
 
         if self.sap3d.FreqEclair < 1000 && self.sap3d.FreqEclair > 500 {
             let n = if self.sap3d.FreqEclair > 750 {
@@ -757,9 +757,17 @@ impl Sapiens {
                 self.sap3d.FreqEclair - 500
             };
             if self.sapglob.heure & 0x200 != 0 {
-                TracePluie(&mut self.random, self.sapw3d.COULEUR_ORAGE_NUIT, n as i16);
+                self.sapwind.ports.TracePluie(
+                    &mut self.random,
+                    self.sapw3d.COULEUR_ORAGE_NUIT,
+                    n as i16,
+                );
             } else {
-                TracePluie(&mut self.random, self.sapw3d.COULEUR_ORAGE_JOUR, n as i16);
+                self.sapwind.ports.TracePluie(
+                    &mut self.random,
+                    self.sapw3d.COULEUR_ORAGE_JOUR,
+                    n as i16,
+                );
             }
             /* Si pas deja de l'eau par terre on mets de l'eau a terre */
             if self.sapglob.liste4.taille > 0
@@ -822,7 +830,7 @@ impl Sapiens {
     L'affichage se fait sur ecran 1
     ******************************************************************************************/
     pub(crate) fn visu(&mut self) {
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
         self.sapglob.zj =
             self.CalculeAltitude(self.sapglob.xj as i16, self.sapglob.yj as i16) as u16;
         let angle = ((self.sapglob.dzeta as f32) * (3.1415927_f32)) as f64 / 512.0;

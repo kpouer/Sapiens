@@ -2,15 +2,13 @@
 #![allow(non_upper_case_globals)]
 
 use crate::Sapiens;
-use crate::acam::{ForeColor, SectRect};
+use crate::acam::SectRect;
 use crate::cbridge::{blackColor, whiteColor};
-use crate::port;
-use crate::sapiens::sapwbrt::{CopyOffscreen, DoFrameRect, SapiensCreeOffscreen};
+use crate::port::PortId;
+use crate::sapiens::sapwbrt::SapiensCreeOffscreen;
 use crate::sapiens::sapwclav::GetKeyMap;
 use crate::sapiens::{FormeId, Mont};
-use crate::shared::{CGrafPtr, Rect};
-use log::error;
-use std::ptr::null_mut;
+use crate::shared::{Rect, SapPort};
 
 const TAILLE_X_CARTE: i64 = 144;
 const TAILLE_Y_CARTE: i64 = 80;
@@ -28,9 +26,9 @@ struct EltCart {
 structure, champ de `Sapiens`. */
 pub(crate) struct Sapwcart {
     /* ex-`EcrCarte` */
-    ecr_carte: CGrafPtr,
+    pub(crate) ecr_carte: SapPort,
     /* ex-`TabEltCar` */
-    tab_elt_car: Option<[EltCart; NB_OBJETS_MAX]>,
+    tab_elt_car: [EltCart; NB_OBJETS_MAX],
     /* ex-`AireCarte` */
     aire_carte: Rect,
 }
@@ -38,9 +36,17 @@ pub(crate) struct Sapwcart {
 impl Default for Sapwcart {
     fn default() -> Self {
         Self {
-            ecr_carte: null_mut(),
-            tab_elt_car: None,
-            aire_carte: Rect::default(),
+            ecr_carte: SapiensCreeOffscreen(
+                (TAILLE_X_CARTE * ECHELLE) as i16,
+                (TAILLE_Y_CARTE * ECHELLE) as i16,
+            ),
+            tab_elt_car: [EltCart::default(); NB_OBJETS_MAX],
+            aire_carte: Rect::new(
+                0,
+                0,
+                (TAILLE_X_CARTE * ECHELLE) as i16,
+                (TAILLE_Y_CARTE * ECHELLE) as i16,
+            ),
         }
     }
 }
@@ -55,16 +61,16 @@ impl Sapiens {
             ((160 + TAILLE_X_CARTE) * ECHELLE) as i16,
             ((117 + TAILLE_Y_CARTE) * ECHELLE) as i16,
         );
-        CopyOffscreen(
-            self.sapwcart.ecr_carte,
-            self.sapwind.debecr,
-            &self.sapwcart.aire_carte,
+        self.sapwind.ports.CopyOffscreen(
+            PortId::ecr_carte,
+            PortId::debecr,
+            self.sapwind.ports.sapwcart.aire_carte,
             &rdest,
         );
-        CopyOffscreen(
-            self.sapwcart.ecr_carte,
-            self.sapwind.mainWindow,
-            &self.sapwcart.aire_carte,
+        self.sapwind.ports.CopyOffscreen(
+            PortId::ecr_carte,
+            PortId::MainWindow,
+            self.sapwind.ports.sapwcart.aire_carte,
             &rdest,
         );
     }
@@ -74,7 +80,7 @@ impl Sapiens {
     ; => Pointeur sur la structure montagne ,Zoom_
     ; <= Xc,Yc (Yc à 0 si montagne invisible)
     */
-    fn calc_cart(&self, mont: &Mont, eltCart_index: usize) -> bool {
+    fn calc_cart(&mut self, mont: &Mont, eltCart_index: usize) -> bool {
         let Some(forme) = mont.forme.map(FormeId::forme) else {
             return false;
         };
@@ -84,9 +90,7 @@ impl Sapiens {
         let y = ((self.sapglob.xj as i64 - mont.posx as i64) / (self.sapglob.zoom as i64))
             + TAILLE_Y_CARTE;
         let r = forme.rayon as i64 / (self.sapglob.zoom as i64 / 2);
-        let Some(eltCart) = &mut self.sapwcart.tab_elt_car.map(|t| t[eltCart_index]) else {
-            return false;
-        };
+        let eltCart = &mut self.sapwind.ports.sapwcart.tab_elt_car[eltCart_index];
         if forme.num_mob == 8 {
             /* (num_mob==BASEMOB+8) Fumee -> BASEMOB=0 */
             eltCart.aire = Rect::new(
@@ -110,7 +114,7 @@ impl Sapiens {
                 (y + r / 8) as i16,
             );
         }
-        if SectRect(&eltCart.aire, &self.sapwcart.aire_carte).is_some() {
+        if SectRect(&eltCart.aire, &self.sapwind.ports.sapwcart.aire_carte).is_some() {
             eltCart.mob = self.sapwind.mob3D + forme.numMob3d;
             return true; /* VRAI */
         }
@@ -127,28 +131,24 @@ impl Sapiens {
         loop {
             let mut jmin = 0;
             let mut minyc = 32767;
-            if let Some(tab_elt_car) = &self.sapwcart.tab_elt_car {
-                for (j, elt) in tab_elt_car.iter().enumerate() {
-                    if elt.aire.bottom < minyc {
-                        jmin = j;
-                        minyc = elt.aire.bottom;
-                    }
+            for (j, elt) in self.sapwind.ports.sapwcart.tab_elt_car.iter().enumerate() {
+                if elt.aire.bottom < minyc {
+                    jmin = j;
+                    minyc = elt.aire.bottom;
                 }
-                if minyc == 32767 {
-                    return;
-                }
-                self.Affmob3d(tab_elt_car[jmin].mob, tab_elt_car[jmin].aire, None);
             }
-            if let Some(tab_elt_car) = &mut self.sapwcart.tab_elt_car {
-                tab_elt_car[jmin].aire.bottom = 32767;
-            } else {
-                error!("self.sapwcart.tab_elt_car should be something");
+            if minyc == 32767 {
+                return;
             }
+            self.Affmob3d(
+                self.sapwind.ports.sapwcart.tab_elt_car[jmin].mob,
+                self.sapwind.ports.sapwcart.tab_elt_car[jmin].aire,
+                None,
+            );
+            self.sapwind.ports.sapwcart.tab_elt_car[jmin].aire.bottom = 32767;
         }
     }
-}
 
-impl Sapiens {
     /***********************************************************************
                              EffCarte
     Efface le fond de la carte
@@ -160,7 +160,7 @@ impl Sapiens {
             (TAILLE_X_CARTE * ECHELLE) as i16,
             (TAILLE_Y_CARTE * ECHELLE) as i16,
         );
-        self.BoxFill(self.sapwcart.ecr_carte, &mut r, 0x050); /* palhaute[3]*/
+        self.BoxFill(PortId::ecr_carte, &mut r, 0x050); /* palhaute[3]*/
     }
 
     /***********************************************************************
@@ -168,38 +168,23 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn carte(&mut self) {
         let mut r = Rect::default();
-
-        /* deconnecte sous menu */
-        if self.sapwcart.ecr_carte.is_null() {
-            self.sapwcart.ecr_carte = SapiensCreeOffscreen(
-                (TAILLE_X_CARTE * ECHELLE) as i16,
-                (TAILLE_Y_CARTE * ECHELLE) as i16,
-            );
-            if self.sapwcart.ecr_carte.is_null() {
-                return;
-            }
-            self.sapwcart.tab_elt_car = Some([EltCart::default(); NB_OBJETS_MAX]);
-            self.sapwcart.aire_carte = Rect::new(
-                0,
-                0,
-                (TAILLE_X_CARTE * ECHELLE) as i16,
-                (TAILLE_Y_CARTE * ECHELLE) as i16,
-            );
-        }
-        let _g = port::on(self.sapwcart.ecr_carte);
+        let _g = self.sapwind.ports.on(PortId::ecr_carte);
         self.sapglob.smenu[1] = 111;
         /* efface carte */
         self.EffCarte();
         /* trie les objets */
         let mut j = 0;
-        for mont in &self.sap3d.aigoual {
+        let aigoual = std::mem::take(&mut self.sap3d.aigoual);
+        for mont in &aigoual {
             if j >= NB_OBJETS_MAX {
                 break;
             }
-            if mont.forme.is_some_and(|id| id.forme().num_mob >= 0) && self.calc_cart(mont, j) {
+            let visible = mont.forme.is_some_and(|id| id.forme().num_mob >= 0);
+            if visible && self.calc_cart(mont, j) {
                 j += 1;
             }
         }
+        self.sap3d.aigoual = aigoual;
         /* affichage */
         self.aff_mont(j as i16);
         /* on affiche la fleche */
@@ -229,7 +214,7 @@ impl Sapiens {
                              ZOOCAR:Gere le zoom
     ***********************************************************************/
     pub(crate) fn zoocar(&mut self) {
-        let _g = port::on(self.sapwind.mainWindow);
+        let _g = self.sapwind.ports.on(PortId::MainWindow);
 
         loop {
             (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
@@ -244,9 +229,9 @@ impl Sapiens {
             ((117 + TAILLE_Y_CARTE) * ECHELLE) as i16,
         );
         r.InsetRect(-1, -1);
-        ForeColor(whiteColor as i16);
-        DoFrameRect(&r);
-        ForeColor(blackColor as i16);
+        self.sapwind.ports.ForeColor(whiteColor as i16);
+        self.sapwind.ports.DoFrameRect(&r);
+        self.sapwind.ports.ForeColor(blackColor as i16);
         self.carte();
         loop {
             self.GereInterface();
@@ -275,6 +260,6 @@ impl Sapiens {
                 break;
             }
         }
-        DoFrameRect(&r);
+        self.sapwind.ports.DoFrameRect(&r);
     }
 }

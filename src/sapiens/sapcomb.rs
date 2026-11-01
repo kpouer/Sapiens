@@ -22,12 +22,11 @@ use crate::MOB_MORT;
 use crate::MOB_SANG_A_TERRE;
 use crate::acam::{FAUX, VRAI};
 use crate::cbridge::{geneva, teJustLeft};
-use crate::port;
+use crate::port::PortId;
 use crate::sapiens::sapglob::{
     AnimPtr, AnimTable, ListeId, SapId, Sapglob, bestagress, besthaut, bestlin, bestvie, hautlin,
     hautou, qtviande, tabinp, tribforce, tribvie,
 };
-use crate::sapiens::sapwbrt::{DoEraseRect, DoFrameRect, DoTextBox, DoTextSize};
 use crate::sapiens::sapwmus::attends_bruit;
 use crate::sapiens::sapwpref::JOUEUR2_AUTONOME;
 use crate::sapiens::{
@@ -35,7 +34,6 @@ use crate::sapiens::{
     NB_MAX_HERBE_AR_PLAN, NB_MAX_HERBE_AV_PLAN, SAGAIE, Vue, brin, sap,
 };
 use crate::shared::{Boolean, Point, Rect};
-use crate::text::TextFont;
 use crate::{DEBBEST, Sapiens};
 use std::ffi::CStr;
 use std::sync::atomic::Ordering;
@@ -271,8 +269,8 @@ impl Sapiens {
     /**********************************************************************
                             InitGenerique
     ***********************************************************************/
-    pub(crate) fn InitGenerique(&self) {
-        let _g = port::on(self.sapwind.debecr);
+    pub(crate) fn InitGenerique(&mut self) {
+        let _g = self.sapwind.ports.on(PortId::debecr);
         /* on balaye les quatre sapiens*/
         for id in SapId::iter() {
             let l = self.sapglob.peuple(id).poslcoeur;
@@ -286,9 +284,9 @@ impl Sapiens {
                 (l + 16 + 2) * ECHELLE as i16,
             );
             r.InsetRect(-1, -1);
-            DoFrameRect(&r);
+            self.sapwind.ports.DoFrameRect(&r);
             r.OffsetRect(0, 22 * ECHELLE as i16);
-            DoFrameRect(&r);
+            self.sapwind.ports.DoFrameRect(&r);
         }
     }
 }
@@ -312,7 +310,7 @@ impl Sapiens {
     /**********************************************************************
                             GENERIQUE:
     ***********************************************************************/
-    pub(crate) fn generique(&self, trace: Boolean) {
+    pub(crate) fn generique(&mut self, trace: Boolean) {
         /* on balaye les quatre sapiens*/
         for i in SapId::iter() {
             let mut l = self.sapglob.peuple(i).poslcoeur;
@@ -364,16 +362,18 @@ impl Sapiens {
             if raff.right > 640 {
                 raff.OffsetRect(640 - raff.right, 0);
             }
-            DoEraseRect(&raff);
+            self.sapwind.ports.DoEraseRect(&raff);
             raff.InsetRect(4, 4);
-            TextFont(geneva as i16);
-            DoTextSize(9);
-            DoTextBox(chaine, &raff, teJustLeft as i16);
+            self.sapwind.ports.TextFont(geneva as i16);
+            self.sapwind.ports.DoTextSize(9);
+            self.sapwind
+                .ports
+                .DoTextBox(chaine, &raff, teJustLeft as i16);
             raff.InsetRect(-4, -4);
-            DoFrameRect(&raff);
+            self.sapwind.ports.DoFrameRect(&raff);
             self.delai(60);
             self.AttendsFinBouton();
-            self.TfrEcr(Some(&raff));
+            self.TfrEcr(Some(raff));
         }
     }
 
@@ -2104,7 +2104,7 @@ impl Sapiens {
         let mut nb: i64;
         /* Premier passage */
         if self.sapcomb.TabIndexHerbeFond.is_none() {
-            let _g = port::on(self.sapwind.Ecran1);
+            let _g = self.sapwind.ports.on(PortId::Ecran1);
             self.sapcomb.TabIndexHerbeFond =
                 Some(self.CalculePaletteAttenuee(MOB_HERBE!(self.sapwind), 0.75, 999));
         }
@@ -2199,7 +2199,7 @@ impl Sapiens {
 
         self.effdemi();
         self.mobs(TesteClavier);
-        self.tfrdemi();
+        self.sapwind.ports.tfrdemi();
         self.GereInterface();
         while t > self
             .sapwclav
@@ -2222,7 +2222,7 @@ impl Sapiens {
         /*  Mise en place 3d fn angle
         .... avplan */
         self.avplan();
-        self.tfrima();
+        self.sapwind.ports.tfrima();
         /* (c) God 7 Aout 87 Inits Souris */
         (
             self.sapglob.bouton,

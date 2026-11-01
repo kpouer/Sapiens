@@ -21,8 +21,8 @@ pub(crate) mod text;
 use crate::acam::Random;
 use crate::dialogs::PreferencesState;
 use crate::exchange::{
-    AlertRequest, CursorShape, INPUT, UiRequest, UiResponse, cursor_hidden, cursor_shape,
-    set_menu_command, take_title, take_ui_request,
+    AlertRequest, CursorShape, INPUT, UiRequest, UiResponse, WindowFrame, cursor_hidden,
+    cursor_shape, set_menu_command, take_title, take_ui_request, take_window_frame,
 };
 use crate::langue::{
     LangMode, Langue, effective_lang, langue, load_lang_mode, save_lang_mode, set_game_language,
@@ -39,7 +39,6 @@ use crate::sapiens::sapw3d::Sapw3d;
 use crate::sapiens::sapwarb::Sapwarb;
 use crate::sapiens::sapwbrt::Sapwbrt;
 use crate::sapiens::sapwcar::Sapwcar;
-use crate::sapiens::sapwcart::Sapwcart;
 use crate::sapiens::sapwclav::{Sapwclav, Souris};
 use crate::sapiens::sapwcvt::Sapwcvt;
 use crate::sapiens::sapwind::SapWind;
@@ -47,7 +46,7 @@ use crate::sapiens::sapwmess::Sapwmess;
 use crate::sapiens::sapwmus::Sapwmus;
 use eframe::egui;
 use egui::CursorIcon;
-use shared::{SapPort, WINDOW_PORT, lut_rgb};
+use shared::lut_rgb;
 use std::sync::mpsc::Sender;
 
 fn main() {
@@ -204,7 +203,6 @@ struct Sapiens {
     sapwmus: Sapwmus,
     sapwarb: Sapwarb,
     sapwcar: Sapwcar,
-    sapwcart: Sapwcart,
     saprel: Saprel,
     sapwmess: Sapwmess,
     sapgest: Sapgest,
@@ -224,6 +222,8 @@ struct SapiensApp {
     game_started: bool,
     monitor_wait: u32,
     last_port_size: Option<(usize, usize)>,
+    /// Dernière image du port fenêtre publiée par le thread C.
+    frame: Option<WindowFrame>,
 }
 
 enum ActiveDialog {
@@ -249,6 +249,7 @@ impl SapiensApp {
             game_started: false,
             monitor_wait: 0,
             last_port_size: None,
+            frame: None,
         }
     }
 
@@ -452,10 +453,16 @@ impl eframe::App for SapiensApp {
 
         record_input(ctx);
 
-        let window = WINDOW_PORT.load(Ordering::SeqCst);
-        if !window.is_null() {
+        let new_frame = take_window_frame();
+        if let Some(f) = new_frame {
+            self.tex =
+                Some(ctx.load_texture("sapiens", frame_image(&f), egui::TextureOptions::NEAREST));
+            self.frame = Some(f);
+        }
+        let window = self.frame.as_ref();
+        if let Some(f) = window {
             // La fenêtre egui suit la taille réelle du port (menu « Échelle »).
-            let (w, h) = port_size(window);
+            let (w, h) = (f.w, f.h);
             if w > 0 && h > 0 && self.last_port_size != Some((w, h)) {
                 self.last_port_size = Some((w, h));
                 let menu_h = (ctx.available_rect().top() - ctx.screen_rect().top()).max(0.0);
@@ -465,7 +472,7 @@ impl eframe::App for SapiensApp {
                 )));
             }
         }
-        if window.is_null() {
+        if window.is_none() {
             egui::CentralPanel::default()
                 .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
                 .show(ctx, |ui| {
@@ -478,12 +485,9 @@ impl eframe::App for SapiensApp {
                 });
             ctx.request_repaint_after(std::time::Duration::from_millis(10));
         } else {
-            let img = port_image(window);
             if let Some(d) = &mut self.dump {
-                d.tick(window);
+                d.tick(window.unwrap());
             }
-            // Ré-upload à chaque frame (remplace la texture du même nom).
-            self.tex = Some(ctx.load_texture("sapiens", img, egui::TextureOptions::NEAREST));
 
             egui::CentralPanel::default()
                 .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
@@ -500,37 +504,20 @@ impl eframe::App for SapiensApp {
     }
 }
 
-/// Dimensions (en pixels) du tampon du port fenêtre.
-fn port_size(p: *mut SapPort) -> (usize, usize) {
-    unsafe {
-        let pp = &*p;
-        (
-            (pp.bounds.right - pp.bounds.left).max(0) as usize,
-            (pp.bounds.bottom - pp.bounds.top).max(0) as usize,
-        )
-    }
-}
-
-/// Convertit l'intégralité du tampon d'indices du port fenêtre en image egui
-/// (via la LUT), à sa taille réelle : le zoom est ainsi réellement visible.
-fn port_image(p: *mut SapPort) -> egui::ColorImage {
-    unsafe {
-        let pp = &*p;
-        let (w, h) = port_size(p);
-        let row = pp.row_bytes.max(0) as usize;
-        let mut pixels = Vec::with_capacity(w * h);
-        for y in 0..h {
-            let rowp = pp.pixels.add(y * row);
-            for x in 0..w {
-                let idx = *rowp.add(x);
-                let (r, g, b) = lut_rgb(idx);
-                pixels.push(egui::Color32::from_rgb(r, g, b));
-            }
-        }
-        egui::ColorImage {
-            size: [w, h],
-            pixels,
-        }
+/// Convertit l'image d'indices du port fenêtre en image egui (via la LUT), à
+/// sa taille réelle : le zoom est ainsi réellement visible.
+fn frame_image(f: &WindowFrame) -> egui::ColorImage {
+    let pixels = f
+        .pixels
+        .iter()
+        .map(|&idx| {
+            let (r, g, b) = lut_rgb(idx);
+            egui::Color32::from_rgb(r, g, b)
+        })
+        .collect();
+    egui::ColorImage {
+        size: [f.w, f.h],
+        pixels,
     }
 }
 
@@ -717,33 +704,23 @@ impl PortDumper {
         })
     }
 
-    fn tick(&mut self, p: *mut SapPort) {
+    fn tick(&mut self, f: &WindowFrame) {
         const INTERVAL: std::time::Duration = std::time::Duration::from_secs(2);
         if self.then.elapsed() < INTERVAL {
             return;
         }
         self.then = std::time::Instant::now();
-        unsafe {
-            let pp = &*p;
-            let w = (pp.bounds.right - pp.bounds.left).max(0) as usize;
-            let h = (pp.bounds.bottom - pp.bounds.top).max(0) as usize;
-            let row = pp.row_bytes.max(0) as usize;
-            let mut ppm = Vec::with_capacity(12 + w * h * 3);
-            ppm.extend_from_slice(format!("P6\n{w} {h}\n255\n").as_bytes());
-            for y in 0..h {
-                let rowp = pp.pixels.add(y * row);
-                for x in 0..w {
-                    let (r, g, b) = lut_rgb(*rowp.add(x));
-                    ppm.push(r);
-                    ppm.push(g);
-                    ppm.push(b);
-                }
-            }
-            let path = self.out.clone();
-            match std::fs::write(&path, &ppm) {
-                Ok(()) => eprintln!("dump -> {path} ({w}x{h})"),
-                Err(e) => eprintln!("dump échec {path}: {e}"),
-            }
+        let (w, h) = (f.w, f.h);
+        let mut ppm = Vec::with_capacity(12 + w * h * 3);
+        ppm.extend_from_slice(format!("P6\n{w} {h}\n255\n").as_bytes());
+        for &idx in &f.pixels {
+            let (r, g, b) = lut_rgb(idx);
+            ppm.extend_from_slice(&[r, g, b]);
+        }
+        let path = self.out.clone();
+        match std::fs::write(&path, &ppm) {
+            Ok(()) => eprintln!("dump -> {path} ({w}x{h})"),
+            Err(e) => eprintln!("dump échec {path}: {e}"),
         }
     }
 }

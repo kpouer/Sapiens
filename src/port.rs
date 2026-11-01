@@ -9,9 +9,15 @@
 //! le menu « Échelle » (le global `SapZoom`). Les dessins à l'écran sont donc
 //! mis à l'échelle par le port courant, ceux vers un hors-écran jamais.
 
+use crate::acam::NewCWindow;
+use crate::sapiens::ECHELLE;
+use crate::sapiens::sapwbrt::SapiensCreeOffscreen;
+use crate::sapiens::sapwcart::Sapwcart;
 use crate::shared::free_pixels;
-use crate::shared::{CGrafPtr, CURRENT_PORT, Ptr, Rect, SapPort, WINDOW_PORT, alloc_pixels};
-use std::sync::atomic::Ordering;
+use crate::shared::{Ptr, Rect, SapPort, alloc_pixels};
+use std::cell::Cell;
+use std::rc::Rc;
+use strum::Display;
 
 /// Aire de l'écran, telle que l game's la voit (la fenêtre fait 640x400).
 pub(crate) const SCREEN: Rect = Rect {
@@ -21,57 +27,135 @@ pub(crate) const SCREEN: Rect = Rect {
     right: 640,
 };
 
+pub(crate) struct Ports {
+    /// Port graphique courant (ce que dessine le C).
+    pub(crate) current: Rc<Cell<PortId>>,
+    pub(crate) mainWindow: SapPort,
+    pub(crate) Ecran1: SapPort,
+    pub(crate) Ecran2: SapPort,
+    pub(crate) debecr: SapPort,
+    pub(crate) BuffMouse: SapPort,
+    pub(crate) sapwcart: Sapwcart,
+}
+
+impl Default for Ports {
+    fn default() -> Self {
+        Self {
+            current: Rc::new(Cell::new(PortId::MainWindow)),
+            mainWindow: NewCWindow(&SCREEN),
+            Ecran1: SapiensCreeOffscreen(256 * ECHELLE as i16, 100 * ECHELLE as i16),
+            Ecran2: SapiensCreeOffscreen(256 * ECHELLE as i16, 100 * ECHELLE as i16),
+            debecr: SapiensCreeOffscreen(320 * ECHELLE as i16, 200 * ECHELLE as i16),
+            BuffMouse: SapiensCreeOffscreen(64 * ECHELLE as i16, 64 * ECHELLE as i16),
+            sapwcart: Sapwcart::default(),
+        }
+    }
+}
+
+impl Ports {
+    pub(crate) fn port(&self, port_id: PortId) -> &SapPort {
+        match port_id {
+            PortId::MainWindow => &self.mainWindow,
+            PortId::Ecran1 => &self.Ecran1,
+            PortId::Ecran2 => &self.Ecran2,
+            PortId::debecr => &self.debecr,
+            PortId::BuffMouse => &self.BuffMouse,
+            e => panic!("Invalid port id {e}"),
+        }
+    }
+
+    pub(crate) fn port_mut(&mut self, port_id: PortId) -> &mut SapPort {
+        match port_id {
+            PortId::MainWindow => &mut self.mainWindow,
+            PortId::Ecran1 => &mut self.Ecran1,
+            PortId::Ecran2 => &mut self.Ecran2,
+            PortId::debecr => &mut self.debecr,
+            PortId::BuffMouse => &mut self.BuffMouse,
+            PortId::ecr_carte => &mut self.sapwcart.ecr_carte,
+        }
+    }
+
+    /// Port de dessin courant.
+    pub(crate) fn current(&self) -> &SapPort {
+        self.port(self.current_id())
+    }
+
+    pub(crate) fn current_mut(&mut self) -> &mut SapPort {
+        self.port_mut(self.current_id())
+    }
+
+    /// Identifiant du port de dessin courant.
+    pub(crate) fn current_id(&self) -> PortId {
+        self.current.get()
+    }
+
+    /// Rend `p` le port de dessin courant (le `SetPort` de QuickDraw).
+    pub(crate) fn set(&self, p: PortId) {
+        self.current.set(p);
+    }
+
+    /// Dessine sur `p` jusqu'à la fin de la portée, puis restaure le port
+    /// précédent — y compris en cas de `return` anticipé.
+    ///
+    /// ```ignore
+    /// let _g = self.sapwind.ports.on(PortId::Debecr);
+    /// // ... dessin dans debecr ...
+    /// ```
+    pub(crate) fn on(&self, p: PortId) -> Guard {
+        let g = self.preserve();
+        self.set(p);
+        g
+    }
+
+    /// Ne change pas le port, mais le restaure à la sortie de la portée : utile
+    /// autour d'un appel qui change le port courant en douce (boîte de dialogue,
+    /// impressions).
+    pub(crate) fn preserve(&self) -> Guard {
+        Guard {
+            current: Rc::clone(&self.current),
+            prev: self.current_id(),
+        }
+    }
+
+    /// Port de la fenêtre principale.
+    pub(crate) fn window(&self) -> &SapPort {
+        &self.mainWindow
+    }
+
+    /// `p` est-il le port de la fenêtre principale ?
+    pub(crate) fn is_window(&self, p: PortId) -> bool {
+        p == PortId::MainWindow
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Port courant
 // ---------------------------------------------------------------------------
 
-/// Rend `p` le port de dessin courant (le `SetPort` de QuickDraw).
-pub(crate) fn set(p: CGrafPtr) {
-    CURRENT_PORT.store(p as *mut SapPort, Ordering::SeqCst);
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Default, Display)]
+pub(crate) enum PortId {
+    #[default]
+    MainWindow,
+    Ecran1,
+    Ecran2,
+    debecr,
+    BuffMouse,
+    ecr_carte,
 }
 
-/// Port de dessin courant.
-pub(crate) fn current() -> CGrafPtr {
-    CURRENT_PORT.load(Ordering::SeqCst) as CGrafPtr
+/// Garde de restoration du port courant (voir [`Ports::on`]).
+///
+/// N'emprunte pas `Ports` : la portée garde l'accès libre à `self`.
+#[must_use]
+pub(crate) struct Guard {
+    current: Rc<Cell<PortId>>,
+    prev: PortId,
 }
-
-/// Port de la fenêtre principale, ou `null` avant `NewCWindow`.
-pub(crate) fn window() -> CGrafPtr {
-    WINDOW_PORT.load(Ordering::SeqCst) as CGrafPtr
-}
-
-/// `p` est-il le port de la fenêtre principale ?
-pub(crate) fn is_window(p: CGrafPtr) -> bool {
-    !p.is_null() && p == window()
-}
-
-/// Garde de restoration du port courant.
-pub(crate) struct Guard(CGrafPtr);
 
 impl Drop for Guard {
     fn drop(&mut self) {
-        set(self.0);
+        self.current.set(self.prev);
     }
-}
-
-/// Dessine sur `p` jusqu'à la fin de la portée, puis restaure le port
-/// précédent — y compris en cas de `return` anticipé.
-///
-/// ```ignore
-/// let _g = port::on(debecr);
-/// // ... dessin dans debecr ...
-/// ```
-pub(crate) fn on(p: CGrafPtr) -> Guard {
-    let g = Guard(current());
-    set(p);
-    g
-}
-
-/// Ne change pas le port, mais le restaure à la sortie de la portée : utile
-/// autour d'un appel qui change le port courant en douce (boîte de dialogue,
-/// impressions).
-pub(crate) fn preserve() -> Guard {
-    Guard(current())
 }
 
 // ---------------------------------------------------------------------------
@@ -79,10 +163,10 @@ pub(crate) fn preserve() -> Guard {
 // ---------------------------------------------------------------------------
 
 /// Alloue un port de `bounds`, profondeur `depth`, échelle 1.0.
-pub(crate) fn create(bounds: Rect, depth: i16) -> CGrafPtr {
+pub(crate) fn create(bounds: Rect, depth: i16) -> SapPort {
     let w = (bounds.right - bounds.left).max(0) as usize;
     let h = (bounds.bottom - bounds.top).max(0) as usize;
-    let port = Box::new(SapPort {
+    SapPort {
         bounds,
         row_bytes: w as i16,
         depth,
@@ -100,26 +184,20 @@ pub(crate) fn create(bounds: Rect, depth: i16) -> CGrafPtr {
         tx_size: 12,
         tx_face: 0,
         zoom: 1.0,
-    });
-    Box::into_raw(port) as CGrafPtr
+    }
 }
 
-/// Libère un port hors-écran. Le port de la fenêtre est laissé en place.
-pub(crate) fn close(p: CGrafPtr) {
-    if p.is_null() || is_window(p) {
-        return;
-    }
-    unsafe {
-        let pp = p as *mut SapPort;
-        free_pixels((*pp).pixels);
-        drop(Box::from_raw(pp));
+impl SapPort {
+    /// Libère un port hors-écran. Le port de la fenêtre est laissé en place.
+    pub(crate) fn close(&mut self) {
+        free_pixels(self.pixels);
     }
 }
 
 /// Redimensionne le tampon de `p` sur `bounds`, en préservant le contenu
 /// commun aux deux aires (l'aire en haut à gauche). Le clip suit l'aire.
-pub(crate) fn resize(p: CGrafPtr, bounds: Rect) {
-    let Some(info) = info(p) else { return };
+pub(crate) fn resize(p: &mut SapPort, bounds: Rect) {
+    let info = p.info();
     let w = (bounds.right - bounds.left).max(0) as usize;
     let h = (bounds.bottom - bounds.top).max(0) as usize;
     if w == 0 || h == 0 {
@@ -127,7 +205,6 @@ pub(crate) fn resize(p: CGrafPtr, bounds: Rect) {
     }
     let pixels = alloc_pixels(w * h);
     unsafe {
-        let pp = &mut *(p as *mut SapPort);
         let copy_w = (bounds.right - info.bounds.left).min(info.bounds.right - info.bounds.left);
         let copy_h = (bounds.bottom - info.bounds.top).min(info.bounds.bottom - info.bounds.top);
         for y in 0..copy_h.max(0) as usize {
@@ -135,12 +212,12 @@ pub(crate) fn resize(p: CGrafPtr, bounds: Rect) {
             let dst = pixels.add(y * w);
             std::ptr::copy_nonoverlapping(src, dst, copy_w.max(0) as usize);
         }
-        free_pixels(pp.pixels);
-        pp.pixels = pixels;
-        pp.pixel_len = w * h;
-        pp.bounds = bounds;
-        pp.row_bytes = w as i16;
-        pp.clip = bounds;
+        free_pixels(p.pixels);
+        p.pixels = pixels;
+        p.pixel_len = w * h;
+        p.bounds = bounds;
+        p.row_bytes = w as i16;
+        p.clip = bounds;
     }
 }
 
@@ -160,23 +237,27 @@ pub(crate) struct PortInfo {
 }
 
 /// Description du tampon de `p`, ou `None` si le port n'existe pas.
-pub(crate) fn info(p: CGrafPtr) -> Option<PortInfo> {
-    if p.is_null() {
-        return None;
-    }
-    unsafe {
-        let pp = &*(p as *const SapPort);
-        Some(PortInfo {
-            pixels: pp.pixels,
-            bounds: pp.bounds,
-            row_bytes: pp.row_bytes,
-        })
+#[deprecated]
+pub(crate) fn info(p: &SapPort) -> Option<PortInfo> {
+    Some(p.info())
+}
+
+impl SapPort {
+    /// Description du tampon de `p`, ou `None` si le port n'existe pas.
+    pub(crate) fn info(&self) -> PortInfo {
+        PortInfo {
+            pixels: self.pixels,
+            bounds: self.bounds,
+            row_bytes: self.row_bytes,
+        }
     }
 }
 
-/// Aire du port `p`, ou un rect vide.
-pub(crate) fn bounds(p: CGrafPtr) -> Rect {
-    info(p).map(|i| i.bounds).unwrap_or_default()
+impl SapPort {
+    /// Aire du port `p`, ou un rect vide.
+    pub(crate) fn bounds(&self) -> Rect {
+        self.bounds
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -184,48 +265,44 @@ pub(crate) fn bounds(p: CGrafPtr) -> Rect {
 // ---------------------------------------------------------------------------
 
 /// Facteur d'échelle du port `p` : 1.0 sauf pour la fenêtre.
-pub(crate) fn zoom_of(p: CGrafPtr) -> f32 {
-    if p.is_null() {
-        1.0
-    } else {
-        unsafe { (*(p as *const SapPort)).zoom }
+#[deprecated]
+pub(crate) fn zoom_of(p: &SapPort) -> f32 {
+    p.zoom
+}
+
+impl Ports {
+    /// Facteur d'échelle du port courant.
+    pub(crate) fn zoom(&self) -> f32 {
+        self.current().zoom
+    }
+
+    /// Facteur d'échelle de la fenêtre : c'est lui qu'il faut appliquer aux
+    /// coordonnées venant de l'écran physique (souris, souris graphique), quel que
+    /// soit le port courant au moment de la lecture.
+    pub(crate) fn window_zoom(&self) -> f32 {
+        self.window().zoom
+    }
+
+    /// Fixe l'échelle de la fenêtre (menu « Échelle »). Sans effet avant sa création.
+    pub(crate) fn set_window_zoom(&mut self, z: f32) {
+        self.mainWindow.zoom = z;
     }
 }
 
-/// Facteur d'échelle du port courant.
-pub(crate) fn zoom() -> f32 {
-    zoom_of(current())
-}
-
-/// Facteur d'échelle de la fenêtre : c'est lui qu'il faut appliquer aux
-/// coordonnées venant de l'écran physique (souris, souris graphique), quel que
-/// soit le port courant au moment de la lecture.
-pub(crate) fn window_zoom() -> f32 {
-    zoom_of(window())
-}
-
-/// Fixe l'échelle de la fenêtre (menu « Échelle »). Sans effet avant sa création.
-pub(crate) fn set_window_zoom(z: f32) {
-    let w = window();
-    if !w.is_null() {
-        unsafe {
-            (*(w as *mut SapPort)).zoom = z;
+impl SapPort {
+    /// Met un rectangle à l'échelle du port `p`.
+    pub(crate) fn zoomed(&self, r: &Rect) -> Rect {
+        let z = self.zoom;
+        if z == 1.0 {
+            return *r;
         }
-    }
-}
-
-/// Met un rectangle à l'échelle du port `p`.
-pub(crate) fn zoomed(p: CGrafPtr, r: &Rect) -> Rect {
-    let z = zoom_of(p);
-    if z == 1.0 {
-        return *r;
-    }
-    let f = |v: i16| (v as f32 * z) as i16;
-    Rect {
-        top: f(r.top),
-        left: f(r.left),
-        bottom: f(r.bottom),
-        right: f(r.right),
+        let f = |v: i16| (v as f32 * z) as i16;
+        Rect {
+            top: f(r.top),
+            left: f(r.left),
+            bottom: f(r.bottom),
+            right: f(r.right),
+        }
     }
 }
 
@@ -250,9 +327,8 @@ mod tests {
             bottom: 30,
             right: 40,
         };
-        assert_eq!(zoom_of(off), 1.0);
-        assert_eq!(zoomed(off, &r), r);
-        close(off);
+        assert_eq!(off.zoom, 1.0);
+        assert_eq!(off.zoomed(&r), r);
     }
 
     #[test]
@@ -264,11 +340,12 @@ mod tests {
             right: 40,
         };
         let w = create(SCREEN, 8);
-        WINDOW_PORT.store(w as *mut SapPort, Ordering::SeqCst);
-        set_window_zoom(2.0);
-        assert_eq!(window_zoom(), 2.0);
+        let mut ports = Ports::default();
+        ports.mainWindow = w;
+        ports.set_window_zoom(2.0);
+        assert_eq!(ports.window_zoom(), 2.0);
         assert_eq!(
-            zoomed(w, &r),
+            ports.mainWindow.zoomed(&r),
             Rect {
                 top: 20,
                 left: 40,
@@ -278,22 +355,31 @@ mod tests {
         );
         /* Un hors-écran n'est pas concerné par l'échelle de la fenêtre. */
         let off = create(SCREEN, 8);
-        assert_eq!(zoomed(off, &r), r);
+        assert_eq!(off.zoomed(&r), r);
         /* close() laisse le port de la fenêtre en place. */
-        close(w);
-        assert_eq!(window(), w);
-        close(off);
-        WINDOW_PORT.store(core::ptr::null_mut(), Ordering::SeqCst);
+        ports.mainWindow.close();
+        assert_eq!(ports.window(), &ports.mainWindow);
     }
 
     #[test]
-    fn zoom_de_null_vaut_1() {
-        assert_eq!(zoom_of(core::ptr::null_mut()), 1.0);
+    fn guard_restaure_le_port_precedent() {
+        let ports = Ports::default();
+        ports.set(PortId::Ecran1);
+        {
+            let _g = ports.on(PortId::debecr);
+            assert!(ports.current_id() == PortId::debecr);
+            {
+                let _g2 = ports.preserve();
+                ports.set(PortId::MainWindow);
+            }
+            assert!(ports.current_id() == PortId::debecr);
+        }
+        assert!(ports.current_id() == PortId::Ecran1);
     }
 
     #[test]
     fn resize_preserve_le_contenu_commun() {
-        let p = create(
+        let mut p = create(
             Rect {
                 top: 0,
                 left: 0,
@@ -303,11 +389,10 @@ mod tests {
             8,
         );
         unsafe {
-            let pp = &mut *(p as *mut SapPort);
-            *pp.pixels.add(5) = 42; // (x=1, y=1)
+            *p.pixels.add(5) = 42; // (x=1, y=1)
         }
         resize(
-            p,
+            &mut p,
             Rect {
                 top: 0,
                 left: 0,
@@ -315,7 +400,7 @@ mod tests {
                 right: 8,
             },
         );
-        let i = info(p).unwrap();
+        let i = p.info();
         assert_eq!(i.bounds.bottom, 8);
         assert_eq!(i.row_bytes, 8);
         unsafe {
@@ -323,6 +408,5 @@ mod tests {
             // Le coin nouveau est à zéro.
             assert_eq!(*i.pixels.add(7 * 8 + 7), 0);
         }
-        close(p);
     }
 }

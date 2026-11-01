@@ -14,7 +14,6 @@ use crate::cbridge::TEText;
 use std::ffi::c_void;
 use std::ops::ShrAssign;
 use std::sync::Mutex;
-use std::sync::atomic::AtomicPtr;
 // ---------------------------------------------------------------------------
 // Types repr(C)
 // ---------------------------------------------------------------------------
@@ -172,6 +171,7 @@ pub(crate) struct FontInfo {
 /// `CGrafPtr`/`WindowPtr` côté C ; `crate::port` en est le gestionnaire.
 /// Le tampon contient les indices 0..255 de la LUT système.
 #[repr(C)]
+#[derive(Debug, PartialEq)]
 pub(crate) struct SapPort {
     pub(crate) bounds: Rect, // top, left, bottom, right
     pub(crate) row_bytes: i16,
@@ -194,12 +194,6 @@ pub(crate) struct SapPort {
     /// qui suit le menu « Échelle » (`SapZoom`).
     pub(crate) zoom: f32,
 }
-
-/// Port graphique courant (ce que dessine le C).
-pub(crate) static CURRENT_PORT: AtomicPtr<SapPort> = AtomicPtr::new(std::ptr::null_mut());
-
-/// Port de la fenêtre principale (`mainWindow`).
-pub(crate) static WINDOW_PORT: AtomicPtr<SapPort> = AtomicPtr::new(std::ptr::null_mut());
 
 // ---------------------------------------------------------------------------
 // Registre des allocations (Ptr/Handle) pour pouvoir les libérer

@@ -14,10 +14,10 @@
 
 use ab_glyph::{Font as _, FontRef, GlyphId, PxScale, ScaleFont};
 use std::collections::HashMap;
-use std::sync::atomic::Ordering::SeqCst;
 use std::sync::{Arc, LazyLock, Mutex};
 
 use crate::acam::plot;
+use crate::port::Ports;
 use crate::shared::*;
 
 // ---------------------------------------------------------------------------
@@ -448,14 +448,15 @@ fn draw_glyph(p: &mut SapPort, bx: i16, by: i16, g: &GlyphDraw) {
 // État texte du port courant
 // ---------------------------------------------------------------------------
 
-/// Exécute `f` sur le port courant (`None` s'il n'y en a pas). La référence ne
-/// sort pas de la closure.
-#[inline]
-pub(crate) fn with_port<R>(f: impl FnOnce(&mut SapPort) -> R) -> Option<R> {
-    let p = CURRENT_PORT.load(SeqCst);
-    // SAFETY : le port courant est posé par `port::set_current` et reste valide
-    // tant qu'il est courant ; seul le thread du jeu dessine.
-    unsafe { p.as_mut() }.map(f)
+impl Ports {
+    /// Exécute `f` sur le port courant (`None` s'il n'y en a pas). La référence ne
+    /// sort pas de la closure.
+    #[inline]
+    #[deprecated]
+    pub(crate) fn with_port<R>(&mut self, f: impl FnOnce(&mut SapPort) -> R) -> Option<R> {
+        let p = self.current_mut();
+        Some(f(p))
+    }
 }
 
 #[inline]
@@ -469,127 +470,130 @@ fn fdt_state(p: &SapPort) -> (Fam, bool, i16) {
 // ---------------------------------------------------------------------------
 // API QuickDraw
 // ---------------------------------------------------------------------------
+impl Ports {
+    pub(crate) fn TextFont(&mut self, font: i16) {
+        self.with_port(|p| p.tx_font = font);
+    }
 
-pub(crate) fn TextFont(font: i16) {
-    with_port(|p| p.tx_font = font);
-}
+    pub(crate) fn TextSize(&mut self, size: i16) {
+        self.with_port(|p| p.tx_size = size);
+    }
 
-pub(crate) fn TextSize(size: i16) {
-    with_port(|p| p.tx_size = size);
-}
-
-pub(crate) fn TextFace(face: i16) {
-    with_port(|p| p.tx_face = face);
+    pub(crate) fn TextFace(&mut self, face: i16) {
+        self.with_port(|p| p.tx_face = face);
+    }
 }
 
 pub(crate) fn GetStdFont() -> i16 {
     0 // geneva
 }
 
-pub(crate) fn GetFontInfo() -> Option<FontInfo> {
-    with_port(|p| {
-        let (fam, bold, size) = fdt_state(p);
-        let m = font_metrics(fam, bold, size);
-        FontInfo {
-            ascent: m.ascent.round() as i16,
-            descent: m.descent.round() as i16,
-            widening: m.widening.round() as i16,
-            leading: m.leading.round() as i16,
-        }
-    })
-}
-
-/// Largeur (en pixels) d'un caractère dans la fonte courante du port.
-pub(crate) fn CharWidth(c: i8) -> i16 {
-    with_port(|p| {
-        let (fam, bold, size) = fdt_state(p);
-        get_glyph(fam, bold, size, decode(c as u8)).advance
-    })
-    .unwrap_or(0)
-}
-
-/// Dessine un caractère à la position courante (baseline = pen_loc).
-pub(crate) fn DrawChar(c: i8) {
-    with_port(|p| {
-        let (fam, bold, size) = fdt_state(p);
-        let g = get_glyph(fam, bold, size, decode(c as u8));
-        let loc = p.pen_loc;
-        draw_glyph(p, loc.h, loc.v, &g);
-    });
-}
-
-/// Dessine une chaîne Pascal (1er octet = longueur), avance le crayon.
-pub(crate) fn DrawString(s: StringPtr) {
-    if s.is_null() {
-        return;
-    }
-    with_port(|p| unsafe {
-        let len = *s as usize;
-        let (fam, bold, size) = fdt_state(p);
-        let by = p.pen_loc.v;
-        let mut h = p.pen_loc.h;
-        for i in 0..len {
-            let g = get_glyph(fam, bold, size, decode(*s.add(1 + i)));
-            draw_glyph(p, h, by, &g);
-            h = h.wrapping_add(g.advance);
-        }
-        p.pen_loc.h = h;
-    });
-}
-
-/// Largeur d'une chaîne Pascal dans la fonte courante.
-pub(crate) fn StringWidth(s: StringPtr) -> i16 {
-    if s.is_null() {
-        return 0;
-    }
-    with_port(|p| unsafe {
-        let len = *s as usize;
-        let (fam, bold, size) = fdt_state(p);
-        let mut w = 0;
-        for i in 0..len {
-            w += get_glyph(fam, bold, size, decode(*s.add(1 + i))).advance as i32;
-        }
-        w.clamp(i16::MIN as i32, i16::MAX as i32) as i16
-    })
-    .unwrap_or(0)
-}
-
-/// Trace un texte (octets C, longueur explicite) dans un rectangle, justifié.
-/// `just` : 0 = gauche (teJustLeft), 1 = centré (teJustCenter), 2 = droite
-/// (teJustRight). Le texte est centré verticalement dans le rectangle, clippé
-/// par pixel au port (via `plot`).
-pub(crate) fn TextBox(text: &[u8], boxr: &Rect, just: i16) {
-    if boxr.is_empty() {
-        return;
-    }
-    with_port(|p| {
-        let (fam, bold, size) = fdt_state(p);
-        // Largeur totale (i32, le texte peut déborder d'un i16).
-        let mut total = 0;
-        for &c in text {
-            total += get_glyph(fam, bold, size, decode(c)).advance as i32;
-        }
-        let m = font_metrics(fam, bold, size);
-        let fh = (m.ascent + m.descent) as i32;
-        let bh = boxr.bottom as i32 - boxr.top as i32;
-        let baseline = boxr.top as i32 + (bh - fh).max(0) / 2 + m.ascent.round() as i32;
-        let start = match just {
-            j if j >= 2 => boxr.right as i32 - total, // droite
-            1 => ((boxr.left as i32 + boxr.right as i32) - total) / 2, // centré
-            _ => boxr.left as i32,                    // gauche
-        };
-        let mut acc = 0;
-        for &c in text {
-            let g = get_glyph(fam, bold, size, decode(c));
-            let x = (start + acc) as i16;
-            let y = baseline as i16;
-            draw_glyph(p, x, y, &g);
-            acc += g.advance as i32;
-            if start + acc > boxr.right as i32 {
-                break;
+impl Ports {
+    pub(crate) fn GetFontInfo(&mut self) -> Option<FontInfo> {
+        self.with_port(|p| {
+            let (fam, bold, size) = fdt_state(p);
+            let m = font_metrics(fam, bold, size);
+            FontInfo {
+                ascent: m.ascent.round() as i16,
+                descent: m.descent.round() as i16,
+                widening: m.widening.round() as i16,
+                leading: m.leading.round() as i16,
             }
+        })
+    }
+
+    /// Largeur (en pixels) d'un caractère dans la fonte courante du port.
+    pub(crate) fn CharWidth(&mut self, c: i8) -> i16 {
+        self.with_port(|p| {
+            let (fam, bold, size) = fdt_state(p);
+            get_glyph(fam, bold, size, decode(c as u8)).advance
+        })
+        .unwrap_or(0)
+    }
+
+    /// Dessine un caractère à la position courante (baseline = pen_loc).
+    pub(crate) fn DrawChar(&mut self, c: i8) {
+        self.with_port(|p| {
+            let (fam, bold, size) = fdt_state(p);
+            let g = get_glyph(fam, bold, size, decode(c as u8));
+            let loc = p.pen_loc;
+            draw_glyph(p, loc.h, loc.v, &g);
+        });
+    }
+
+    /// Dessine une chaîne Pascal (1er octet = longueur), avance le crayon.
+    pub(crate) fn DrawString(&mut self, s: StringPtr) {
+        if s.is_null() {
+            return;
         }
-    });
+        self.with_port(|p| unsafe {
+            let len = *s as usize;
+            let (fam, bold, size) = fdt_state(p);
+            let by = p.pen_loc.v;
+            let mut h = p.pen_loc.h;
+            for i in 0..len {
+                let g = get_glyph(fam, bold, size, decode(*s.add(1 + i)));
+                draw_glyph(p, h, by, &g);
+                h = h.wrapping_add(g.advance);
+            }
+            p.pen_loc.h = h;
+        });
+    }
+
+    /// Largeur d'une chaîne Pascal dans la fonte courante.
+    pub(crate) fn StringWidth(&mut self, s: StringPtr) -> i16 {
+        if s.is_null() {
+            return 0;
+        }
+        self.with_port(|p| unsafe {
+            let len = *s as usize;
+            let (fam, bold, size) = fdt_state(p);
+            let mut w = 0;
+            for i in 0..len {
+                w += get_glyph(fam, bold, size, decode(*s.add(1 + i))).advance as i32;
+            }
+            w.clamp(i16::MIN as i32, i16::MAX as i32) as i16
+        })
+        .unwrap_or(0)
+    }
+
+    /// Trace un texte (octets C, longueur explicite) dans un rectangle, justifié.
+    /// `just` : 0 = gauche (teJustLeft), 1 = centré (teJustCenter), 2 = droite
+    /// (teJustRight). Le texte est centré verticalement dans le rectangle, clippé
+    /// par pixel au port (via `plot`).
+    pub(crate) fn TextBox(&mut self, text: &[u8], boxr: &Rect, just: i16) {
+        if boxr.is_empty() {
+            return;
+        }
+        self.with_port(|p| {
+            let (fam, bold, size) = fdt_state(p);
+            // Largeur totale (i32, le texte peut déborder d'un i16).
+            let mut total = 0;
+            for &c in text {
+                total += get_glyph(fam, bold, size, decode(c)).advance as i32;
+            }
+            let m = font_metrics(fam, bold, size);
+            let fh = (m.ascent + m.descent) as i32;
+            let bh = boxr.bottom as i32 - boxr.top as i32;
+            let baseline = boxr.top as i32 + (bh - fh).max(0) / 2 + m.ascent.round() as i32;
+            let start = match just {
+                j if j >= 2 => boxr.right as i32 - total, // droite
+                1 => ((boxr.left as i32 + boxr.right as i32) - total) / 2, // centré
+                _ => boxr.left as i32,                    // gauche
+            };
+            let mut acc = 0;
+            for &c in text {
+                let g = get_glyph(fam, bold, size, decode(c));
+                let x = (start + acc) as i16;
+                let y = baseline as i16;
+                draw_glyph(p, x, y, &g);
+                acc += g.advance as i32;
+                if start + acc > boxr.right as i32 {
+                    break;
+                }
+            }
+        });
+    }
 }
 #[cfg(test)]
 mod tests {
@@ -662,21 +666,22 @@ mod tests {
         let _g = with_lock();
         let mut t = TestPort::new(160, 40);
         let p = t.port_ptr();
-        let old = CURRENT_PORT.swap(p, SeqCst);
-        TextFont(2);
-        TextSize(12);
-        TextFace(0);
-        let info = GetFontInfo().unwrap_or_default();
+        let mut ports = Ports::default();
+        let old = ports.current_id();
+        ports.TextFont(2);
+        ports.TextSize(12);
+        ports.TextFace(0);
+        let info = ports.GetFontInfo().unwrap_or_default();
         assert!(info.ascent > 0, "ascent nul : {info:?}");
         assert!(info.descent > 0);
         assert!(info.widening > 0);
 
-        TextFace(1);
-        let bold = GetFontInfo().unwrap_or_default();
+        ports.TextFace(1);
+        let bold = ports.GetFontInfo().unwrap_or_default();
         // Le gras reste dans le même ordre de grandeurs en hauteur.
         let di = (bold.ascent - info.ascent).abs();
         assert!(di <= 4, "bold {bold:?} vs regular {info:?} (diff {di})");
-        CURRENT_PORT.store(old, SeqCst);
+        ports.set(old);
     }
 
     #[test]
@@ -684,21 +689,22 @@ mod tests {
         let _g = with_lock();
         let mut t = TestPort::new(160, 40);
         let p = t.port_ptr();
-        let old = CURRENT_PORT.swap(p, SeqCst);
-        TextFont(2);
-        TextSize(12);
-        TextFace(0);
+        let mut ports = Ports::default();
+        let old = ports.current_id();
+        ports.TextFont(2);
+        ports.TextSize(12);
+        ports.TextFace(0);
         // 'é' = 0x89 en MacRoman → largeur non nulle.
-        assert!(CharWidth(0x89u8 as i8) > 0);
+        assert!(ports.CharWidth(0x89u8 as i8) > 0);
         // Caractère absent de l'alphabet (logo Apple 0xF0) : avance réduite du
         // `.notdef` de la police, aucun glyphe tracé.
-        let w_apple = CharWidth(0xF0u8 as i8);
+        let w_apple = ports.CharWidth(0xF0u8 as i8);
         assert!(w_apple < 12, "avance .notdef surprenante : {w_apple}");
         let pen = Point { v: 10, h: 10 };
         unsafe { (*p).pen_loc = pen };
-        DrawChar(0xF0u8 as i8);
+        ports.DrawChar(0xF0u8 as i8);
         assert_eq!(t.count(), 0, "glyphe absent tracé quand même");
-        CURRENT_PORT.store(old, SeqCst);
+        ports.set(old);
     }
 
     #[test]
@@ -706,20 +712,21 @@ mod tests {
         let _g = with_lock();
         let mut t = TestPort::new(160, 40);
         let p = t.port_ptr();
-        let old = CURRENT_PORT.swap(p, SeqCst);
+        let mut ports = Ports::default();
+        let old = ports.current_id();
         unsafe { (*p).pen_loc = Point { v: 15, h: 10 } };
-        TextFont(1);
-        TextSize(12);
-        TextFace(1);
+        ports.TextFont(1);
+        ports.TextSize(12);
+        ports.TextFace(1);
         let mut s = [0u8; 6];
         s[0] = 4; // "WXYZ"
         s[1] = b'W';
         s[2] = b'X';
         s[3] = b'Y';
         s[4] = b'Z';
-        unsafe { DrawString(s.as_mut_ptr()) };
-        let w = unsafe { StringWidth(s.as_mut_ptr()) };
-        CURRENT_PORT.store(old, SeqCst);
+        unsafe { ports.DrawString(s.as_mut_ptr()) };
+        let w = unsafe { ports.StringWidth(s.as_mut_ptr()) };
+        ports.set(old);
         assert!(w > 16, "largeur étrange : {w}");
         let n = t.count();
         assert!(n > 60, "trop peu de pixels tracés : {n}");
@@ -732,10 +739,11 @@ mod tests {
         let _g = with_lock();
         let mut t = TestPort::new(200, 60);
         let p = t.port_ptr();
-        let old = CURRENT_PORT.swap(p, SeqCst);
-        TextFont(2);
-        TextSize(14);
-        TextFace(0);
+        let mut ports = Ports::default();
+        let old = ports.current_id();
+        ports.TextFont(2);
+        ports.TextSize(14);
+        ports.TextFace(0);
         let text = b"THE END";
         let boxr = Rect {
             top: 10,
@@ -743,8 +751,8 @@ mod tests {
             bottom: 50,
             right: 180,
         };
-        TextBox(text, &boxr, 1); // teJustCenter
-        CURRENT_PORT.store(old, SeqCst);
+        ports.TextBox(text, &boxr, 1); // teJustCenter
+        ports.set(old);
         let n = t.count();
         assert!(n > 100, "trop peu de pixels tracés : {n}");
         // Le texte est centré verticalement : présence de pixels dans la

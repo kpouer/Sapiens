@@ -5,38 +5,34 @@
 ;-----------------------------------------------------------------------
 */
 use crate::acam::{
-    Alert, BackColor, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle,
-    DrawMenuBar, EnableItem, FAUX, ForeColor, GetCursor, GetIndString, GetItem, GetMHandle,
-    GetNewMBar, NewCWindow, ParamText, PenNormal, PtoCstr, Random, SetCursor, SetMenuBar,
-    SetWTitle, TickCount, VRAI, c_string,
+    Alert, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle, DrawMenuBar,
+    EnableItem, FAUX, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, NewCWindow,
+    ParamText, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI, c_string,
 };
 use crate::audio;
 use crate::cbridge::{
     DRVR, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, everyEvent, helvetica,
     optionKey, strcpy, strlen, watchCursor, whiteColor,
 };
-use crate::exchange::take_menu_command;
+use crate::exchange::{publish_window_frame, take_menu_command};
 use crate::langue::{langue_i16, set_langue};
 use crate::port;
+use crate::port::{PortId, Ports};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::CvtDefaultLangRess;
-use crate::sapiens::sapwbrt::{
-    DoFrameRect, DoMoveTo, DoPenSize, DoTextSize, DoZoomRect, SapiensCreeOffscreen, SetPathInData,
-};
+use crate::sapiens::sapwbrt::SetPathInData;
 use crate::sapiens::{ECHELLE, STR_VRAC, Vue};
-use crate::shared::{Boolean, CGrafPtr, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr};
+use crate::shared::{Boolean, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr};
 use crate::stubs::{
     AddResMenu, BeginUpdate, CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseValideUpdate,
     DragWindow, DrawPicture, EndUpdate, FindWindow, FrontWindow, GetNextEvent, GetPicture,
     HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc, PopPath,
-    PushPath, ReleaseResource, SelectWindow, SizeWindow, SystemClick, SystemTask,
+    PushPath, ReleaseResource, SelectWindow, SystemClick, SystemTask,
 };
-use crate::text::{DrawString, StringWidth, TextFace, TextFont, TextSize};
 use crate::{Sapiens, cbridge};
 use cbridge::*;
 use std::ffi::c_void;
 use std::process::exit;
-
 /******************** Constantes (SAPIENS.H / acam.h) *******************/
 const ALRT_VERSION: i16 = 133;
 
@@ -66,11 +62,7 @@ pub(crate) struct SapWind {
     pub(crate) SapZoom: f32,
 
     MenuReduit: bool,
-    pub(crate) mainWindow: WindowPtr,
-    pub(crate) Ecran1: CGrafPtr,
-    pub(crate) Ecran2: CGrafPtr,
-    pub(crate) debecr: CGrafPtr,
-    pub(crate) BuffMouse: CGrafPtr,
+    pub(crate) ports: Ports,
 
     pub(crate) toucheClav: i16,
     pub(crate) mobBambou: i16,
@@ -92,11 +84,7 @@ impl Default for SapWind {
         Self {
             SapZoom: 2.0,
             MenuReduit: false,
-            mainWindow: core::ptr::null_mut(),
-            Ecran1: core::ptr::null_mut(),
-            Ecran2: core::ptr::null_mut(),
-            debecr: core::ptr::null_mut(),
-            BuffMouse: core::ptr::null_mut(),
+            ports: Ports::default(),
             toucheClav: 0,
             mobBambou: 0,
             mobFace: 0,
@@ -128,7 +116,8 @@ impl SapWind {
     /// porte l'échelle utilisée par le dessin : les deux sont mis à jour ensemble.
     pub(crate) fn set_zoom(&mut self, z: f32) {
         self.SapZoom = z;
-        port::set_window_zoom(z);
+        self.ports.set_window_zoom(z);
+        publish_window_frame(self.ports.window(), true);
     }
 
     /// Taille en pixels (ST 320x200) de l'aire de jeu multipliée par SapZoom.
@@ -172,11 +161,9 @@ impl Sapiens {
     => Message à afficher
     <= rien
     ***********************************************************************************/
-    pub(crate) fn Collapse<T: Into<String>>(&self, message: T) {
-        let _g = port::preserve();
-        if !self.sapwind.mainWindow.is_null() {
-            port::set(self.sapwind.mainWindow);
-        }
+    pub(crate) fn Collapse<T: Into<String>>(&mut self, message: T) {
+        let _g = self.sapwind.ports.preserve();
+        self.sapwind.ports.set(PortId::MainWindow);
 
         /* On fixe la zone à la zone de secours de l'interface */
         CarboniseSetCursorArrow();
@@ -200,7 +187,7 @@ impl Sapiens {
     /******************************************************************************************
                                         DoAlertSapiens
     ******************************************************************************************/
-    pub(crate) fn DoAlertSapiens(&self, num: i16) -> i16 {
+    pub(crate) fn DoAlertSapiens(&mut self, num: i16) -> i16 {
         let n = Alert(num, core::ptr::null_mut());
         self.tfrvirt();
         self.TfrEcr(None);
@@ -284,7 +271,7 @@ impl Sapiens {
             lignefin * ECHELLE as i16,
         );
         self.BoxFill(
-            port::current(),
+            self.sapwind.ports.current_id(),
             &mut aire,
             self.sapglob.palhaute.borrow()[index as usize],
         );
@@ -309,7 +296,7 @@ impl Sapiens {
     pub(crate) fn AdjustMenus(&self) {
         let mut menu: MenuHandle;
 
-        let _g = port::on(self.sapwind.mainWindow);
+        let _g = self.sapwind.ports.on(PortId::MainWindow);
 
         menu = GetMHandle(CvtDefaultLangRess(128)); /* menuPomme */
         menu = GetMHandle(CvtDefaultLangRess(129)); /* menuFichier */
@@ -365,7 +352,7 @@ impl Sapiens {
     /******************************************************************************************
                                     DoInfo
     ******************************************************************************************/
-    pub(crate) fn DoInfo(&self) {
+    pub(crate) fn DoInfo(&mut self) {
         ParamText(
             GetVersionSapiens(),
             c_string(TRANS_VIDE.as_ptr() as *mut u8),
@@ -562,7 +549,7 @@ impl Sapiens {
     pub(crate) fn InitMobs(&mut self) -> Boolean {
         let mut nb: i16;
 
-        let _g = port::on(self.sapwind.Ecran1);
+        let _g = self.sapwind.ports.on(PortId::Ecran1);
 
         self.LibereDataMobs();
         PushPath();
@@ -629,28 +616,31 @@ impl Sapiens {
     }
 }
 
-/***********************************************************************************
-                                 AfficheFond
-Affiche le tramage de fond de la fenetre
-***********************************************************************************/
-fn AfficheFond(gfx: CGrafPtr) {
-    let _g = port::on(gfx);
-    let portRect = port::bounds(gfx);
-    /* Le fond au-dessus de l'awale */
-    let picMotif: PicHandle = GetPicture(128) as PicHandle;
-    let mut y: i16 = 0;
-    while y < portRect.bottom {
-        let mut x: i16 = 0;
-        while x < portRect.right + 16 {
-            BackColor(whiteColor as i16);
-            ForeColor(blackColor as i16);
-            let r = Rect::new(x, y, x + 64, y + 64);
-            DrawPicture(picMotif, &r);
-            x += 64;
+impl Ports {
+    /***********************************************************************************
+                                     AfficheFond
+    Affiche le tramage de fond de la fenetre
+    ***********************************************************************************/
+    pub(crate) fn AfficheFond(&mut self, port_id: PortId) {
+        let _g = self.on(port_id);
+        let sap_port = self.port(port_id);
+        let portRect = sap_port.bounds;
+        /* Le fond au-dessus de l'awale */
+        let picMotif: PicHandle = GetPicture(128) as PicHandle;
+        let mut y: i16 = 0;
+        while y < portRect.bottom {
+            let mut x: i16 = 0;
+            while x < portRect.right + 16 {
+                self.BackColor(whiteColor as i16);
+                self.ForeColor(blackColor as i16);
+                let r = Rect::new(x, y, x + 64, y + 64);
+                DrawPicture(picMotif, &r);
+                x += 64;
+            }
+            y += 64;
         }
-        y += 64;
+        ReleaseResource(picMotif as Handle);
     }
-    ReleaseResource(picMotif as Handle);
 }
 
 impl Sapiens {
@@ -660,52 +650,53 @@ impl Sapiens {
     latérale, depuis l'écran virtuel (Ecran1). Utilisé quand la zone visible
     change de taille (menu « Échelle ») ou après une mise à jour système.
     ***********************************************************************************/
-    pub(crate) fn RedessineFenetre(&self) {
-        port::set(self.sapwind.mainWindow);
+    pub(crate) fn RedessineFenetre(&mut self) {
+        self.sapwind.ports.set(PortId::MainWindow);
         self.TfrEcr(None);
-        self.tfrima();
+        self.sapwind.ports.tfrima();
         if self.sapglob.dervue == Vue::LATERALE {
-            self.tfrdemi();
+            self.sapwind.ports.tfrdemi();
         }
     }
+}
 
+impl Ports {
     /***********************************************************************************
                                      FixeTitreMainWindow
     ***********************************************************************************/
-    pub(crate) fn FixeTitreMainWindow(&self) {
-        port::set(self.sapwind.mainWindow);
-        SetWTitle(
-            self.sapwind.mainWindow,
-            format!("Sapiens {}", GetVersionSapiens()),
-        );
+    pub(crate) fn FixeTitreMainWindow(&mut self) {
+        self.set(PortId::MainWindow);
+        SetWTitle(&self.mainWindow, format!("Sapiens {}", GetVersionSapiens()));
     }
+}
 
+impl Sapiens {
     /****************************************************************************
                 Encadre l'aire 3d
     => etat 1 actif
     *****************************************************************************/
-    pub(crate) fn Frame3d(&self, etat: i16) {
-        let _g = port::on(self.sapwind.debecr);
+    pub(crate) fn Frame3d(&mut self, etat: i16) {
+        let _g = self.sapwind.ports.on(PortId::debecr);
         let r = Rect::new(62, 0, 640 - 64, 204);
         if etat != 0 {
-            ForeColor(blackColor as i16);
+            self.sapwind.ports.ForeColor(blackColor as i16);
         } else {
-            ForeColor(whiteColor as i16);
+            self.sapwind.ports.ForeColor(whiteColor as i16);
         }
-        DoPenSize(2, 2);
-        DoFrameRect(&r);
-        ForeColor(blackColor as i16);
-        PenNormal();
-        port::set(self.sapwind.mainWindow);
+        self.sapwind.ports.DoPenSize(2, 2);
+        self.sapwind.ports.DoFrameRect(&r);
+        self.sapwind.ports.ForeColor(blackColor as i16);
+        self.sapwind.ports.PenNormal();
+        self.sapwind.ports.set(PortId::MainWindow);
         if etat != 0 {
-            ForeColor(blackColor as i16);
+            self.sapwind.ports.ForeColor(blackColor as i16);
         } else {
-            ForeColor(whiteColor as i16);
+            self.sapwind.ports.ForeColor(whiteColor as i16);
         }
-        DoPenSize(2, 2);
-        DoFrameRect(&r);
-        PenNormal();
-        ForeColor(blackColor as i16);
+        self.sapwind.ports.DoPenSize(2, 2);
+        self.sapwind.ports.DoFrameRect(&r);
+        self.sapwind.ports.PenNormal();
+        self.sapwind.ports.ForeColor(blackColor as i16);
     }
 
     /**********************************************************************************
@@ -732,30 +723,38 @@ pub(crate) fn ValideUpdate() {
     CarboniseValideUpdate();
 }
 
-impl SapWind {
+impl Ports {
     /**********************************************************************************************
                                                                     AffStr
     ***********************************************************************************************/
-    unsafe fn AffStr(&self, chaine: *mut i8, fonte: i16, size: i16, face: i16, x_in: i16, y: i16) {
+    unsafe fn AffStr(
+        &mut self,
+        chaine: *mut i8,
+        fonte: i16,
+        size: i16,
+        face: i16,
+        x_in: i16,
+        y: i16,
+    ) {
         let mut x: i16 = x_in;
 
         CtoPstr(chaine);
-        TextFont(fonte);
-        TextSize(size);
-        TextFace(face);
+        self.TextFont(fonte);
+        self.TextSize(size);
+        self.TextFace(face);
         if x < 0 {
-            x = (640 - StringWidth(chaine as *mut u8)) / 2;
+            x = (640 - self.StringWidth(chaine as *mut u8)) / 2;
         }
-        ForeColor(blackColor as i16);
-        DoTextSize(size);
-        DoMoveTo(x + 1, y + 1);
-        DrawString(chaine as *mut u8);
-        ForeColor(whiteColor as i16);
-        DoMoveTo(x, y);
-        DrawString(chaine as *mut u8);
-        DoMoveTo(x - 1, y);
-        DrawString(chaine as *mut u8);
-        ForeColor(blackColor as i16);
+        self.ForeColor(blackColor as i16);
+        self.DoTextSize(size);
+        self.DoMoveTo(x + 1, y + 1);
+        self.DrawString(chaine as *mut u8);
+        self.ForeColor(whiteColor as i16);
+        self.DoMoveTo(x, y);
+        self.DrawString(chaine as *mut u8);
+        self.DoMoveTo(x - 1, y);
+        self.DrawString(chaine as *mut u8);
+        self.ForeColor(blackColor as i16);
         PtoCstr(chaine as *mut u8);
     }
 }
@@ -789,9 +788,9 @@ impl SapWind {
                     / 2,
         );
         /* On crée la fenetre principale */
-        self.mainWindow = NewCWindow(&rect);
+        self.ports.mainWindow = NewCWindow(&rect);
         /* La fenêtre porte l'échelle courante (menu « Échelle »). */
-        port::set_window_zoom(self.SapZoom);
+        self.ports.set_window_zoom(self.SapZoom);
     }
 }
 
@@ -821,9 +820,9 @@ impl Sapiens {
         }
         self.sapglob.init_and_check_texts();
         self.sapwind.InitMainWindow();
-        self.FixeTitreMainWindow();
-        port::set(self.sapwind.mainWindow);
-        AfficheFond(self.sapwind.mainWindow);
+        self.sapwind.ports.FixeTitreMainWindow();
+        self.sapwind.ports.set(PortId::MainWindow);
+        self.sapwind.ports.AfficheFond(PortId::MainWindow);
         /* On affiche le logo centre */
         let pict = GetPicture(134) as PicHandle;
         unsafe {
@@ -833,13 +832,13 @@ impl Sapiens {
                     ((320 * ECHELLE as i16 as i64 - (r.right - r.left) as i64) / 2) as i16,
                     60,
                 );
-                let rdest = DoZoomRect(&r);
+                let rdest = self.sapwind.ports.DoZoomRect(&r);
                 DrawPicture(pict, &rdest);
                 ReleaseResource(pict as Handle);
             }
             /* Affichage de la version de sapiens */
             copie_chaine(&mut chaine, &GetVersionSapiens());
-            self.sapwind.AffStr(
+            self.sapwind.ports.AffStr(
                 &raw mut chaine as *mut i8,
                 helvetica as i16,
                 14,
@@ -852,7 +851,7 @@ impl Sapiens {
                 &raw mut chaine as *mut i8,
                 c"Copyright Didier & Olivier Guillion, 1986,1996,2005,2017".as_ptr(),
             );
-            self.sapwind.AffStr(
+            self.sapwind.ports.AffStr(
                 &raw mut chaine as *mut i8,
                 helvetica as i16,
                 16,
@@ -872,7 +871,7 @@ impl Sapiens {
                 i += 1;
                 PtoCstr(&raw mut chaine as *mut u8);
                 if strlen(&raw const chaine as *const i8) != 0 {
-                    self.sapwind.AffStr(
+                    self.sapwind.ports.AffStr(
                         &raw mut chaine as *mut i8,
                         helvetica as i16,
                         16,
@@ -900,25 +899,17 @@ impl Sapiens {
                 SapiensExit(-1);
             }
             self.FixeMenusReduit();
-            port::set(self.sapwind.mainWindow);
+            self.sapwind.ports.set(PortId::MainWindow);
             MessInit(self.sapwind.GetStr(20)); /* Initialsations des ecrans */
             CalcIndexPalette(self.saplist.pal1.borrow_mut().as_mut());
             CalcIndexPalette(self.saplist.pal2.borrow_mut().as_mut());
-            self.sapwind.Ecran1 = SapiensCreeOffscreen(256 * ECHELLE as i16, 100 * ECHELLE as i16);
-            if self.sapwind.Ecran1.is_null() {
-                self.Collapse("[SapWind.init_graph.1] Unable to create offscreen");
-                SapiensExit(-2);
-            }
-            self.sapwind.Ecran2 = SapiensCreeOffscreen(256 * ECHELLE as i16, 100 * ECHELLE as i16);
-            port::set(self.sapwind.Ecran1);
+            self.sapwind.ports.set(PortId::Ecran1);
             MessInit(self.sapwind.GetStr(21)); /* Initialsations des palettes */
             /* Fabrique les luts */
             self.sapwcvt.FabriqueLuts();
-            self.sapwind.debecr = SapiensCreeOffscreen(320 * ECHELLE as i16, 200 * ECHELLE as i16);
-            port::set(self.sapwind.debecr);
-            AfficheFond(self.sapwind.debecr);
+            self.sapwind.ports.set(PortId::debecr);
+            self.sapwind.ports.AfficheFond(PortId::debecr);
             /* Buffer de la souris*/
-            self.sapwind.BuffMouse = SapiensCreeOffscreen(64 * ECHELLE as i16, 64 * ECHELLE as i16);
             MessInit(self.sapwind.GetStr(22)); /*Chargement des graphismes */
             /* On charge les mobs */
             if !self.InitMobs() {
@@ -959,7 +950,8 @@ impl Sapiens {
             self.DoMenuCommand(cmd);
         }
 
-        let _g = port::on(self.sapwind.mainWindow);
+        publish_window_frame(self.sapwind.ports.window(), false);
+        let _g = self.sapwind.ports.on(PortId::MainWindow);
         let window = FrontWindow();
         self.CheckChangeMusique();
         while GetNextEvent(everyEvent as i16, &mut event) {
@@ -997,16 +989,16 @@ impl Sapiens {
                         _ => {}
                     }
                 }
-                updateEvt => {
-                    if port::is_window(window) {
-                        //                    AcamGetPortOffscreen(&gbak);
-                        port::set(window);
-                        BeginUpdate(window);
-                        self.RedessineFenetre();
-                        EndUpdate(window);
-                        //                    AcamSetPortOffscreen(gbak);
-                    }
-                }
+                // updateEvt => {
+                //     if self.sapwind.ports.is_window(window) {
+                //         //                    AcamGetPortOffscreen(&gbak);
+                //         self.sapwind.ports.set(window);
+                //         BeginUpdate(window);
+                //         self.RedessineFenetre();
+                //         EndUpdate(window);
+                //         //                    AcamSetPortOffscreen(gbak);
+                //     }
+                // }
                 activateEvt => {
                     if (event.message & 1) > 0 {
                         /* on reprends le traitement */
@@ -1050,11 +1042,12 @@ impl SapWind {
     /*******************************************************************
                             FixeTailleMainWindow
     ********************************************************************/
-    pub(crate) fn FixeTailleMainWindow(&self) {
-        let _g = port::on(self.mainWindow);
+    pub(crate) fn FixeTailleMainWindow(&mut self) {
+        let _g = self.ports.on(PortId::MainWindow);
         let right = (320.0 * ECHELLE as f32 * self.SapZoom) as i16;
         let bottom = (200.0 * ECHELLE as f32 * self.SapZoom) as i16;
-        SizeWindow(self.mainWindow, right, bottom, true);
+        self.ports
+            .SizeWindow(PortId::MainWindow, right, bottom, true);
     }
 }
 

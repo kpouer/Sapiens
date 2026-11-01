@@ -11,13 +11,14 @@
 //!   (`acam.rs`).
 
 use crate::langue::LangMode;
-use crate::shared::KeyMap;
+use crate::shared::{KeyMap, SapPort};
 use log::{error, info};
 use std::fmt::Display;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU8, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
+use std::time::{Duration, Instant};
 // ---------------------------------------------------------------------------
 // Curseur (thread C → egui)
 // ---------------------------------------------------------------------------
@@ -123,6 +124,55 @@ pub(crate) fn set_menu_command(menu_result: i32) {
 pub(crate) fn take_menu_command() -> Option<i32> {
     let command = MENU_COMMAND.swap(0, Ordering::SeqCst);
     (command != 0).then_some(command)
+}
+
+// ---------------------------------------------------------------------------
+// Image de la fenêtre (thread C → egui)
+// ---------------------------------------------------------------------------
+
+/// Copie du tampon d'indices du port fenêtre, sans padding de lignes.
+pub(crate) struct WindowFrame {
+    pub(crate) w: usize,
+    pub(crate) h: usize,
+    /// `w * h` indices de la LUT système.
+    pub(crate) pixels: Vec<u8>,
+}
+
+/// Dernière image publiée, pas encore reprise par egui (« dernière valeur » :
+/// une image non lue est simplement écrasée). Le verrou n'est tenu que le temps
+/// d'échanger l'`Option`.
+static WINDOW_FRAME: Mutex<Option<WindowFrame>> = Mutex::new(None);
+static LAST_PUBLISH: Mutex<Option<Instant>> = Mutex::new(None);
+const PUBLISH_INTERVAL: Duration = Duration::from_millis(15);
+
+/// Publie une copie du port fenêtre (thread C), au plus une fois par
+/// `PUBLISH_INTERVAL` sauf si `force`.
+pub(crate) fn publish_window_frame(port: &SapPort, force: bool) {
+    {
+        let mut last = LAST_PUBLISH.lock().unwrap();
+        if !force && last.is_some_and(|t| t.elapsed() < PUBLISH_INTERVAL) {
+            return;
+        }
+        *last = Some(Instant::now());
+    }
+    let w = (port.bounds.right - port.bounds.left).max(0) as usize;
+    let h = (port.bounds.bottom - port.bounds.top).max(0) as usize;
+    let row = port.row_bytes.max(0) as usize;
+    if port.pixels.is_null() || w == 0 || h == 0 || row < w {
+        return;
+    }
+    let mut pixels = Vec::with_capacity(w * h);
+    for y in 0..h {
+        // SAFETY: le port fenêtre possède `h` lignes de `row_bytes` octets.
+        let line = unsafe { std::slice::from_raw_parts(port.pixels.add(y * row), w) };
+        pixels.extend_from_slice(line);
+    }
+    *WINDOW_FRAME.lock().unwrap() = Some(WindowFrame { w, h, pixels });
+}
+
+/// Reprise de l'image publiée depuis la dernière lecture (côté thread egui).
+pub(crate) fn take_window_frame() -> Option<WindowFrame> {
+    WINDOW_FRAME.lock().unwrap().take()
 }
 
 // ---------------------------------------------------------------------------
