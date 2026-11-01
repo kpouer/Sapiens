@@ -185,13 +185,6 @@ pub(crate) fn create(bounds: Rect, depth: i16) -> SapPort {
     }
 }
 
-impl SapPort {
-    /// Libère un port hors-écran. Le port de la fenêtre est laissé en place.
-    pub(crate) fn close(&mut self) {
-        self.pixels = Vec::new();
-    }
-}
-
 /// Redimensionne le tampon de `p` sur `bounds`, en préservant le contenu
 /// commun aux deux aires (l'aire en haut à gauche). Le clip suit l'aire.
 pub(crate) fn resize(p: &mut SapPort, bounds: Rect) {
@@ -213,27 +206,6 @@ pub(crate) fn resize(p: &mut SapPort, bounds: Rect) {
     p.bounds = bounds;
     p.row_bytes = w as i16;
     p.clip = bounds;
-}
-
-// ---------------------------------------------------------------------------
-// Contenu d'un port
-// ---------------------------------------------------------------------------
-
-impl SapPort {
-    /// Aire du port `p`, ou un rect vide.
-    pub(crate) fn bounds(&self) -> Rect {
-        self.bounds
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Échelle
-// ---------------------------------------------------------------------------
-
-/// Facteur d'échelle du port `p` : 1.0 sauf pour la fenêtre.
-#[deprecated]
-pub(crate) fn zoom_of(p: &SapPort) -> f32 {
-    p.zoom
 }
 
 impl Ports {
