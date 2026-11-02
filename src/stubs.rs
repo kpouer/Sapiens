@@ -43,7 +43,7 @@ impl Ports {
     pub(crate) fn GetMouse(&self) -> Point {
         let st = INPUT.lock().unwrap();
         let p = &self.mainWindow;
-        let b = (*p).bounds;
+        let b = p.bounds;
         let w = f64::from(b.right - b.left).max(1.0);
         let h = f64::from(b.bottom - b.top).max(1.0);
         Point {

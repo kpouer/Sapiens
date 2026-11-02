@@ -193,7 +193,7 @@ impl Sapiens {
             /* On ouvre le fichier en lecture */
             f = fopen(chaine, c"rb".as_ptr());
             if f.is_null() {
-                self.Collapse(&format!("Charge fichier Brt : Fichier '{nom}' non trouve"));
+                self.Collapse(format!("Charge fichier Brt : Fichier '{nom}' non trouve"));
                 return -1;
             }
             if getc(f) != b'B' as i32

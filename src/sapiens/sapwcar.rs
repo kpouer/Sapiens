@@ -138,7 +138,7 @@ fn SetColorFont(sapiens: &mut Sapiens, id: i16) {
     } else if id == sapiens.sapwcar.index_gray {
         sapiens.sapwind.ports.RGBForeColor(&rgbGray);
     } else {
-        sapiens.Collapse(&format!("SetColorFont: {id} unknown"));
+        sapiens.Collapse(format!("SetColorFont: {id} unknown"));
     }
 }
 

@@ -42,7 +42,7 @@ impl Sapiens {
             let _ = std::fs::create_dir_all(dir);
         }
         if let Err(e) = std::fs::write(&path, &out) {
-            self.Collapse(&format!("Error writing preferences: {e}"));
+            self.Collapse(format!("Error writing preferences: {e}"));
         }
     }
 

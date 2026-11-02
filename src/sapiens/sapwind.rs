@@ -463,7 +463,7 @@ impl Sapiens {
                     self.TfrEcr(None);
                     i += 1;
                 }
-                self.Collapse(&format!(
+                self.Collapse(format!(
                     "{i} transferts totaux de l'ecran : {} ticks",
                     TickCount() - t
                 ));
@@ -478,7 +478,7 @@ impl Sapiens {
                     self.affich(self.sapglob.dzeta as u16);
                     i += 1;
                 }
-                self.Collapse(&format!("{i} images 3d : {} ticks", TickCount() - t));
+                self.Collapse(format!("{i} images 3d : {} ticks", TickCount() - t));
             }
             if car == 0x23 {
                 /*'P'*/

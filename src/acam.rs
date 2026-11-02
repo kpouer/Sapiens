@@ -554,7 +554,7 @@ pub(crate) fn SetMenuBar(_menuBar: Handle) {}
 
 pub(crate) fn DrawMenuBar() {}
 
-fn find_menu<'a>(menus: &'a mut [Menu], handle: MenuHandle) -> Option<&'a mut Menu> {
+fn find_menu(menus: &mut [Menu], handle: MenuHandle) -> Option<&mut Menu> {
     if handle.is_null() {
         return None;
     }
@@ -744,7 +744,7 @@ pub(crate) fn plot(p: &mut SapPort, x: i16, y: i16, c: u8) {
 
 /// Remplit un rectangle (respecte clip), et accumule dans la région ouverte.
 fn fill_rect(p: &mut SapPort, r: &Rect, color: u8) {
-    p.open_acc = p.open_acc.union(&r);
+    p.open_acc = p.open_acc.union(r);
     let c = r.intersect(&p.clip);
     if c.is_empty() {
         return;
@@ -917,7 +917,7 @@ impl Ports {
     pub(crate) fn PaintRect(&mut self, r: &Rect) {
         let p = self.current_mut();
         let fore = p.fore_index;
-        fill_rect(&mut *p, r, fore);
+        fill_rect(p, r, fore);
     }
 
     pub(crate) fn EraseRect(&mut self, r: &Rect) {
