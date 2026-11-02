@@ -371,8 +371,6 @@ impl Sapiens {
     *******************************************************************************************/
 
     pub(crate) fn DoMenuCommand(&mut self, menuResult: i32) {
-        let mut daName: [u8; 256] = [0; 256];
-
         self.AdjustMenus();
         self.souris.MontreSouris();
         let menuID = ((menuResult >> 16) & 0xFFFF) as i16; /* HiWord */
@@ -383,6 +381,7 @@ impl Sapiens {
                 itemInformation => self.DoInfo(),
                 itemAide => self.DoAide(),
                 _ => {
+                    let mut daName: [u8; 256] = [0; 256];
                     GetItem(
                         GetMHandle(CvtDefaultLangRess(128)),
                         menuItem,
