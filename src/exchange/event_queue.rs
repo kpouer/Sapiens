@@ -191,6 +191,15 @@ mod tests {
     }
 
     #[test]
+    fn souris_down_puis_up_dans_l_ordre() {
+        let queue = NativeEventQueue::new();
+        queue.push(event(1, 0));
+        queue.push(event(2, 0));
+        assert_eq!(queue.pop(1 << 2), Some(event(2, 0)));
+        assert_eq!(queue.pop(1 << 1), Some(event(1, 0)));
+    }
+
+    #[test]
     fn every_event_prend_le_premier() {
         let queue = NativeEventQueue::new();
         queue.push(event(1, 1));

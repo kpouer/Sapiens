@@ -77,6 +77,7 @@ pub(crate) const autoKey: u32 = 5;
 pub(crate) const keyUp: u32 = 4;
 // Codes d'événement et résultats de `FindWindow` (Inside Macintosh).
 pub(crate) const mouseDown: u32 = 1;
+pub(crate) const mouseUp: u32 = 2;
 pub(crate) const inMenuBar: u32 = 1;
 pub(crate) const inSysWindow: u32 = 2;
 pub(crate) const inContent: u32 = 3;

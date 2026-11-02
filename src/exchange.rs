@@ -183,6 +183,10 @@ pub(crate) fn take_window_frame() -> Option<WindowFrame> {
 // Entrées
 // ---------------------------------------------------------------------------
 
+/// Les `where_` des événements souris sont normalisés de 0 à cette valeur ;
+/// le thread C les convertit en coordonnées fenêtre (`Ports::event_point`).
+pub(crate) const MOUSE_EVENT_SCALE: i16 = 32767;
+
 /// État des entrées posé par egui (thread principal) et lu par le C.
 #[derive(Clone, Copy, Default)]
 pub(crate) struct InputState {

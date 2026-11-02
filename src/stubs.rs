@@ -7,7 +7,7 @@
 #![allow(non_snake_case)]
 
 use crate::cbridge::{MenuHandle, OSErr, SndChannelPtr, WindowPtr};
-use crate::exchange::INPUT;
+use crate::exchange::{INPUT, MOUSE_EVENT_SCALE};
 use crate::port;
 use crate::port::{PortId, Ports};
 use crate::shared::*;
@@ -25,6 +25,20 @@ pub(crate) fn Button() -> Boolean {
 }
 
 impl Ports {
+    /// Convertit le `where_` d'un événement souris (position normalisée de
+    /// 0 à `MOUSE_EVENT_SCALE`, posée par egui) dans le repère de la fenêtre
+    /// principale, comme `GetMouse`.
+    pub(crate) fn event_point(&self, pt: Point) -> Point {
+        let b = self.mainWindow.bounds;
+        let w = f64::from(b.right - b.left).max(1.0);
+        let h = f64::from(b.bottom - b.top).max(1.0);
+        let scale = f64::from(MOUSE_EVENT_SCALE);
+        Point {
+            h: (f64::from(pt.h) / scale * w) as i16,
+            v: (f64::from(pt.v) / scale * h) as i16,
+        }
+    }
+
     #[allow(non_snake_case)]
     pub(crate) fn GetMouse(&self) -> Point {
         let st = INPUT.lock().unwrap();
@@ -43,8 +57,10 @@ pub(crate) extern "C" fn FrontWindow() -> WindowPtr {
     std::ptr::null_mut()
 }
 pub(crate) extern "C" fn SelectWindow(_w: WindowPtr) {}
+/// Un seul « bureau » : tout clic est dans le contenu de la fenêtre de jeu
+/// (la barre de menu est gérée par egui, qui ne pousse pas d'événement).
 pub(crate) extern "C" fn FindWindow(_pt: Point, _window: *mut WindowPtr) -> i16 {
-    0
+    crate::cbridge::inContent as i16
 }
 pub(crate) extern "C" fn SystemClick(_event: *const EventRecord, _w: WindowPtr) {}
 pub(crate) extern "C" fn SystemTask() {}

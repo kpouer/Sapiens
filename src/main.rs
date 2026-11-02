@@ -22,9 +22,9 @@ pub(crate) mod text;
 use crate::acam::Random;
 use crate::dialogs::PreferencesState;
 use crate::exchange::{
-    AlertRequest, CursorShape, INPUT, UiRequest, UiResponse, WindowFrame, clear_events,
-    cursor_hidden, cursor_shape, push_event, set_menu_command, take_title, take_ui_request,
-    take_window_frame,
+    AlertRequest, CursorShape, INPUT, MOUSE_EVENT_SCALE, UiRequest, UiResponse, WindowFrame,
+    clear_events, cursor_hidden, cursor_shape, push_event, set_menu_command, take_title,
+    take_ui_request, take_window_frame,
 };
 use crate::langue::{
     LangMode, Langue, effective_lang, langue, load_lang_mode, save_lang_mode, set_game_language,
@@ -51,7 +51,7 @@ use egui::CursorIcon;
 use shared::{EventRecord, Point, lut_rgb};
 use std::sync::mpsc::Sender;
 
-use crate::cbridge::{cmdKey, controlKey, keyDown, optionKey, shiftKey};
+use crate::cbridge::{cmdKey, controlKey, keyDown, mouseDown, mouseUp, optionKey, shiftKey};
 
 fn main() {
     // Le code C ouvre les fichiers relatifs (data/mobs/*.BRT) dans le répertoire
@@ -616,6 +616,32 @@ fn record_input(ctx: &egui::Context, accept_events: bool) {
                         ev.message = (ev.message & !0xFF) | i64::from(b);
                     }
                     push_event(ev);
+                }
+            }
+            egui::Event::PointerButton {
+                button: egui::PointerButton::Primary,
+                pressed,
+                pos,
+                modifiers,
+            } => {
+                if let Some(ev) = pending.take() {
+                    push_event(ev);
+                }
+                // Clics hors de la zone de jeu (barre de menu egui) ignorés.
+                if area.contains(*pos) {
+                    let scale = f32::from(MOUSE_EVENT_SCALE);
+                    push_event(EventRecord {
+                        what: if *pressed { mouseDown } else { mouseUp } as i16,
+                        message: 0,
+                        when: 0,
+                        where_: Point {
+                            h: (((pos.x - area.left()) / area.width().max(1.0)).clamp(0.0, 1.0)
+                                * scale) as i16,
+                            v: (((pos.y - area.top()) / area.height().max(1.0)).clamp(0.0, 1.0)
+                                * scale) as i16,
+                        },
+                        modifiers: mac_modifiers(modifiers),
+                    });
                 }
             }
             egui::Event::WindowFocused(false) => {

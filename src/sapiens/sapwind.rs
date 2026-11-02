@@ -967,6 +967,8 @@ impl Sapiens {
                 }
                 mouseDown => {
                     /* On cherche quelle fenetre a été cliquée */
+                    let mut event = event;
+                    event.where_ = self.sapwind.ports.event_point(event.where_);
                     part = FindWindow(event.where_, &mut windowResult);
                     /* Où a-t'on cliqué ??? */
                     match part as u32 {
@@ -994,6 +996,8 @@ impl Sapiens {
                         _ => {}
                     }
                 }
+                /* La souris est lue par polling (Button/GetMouse) : rien à faire */
+                mouseUp => {}
                 // updateEvt => {
                 //     if self.sapwind.ports.is_window(window) {
                 //         //                    AcamGetPortOffscreen(&gbak);
