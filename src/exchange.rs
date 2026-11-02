@@ -12,9 +12,9 @@
 //!   menus) restent chez l'émulation concernée et sont exposés par snapshot
 //!   (`acam.rs`).
 
-mod event_queue;
+pub(crate) mod event_queue;
 
-pub(crate) use event_queue::{clear_events, pop_event, push_event};
+pub(crate) use event_queue::{clear_events, push_event};
 
 use crate::langue::LangMode;
 use crate::shared::{KeyMap, SapPort};

@@ -10,7 +10,7 @@ pub(crate) mod acam;
 mod audio;
 pub(crate) mod cbridge;
 mod dialogs;
-mod exchange;
+pub(crate) mod exchange;
 pub(crate) mod langue;
 pub(crate) mod port;
 pub(crate) mod sapiens;

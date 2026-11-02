@@ -43,9 +43,6 @@ pub(crate) extern "C" fn FrontWindow() -> WindowPtr {
     std::ptr::null_mut()
 }
 pub(crate) extern "C" fn SelectWindow(_w: WindowPtr) {}
-pub(crate) extern "C" fn GetNextEvent(_mask: i16, _event: *mut EventRecord) -> Boolean {
-    false
-}
 pub(crate) extern "C" fn FindWindow(_pt: Point, _window: *mut WindowPtr) -> i16 {
     0
 }

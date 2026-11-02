@@ -6,15 +6,15 @@
 */
 use crate::acam::{
     Alert, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle, DrawMenuBar,
-    EnableItem, FAUX, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, GetNextEvent,
-    NewCWindow, ParamText, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI,
-    c_string,
+    EnableItem, FAUX, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, NewCWindow,
+    ParamText, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI, c_string,
 };
 use crate::audio;
 use crate::cbridge::{
     DRVR, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, everyEvent, helvetica,
     optionKey, strcpy, strlen, watchCursor, whiteColor,
 };
+use crate::exchange::event_queue::GetNextEvent;
 use crate::exchange::{publish_window_frame, take_menu_command};
 use crate::langue::{langue_i16, set_langue};
 use crate::port;
@@ -32,7 +32,6 @@ use crate::stubs::{
 };
 use crate::{Sapiens, cbridge};
 use cbridge::*;
-use egui::debug_text::print;
 use std::ffi::c_void;
 use std::process::exit;
 /******************** Constantes (SAPIENS.H / acam.h) *******************/
@@ -946,7 +945,6 @@ impl Sapiens {
     pub(crate) fn GereInterface(&mut self) {
         let mut part;
         let mut windowResult = WindowPtr::default();
-        let mut event = EventRecord::default();
 
         /* Commande de menu venue de la barre egui : elle s'execute ici, sur le
         thread C, la ou vit le `&mut Sapiens`. Le swap a ete fait, donc un modal
@@ -959,7 +957,7 @@ impl Sapiens {
         let _g = self.sapwind.ports.on(PortId::MainWindow);
         let window = FrontWindow();
         self.CheckChangeMusique();
-        while GetNextEvent(everyEvent as i16, &mut event) {
+        while let Some(event) = GetNextEvent(everyEvent as i16) {
             match event.what as u32 {
                 keyDown => {
                     self.sapwind.toucheClav = event.message as i16 & charCodeMask as i16;
