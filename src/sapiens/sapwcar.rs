@@ -251,7 +251,7 @@ impl Sapiens {
                     }
                 }
             } else {
-                eprintln!("GetStrBkMot error");
+                eprintln!("GetStrBkMot error {car}");
             }
         }
         p
