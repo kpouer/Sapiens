@@ -12,6 +12,7 @@ pub(crate) mod cbridge;
 mod dialogs;
 pub(crate) mod exchange;
 pub(crate) mod langue;
+pub(crate) mod pict;
 pub(crate) mod port;
 pub(crate) mod sapiens;
 pub(crate) mod shared;

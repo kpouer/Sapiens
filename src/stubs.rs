@@ -100,10 +100,9 @@ pub(crate) fn CarboniseSetPatGray() {}
 
 pub(crate) fn ReleaseResource(_h: Handle) {}
 pub(crate) fn DisposePtr(_p: Ptr) {}
-pub(crate) fn GetPicture(_resID: i16) -> PicHandle {
-    std::ptr::null_mut()
+pub(crate) fn GetPicture(resID: i16) -> PicHandle {
+    crate::pict::get_picture(resID)
 }
-pub(crate) fn DrawPicture(_pic: PicHandle, _dstRect: &Rect) {}
 pub(crate) fn GetRectFilePng(_name: &str, _r: &mut Rect) -> Boolean {
     false
 }

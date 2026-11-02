@@ -12,8 +12,7 @@ use crate::sapiens::{DEFAULT_PALCOUL, ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalC
 use crate::shared::{Ptr, RGBColor, Rect, RgnHandle, SapPort};
 use crate::stubs::{
     CarboniseInvalRect, CarboniseSetPatGray, CarboniseValideUpdate, ConvertPNGFileToOffscreen,
-    DisposePtr, DrawPicture, FixeCheminRelatif, GetPicture, GetRectFilePng, PopPath, PushPath,
-    SaisitChemin,
+    DisposePtr, FixeCheminRelatif, GetPicture, GetRectFilePng, PopPath, PushPath, SaisitChemin,
 };
 use crate::{Sapiens, cbridge, port};
 
@@ -1243,7 +1242,7 @@ impl Sapiens {
                 pict = GetPicture(CvtLangRess(GB as i16, num));
             }
             if !pict.is_null() {
-                DrawPicture(pict, &rDest);
+                self.sapwind.ports.DrawPicture(pict, &rDest);
             }
         }
         PopPath();

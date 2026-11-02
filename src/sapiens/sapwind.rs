@@ -26,9 +26,9 @@ use crate::sapiens::{ECHELLE, STR_VRAC, Vue};
 use crate::shared::{Boolean, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr};
 use crate::stubs::{
     AddResMenu, CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseValideUpdate, DragWindow,
-    DrawPicture, FindWindow, FrontWindow, GetPicture, HiliteMenu, InitDefautConfigSortieNumerique,
-    MenuKey, MenuSelect, OpenDeskAcc, PopPath, PushPath, ReleaseResource, SelectWindow,
-    SystemClick, SystemTask,
+    FindWindow, FrontWindow, GetPicture, HiliteMenu, InitDefautConfigSortieNumerique, MenuKey,
+    MenuSelect, OpenDeskAcc, PopPath, PushPath, ReleaseResource, SelectWindow, SystemClick,
+    SystemTask,
 };
 use crate::{Sapiens, cbridge};
 use cbridge::*;
@@ -638,7 +638,7 @@ impl Ports {
                 self.BackColor(whiteColor as i16);
                 self.ForeColor(blackColor as i16);
                 let r = Rect::new(x, y, x + 64, y + 64);
-                DrawPicture(picMotif, &r);
+                self.DrawPicture(picMotif, &r);
                 x += 64;
             }
             y += 64;
@@ -837,7 +837,7 @@ impl Sapiens {
                     60,
                 );
                 let rdest = self.sapwind.ports.DoZoomRect(&r);
-                DrawPicture(pict, &rdest);
+                self.sapwind.ports.DrawPicture(pict, &rdest);
                 ReleaseResource(pict as Handle);
             }
             /* Affichage de la version de sapiens */
@@ -889,7 +889,10 @@ impl Sapiens {
                     break;
                 }
             }
-            let timeBase = TickCount() + 5 * 60;
+            /* Le générique est dessiné : on le présente avant l'attente */
+            publish_window_frame(self.sapwind.ports.window(), true);
+            /* TickCount() renvoie des millisecondes ici (et non des ticks de 1/60 s) : 5 s */
+            let timeBase = TickCount() + 5000;
 
             r = self.sapwind.aire_rect();
             CarboniseInvalRect(&raw const r);

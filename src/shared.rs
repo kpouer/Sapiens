@@ -31,6 +31,8 @@ pub(crate) type SndListHandle = *mut *mut c_void;
 pub(crate) struct Pic {
     pub(crate) picSize: i16,
     pub(crate) picFrame: Rect,
+    /// Image décodée (`pict::Picture`), 0 si absente.
+    pub(crate) pict: usize,
 }
 pub(crate) type PicHandle = *mut *mut Pic;
 pub(crate) type TEHandle = *mut *mut TEText;
