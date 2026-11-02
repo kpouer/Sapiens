@@ -30,10 +30,11 @@ pub(crate) const FAUX: bool = false;
 
 static TICK_START: Mutex<Option<Instant>> = Mutex::new(None);
 
+/// Ticks de 1/60 s depuis le premier appel, comme le `TickCount` du Mac.
 pub(crate) fn TickCount() -> i64 {
     let mut g = TICK_START.lock().unwrap();
     let start = *g.get_or_insert_with(Instant::now);
-    start.elapsed().as_millis() as i64
+    (start.elapsed().as_millis() * 60 / 1000) as i64
 }
 
 pub(crate) struct Random {

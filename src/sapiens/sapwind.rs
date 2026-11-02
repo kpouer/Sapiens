@@ -891,8 +891,7 @@ impl Sapiens {
             }
             /* Le générique est dessiné : on le présente avant l'attente */
             publish_window_frame(self.sapwind.ports.window(), true);
-            /* TickCount() renvoie des millisecondes ici (et non des ticks de 1/60 s) : 5 s */
-            let timeBase = TickCount() + 5000;
+            let timeBase = TickCount() + 5 * 60;
 
             r = self.sapwind.aire_rect();
             CarboniseInvalRect(&raw const r);
