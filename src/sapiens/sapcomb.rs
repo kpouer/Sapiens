@@ -237,10 +237,10 @@ impl Sapglob {
             SapId::Sap2
         };
         /*On teste si un des deux clans est vide*/
-        if sap1.vie + self.sap3.vie == 0 {
+        if sap1.vie == 0 && self.sap3.vie == 0 {
             return 1; /*clan 1 kaput*/
         }
-        if self.sap2.vie + self.sap4.vie == 0 {
+        if self.sap2.vie == 0 && self.sap4.vie == 0 {
             return 0; /*clan 2 kaput*/
         }
         /* Joueur toujours present ???*/
