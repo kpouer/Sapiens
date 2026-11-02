@@ -205,12 +205,139 @@ pub(crate) fn CtoPstr(str: *mut i8) -> *mut u8 {
     }
 }
 
-pub(crate) fn GetIndString(s: StringPtr, _id: i16, _index: i16) {
+/// Ressources `STR#` extraites de `c_code/Rsrc/sapiens.rsrc`.
+/// Les identifiants suivent `CvtLangRess` : base + 1000 * langue
+/// (0 = français, 1000 = anglais, 2000 = espagnol).
+/// Les index absents (ou chaînes vides) donnent une chaîne vide.
+const STR_FR: &[&str] = &[
+    "Aucune",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Des fichiers essentiels sont absents, réinstallez le logiciel.",
+    "",
+    "",
+    "",
+    "C'est toi.Ton nom est %s.",
+    "C'est ton ami.Son nom est %s.",
+    "C'est ton adversaire.",
+    "C'est l'ami de ton adversaire.",
+    "Ce n'est personne.",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "C'est l'indicateur de ton souffle et de ton état.",
+    "C'est l'indicateur de souffle et d'état de tes adversaires.",
+    "C'est l'indicateur du souffle et de l'état de ton ami.",
+];
+const STR_GB: &[&str] = &[
+    "None",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Important files are missing. Please reinstall this software.",
+    "",
+    "",
+    "",
+    "It's you. Your name is %s.",
+    "It's your friend, whose name is %s.",
+    "It's your opponent.",
+    "It's your opponent's friend.",
+    "Nobody's here.",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "It's your breath and condition indicator.",
+    "It's your opponent's breath and condition indicator.",
+    "It's your friend's breath and condition indicator.",
+];
+const STR_ES: &[&str] = &[
+    "Ninguno",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Faltan archivos importantes. Por favor reinstalar el programa.",
+    "",
+    "",
+    "",
+    "Eres tú. Tu nombre es %s.",
+    "Es tu amigo, su nombre es %s.",
+    "Es tu oponente.",
+    "Es el amigo de tu oponente.",
+    "No hay nadie aquí.",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Es tu indicador de respiración y condición.",
+    "Es el indicador de respiración y condición de tu oponente.",
+    "Es el indicado de respiración y condición de tu amigo.",
+];
+
+fn str_resource(id: i16) -> &'static [&'static str] {
+    match id {
+        0 => STR_FR,
+        1000 => STR_GB,
+        2000 => STR_ES,
+        1 => &["Edition spéciale 30ème anniversaire"],
+        1001 => &["30th anniversary special edition"],
+        2001 => &["Edición especial 30 aniversario "],
+        128 => &["Français", "English", "Castellano"],
+        _ => &[],
+    }
+}
+
+/// Écrit dans `s` (chaîne Pascal, MacRoman) la chaîne n° `index` (base 1)
+/// de la ressource `STR#` `id`. Chaîne vide si elle n'existe pas.
+pub(crate) fn GetIndString(s: StringPtr, id: i16, index: i16) {
     if s.is_null() {
         return;
     }
+    let text = usize::try_from(index - 1)
+        .ok()
+        .and_then(|i| str_resource(id).get(i))
+        .copied()
+        .unwrap_or("");
     unsafe {
-        *s = 0;
+        let mut len = 0usize;
+        for c in text.chars() {
+            if len == 255 {
+                break;
+            }
+            let b = crate::text::unicode_to_mac_roman(c).unwrap_or(b'?');
+            *s.add(1 + len) = b;
+            len += 1;
+        }
+        *s = len as u8;
     }
 }
 
