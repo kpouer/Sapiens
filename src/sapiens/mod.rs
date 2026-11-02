@@ -1,11 +1,7 @@
-//! Les 148 prototypes de l'API "Acam" (declarations dans
-//! `Sources/Headers/acam.h`, seul vestige de la glue C) sont fournis *ici* en
-//! Rust : ils sont exposes en `#[no_mangle] extern "C"` et servent de
-//! squelette au portage. Chaque erreur de lien du `cargo build` correspond a un
-//! prototype d'`acam.h` a stuber (l'inventaire exact vient du linker).
-//!
-//! Aucun code C n'est compile : le port est complet, `Sources/Headers/acam.h`
-//! n'est plus lu a la compilation.
+//! Les prototypes de l'API "Acam" historiques (référence :
+//! `Sources/Headers/acam.h`) sont réimplémentés en Rust pur.
+//! Aucun code C n'est compilé et aucune frontière `extern "C"` n'est
+//! nécessaire pour le jeu : les fonctions s'appellent comme du Rust ordinaire.
 
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]

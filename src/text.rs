@@ -274,6 +274,18 @@ fn decode(b: u8) -> char {
     }
 }
 
+/// Convertit un caractère Unicode en octet MacRoman. `None` si le caractère
+/// n'existe pas dans l'encodage historique (utilisé pour la saisie clavier).
+pub(crate) fn unicode_to_mac_roman(c: char) -> Option<u8> {
+    if c.is_ascii() {
+        return Some(c as u8);
+    }
+    MAC_ROMAN
+        .iter()
+        .position(|&m| m == c)
+        .map(|i| 0x80 + i as u8)
+}
+
 // ---------------------------------------------------------------------------
 // Métriques de police (cache par famille × graisse × taille)
 // ---------------------------------------------------------------------------
@@ -751,5 +763,18 @@ mod tests {
             half > all / 4,
             "texte pas centré verticalement : {half}/{all}"
         );
+    }
+
+    #[test]
+    fn conversion_unicode_vers_mac_roman() {
+        // ASCII inchangé.
+        assert_eq!(unicode_to_mac_roman('A'), Some(0x41));
+        assert_eq!(unicode_to_mac_roman(' '), Some(0x20));
+        // Accents MacRoman.
+        assert_eq!(unicode_to_mac_roman('é'), Some(0x8E));
+        assert_eq!(unicode_to_mac_roman('É'), Some(0x83));
+        assert_eq!(unicode_to_mac_roman('€'), Some(0xDB));
+        // Hors du répertoire historique : la saisie est ignorée.
+        assert_eq!(unicode_to_mac_roman('中'), None);
     }
 }

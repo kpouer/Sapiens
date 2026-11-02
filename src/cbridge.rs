@@ -64,6 +64,8 @@ pub(crate) const courier: u32 = 1;
 pub(crate) const noErr: u32 = 0;
 pub(crate) const cmdKey: u32 = 256;
 pub(crate) const ctrlItem: u32 = 16;
+pub(crate) const shiftKey: u32 = 512;
+pub(crate) const controlKey: u32 = 4096;
 pub(crate) const activateEvt: u32 = 8;
 pub(crate) const app4Evt: u32 = 55;
 pub(crate) const bold: u32 = 1;
@@ -73,6 +75,12 @@ pub(crate) const watchCursor: u32 = 0;
 pub(crate) const keyDown: u32 = 3;
 pub(crate) const autoKey: u32 = 5;
 pub(crate) const keyUp: u32 = 4;
+// Codes d'événement et résultats de `FindWindow` (Inside Macintosh).
+pub(crate) const mouseDown: u32 = 1;
+pub(crate) const inMenuBar: u32 = 1;
+pub(crate) const inSysWindow: u32 = 2;
+pub(crate) const inContent: u32 = 3;
+pub(crate) const inDrag: u32 = 4;
 pub(crate) const blackColor: u32 = 33;
 pub(crate) const whiteColor: u32 = 30;
 

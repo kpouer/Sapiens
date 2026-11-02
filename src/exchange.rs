@@ -2,13 +2,19 @@
 //!
 //! Un static par sens et par primitive (jamais un verrou unique pour tout) :
 //!
-//! - **egui → thread C** : commandes de menu (boîte 0-swap) et état des
-//!   entrées (souris/clavier), alimenté chaque frame par egui (`src/main.rs`)
-//!   et consommé par les stubs `GetMouse`/`Button`/`GetKeys`.
+//! - **egui → thread C** : commandes de menu (boîte 0-swap), état des
+//!   entrées (souris/clavier) et file d'événements Mac (`keyDown`, cf.
+//!   `event_queue.rs`), alimentés chaque frame par egui (`src/main.rs`) et
+//!   consommés par les stubs `GetMouse`/`Button`/`GetKeys` puis
+//!   `GetNextEvent`.
 //! - **thread C → egui** : curseur (forme/caché) et titre de fenêtre ; egui
 //!   les relit en tête de `update()`. Les modèles Mac mutables (barre de
 //!   menus) restent chez l'émulation concernée et sont exposés par snapshot
 //!   (`acam.rs`).
+
+mod event_queue;
+
+pub(crate) use event_queue::{clear_events, pop_event, push_event};
 
 use crate::langue::LangMode;
 use crate::shared::{KeyMap, SapPort};

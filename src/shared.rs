@@ -24,7 +24,6 @@ pub(crate) type Ptr = *mut u8;
 pub(crate) type CGrafPtr = *mut c_void;
 pub(crate) type DialogPtr = *mut c_void;
 pub(crate) type RgnHandle = *mut c_void;
-pub(crate) type ControlHandle = *mut c_void;
 pub(crate) type Cursor = *mut c_void;
 pub(crate) type SndListHandle = *mut *mut c_void;
 #[repr(C)]
@@ -38,10 +37,6 @@ pub(crate) type TEHandle = *mut *mut TEText;
 
 pub(crate) type StringPtr = *mut u8;
 pub(crate) type KeyMap = [u64; 4];
-pub(crate) type ControlActionProcPtr =
-    ::std::option::Option<unsafe extern "C" fn(control: ControlHandle, part: i16)>;
-
-pub(crate) type ControlActionUPP = ControlActionProcPtr;
 
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
@@ -145,7 +140,7 @@ impl ShrAssign<u8> for RGBColor {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Default, Debug)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub(crate) struct EventRecord {
     pub(crate) what: i16,
     pub(crate) message: i64,

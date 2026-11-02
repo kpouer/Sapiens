@@ -6,8 +6,9 @@
 */
 use crate::acam::{
     Alert, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle, DrawMenuBar,
-    EnableItem, FAUX, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, NewCWindow,
-    ParamText, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI, c_string,
+    EnableItem, FAUX, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, GetNextEvent,
+    NewCWindow, ParamText, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI,
+    c_string,
 };
 use crate::audio;
 use crate::cbridge::{
@@ -25,12 +26,13 @@ use crate::sapiens::{ECHELLE, STR_VRAC, Vue};
 use crate::shared::{Boolean, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr};
 use crate::stubs::{
     AddResMenu, CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseValideUpdate, DragWindow,
-    DrawPicture, FindWindow, FrontWindow, GetNextEvent, GetPicture, HiliteMenu,
-    InitDefautConfigSortieNumerique, MenuKey, MenuSelect, OpenDeskAcc, PopPath, PushPath,
-    ReleaseResource, SelectWindow, SystemClick, SystemTask,
+    DrawPicture, FindWindow, FrontWindow, GetPicture, HiliteMenu, InitDefautConfigSortieNumerique,
+    MenuKey, MenuSelect, OpenDeskAcc, PopPath, PushPath, ReleaseResource, SelectWindow,
+    SystemClick, SystemTask,
 };
 use crate::{Sapiens, cbridge};
 use cbridge::*;
+use egui::debug_text::print;
 use std::ffi::c_void;
 use std::process::exit;
 /******************** Constantes (SAPIENS.H / acam.h) *******************/

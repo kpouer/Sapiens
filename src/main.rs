@@ -21,8 +21,9 @@ pub(crate) mod text;
 use crate::acam::Random;
 use crate::dialogs::PreferencesState;
 use crate::exchange::{
-    AlertRequest, CursorShape, INPUT, UiRequest, UiResponse, WindowFrame, cursor_hidden,
-    cursor_shape, set_menu_command, take_title, take_ui_request, take_window_frame,
+    AlertRequest, CursorShape, INPUT, UiRequest, UiResponse, WindowFrame, clear_events,
+    cursor_hidden, cursor_shape, push_event, set_menu_command, take_title, take_ui_request,
+    take_window_frame,
 };
 use crate::langue::{
     LangMode, Langue, effective_lang, langue, load_lang_mode, save_lang_mode, set_game_language,
@@ -46,8 +47,10 @@ use crate::sapiens::sapwmess::Sapwmess;
 use crate::sapiens::sapwmus::Sapwmus;
 use eframe::egui;
 use egui::CursorIcon;
-use shared::lut_rgb;
+use shared::{EventRecord, Point, lut_rgb};
 use std::sync::mpsc::Sender;
+
+use crate::cbridge::{cmdKey, controlKey, keyDown, optionKey, shiftKey};
 
 fn main() {
     // Le code C ouvre les fichiers relatifs (data/mobs/*.BRT) dans le répertoire
@@ -451,8 +454,10 @@ impl eframe::App for SapiensApp {
             set_menu_command(r);
         }
 
-        record_input(ctx);
-
+        // Le thread du jeu est bloqué quand un modal egui est ouvert :
+        // `record_input` vide alors la file pour ne pas rejouer les frappes
+        // accumulées à la fermeture.
+        record_input(ctx, self.active_dialog.is_none());
         let new_frame = take_window_frame();
         if let Some(f) = new_frame {
             self.tex =
@@ -524,7 +529,12 @@ fn frame_image(f: &WindowFrame) -> egui::ColorImage {
 /// Alimente l'état d'entrée partagé (utilisé par les stubs GetMouse/Button au
 /// moment voulu). Les coordonnées sont normalisées dans la zone de jeu (sous la
 /// barre de menus), pas dans toute la fenêtre.
-fn record_input(ctx: &egui::Context) {
+///
+/// Traduit aussi les événements clavier egui en `keyDown` Mac pour la file
+/// consommée par `GetNextEvent`. `accept_events` est faux quand un dialogue
+/// modal est ouvert : le thread du jeu est alors bloqué et ne doit pas recevoir
+/// les frappes destinées à la boîte de dialogue.
+fn record_input(ctx: &egui::Context, accept_events: bool) {
     let area = ctx.available_rect();
     let (mh, mv) = ctx
         .pointer_interact_pos()
@@ -535,7 +545,7 @@ fn record_input(ctx: &egui::Context) {
             )
         })
         .unwrap_or((0.5, 0.5));
-    let (button, keymap) = ctx.input(|i| {
+    let (button, keymap, events) = ctx.input(|i| {
         let mut km = [0u64; 4];
         for &k in &i.keys_down {
             if let Some(code) = mac_keycode(k) {
@@ -554,7 +564,7 @@ fn record_input(ctx: &egui::Context) {
         if i.modifiers.command {
             km_set_key(&mut km, 0x37);
         }
-        (i.pointer.primary_down(), km)
+        (i.pointer.primary_down(), km, i.events.clone())
     });
     {
         let mut st = INPUT.lock().unwrap();
@@ -563,6 +573,189 @@ fn record_input(ctx: &egui::Context) {
         st.button = button;
         st.keymap = keymap;
     }
+
+    if !accept_events {
+        clear_events();
+        return;
+    }
+
+    let where_ = Point {
+        h: (mh * area.width()) as i16,
+        v: (mv * area.height()) as i16,
+    };
+    // Un `keyDown` Mac porte le code touche dans l'octet haut et le caractère
+    // dans l'octet bas. egui envoie `Key` puis `Text` : on garde le `keyDown`
+    // en attente pour y greffer le caractère réellement saisi (disposition
+    // clavier, Maj, AltGr...).
+    let mut pending: Option<EventRecord> = None;
+    for event in &events {
+        match event {
+            egui::Event::Key {
+                key,
+                pressed: true,
+                modifiers,
+                ..
+            } => {
+                if let Some(ev) = pending.take() {
+                    push_event(ev);
+                }
+                // Les raccourcis `command` sont déjà traités par `handle_shortcuts`
+                // (Cmd sur macOS, Ctrl ailleurs) : ne pas les doubler ici.
+                if !modifiers.command
+                    && let Some(ev) = mac_key_event(*key, modifiers, where_)
+                {
+                    pending = Some(ev);
+                }
+            }
+            egui::Event::Text(text) => {
+                if let Some(mut ev) = pending.take() {
+                    if let Some(c) = text.chars().next()
+                        && let Some(b) = crate::text::unicode_to_mac_roman(c)
+                    {
+                        ev.message = (ev.message & !0xFF) | i64::from(b);
+                    }
+                    push_event(ev);
+                }
+            }
+            egui::Event::WindowFocused(false) => {
+                // Les frappes en attente n'ont plus de sens : on perd le focus.
+                pending = None;
+                clear_events();
+            }
+            _ => {
+                if let Some(ev) = pending.take() {
+                    push_event(ev);
+                }
+            }
+        }
+    }
+    if let Some(ev) = pending.take() {
+        push_event(ev);
+    }
+}
+
+/// Construit un `keyDown` Mac depuis une touche egui. Le caractère est un
+/// repli ; `Event::Text` l'écrase quand il est disponible.
+fn mac_key_event(
+    key: egui::Key,
+    modifiers: &egui::Modifiers,
+    where_: Point,
+) -> Option<EventRecord> {
+    let keycode = mac_keycode(key)?;
+    Some(EventRecord {
+        what: keyDown as i16,
+        message: (i64::from(keycode) << 8) | i64::from(fallback_char(key, modifiers.shift)),
+        // Aucun consommateur du jeu ne lit `when` : le laisser à zéro évite de
+        // dépendre d'une horloge (utile pour wasm plus tard).
+        when: 0,
+        where_,
+        modifiers: mac_modifiers(modifiers),
+    })
+}
+
+/// Modificateurs Mac, dérivés des modificateurs egui portables :
+/// `command` = Cmd sur macOS, Ctrl sur Windows/Linux.
+fn mac_modifiers(modifiers: &egui::Modifiers) -> i16 {
+    let mut mac = 0i16;
+    if modifiers.command {
+        mac |= cmdKey as i16;
+    }
+    if modifiers.shift {
+        mac |= shiftKey as i16;
+    }
+    if modifiers.alt {
+        mac |= optionKey as i16;
+    }
+    if modifiers.ctrl && !modifiers.command {
+        mac |= controlKey as i16;
+    }
+    mac
+}
+
+/// Caractère de repli quand egui n'envoie pas d'`Event::Text` (touches de
+/// contrôle, fonction, flèches...). Les codes sont ceux du Mac.
+fn fallback_char(key: egui::Key, shift: bool) -> i16 {
+    use egui::Key::*;
+    match key {
+        Enter => 13,
+        Tab => 9,
+        Escape => 27,
+        Backspace => 8,
+        Space => 32,
+        ArrowLeft => 0x1C,
+        ArrowRight => 0x1D,
+        ArrowUp => 0x1E,
+        ArrowDown => 0x1F,
+        F1 => 0x10,
+        F2 => 0x11,
+        F3 => 0x12,
+        F4 => 0x13,
+        F5 => 0x14,
+        F6 => 0x15,
+        F7 => 0x16,
+        F8 => 0x17,
+        F9 => 0x18,
+        F10 => 0x19,
+        F11 => 0x1A,
+        F12 => 0x1B,
+        _ => ascii_key(key, shift).map_or(0, i16::from),
+    }
+}
+
+/// Repli ASCII pour les touches imprimables (le vrai caractère vient de
+/// `Event::Text`, qui respecte la disposition clavier).
+fn ascii_key(key: egui::Key, shift: bool) -> Option<u8> {
+    use egui::Key::*;
+    let c = match key {
+        A => b'a',
+        B => b'b',
+        C => b'c',
+        D => b'd',
+        E => b'e',
+        F => b'f',
+        G => b'g',
+        H => b'h',
+        I => b'i',
+        J => b'j',
+        K => b'k',
+        L => b'l',
+        M => b'm',
+        N => b'n',
+        O => b'o',
+        P => b'p',
+        Q => b'q',
+        R => b'r',
+        S => b's',
+        T => b't',
+        U => b'u',
+        V => b'v',
+        W => b'w',
+        X => b'x',
+        Y => b'y',
+        Z => b'z',
+        Num0 => b'0',
+        Num1 => b'1',
+        Num2 => b'2',
+        Num3 => b'3',
+        Num4 => b'4',
+        Num5 => b'5',
+        Num6 => b'6',
+        Num7 => b'7',
+        Num8 => b'8',
+        Num9 => b'9',
+        Period => b'.',
+        Comma => b',',
+        Slash => b'/',
+        Semicolon => b';',
+        Minus => b'-',
+        Equals => b'=',
+        Backtick => b'`',
+        OpenBracket => b'[',
+        CloseBracket => b']',
+        Backslash => b'\\',
+        _ => return None,
+    };
+    Some(if shift { c.to_ascii_uppercase() } else { c })
 }
 
 /// Résultat de menu attendu par `DoMenuCommand` : `menuID<<16|item`,
@@ -685,6 +878,19 @@ fn mac_keycode(k: egui::Key) -> Option<u8> {
         End => 0x77,
         PageUp => 0x74,
         PageDown => 0x79,
+        // Touches de fonction.
+        F1 => 0x7A,
+        F2 => 0x78,
+        F3 => 0x63,
+        F4 => 0x76,
+        F5 => 0x60,
+        F6 => 0x61,
+        F7 => 0x62,
+        F8 => 0x64,
+        F9 => 0x65,
+        F10 => 0x6D,
+        F11 => 0x67,
+        F12 => 0x6F,
         _ => return None,
     })
 }

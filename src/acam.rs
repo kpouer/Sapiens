@@ -12,7 +12,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use crate::cbridge::{MenuHandle, watchCursor};
-use crate::exchange::{CursorShape, request_alert, set_cursor_shape, set_title};
+use crate::exchange::{CursorShape, pop_event, request_alert, set_cursor_shape, set_title};
 use crate::langue::{Langue, langue};
 use crate::port;
 use crate::port::{PortId, Ports};
@@ -34,6 +34,25 @@ pub(crate) fn TickCount() -> i64 {
     let mut g = TICK_START.lock().unwrap();
     let start = *g.get_or_insert_with(Instant::now);
     start.elapsed().as_millis() as i64
+}
+
+// ---------------------------------------------------------------------------
+// Evenements
+// ---------------------------------------------------------------------------
+
+/// Retire le premier événement de la file compatible avec `mask` et le copie
+/// dans `event`.
+///
+/// La file elle-même est dans `exchange::event_queue` : aucune frontière FFI,
+/// aucun pointeur brut, juste un emprunt mutable.
+pub(crate) fn GetNextEvent(mask: i16, event: &mut EventRecord) -> Boolean {
+    match pop_event(mask) {
+        Some(ev) => {
+            *event = ev;
+            VRAI
+        }
+        None => FAUX,
+    }
 }
 
 pub(crate) struct Random {
@@ -102,8 +121,7 @@ const NB_CURSOR_SLOTS: usize = 4;
 /// - `SetCursor` relit l'id par rapport d'adresse pour choisir la forme.
 static mut CURSOR_SLOTS: [Slot8; NB_CURSOR_SLOTS] = [Slot8([0; 8]); NB_CURSOR_SLOTS];
 
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn GetCursor(id: i16) -> Cursor {
+pub(crate) fn GetCursor(id: i16) -> Cursor {
     let idx = (id.max(0) as usize) % NB_CURSOR_SLOTS;
     unsafe {
         let slot = core::ptr::addr_of_mut!(CURSOR_SLOTS)
