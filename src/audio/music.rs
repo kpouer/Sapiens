@@ -438,8 +438,8 @@ impl MusicPlayer {
         self.muse = muse;
         self.tabins = tabins;
         self.defs = defs;
-        for i in 0..NB_VOIES {
-            self.voices[i] = SeqVoice::new(defs[i]);
+        for (i, def) in defs.iter().enumerate().take(NB_VOIES) {
+            self.voices[i] = SeqVoice::new(def);
             self.synths[i].stop();
         }
         self.active = true;

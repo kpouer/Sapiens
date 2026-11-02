@@ -40,23 +40,6 @@ pub(crate) struct TEText {
 pub(crate) type WindowPtr = *mut ::std::os::raw::c_void;
 
 pub(crate) type __darwin_off_t = __int64_t;
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub(crate) struct TPrint {
-    pub(crate) prInfo: TPrint__bindgen_ty_1,
-    pub(crate) prJob: TPrint__bindgen_ty_2,
-}
-
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub(crate) struct TPrint__bindgen_ty_1 {
-    pub(crate) rPage: Rect,
-}
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub(crate) struct TPrint__bindgen_ty_2 {
-    pub(crate) bJDocLoop: i16,
-}
 
 pub(crate) type FILE = __sFILE;
 pub(crate) const charCodeMask: u32 = 255;
@@ -107,20 +90,8 @@ impl Default for __sbuf {
 }
 pub(crate) const patOr: u32 = 1;
 pub(crate) const srcCopy: u32 = 0;
-pub(crate) type THPrint = *mut *mut TPrint;
 
 pub(crate) const DRVR: u32 = 1146246738;
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub(crate) struct DateTimeRec {
-    pub(crate) year: i16,
-    pub(crate) month: i16,
-    pub(crate) day: i16,
-    pub(crate) hour: i16,
-    pub(crate) minute: i16,
-    pub(crate) second: i16,
-    pub(crate) dayOfWeek: i16,
-}
 pub(crate) type fpos_t = __darwin_off_t;
 
 #[repr(C)]
@@ -155,44 +126,12 @@ impl Default for __sFILE {
         }
     }
 }
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub(crate) struct CInfoPBRec {
-    pub(crate) hFileInfo: CInfoPBRec__bindgen_ty_1,
-}
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub(crate) struct CInfoPBRec__bindgen_ty_1 {
-    pub(crate) ioNamePtr: *mut ::std::os::raw::c_void,
-}
-
-impl Default for CInfoPBRec__bindgen_ty_1 {
-    fn default() -> Self {
-        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
-impl Default for CInfoPBRec {
-    fn default() -> Self {
-        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
-}
 
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct GDevice {
     pub(crate) gdRect: Rect,
 }
-pub(crate) type GDHandle = *mut *mut GDevice;
-pub(crate) type DialogPtr = *mut ::std::os::raw::c_void;
 
 unsafe extern "C" {
     pub(crate) fn putc(arg1: i32, arg2: *mut FILE) -> i32;

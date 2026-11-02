@@ -383,8 +383,7 @@ pub(crate) fn NewCWindow(b: &Rect) -> SapPort {
     /* Le positionnement global de la fenêtre est géré par egui : le port de
     dessin travaille en coordonnées locales (0,0)-(largeur,hauteur). */
     let local = Rect::new(0, 0, b.right - b.left, b.bottom - b.top);
-    let p = port::create(local, 8);
-    p
+    port::create(local, 8)
 }
 
 /// `SetWTitle` : le titre (chaîne Pascal MacRoman) part par le pont
@@ -591,36 +590,35 @@ fn label_for(menus: &[Menu], handle: MenuHandle, item: i16) -> Option<&'static s
 }
 
 pub(crate) fn DisableItem(menu: MenuHandle, item: i16) {
-    if let Some(m) = &mut *MENU_MODEL.lock().unwrap() {
-        if let Some(menu) = find_menu(&mut m.menus, menu) {
-            if item == 0 {
-                menu.enabled = false;
-            } else if let Some(it) = menu.items.get_mut((item - 1) as usize) {
-                it.enabled = false;
-            }
+    if let Some(m) = &mut *MENU_MODEL.lock().unwrap()
+        && let Some(menu) = find_menu(&mut m.menus, menu)
+    {
+        if item == 0 {
+            menu.enabled = false;
+        } else if let Some(it) = menu.items.get_mut((item - 1) as usize) {
+            it.enabled = false;
         }
     }
 }
 
 pub(crate) fn EnableItem(menu: MenuHandle, item: i16) {
-    if let Some(m) = &mut *MENU_MODEL.lock().unwrap() {
-        if let Some(menu) = find_menu(&mut m.menus, menu) {
-            if item == 0 {
-                menu.enabled = true;
-            } else if let Some(it) = menu.items.get_mut((item - 1) as usize) {
-                it.enabled = true;
-            }
+    if let Some(m) = &mut *MENU_MODEL.lock().unwrap()
+        && let Some(menu) = find_menu(&mut m.menus, menu)
+    {
+        if item == 0 {
+            menu.enabled = true;
+        } else if let Some(it) = menu.items.get_mut((item - 1) as usize) {
+            it.enabled = true;
         }
     }
 }
 
 pub(crate) fn CheckItem(menu: MenuHandle, item: i16, checked: Boolean) {
-    if let Some(m) = &mut *MENU_MODEL.lock().unwrap() {
-        if let Some(menu) = find_menu(&mut m.menus, menu) {
-            if let Some(it) = menu.items.get_mut((item - 1) as usize) {
-                it.checked = checked;
-            }
-        }
+    if let Some(m) = &mut *MENU_MODEL.lock().unwrap()
+        && let Some(menu) = find_menu(&mut m.menus, menu)
+        && let Some(it) = menu.items.get_mut((item - 1) as usize)
+    {
+        it.checked = checked;
     }
 }
 
@@ -686,10 +684,10 @@ pub(crate) fn menus_snapshot() -> Vec<MenuSnapshot> {
     let mut g = MENU_MODEL.lock().unwrap();
     // Si la langue C a changé ailleurs (ChargePref/Alert), on reconstruit le
     // modèle pour garder IDs de menus et libellés cohérents.
-    if let Some(m) = g.as_mut() {
-        if m.lang != lang {
-            *m = build_model();
-        }
+    if let Some(m) = g.as_mut()
+        && m.lang != lang
+    {
+        *m = build_model();
     }
     let Some(m) = &*g else { return Vec::new() };
     m.menus
@@ -998,7 +996,7 @@ impl From<SapPort> for PortKind {
 impl PortKind {
     pub fn unwrap_or<'a>(&'a self, ports: &'a Ports) -> &'a SapPort {
         match self {
-            PortKind::Raw(x) => &x,
+            PortKind::Raw(x) => x,
             PortKind::PortId(id) => ports.port(*id),
         }
     }
@@ -1012,7 +1010,7 @@ impl PortKind {
 }
 
 impl Ports {
-    pub(crate) fn CopyBits<'a, S: Into<PortKind>, D: Into<PortKind>>(
+    pub(crate) fn CopyBits<S: Into<PortKind>, D: Into<PortKind>>(
         &mut self,
         src_id: S,
         dst_id: D,
