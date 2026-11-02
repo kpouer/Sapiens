@@ -91,7 +91,7 @@ impl Sapiens {
     /*************************************************************************
                         TailleChaine
     Affiche un caractere sur le port en entrée
-    => Chaine a traiter
+    => Chaine à traiter
     @= taille maximale en colonne x, nbre de lignes t
     **************************************************************************/
     fn TailleChaine(&mut self, mut debut: &[i8]) -> (i16, i16) {
@@ -116,14 +116,11 @@ impl Sapiens {
         (taillex, ty)
     }
 
-    fn TailleCarMess<'a>(
-        &mut self,
-        debut: &'a [i8],
-        mut taillex: i16,
-        mut tailley: i16,
-    ) -> (&'a [i8], i16, i16) {
+    fn TailleCarMess<'a>(&mut self, debut: &'a [i8], tx: i16, ty: i16) -> (&'a [i8], i16, i16) {
         let car = debut[0] as u8 as i16;
         let ret = &debut[1..];
+        let mut taillex = tx;
+        let mut tailley = ty;
         if car > 128 {
             let chaine = cstr_slice(self.GetStrBkMot(car));
             let (tx, ty) = self.TailleChaine(chaine);
