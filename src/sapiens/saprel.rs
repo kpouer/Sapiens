@@ -9,8 +9,9 @@ use std::sync::atomic::Ordering;
 
 use crate::Sapiens;
 use crate::acam::{FAUX, TickCount, VRAI};
-use crate::cbridge::{strcat, strcpy, whiteColor};
+use crate::cbridge::{strcpy, whiteColor};
 use crate::port::PortId;
+use crate::sapiens::c_str::ChaineC;
 use crate::sapiens::sapglob::{ListeId, SapId, Sapglob, tabprf, tenerv, tobje};
 use crate::sapiens::sapw3d::distance;
 use crate::sapiens::sapwmus::attends_bruit;
@@ -154,60 +155,58 @@ impl Sapiens {
     Le message s'affiche sur l'aire 3d
     ***********************************************************************/
     pub(crate) fn sceveu(&mut self, quoi: u16) {
-        unsafe {
-            let scenme = self.sap_lang.GetScenme();
+        self.sapglob.dervue = Vue::AUCUNE;
+        if quoi == 6 {
+            self.gemouvre(6, 32, 1, 2, 1, 8, 8, 38);
+        } else {
+            self.gemouvre(6, 32, 1, 2, 1, 8, 5, 38);
+        }
+        /* on efface la zone */
+        self.effvirt(0x007);
+        self.Gotoxy(12, 1);
 
-            self.sapglob.dervue = Vue::AUCUNE;
-            if quoi == 6 {
-                self.gemouvre(6, 32, 1, 2, 1, 8, 8, 38);
-            } else {
-                self.gemouvre(6, 32, 1, 2, 1, 8, 5, 38);
-            }
-            /* on efface la zone */
-            self.effvirt(0x007);
-
-            self.Gotoxy(12, 1);
-            let mut p = *scenme.add((quoi - 1) as usize);
-            let mut car = *p as u8;
-            p = p.add(1);
-            /* On affiche sur Debecr */
-            while car != 0 {
-                self.car2(car as i16);
-                loop {
-                    car = *p as u8;
-                    p = p.add(1);
-                    if car == 13 {
-                        self.Gotoxy(12, self.sapglob.linaff + 1);
-                    }
-                    if car != 13 {
-                        break;
-                    }
+        let scenme = self.sap_lang.GetScenme();
+        let txt = scenme[quoi as usize - 1];
+        let mut p = 0;
+        let mut car = txt[p];
+        p += 1;
+        /* On affiche sur Debecr */
+        while car != 0 {
+            self.car2(car as i16);
+            loop {
+                car = txt[p];
+                p += 1;
+                if car == 13 {
+                    self.Gotoxy(12, self.sapglob.linaff + 1);
+                }
+                if car != 13 {
+                    break;
                 }
             }
-            if quoi == 6 {
-                for _i in 0..3 {
-                    self.bruit(6);
-                    attends_bruit();
-                }
+        }
+        if quoi == 6 {
+            for _i in 0..3 {
+                self.bruit(6);
+                attends_bruit();
             }
-            /* Transfert Debecr vers reel */
-            self.TfrEcr(None);
-            if quoi == 6 {
-                /* Bravo tu as gagné */
-                let rdest = Rect::new(0, 0, 255 * ECHELLE, 100 * ECHELLE);
-                let rsourc = Rect::new(
-                    32 * ECHELLE,
-                    ECHELLE,
-                    (32 + 255) * ECHELLE,
-                    (1 + 100) * ECHELLE,
-                );
+        }
+        /* Transfert Debecr vers reel */
+        self.TfrEcr(None);
+        if quoi == 6 {
+            /* Bravo tu as gagné */
+            let rdest = Rect::new(0, 0, 255 * ECHELLE, 100 * ECHELLE);
+            let rsourc = Rect::new(
+                32 * ECHELLE,
+                ECHELLE,
+                (32 + 255) * ECHELLE,
+                (1 + 100) * ECHELLE,
+            );
 
-                self.sapwind
-                    .ports
-                    .CopyOffscreen(PortId::Debecr, PortId::Ecran1, rsourc, &rdest);
-                self.delai(15 * 60);
-                self.Final();
-            }
+            self.sapwind
+                .ports
+                .CopyOffscreen(PortId::Debecr, PortId::Ecran1, rsourc, &rdest);
+            self.delai(15 * 60);
+            self.Final();
         }
     }
 
@@ -217,11 +216,10 @@ impl Sapiens {
     Le message s'affiche sur l'aire 3d
     ***********************************************************************/
     pub(crate) fn SceveuBulle(&mut self, quoi: u16) {
-        let scenme = self.sap_lang.GetScenme();
         self.effaceBulles();
-        unsafe {
-            self.bulle_c(*scenme.add(quoi as usize) as Ptr, 1);
-        }
+        let scenme = self.sap_lang.GetScenme();
+        let debut = ChaineC::from(scenme[quoi as usize]);
+        self.bulle(&debut, 1);
     }
 
     /***********************************************************************
@@ -282,20 +280,17 @@ impl Sapiens {
     => rang du commentaire
     */
     pub(crate) fn comment(&mut self, rang: u16) {
-        let mut p: *mut u8;
-
         if self.sapglob.flefba == 0 {
             self.sapglob.flefba += 1;
             self.scrollbadi();
         }
         self.sapglob.flagbadi = 1;
-        let mescon = self.sap_lang.GetMesCon();
-        p = mescon[(rang - 1) as usize] as *mut u8;
-        unsafe {
-            while *p != 0 {
-                self.affcarmess(*p as i16);
-                p = p.add(1);
-            }
+        let message_index = (rang - 1) as usize;
+        let mut p = 0;
+        // let mut p = mescon[(rang - 1) as usize] as *mut u8;
+        while self.sap_lang.GetMesCon()[message_index][p] != 0 {
+            self.affcarmess(self.sap_lang.GetMesCon()[message_index][p] as i16);
+            p += 1;
         }
         self.TfrBadAss();
     }
@@ -539,20 +534,17 @@ impl Sapiens {
     *************************************************************************
     => Contexte de 1 à ....
     */
-    unsafe fn cause(&mut self, context: u16, mess_add: *const i8) {
-        let mut chaine = [0; 255];
-        unsafe {
-            /*y cause ti ?*/
-            if self.sapglob.fdialo != 0 {
-                /*y cause */
-                let rang = ((context - 1) * 4 + (self.random.Rnd() & 3) as u16) as i16;
-                let mescon = self.sap_lang.GetMesCon();
-                strcpy(chaine.as_mut_ptr(), mescon[rang as usize]);
-                if !mess_add.is_null() {
-                    strcat(chaine.as_mut_ptr(), mess_add);
-                }
-                self.bulle_c(chaine.as_mut_ptr() as Ptr, 1); /*affiche le commentaire*/
+    fn cause(&mut self, context: u16, mess_add: Option<&[u8]>) {
+        /*y cause ti ?*/
+        if self.sapglob.fdialo != 0 {
+            /*y cause */
+            let rang = ((context - 1) * 4 + (self.random.Rnd() & 3) as u16) as i16;
+            let mescon = self.sap_lang.GetMesCon();
+            let mut chaine = ChaineC::from(mescon[rang as usize]);
+            if let Some(mess_add) = mess_add {
+                chaine.concat(mess_add);
             }
+            self.bulle(&chaine, 1); /*affiche le commentaire*/
         }
     }
 
@@ -626,16 +618,16 @@ impl Sapiens {
             /*tres calme*/
             {
                 if self.sapglob.fpress != 0 {
-                    self.cause(7, core::ptr::null());
+                    self.cause(7, None);
                 } else {
-                    self.cause(2, core::ptr::null());
+                    self.cause(2, None);
                 }
                 return;
             }
             if self.sapglob.enerv < 102 * 256
             /*peu self.sapglob.enerve*/
             {
-                self.cause(8, core::ptr::null());
+                self.cause(8, None);
                 return;
             }
             if (self.random.Rnd() as u16) < self.sapglob.enerv / 512
@@ -646,14 +638,14 @@ impl Sapiens {
                 return;
             }
             if self.sapglob.enerv < 153 * 256 {
-                self.cause(9, core::ptr::null());
+                self.cause(9, None);
                 return;
             }
             if self.sapglob.enerv < 204 * 256 {
-                self.cause(10, core::ptr::null());
+                self.cause(10, None);
                 return;
             }
-            self.cause(11, core::ptr::null());
+            self.cause(11, None);
         }
     }
 
@@ -710,7 +702,7 @@ impl Sapiens {
                         self.prends(); /* enleve viande*/
                         self.sapglob.list10.taille = 0; /* mise à zéro taille*/
                         self.effaceBulles();
-                        self.cause(6, core::ptr::null()); /* donne encore*/
+                        self.cause(6, None); /* donne encore*/
                         return;
                     }
                 }
@@ -723,10 +715,10 @@ impl Sapiens {
                 self.effaceBulles();
                 let mescon = self.sap_lang.GetMesCon();
                 match self.sapglob.scenar {
-                    1 => self.bulle_c(mescon[81] as Ptr, 1),
-                    2 => self.bulle_c(mescon[82] as Ptr, 1),
-                    3 => self.bulle_c(mescon[83] as Ptr, 1),
-                    4 => self.bulle_c(mescon[83] as Ptr, 1),
+                    1 => self.bulle(&ChaineC::from(mescon[81]), 1),
+                    2 => self.bulle(&ChaineC::from(mescon[82]), 1),
+                    3 => self.bulle(&ChaineC::from(mescon[83]), 1),
+                    4 => self.bulle(&ChaineC::from(mescon[83]), 1),
                     _ => {}
                 }
                 self.sapglob.scenar += 1;
@@ -765,8 +757,8 @@ impl Sapiens {
                 if self.sapglob.list10.taille <= self.sapglob.list10.maxtaille {
                     self.prends(); /*y a de la place : on prends*/
                     if self.sapglob.enerv < 102 * 256 {
-                        self.cause(1, core::ptr::null()); /*merci*/
-                        self.cause(12, core::ptr::null()); /*je suis ...*/
+                        self.cause(1, None); /*merci*/
+                        self.cause(12, None); /*je suis ...*/
                     }
                     if self.sapglob.agress > 0 {
                         self.sapglob.agress -= 1;
@@ -799,7 +791,7 @@ impl Sapiens {
                 {
                     /*ok il prends*/
                     self.sapglob.vlchan = valeur as u8;
-                    self.cause(4, core::ptr::null()); /*marché conclu*/
+                    self.cause(4, None); /*marché conclu*/
                     if self.sapglob.echan == 1 {
                         /*protection*/
                         self.sapglob.enetoi[self.sapglob.tribu as usize - 1] = 0; /*enerv =0*/
@@ -813,7 +805,7 @@ impl Sapiens {
                     }
                 } else {
                     /*insuffisant*/
-                    self.cause(3, core::ptr::null()); /*c'est pas assez glandu !!!*/
+                    self.cause(3, None); /*c'est pas assez glandu !!!*/
                     self.excite(50);
                 }
             }
@@ -824,7 +816,7 @@ impl Sapiens {
                     /*il ya de la place*/
                     self.prends();
                     self.sapglob.enerv = valeur;
-                    self.cause(5, core::ptr::null()); /*merci du cado*/
+                    self.cause(5, None); /*merci du cado*/
                     /*..
                     suivre...*/
                 }
@@ -1008,11 +1000,11 @@ impl Sapiens {
                 if self.sapglob.fpress == 0
                 /*pas présenté*/
                 {
-                    self.cause(2, core::ptr::null()); /*qui est tu ???*/
+                    self.cause(2, None); /*qui est tu ???*/
                 } else {
                     /*il s'en va*/
                     /*bonne chasse*/
-                    self.bulle_c(mescon[72] as Ptr, 1);
+                    self.bulle(&ChaineC::from(mescon[72]), 1);
                     self.quitte();
                     self.inimen(0);
                     self.effaceBulles();
@@ -1042,7 +1034,7 @@ impl Sapiens {
                 sap3.vie = 200;
                 /*je suis avec toi*/
                 let mescon = self.sap_lang.GetMesCon();
-                self.bulle_c(mescon[99] as Ptr, 1);
+                self.bulle(&ChaineC::from(mescon[99]), 1);
                 self.sapglob.flagbadi = 0;
             } else {
                 self.excite(1500);
@@ -1050,7 +1042,7 @@ impl Sapiens {
         } else {
             /*je ne suis pas celle que vous croyez*/
             let mescon = self.sap_lang.GetMesCon();
-            self.bulle_c(mescon[98] as Ptr, 1);
+            self.bulle(&ChaineC::from(mescon[98]), 1);
             self.excite(2000);
         }
         self.sapglob.flgcharism = 1;
@@ -1063,43 +1055,47 @@ impl Sapiens {
         let valeur: u8;
         let refer1 = self.sap_lang.GetRefer1();
         let mescon = self.sap_lang.GetMesCon();
-        let scenme = self.sap_lang.GetScenme();
         unsafe {
             if self.sapglob.enerv > 102 * 256 {
-                self.cause(13, core::ptr::null()); /*ta vie !!*/
+                self.cause(13, None); /*ta vie !!*/
             } else {
                 if self.sapglob.chef != 0 && self.sapglob.tribu == 1 {
                     self.sapglob.dquest = 0;
-                    self.bulle_c(*scenme.add((self.sapglob.scenar as usize) - 1) as Ptr, 1);
+                    let scenme = self.sap_lang.GetScenme();
+                    let debut = ChaineC::from(scenme[(self.sapglob.scenar as usize) - 1]);
+                    self.bulle(&debut, 1);
                 } else {
                     if self.sapglob.tribu == self.sapglob.scenar && self.sapglob.chef != 0 {
-                        self.cause(
-                            14,
-                            addr_of_mut!(
-                                (*refer1.add((self.sapglob.predil.wrapping_sub(1)) as usize))
-                                    .nomref[0]
-                            ),
+                        let mess_add = addr_of_mut!(
+                            (*refer1.add((self.sapglob.predil.wrapping_sub(1)) as usize)).nomref[0]
                         );
+                        let cstr = unsafe { std::ffi::CStr::from_ptr(mess_add) };
+                        let mess_add = cstr.to_bytes();
+
+                        self.cause(14, Some(mess_add));
                         return;
                     }
                     valeur = self.intrsq(self.rapias()) as u8;
                     if valeur > self.sapglob.vlchan {
-                        self.cause(
-                            14,
-                            addr_of_mut!((*refer1.add((self.rapias() - 1) as usize)).nomref[0]),
-                        ); /*je veux*/
+                        let mess_add =
+                            addr_of_mut!((*refer1.add((self.rapias() - 1) as usize)).nomref[0]);
+                        let cstr = unsafe { std::ffi::CStr::from_ptr(mess_add) };
+                        let mess_add = cstr.to_bytes();
+
+                        self.cause(14, Some(mess_add)); /*je veux*/
                     } else {
                         if self.sapglob.chef != 0 {
-                            self.cause(
-                                14,
-                                addr_of_mut!(
-                                    (*refer1.add((self.sapglob.predil.wrapping_sub(1)) as usize))
-                                        .nomref[0]
-                                ),
+                            let mess_add = addr_of_mut!(
+                                (*refer1.add((self.sapglob.predil.wrapping_sub(1)) as usize))
+                                    .nomref[0]
                             );
+                            let cstr = unsafe { std::ffi::CStr::from_ptr(mess_add) };
+                            let mess_add = cstr.to_bytes();
+
+                            self.cause(14, Some(mess_add));
                         } else {
                             /*rien !!!*/
-                            self.bulle_c(mescon[65] as Ptr, 1);
+                            self.bulle(&ChaineC::from(mescon[65]), 1);
                             self.excite(0);
                         }
                     }
@@ -1151,11 +1147,11 @@ impl Sapiens {
                     let mescon = self.sap_lang.GetMesCon();
                     if self.sapglob.enerv > 0x3400 {
                         /*c'est donc toi*/
-                        self.bulle_c(mescon[71] as Ptr, 1);
+                        self.bulle(&ChaineC::from(mescon[71]), 1);
                         self.excite(0);
                     } else {
                         /*bonjour*/
-                        self.bulle_c(mescon[70] as Ptr, 1);
+                        self.bulle(&ChaineC::from(mescon[70]), 1);
                     }
                 } else {
                     /*deja présenté*/
@@ -1183,11 +1179,15 @@ impl Sapiens {
                     if self.sapglob.enerv > 102 * 256 {
                         self.excite(100);
                     } else {
-                        self.cause(12, self.GetStrBkMot(129 + 3)); /*'je suis'*/
+                        let mess_add = self.GetStrBkMot(129 + 3);
+                        let cstr = unsafe { std::ffi::CStr::from_ptr(mess_add) };
+                        let mess_add = cstr.to_bytes();
+
+                        self.cause(12, Some(mess_add)); /*'je suis'*/
                         if self.sapglob.fpress == 0 && self.sapglob.chef == 0 {
                             /*et toi??*/
                             let mescon = self.sap_lang.GetMesCon();
-                            self.bulle_c(mescon[64] as Ptr, 1);
+                            self.bulle(&ChaineC::from(mescon[64]), 1);
                             self.excite(200);
                         }
                     }
@@ -1207,22 +1207,23 @@ impl Sapiens {
                     {
                         /*rien...*/
                         let mescon = self.sap_lang.GetMesCon();
-                        self.bulle_c(mescon[65] as Ptr, 1);
+                        self.bulle(&ChaineC::from(mescon[65]), 1);
                         tfr = (self.sapglob.enerv as i32).wrapping_add(200) as i16;
                         if (self.sapglob.enerv as i32) < (tfr as i32) {
                             self.sapglob.enerv = tfr as u16;
                         }
                     } else {
                         if self.sapglob.fpress == 0 {
-                            self.cause(2, core::ptr::null()); /*qui est tu ???*/
+                            self.cause(2, None); /*qui est tu ???*/
                         } else {
-                            self.cause(
-                                15,
-                                addr_of_mut!(
-                                    (*refer1.add(self.sapglob.echan.wrapping_sub(1) as usize))
-                                        .nomref[0]
-                                ),
-                            ); /*moi offrir*/
+                            let mess_add = addr_of_mut!(
+                                (*refer1.add(self.sapglob.echan.wrapping_sub(1) as usize)).nomref
+                                    [0]
+                            );
+                            let cstr = unsafe { std::ffi::CStr::from_ptr(mess_add) };
+                            let mess_add = cstr.to_bytes();
+
+                            self.cause(15, Some(mess_add)); /*moi offrir*/
                         }
                     }
                     return;
@@ -1234,14 +1235,14 @@ impl Sapiens {
                     self.excite(32700); /*il s'excite*/
                 } else {
                     if self.sapglob.enerv > 51 * 256 {
-                        self.cause(16, core::ptr::null()); /*je dirais rien*/
+                        self.cause(16, None); /*je dirais rien*/
                         tfr = (self.sapglob.enerv as i32).wrapping_add(256) as i16;
                         if (self.sapglob.enerv as i32) < (tfr as i32) {
                             self.sapglob.enerv = tfr as u16;
                         }
                     } else {
                         if self.sapglob.fpress == 0 {
-                            self.cause(2, core::ptr::null()); /*qui est tu*/
+                            self.cause(2, None); /*qui est tu*/
                         } else {
                             self.saptxt.poschef[0] = 32;
                             self.saptxt.poschef[2] = 32;

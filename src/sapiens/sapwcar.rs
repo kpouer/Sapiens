@@ -7,7 +7,7 @@ use crate::langue::{Langue, langue};
 use crate::port::PortId;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtCar, CvtCarLissage};
-use crate::sapiens::{NB_MOTS_BKMOTS, POLICE_LISSAGE, STYLE_LISSAGE};
+use crate::sapiens::{POLICE_LISSAGE, STYLE_LISSAGE};
 use crate::shared::{Boolean, Point, RGBColor, Rect};
 use crate::stubs::CarboniseSetPatBlack;
 use std::ptr::addr_of;
@@ -227,34 +227,31 @@ impl Sapiens {
                     GetStrBkMot
 **************************************************************************/
 impl Sapiens {
-    pub(crate) fn GetStrBkMot(&self, car: i16) -> *mut i8 {
+    pub(crate) fn GetStrBkMot(&self, car: i16) -> *const i8 {
         let vide: *mut i8 = c"".as_ptr() as *mut i8;
-        let bkmots = self.sap_lang.GetBkMot();
-        let mut p: *mut i8 = vide;
         let car = car - 129;
-        unsafe {
-            if car < NB_MOTS_BKMOTS as i16 {
-                p = *bkmots.add(car as usize);
-                if *p == b'$' as i8 {
-                    /* Substitution */
-                    let c = *p.add(1);
-                    if c == b'0' as i8 {
-                        p = addr_of!(self.saptxt.nomsecondaire) as *mut i8;
-                    } else if c == b'1' as i8 {
-                        p = addr_of!(self.saptxt.nomjoueur) as *mut i8;
-                    } else if c == b'2' as i8 {
-                        p = addr_of!(self.saptxt.nomadversaire) as *mut i8;
-                    } else if c == b'3' as i8 {
-                        p = addr_of!(self.saptxt.nomtribu) as *mut i8;
-                    } else if c == b'4' as i8 {
-                        p = addr_of!(self.saptxt.nomcopain) as *mut i8;
-                    }
-                }
-            } else {
-                eprintln!("GetStrBkMot error {car}");
+
+        let Some(mot) = usize::try_from(car)
+            .ok()
+            .and_then(|index| self.sap_lang.GetBkMot().get(index))
+        else {
+            eprintln!("GetStrBkMot error {car}");
+            return vide;
+        };
+
+        if mot.first() == Some(&b'$') {
+            /* Substitution */
+            match mot.get(1) {
+                Some(b'0') => addr_of!(self.saptxt.nomsecondaire) as *mut i8,
+                Some(b'1') => addr_of!(self.saptxt.nomjoueur) as *mut i8,
+                Some(b'2') => addr_of!(self.saptxt.nomadversaire) as *mut i8,
+                Some(b'3') => addr_of!(self.saptxt.nomtribu) as *mut i8,
+                Some(b'4') => addr_of!(self.saptxt.nomcopain) as *mut i8,
+                _ => mot.as_ptr() as *mut i8,
             }
+        } else {
+            mot.as_ptr() as *mut i8
         }
-        p
     }
 
     /*************************************************************************
@@ -363,14 +360,10 @@ impl Sapiens {
                             MOTLST2:Affiche Pour jauges
     ***********************************************************************/
     pub(crate) fn motlst2(&mut self, debut_index: usize) {
-        let app = self.sap_lang.GetApp();
-        let debut = app[debut_index];
-        let mut p = debut as *mut u8;
-        unsafe {
-            while *p != 0 {
-                self.car2(*p as i16);
-                p = p.add(1);
-            }
+        let mut p = 0;
+        while self.sap_lang.GetApp()[debut_index][p] != 0 {
+            self.car2(self.sap_lang.GetApp()[debut_index][p] as i16);
+            p += 1;
         }
     }
 }

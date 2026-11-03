@@ -2,7 +2,6 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 
-use crate::shared::Rect;
 use std::ffi::CString;
 pub(crate) type __int64_t = ::std::os::raw::c_longlong;
 
@@ -127,20 +126,12 @@ impl Default for __sFILE {
     }
 }
 
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub(crate) struct GDevice {
-    pub(crate) gdRect: Rect,
-}
-
 unsafe extern "C" {
     pub(crate) fn putc(arg1: i32, arg2: *mut FILE) -> i32;
 
     pub(crate) fn strlen(__s: *const i8) -> u64;
     pub(crate) fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
-    pub(crate) fn strcat(__s1: *mut i8, __s2: *const i8) -> *mut i8;
     pub(crate) fn strcpy(__dst: *mut i8, __src: *const i8) -> *mut i8;
-    pub(crate) fn sprintf(arg1: *mut i8, arg2: *const i8, ...) -> i32;
     pub(crate) fn fopen(__filename: *const i8, __mode: *const i8) -> *mut FILE;
     pub(crate) fn fprintf(arg1: *mut FILE, arg2: *const i8, ...) -> i32;
     pub(crate) fn fscanf(arg1: *mut FILE, arg2: *const i8, ...) -> i32;

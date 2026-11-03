@@ -76,18 +76,6 @@ pub(crate) const fn nomref(s: &[u8]) -> [i8; 64] {
     out
 }
 
-/* Chaine MacRoman statique : equivalent du litteral C "..." dans un tableau
-`char *`. Un litteral c"..." est inutilisable ici, il refuse les octets
-MacRoman hauts (\x82, \x9C...).
-
-Le litteral DOIT garder son \0 final : en C il fait partie de la donnee, et
-le code fait strlen() dessus. Sans lui la lecture deborderait sur la suite
-du .rodata. Pour une chaine vide, ecrire b"\0" et surtout pas b"" : as_ptr()
-rendrait 0x1, un pointeur pendant, et le dereferencement planterait. */
-pub(crate) const fn sc(s: &[u8]) -> *mut i8 {
-    s.as_ptr() as *mut i8
-}
-
 #[derive(Default)]
 pub(crate) struct SapLang {
     saptxt_fr: Saptxt_fr,
@@ -144,7 +132,7 @@ impl SapLang {
         }
     }
 
-    pub(crate) fn GetMesCon(&self) -> &[*mut i8] {
+    pub(crate) fn GetMesCon(&self) -> &[&'static [u8]] {
         if langue() == FR {
             &self.saptxt_fr.mescon
         } else if langue() == ES {
@@ -154,7 +142,7 @@ impl SapLang {
         }
     }
 
-    pub(crate) fn GetApp(&self) -> &[*mut i8] {
+    pub(crate) fn GetApp(&self) -> &[&'static [u8]] {
         if langue() == FR {
             &self.saptxt_fr.app
         } else if langue() == ES {
@@ -164,23 +152,23 @@ impl SapLang {
         }
     }
 
-    pub(crate) fn GetBkMot(&self) -> *mut *mut i8 {
+    pub(crate) fn GetBkMot(&self) -> &[&'static [u8]] {
         if langue() == FR {
-            addr_of!(self.saptxt_fr.bkmots) as *mut *mut i8
+            &self.saptxt_fr.bkmots
         } else if langue() == ES {
-            addr_of!(self.saptxt_es.bkmots) as *mut *mut i8
+            &self.saptxt_es.bkmots
         } else {
-            addr_of!(self.saptxt_gb.bkmots) as *mut *mut i8
+            &self.saptxt_gb.bkmots
         }
     }
 
-    pub(crate) fn GetScenme(&self) -> *mut *mut i8 {
+    pub(crate) fn GetScenme(&self) -> &[&'static [u8]] {
         if langue() == FR {
-            addr_of!(self.saptxt_fr.scenme) as *mut *mut i8
+            &self.saptxt_fr.scenme
         } else if langue() == ES {
-            addr_of!(self.saptxt_es.scenme) as *mut *mut i8
+            &self.saptxt_es.scenme
         } else {
-            addr_of!(self.saptxt_gb.scenme) as *mut *mut i8
+            &self.saptxt_gb.scenme
         }
     }
 }
