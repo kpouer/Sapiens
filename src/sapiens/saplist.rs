@@ -13,7 +13,7 @@ use crate::sapiens::sapglob::{
 };
 use crate::sapiens::sapwind::{cadreg, hires};
 use crate::sapiens::{ECHELLE, Vue, geminterv, gemnbrecad};
-use crate::shared::{Ptr, Rect};
+use crate::shared::Rect;
 use crate::{DOWN, INCONNU, MOB_CADRE, SELECT, Sapiens, UP};
 use log::warn;
 use std::cell::RefCell;
@@ -1103,8 +1103,14 @@ impl Sapiens {
                     let index = self.sapglob.liste(self.saplist.sliste[1]).elements
                         [self.sapglob.rega as usize]
                         - 1;
-                    let ptr = &(refer.wrapping_add(index as usize)) as *const _ as Ptr;
-                    self.bulle_c(ptr, 0);
+                    let nomref = unsafe { (*refer.add(index as usize)).nomref };
+                    let texte: Vec<u8> = nomref
+                        .iter()
+                        .map(|&c| c as u8)
+                        .take_while(|&c| c != 0)
+                        .chain(std::iter::once(0))
+                        .collect();
+                    self.bulle(&texte, 0);
                     self.trdire(self.sapglob.liste2.elements[self.sapglob.rega as usize] as u16); /*on envoie la phrase*/
                     self.ListAttendsFinBouton();
                 } else {

@@ -25,9 +25,9 @@ impl From<&[u8]> for ChaineC {
 }
 
 impl Deref for ChaineC {
-    type Target = [i8];
+    type Target = [u8];
 
     fn deref(&self) -> &Self::Target {
-        unsafe { std::mem::transmute(&self.data[..]) }
+        &self.data
     }
 }

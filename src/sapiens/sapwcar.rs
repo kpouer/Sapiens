@@ -10,7 +10,6 @@ use crate::sapiens::saptxt::{CvtCar, CvtCarLissage};
 use crate::sapiens::{POLICE_LISSAGE, STYLE_LISSAGE};
 use crate::shared::{Boolean, Point, RGBColor, Rect};
 use crate::stubs::CarboniseSetPatBlack;
-use std::ptr::addr_of;
 
 const ECHELLE: i16 = 2;
 
@@ -227,8 +226,7 @@ impl Sapiens {
                     GetStrBkMot
 **************************************************************************/
 impl Sapiens {
-    pub(crate) fn GetStrBkMot(&self, car: i16) -> *const i8 {
-        let vide: *mut i8 = c"".as_ptr() as *mut i8;
+    pub(crate) fn GetStrBkMot(&self, car: i16) -> Vec<u8> {
         let car = car - 129;
 
         let Some(mot) = usize::try_from(car)
@@ -236,21 +234,21 @@ impl Sapiens {
             .and_then(|index| self.sap_lang.GetBkMot().get(index))
         else {
             eprintln!("GetStrBkMot error {car}");
-            return vide;
+            return vec![0];
         };
 
         if mot.first() == Some(&b'$') {
             /* Substitution */
             match mot.get(1) {
-                Some(b'0') => addr_of!(self.saptxt.nomsecondaire) as *mut i8,
-                Some(b'1') => addr_of!(self.saptxt.nomjoueur) as *mut i8,
-                Some(b'2') => addr_of!(self.saptxt.nomadversaire) as *mut i8,
-                Some(b'3') => addr_of!(self.saptxt.nomtribu) as *mut i8,
-                Some(b'4') => addr_of!(self.saptxt.nomcopain) as *mut i8,
-                _ => mot.as_ptr() as *mut i8,
+                Some(b'0') => self.saptxt.nomsecondaire.to_vec(),
+                Some(b'1') => self.saptxt.nomjoueur.to_vec(),
+                Some(b'2') => self.saptxt.nomadversaire.to_vec(),
+                Some(b'3') => self.saptxt.nomtribu.to_vec(),
+                Some(b'4') => self.saptxt.nomcopain.to_vec(),
+                _ => mot.to_vec(),
             }
         } else {
-            mot.as_ptr() as *mut i8
+            mot.to_vec()
         }
     }
 
@@ -260,17 +258,16 @@ impl Sapiens {
     **************************************************************************/
     fn AffCarBank(&mut self, port: PortId, car: i16, couleur1: i16, couleur2: i16, taille: i16) {
         let _g = self.sapwind.ports.on(port);
-        unsafe {
-            if car > 128 {
-                let mut p = self.GetStrBkMot(car);
-                while *p != 0 {
-                    self.AffCarBank(port, *p as u8 as i16, couleur1, couleur2, taille);
-                    p = p.add(1);
-                }
-            } else {
-                self.AffCarBrt(car, couleur1, couleur2, taille);
-                self.sapglob.colaff += 1;
+        if car > 128 {
+            let mut p = 0;
+            let s = self.GetStrBkMot(car);
+            while s[p] != 0 {
+                self.AffCarBank(port, s[p] as i16, couleur1, couleur2, taille);
+                p += 1;
             }
+        } else {
+            self.AffCarBrt(car, couleur1, couleur2, taille);
+            self.sapglob.colaff += 1;
         }
     }
 

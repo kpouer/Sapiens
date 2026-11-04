@@ -23,13 +23,13 @@ const C_BARRE: i16 = b'|' as i16;
 const C_TRAIT_BAS: i16 = b'_' as i16;
 
 pub(crate) struct Saptxt {
-    pub(crate) nomjoueur: [i8; 9],
-    pub(crate) nomcopain: [i8; 7],
-    pub(crate) nomadversaire: [i8; 255],
-    pub(crate) nomtribu: [i8; 255],
-    pub(crate) nomsecondaire: [i8; 255],
-    pub(crate) poschef: [i8; 4],
-    pub(crate) maced: [i8; 52],
+    pub(crate) nomjoueur: [u8; 9],
+    pub(crate) nomcopain: [u8; 7],
+    pub(crate) nomadversaire: [u8; 255],
+    pub(crate) nomtribu: [u8; 255],
+    pub(crate) nomsecondaire: [u8; 255],
+    pub(crate) poschef: [u8; 4],
+    pub(crate) maced: [u8; 52],
     #[allow(dead_code)]
     pub(crate) traps: [&'static str; 7],
 }
