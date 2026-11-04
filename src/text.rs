@@ -601,51 +601,53 @@ impl Ports {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::port::PortId;
 
     struct TestPort {
-        port: Box<SapPort>,
+        ports: Ports,
     }
 
     impl TestPort {
         fn new(w: usize, h: usize) -> Self {
-            TestPort {
-                port: Box::new(SapPort {
-                    bounds: Rect {
-                        top: 0,
-                        left: 0,
-                        bottom: h as i16,
-                        right: w as i16,
-                    },
-                    row_bytes: w as i16,
-                    depth: 8,
-                    pixels: vec![0u8; w * h],
-                    pen_loc: Point { v: 0, h: 0 },
-                    pen_size: Point { v: 1, h: 1 },
-                    pen_mode: PAT_COPY,
-                    fore_index: 255,
-                    back_index: 0,
-                    clip: Rect {
-                        top: 0,
-                        left: 0,
-                        bottom: h as i16,
-                        right: w as i16,
-                    },
-                    open_rgn: 0,
-                    open_acc: Rect::default(),
-                    tx_font: 0,
-                    tx_size: 12,
-                    tx_face: 0,
-                    zoom: 1.0,
-                }),
-            }
+            let mut ports = Ports::default();
+            ports.mainWindow = SapPort {
+                bounds: Rect {
+                    top: 0,
+                    left: 0,
+                    bottom: h as i16,
+                    right: w as i16,
+                },
+                row_bytes: w as i16,
+                depth: 8,
+                pixels: vec![0u8; w * h],
+                pen_loc: Point { v: 0, h: 0 },
+                pen_size: Point { v: 1, h: 1 },
+                pen_mode: PAT_COPY,
+                fore_index: 255,
+                back_index: 0,
+                clip: Rect {
+                    top: 0,
+                    left: 0,
+                    bottom: h as i16,
+                    right: w as i16,
+                },
+                open_rgn: 0,
+                open_acc: Rect::default(),
+                tx_font: 0,
+                tx_size: 12,
+                tx_face: 0,
+                zoom: 1.0,
+            };
+            ports.set(PortId::MainWindow);
+            TestPort { ports }
         }
 
-        fn port_ptr(&mut self) -> *mut SapPort {
-            &mut *self.port
+        fn port(&self) -> &SapPort {
+            &self.ports.mainWindow
         }
 
         fn count(&self) -> usize {
-            self.port.pixels.iter().filter(|&&v| v != 0).count()
+            self.port().pixels.iter().filter(|&&v| v != 0).count()
         }
     }
 
@@ -653,89 +655,77 @@ mod tests {
     static LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
     fn with_lock() -> std::sync::MutexGuard<'static, ()> {
-        LOCK.lock().unwrap()
+        LOCK.lock().unwrap_or_else(|e| e.into_inner())
     }
 
     #[test]
     fn metrics_et_taille() {
         let _g = with_lock();
-        let mut ports = Ports::default();
-        let old = ports.current_id();
-        ports.TextFont(2);
-        ports.TextSize(12);
-        ports.TextFace(0);
-        let info = ports.GetFontInfo();
+        let mut t = TestPort::new(160, 40);
+        t.ports.TextFont(2);
+        t.ports.TextSize(12);
+        t.ports.TextFace(0);
+        let info = t.ports.GetFontInfo();
         assert!(info.ascent > 0, "ascent nul : {info:?}");
         assert!(info.descent > 0);
         assert!(info.widening > 0);
 
-        ports.TextFace(1);
-        let bold = ports.GetFontInfo();
+        t.ports.TextFace(1);
+        let bold = t.ports.GetFontInfo();
         // Le gras reste dans le même ordre de grandeurs en hauteur.
         let di = (bold.ascent - info.ascent).abs();
         assert!(di <= 4, "bold {bold:?} vs regular {info:?} (diff {di})");
-        ports.set(old);
     }
 
     #[test]
     fn largeurs_macro_romain() {
         let _g = with_lock();
         let mut t = TestPort::new(160, 40);
-        let p = t.port_ptr();
-        let mut ports = Ports::default();
-        let old = ports.current_id();
-        ports.TextFont(2);
-        ports.TextSize(12);
-        ports.TextFace(0);
+        t.ports.TextFont(2);
+        t.ports.TextSize(12);
+        t.ports.TextFace(0);
         // 'é' = 0x89 en MacRoman → largeur non nulle.
-        assert!(ports.CharWidth(0x89u8 as i8) > 0);
+        assert!(t.ports.CharWidth(0x89u8 as i8) > 0);
         // Caractère absent de l'alphabet (logo Apple 0xF0) : avance réduite du
         // `.notdef` de la police, aucun glyphe tracé.
-        let w_apple = ports.CharWidth(0xF0u8 as i8);
+        let w_apple = t.ports.CharWidth(0xF0u8 as i8);
         assert!(w_apple < 12, "avance .notdef surprenante : {w_apple}");
         let pen = Point { v: 10, h: 10 };
-        unsafe { (*p).pen_loc = pen };
-        ports.DrawChar(0xF0u8 as i8);
+        unsafe { t.ports.mainWindow.pen_loc = pen };
+        t.ports.DrawChar(0xF0u8 as i8);
         assert_eq!(t.count(), 0, "glyphe absent tracé quand même");
-        ports.set(old);
     }
 
     #[test]
     fn dessine_et_progresse() {
         let _g = with_lock();
         let mut t = TestPort::new(160, 40);
-        let p = t.port_ptr();
-        let mut ports = Ports::default();
-        let old = ports.current_id();
-        unsafe { (*p).pen_loc = Point { v: 15, h: 10 } };
-        ports.TextFont(1);
-        ports.TextSize(12);
-        ports.TextFace(1);
+        t.ports.mainWindow.pen_loc = Point { v: 15, h: 10 };
+        t.ports.TextFont(1);
+        t.ports.TextSize(12);
+        t.ports.TextFace(1);
         let mut s = [0u8; 6];
         s[0] = 4; // "WXYZ"
         s[1] = b'W';
         s[2] = b'X';
         s[3] = b'Y';
         s[4] = b'Z';
-        ports.DrawString(s.as_mut_ptr());
-        let w = ports.StringWidth(s.as_mut_ptr());
-        ports.set(old);
+        t.ports.DrawString(s.as_mut_ptr());
+        let w = t.ports.StringWidth(s.as_mut_ptr());
         assert!(w > 16, "largeur étrange : {w}");
         let n = t.count();
         assert!(n > 60, "trop peu de pixels tracés : {n}");
         // Le crayon a avancé de la largeur totale.
-        assert_eq!(t.port.pen_loc.h, 10 + w);
+        assert_eq!(t.port().pen_loc.h, 10 + w);
     }
 
     #[test]
     fn textbox_centre() {
         let _g = with_lock();
-        let t = TestPort::new(200, 60);
-        let mut ports = Ports::default();
-        let old = ports.current_id();
-        ports.TextFont(2);
-        ports.TextSize(14);
-        ports.TextFace(0);
+        let mut t = TestPort::new(200, 60);
+        t.ports.TextFont(2);
+        t.ports.TextSize(14);
+        t.ports.TextFace(0);
         let text = b"THE END";
         let boxr = Rect {
             top: 10,
@@ -743,8 +733,7 @@ mod tests {
             bottom: 50,
             right: 180,
         };
-        ports.TextBox(text, &boxr, 1); // teJustCenter
-        ports.set(old);
+        t.ports.TextBox(text, &boxr, 1); // teJustCenter
         let n = t.count();
         assert!(n > 100, "trop peu de pixels tracés : {n}");
         // Le texte est centré verticalement : présence de pixels dans la
@@ -752,7 +741,7 @@ mod tests {
         let w = 200usize;
         let mut half = 0;
         let mut all = 0;
-        for (i, &v) in t.port.pixels.iter().enumerate() {
+        for (i, &v) in t.port().pixels.iter().enumerate() {
             let y = i / w;
             if y >= 30 {
                 half += (v != 0) as usize;
