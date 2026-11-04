@@ -3,7 +3,7 @@
                 SAPREL : Module relationnel (SAPREL.C porté en Rust)
                     (c) god Le 7 Novembre 1986
 ***********************************************************************/
-use std::ptr::{addr_of, addr_of_mut};
+use std::ptr::addr_of;
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
 
@@ -66,16 +66,14 @@ impl Sapiens {
                     AFSTAT:affiche menu status
     ***********************************************************************/
     pub(crate) fn afstat(&mut self) {
-        let refer3 = self.sap_lang.GetRefer3();
-        unsafe {
-            (*refer3.wrapping_add(7)).nomref[0] = ((self.sapglob.faim / 64) + 0x91) as i8;
-            (*refer3.wrapping_add(8)).nomref[0] = ((self.sapglob.soif / 64) + 0x91) as i8;
-            (*refer3.wrapping_add(9)).nomref[1] = ((self.sapglob.fatig / 64) + 0x95) as i8;
-            (*refer3.wrapping_add(10)).nomref[1] = ((self.sapglob.bless / 64) + 0x9A) as i8;
-            (*refer3.wrapping_add(11)).nomref[1] = (self.sapglob.mort + 0xA7) as i8;
-            self.inimen(7);
-            self.sapglob.s_action = 2;
-        }
+        let refer3 = self.sap_lang.GetRefer3_mut();
+        refer3[7].nomref[0] = (self.sapglob.faim / 64) + 0x91;
+        refer3[8].nomref[0] = (self.sapglob.soif / 64) + 0x91;
+        refer3[9].nomref[1] = (self.sapglob.fatig / 64) + 0x95;
+        refer3[10].nomref[1] = (self.sapglob.bless / 64) + 0x9A;
+        refer3[11].nomref[1] = self.sapglob.mort + 0xA7;
+        self.inimen(7);
+        self.sapglob.s_action = 2;
     }
 
     /*************************************************************************
@@ -547,13 +545,11 @@ impl Sapiens {
     */
     pub(crate) fn intrsq(&self, objet: u16) -> u16 {
         let refer1 = self.sap_lang.GetRefer1();
-        unsafe {
-            let mut valeur = (*refer1.add((objet - 1) as usize)).param1 & 0xF;
-            if objet == self.sapglob.predil as u16 {
-                valeur *= 2;
-            }
-            valeur as u16
+        let mut valeur = refer1[(objet - 1) as usize].param1 & 0xF;
+        if objet == self.sapglob.predil as u16 {
+            valeur *= 2;
         }
+        valeur as u16
     }
 
     /***************************************************************************
@@ -654,149 +650,143 @@ impl Sapiens {
         }
         let objet = self.sapglob.liste1.elements[rangb as usize]; /*on prendsl'objet ds la liste*/
         self.sapglob.flefba = 0;
-        unsafe {
-            if self.sapglob.chef != 0 && self.sapglob.tribu == 1 {
-                /*on donne à son self.sapglob.chef*/
-                if self.sapglob.scenar != 1 {
-                    /* on compare l'objet
-                    l'objet desiré*/
-                    if objet != self.sapglob.scenar + 40
-                    /*objet du scenario*/
-                    {
-                        self.SceveuBulle((self.sapglob.scenar - 1) as u16); /*on raffiche l'objet desire*/
-                        return;
-                    }
-                } else {
-                    /*scenario = viande*/
-                    if !(35..=39).contains(&objet) {
-                        /*viande pourrie ou autre*/
-                        self.SceveuBulle((self.sapglob.scenar - 1) as u16);
-                        return;
-                    }
-                    self.sapglob.scenpr = ((40 - objet) as i32 - 1) as i8; /*on enleve au total*/
-                    if self.sapglob.scenpr > 0 {
-                        /* pas fini !!!*/
-                        self.prends(); /* enleve viande*/
-                        self.sapglob.list10.taille = 0; /* mise à zéro taille*/
-                        self.effaceBulles();
-                        self.cause(6, None); /* donne encore*/
-                        return;
-                    }
-                }
-                if !self.IsEnreg() {
-                    self.SceveuBulle(9);
+        if self.sapglob.chef != 0 && self.sapglob.tribu == 1 {
+            /*on donne à son self.sapglob.chef*/
+            if self.sapglob.scenar != 1 {
+                /* on compare l'objet
+                l'objet desiré*/
+                if objet != self.sapglob.scenar + 40
+                /*objet du scenario*/
+                {
+                    self.SceveuBulle((self.sapglob.scenar - 1) as u16); /*on raffiche l'objet desire*/
                     return;
                 }
-                self.prends(); /*on prends la chose*/
-                /* Remerciement du self.sapglob.chef */
-                self.effaceBulles();
-                let mescon = self.sap_lang.GetMesCon();
-                match self.sapglob.scenar {
-                    1 => self.bulle(mescon[81], 1),
-                    2 => self.bulle(mescon[82], 1),
-                    3 => self.bulle(mescon[83], 1),
-                    4 => self.bulle(mescon[83], 1),
-                    _ => {}
-                }
-                self.sapglob.scenar += 1;
-                if self.sapglob.scenar == 5 {
-                    /*combat ultime*/
-                    self.sapglob.flcomb = 1;
+            } else {
+                /*scenario = viande*/
+                if !(35..=39).contains(&objet) {
+                    /*viande pourrie ou autre*/
                     self.SceveuBulle((self.sapglob.scenar - 1) as u16);
-                    /* Delay de 5 seconde */
-                    self.delai(5 * 60);
                     return;
                 }
-                if self.sapglob.scenar == 3 {
-                    /*bras de roc 'achement self.sapglob.enerves et on doit lui voler sa hache*/
-                    self.sapglob.enetoi[2] = 60000;
+                self.sapglob.scenpr = ((40 - objet) as i32 - 1) as i8; /*on enleve au total*/
+                if self.sapglob.scenpr > 0 {
+                    /* pas fini !!!*/
+                    self.prends(); /* enleve viande*/
+                    self.sapglob.list10.taille = 0; /* mise à zéro taille*/
+                    self.effaceBulles();
+                    self.cause(6, None); /* donne encore*/
+                    return;
                 }
-                /*comment(80 + scenar);*/
-                /*affiche commentaire selon scenar*/
-                return; /*fin partie donne->scenario*/
             }
-            /*-----------------------*/
-            /* on donne hors scenario  */
-            /*-----------------------*/
-
-            /*cherche valeur de l'objet*/
-            self.effaceBulles();
-            valeur = self.sapglob.enerv.wrapping_sub(
-                512 * self.intrsq(self.sapglob.liste1.elements[self.sapglob.rega as usize] as u16),
-            );
-            /*compense l'enervement*/
-            if valeur > self.sapglob.enerv {
-                /*bien compense*/
-                valeur = 0;
-            }
-            if self.sapglob.fpress == 0 {
-                /*pas presente => cado */
-                if self.sapglob.list10.taille <= self.sapglob.list10.maxtaille {
-                    self.prends(); /*y a de la place : on prends*/
-                    if self.sapglob.enerv < 102 * 256 {
-                        self.cause(1, None); /*merci*/
-                        self.cause(12, None); /*je suis ...*/
-                    }
-                    if self.sapglob.agress > 0 {
-                        self.sapglob.agress -= 1;
-                    }
-                    /*l'agressivite descend*/
-                    /*Sappause(2000);*/
-                    self.sapglob.enerv = valeur; /*l'enervement diminue*/
-                    self.excite(0); /*on affiche l'etat d'enerv*/
-                }
+            if !self.IsEnreg() {
+                self.SceveuBulle(9);
                 return;
             }
-            /*---------*/
-            /* self.sapglob.echange */
-            /*---------*/
-            if self.sapglob.enerv < 102 * 256 {
-                valeur =
-                    self.intrsq(self.sapglob.liste1.elements[self.sapglob.rega as usize] as u16);
-                if self.sapglob.chef != 0 && self.sapglob.scenar as u16 == self.sapglob.tribu as u16
-                {
-                    if self.sapglob.liste1.elements[self.sapglob.rega as usize]
-                        != self.sapglob.predil
-                    {
-                        valeur = 0;
-                    } else {
-                        valeur = 200;
-                    }
+            self.prends(); /*on prends la chose*/
+            /* Remerciement du self.sapglob.chef */
+            self.effaceBulles();
+            let mescon = self.sap_lang.GetMesCon();
+            match self.sapglob.scenar {
+                1 => self.bulle(mescon[81], 1),
+                2 => self.bulle(mescon[82], 1),
+                3 => self.bulle(mescon[83], 1),
+                4 => self.bulle(mescon[83], 1),
+                _ => {}
+            }
+            self.sapglob.scenar += 1;
+            if self.sapglob.scenar == 5 {
+                /*combat ultime*/
+                self.sapglob.flcomb = 1;
+                self.SceveuBulle((self.sapglob.scenar - 1) as u16);
+                /* Delay de 5 seconde */
+                self.delai(5 * 60);
+                return;
+            }
+            if self.sapglob.scenar == 3 {
+                /*bras de roc 'achement self.sapglob.enerves et on doit lui voler sa hache*/
+                self.sapglob.enetoi[2] = 60000;
+            }
+            /*comment(80 + scenar);*/
+            /*affiche commentaire selon scenar*/
+            return; /*fin partie donne->scenario*/
+        }
+        /*-----------------------*/
+        /* on donne hors scenario  */
+        /*-----------------------*/
+
+        /*cherche valeur de l'objet*/
+        self.effaceBulles();
+        valeur = self.sapglob.enerv.wrapping_sub(
+            512 * self.intrsq(self.sapglob.liste1.elements[self.sapglob.rega as usize] as u16),
+        );
+        /*compense l'enervement*/
+        if valeur > self.sapglob.enerv {
+            /*bien compense*/
+            valeur = 0;
+        }
+        if self.sapglob.fpress == 0 {
+            /*pas presente => cado */
+            if self.sapglob.list10.taille <= self.sapglob.list10.maxtaille {
+                self.prends(); /*y a de la place : on prends*/
+                if self.sapglob.enerv < 102 * 256 {
+                    self.cause(1, None); /*merci*/
+                    self.cause(12, None); /*je suis ...*/
                 }
-                if valeur > self.sapglob.vlchan as u16
-                /*valeur superieure*/
-                {
-                    /*ok il prends*/
-                    self.sapglob.vlchan = valeur as u8;
-                    self.cause(4, None); /*marché conclu*/
-                    if self.sapglob.echan == 1 {
-                        /*protection*/
-                        self.sapglob.enetoi[self.sapglob.tribu as usize - 1] = 0; /*enerv =0*/
-                        self.sapglob.echan = 25; /*onguent*/
-                    } else {
-                        /*on permute les deux*/
-                        tfr = self.sapglob.liste1.elements[rangb as usize];
-                        self.sapglob.liste1.elements[rangb as usize] = self.sapglob.echan;
-                        self.sapglob.echan = tfr;
-                        self.inimen(self.sapglob.s_menu as u16);
-                    }
+                if self.sapglob.agress > 0 {
+                    self.sapglob.agress -= 1;
+                }
+                /*l'agressivite descend*/
+                /*Sappause(2000);*/
+                self.sapglob.enerv = valeur; /*l'enervement diminue*/
+                self.excite(0); /*on affiche l'etat d'enerv*/
+            }
+            return;
+        }
+        /*---------*/
+        /* self.sapglob.echange */
+        /*---------*/
+        if self.sapglob.enerv < 102 * 256 {
+            valeur = self.intrsq(self.sapglob.liste1.elements[self.sapglob.rega as usize] as u16);
+            if self.sapglob.chef != 0 && self.sapglob.scenar as u16 == self.sapglob.tribu as u16 {
+                if self.sapglob.liste1.elements[self.sapglob.rega as usize] != self.sapglob.predil {
+                    valeur = 0;
                 } else {
-                    /*insuffisant*/
-                    self.cause(3, None); /*c'est pas assez glandu !!!*/
-                    self.excite(50);
+                    valeur = 200;
                 }
             }
-            /*si donne et pas trop self.sapglob.enerve*/
-            else {
-                /*enerv<e*/
-                if self.sapglob.list10.taille < self.sapglob.list10.maxtaille {
-                    /*il ya de la place*/
-                    self.prends();
-                    self.sapglob.enerv = valeur;
-                    self.cause(5, None); /*merci du cado*/
-                    /*..
-                    suivre...*/
+            if valeur > self.sapglob.vlchan as u16
+            /*valeur superieure*/
+            {
+                /*ok il prends*/
+                self.sapglob.vlchan = valeur as u8;
+                self.cause(4, None); /*marché conclu*/
+                if self.sapglob.echan == 1 {
+                    /*protection*/
+                    self.sapglob.enetoi[self.sapglob.tribu as usize - 1] = 0; /*enerv =0*/
+                    self.sapglob.echan = 25; /*onguent*/
+                } else {
+                    /*on permute les deux*/
+                    tfr = self.sapglob.liste1.elements[rangb as usize];
+                    self.sapglob.liste1.elements[rangb as usize] = self.sapglob.echan;
+                    self.sapglob.echan = tfr;
+                    self.inimen(self.sapglob.s_menu as u16);
                 }
+            } else {
+                /*insuffisant*/
+                self.cause(3, None); /*c'est pas assez glandu !!!*/
+                self.excite(50);
+            }
+        }
+        /*si donne et pas trop self.sapglob.enerve*/
+        else {
+            /*enerv<e*/
+            if self.sapglob.list10.taille < self.sapglob.list10.maxtaille {
+                /*il ya de la place*/
+                self.prends();
+                self.sapglob.enerv = valeur;
+                self.cause(5, None); /*merci du cado*/
+                /*..
+                suivre...*/
             }
         }
     }
@@ -969,23 +959,21 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn bonnechass(&mut self) {
         let mescon = self.sap_lang.GetMesCon();
-        unsafe {
-            if self.sapglob.enerv > 102 * 256 {
-                /*énervé!!!*/
-                self.excite(300);
+        if self.sapglob.enerv > 102 * 256 {
+            /*énervé!!!*/
+            self.excite(300);
+        } else {
+            if self.sapglob.fpress == 0
+            /*pas présenté*/
+            {
+                self.cause(2, None); /*qui est tu ???*/
             } else {
-                if self.sapglob.fpress == 0
-                /*pas présenté*/
-                {
-                    self.cause(2, None); /*qui est tu ???*/
-                } else {
-                    /*il s'en va*/
-                    /*bonne chasse*/
-                    self.bulle(mescon[72], 1);
-                    self.quitte();
-                    self.inimen(0);
-                    self.effaceBulles();
-                }
+                /*il s'en va*/
+                /*bonne chasse*/
+                self.bulle(mescon[72], 1);
+                self.quitte();
+                self.inimen(0);
+                self.effaceBulles();
             }
         }
     }
@@ -1032,48 +1020,32 @@ impl Sapiens {
         let valeur: u8;
         let refer1 = self.sap_lang.GetRefer1();
         let mescon = self.sap_lang.GetMesCon();
-        unsafe {
-            if self.sapglob.enerv > 102 * 256 {
-                self.cause(13, None); /*ta vie !!*/
+        if self.sapglob.enerv > 102 * 256 {
+            self.cause(13, None); /*ta vie !!*/
+        } else {
+            if self.sapglob.chef != 0 && self.sapglob.tribu == 1 {
+                self.sapglob.dquest = 0;
+                let scenme = self.sap_lang.GetScenme();
+                self.bulle(scenme[(self.sapglob.scenar as usize) - 1], 1);
             } else {
-                if self.sapglob.chef != 0 && self.sapglob.tribu == 1 {
-                    self.sapglob.dquest = 0;
-                    let scenme = self.sap_lang.GetScenme();
-                    self.bulle(scenme[(self.sapglob.scenar as usize) - 1], 1);
+                if self.sapglob.tribu == self.sapglob.scenar && self.sapglob.chef != 0 {
+                    let mess_add = refer1[self.sapglob.predil.wrapping_sub(1) as usize].nomref[0];
+                    self.cause(14, Some(&[mess_add]));
+                    return;
+                }
+                valeur = self.intrsq(self.rapias()) as u8;
+                if valeur > self.sapglob.vlchan {
+                    let mess_add = refer1[(self.rapias() - 1) as usize].nomref[0];
+                    self.cause(14, Some(&[mess_add])); /*je veux*/
                 } else {
-                    if self.sapglob.tribu == self.sapglob.scenar && self.sapglob.chef != 0 {
-                        let mess_add = addr_of_mut!(
-                            (*refer1.add((self.sapglob.predil.wrapping_sub(1)) as usize)).nomref[0]
-                        );
-                        let cstr = unsafe { std::ffi::CStr::from_ptr(mess_add) };
-                        let mess_add = cstr.to_bytes();
-
-                        self.cause(14, Some(mess_add));
-                        return;
-                    }
-                    valeur = self.intrsq(self.rapias()) as u8;
-                    if valeur > self.sapglob.vlchan {
+                    if self.sapglob.chef != 0 {
                         let mess_add =
-                            addr_of_mut!((*refer1.add((self.rapias() - 1) as usize)).nomref[0]);
-                        let cstr = unsafe { std::ffi::CStr::from_ptr(mess_add) };
-                        let mess_add = cstr.to_bytes();
-
-                        self.cause(14, Some(mess_add)); /*je veux*/
+                            refer1[self.sapglob.predil.wrapping_sub(1) as usize].nomref[0];
+                        self.cause(14, Some(&[mess_add]));
                     } else {
-                        if self.sapglob.chef != 0 {
-                            let mess_add = addr_of_mut!(
-                                (*refer1.add((self.sapglob.predil.wrapping_sub(1)) as usize))
-                                    .nomref[0]
-                            );
-                            let cstr = unsafe { std::ffi::CStr::from_ptr(mess_add) };
-                            let mess_add = cstr.to_bytes();
-
-                            self.cause(14, Some(mess_add));
-                        } else {
-                            /*rien !!!*/
-                            self.bulle(mescon[65], 1);
-                            self.excite(0);
-                        }
+                        /*rien !!!*/
+                        self.bulle(mescon[65], 1);
+                        self.excite(0);
                     }
                 }
             }
@@ -1093,204 +1065,172 @@ impl Sapiens {
             return; /*si pas de dialogue alors rien*/
         }
         self.sapglob.flefba = 1; /* pas d'effacement au prochain*/
-        unsafe {
-            if diquoi == self.sapglob.dquest as u16 {
-                self.excite(1000);
-                return;
-            }
-            self.sapglob.dquest = diquoi as u8; /*derniere question*/
+        if diquoi == self.sapglob.dquest as u16 {
+            self.excite(1000);
+            return;
+        }
+        self.sapglob.dquest = diquoi as u8; /*derniere question*/
 
-            if diquoi == 5
-            /*je suis tedehur*/
+        if diquoi == 5
+        /*je suis tedehur*/
+        {
+            if self.sapglob.fpress == 0
+            /*pas encore presente*/
             {
-                if self.sapglob.fpress == 0
-                /*pas encore presente*/
-                {
-                    self.sapglob.fpress += 1; /* on est présenté*/
-                    /*calcul de la reponse en fn de l'enervement*/
-                    tfr = (self.sapglob.enerv as i32
-                        - tenerv[self.sapglob.tribu as usize - 1] as i32)
-                        as i16;
-                    self.sapglob.enerv = self.sapglob.enetoi[self.sapglob.tribu as usize - 1];
-                    enerv2 = (self.sapglob.enerv as i32).wrapping_add(tfr as i32) as u16;
-                    if tfr > 0 && enerv2 < self.sapglob.enerv {
-                        enerv2 = 65535;
-                    }
-                    if tfr < 0 && enerv2 > self.sapglob.enerv {
-                        enerv2 = 0;
-                    }
-                    self.sapglob.enerv = enerv2;
-                    let mescon = self.sap_lang.GetMesCon();
-                    if self.sapglob.enerv > 0x3400 {
-                        /*c'est donc toi*/
-                        self.bulle(mescon[71], 1);
-                        self.excite(0);
-                    } else {
-                        /*bonjour*/
-                        self.bulle(mescon[70], 1);
-                    }
+                self.sapglob.fpress += 1; /* on est présenté*/
+                /*calcul de la reponse en fn de l'enervement*/
+                tfr = (self.sapglob.enerv as i32 - tenerv[self.sapglob.tribu as usize - 1] as i32)
+                    as i16;
+                self.sapglob.enerv = self.sapglob.enetoi[self.sapglob.tribu as usize - 1];
+                enerv2 = (self.sapglob.enerv as i32).wrapping_add(tfr as i32) as u16;
+                if tfr > 0 && enerv2 < self.sapglob.enerv {
+                    enerv2 = 65535;
+                }
+                if tfr < 0 && enerv2 > self.sapglob.enerv {
+                    enerv2 = 0;
+                }
+                self.sapglob.enerv = enerv2;
+                let mescon = self.sap_lang.GetMesCon();
+                if self.sapglob.enerv > 0x3400 {
+                    /*c'est donc toi*/
+                    self.bulle(mescon[71], 1);
+                    self.excite(0);
                 } else {
-                    /*deja présenté*/
-                    self.excite(600); /*on s'enerve*/
-                }
-                return;
-            }
-
-            if diquoi == 6 {
-                self.bonnechass();
-                return;
-            }
-            if diquoi == 7 || diquoi == 8
-            /*viens avec moi*/
-            {
-                self.viensavec();
-                return;
-            }
-
-            /*la phrase n'est ni je suis ni au revoir */
-            if self.sapglob.stock1 == 0 {
-                if diquoi == 1
-                /*qui est tu ?*/
-                {
-                    if self.sapglob.enerv > 102 * 256 {
-                        self.excite(100);
-                    } else {
-                        let mess_add = self.GetStrBkMot(129 + 3);
-
-                        self.cause(12, Some(&mess_add)); /*'je suis'*/
-                        if self.sapglob.fpress == 0 && self.sapglob.chef == 0 {
-                            /*et toi??*/
-                            let mescon = self.sap_lang.GetMesCon();
-                            self.bulle(mescon[64], 1);
-                            self.excite(200);
-                        }
-                    }
-                    return;
-                }
-                if diquoi == 2
-                /*que veux tu*/
-                {
-                    self.tuveuquoi();
-                    return;
-                }
-                if diquoi == 3
-                /*que m'offres tu ?*/
-                {
-                    if self.sapglob.enerv > 256 * 102
-                    /*trop énervé pour négocier*/
-                    {
-                        /*rien...*/
-                        let mescon = self.sap_lang.GetMesCon();
-                        self.bulle(mescon[65], 1);
-                        tfr = (self.sapglob.enerv as i32).wrapping_add(200) as i16;
-                        if (self.sapglob.enerv as i32) < (tfr as i32) {
-                            self.sapglob.enerv = tfr as u16;
-                        }
-                    } else {
-                        if self.sapglob.fpress == 0 {
-                            self.cause(2, None); /*qui est tu ???*/
-                        } else {
-                            let mess_add = addr_of_mut!(
-                                (*refer1.add(self.sapglob.echan.wrapping_sub(1) as usize)).nomref
-                                    [0]
-                            );
-                            let cstr = unsafe { std::ffi::CStr::from_ptr(mess_add) };
-                            let mess_add = cstr.to_bytes();
-
-                            self.cause(15, Some(mess_add)); /*moi offrir*/
-                        }
-                    }
-                    return;
-                }
-                /*ou est ton self.sapglob.chef*/
-                if self.sapglob.chef != 0
-                /*c'est lui !!!*/
-                {
-                    self.excite(32700); /*il s'excite*/
-                } else {
-                    if self.sapglob.enerv > 51 * 256 {
-                        self.cause(16, None); /*je dirais rien*/
-                        tfr = (self.sapglob.enerv as i32).wrapping_add(256) as i16;
-                        if (self.sapglob.enerv as i32) < (tfr as i32) {
-                            self.sapglob.enerv = tfr as u16;
-                        }
-                    } else {
-                        if self.sapglob.fpress == 0 {
-                            self.cause(2, None); /*qui est tu*/
-                        } else {
-                            self.saptxt.poschef[0] = 32;
-                            self.saptxt.poschef[2] = 32;
-                            /*determination de la position du self.sapglob.chef*/
-                            if self.sapglob.xj / 256
-                                < self.sapglob.destine[self.sapglob.tribu as usize - 1].posx as u16
-                            {
-                                self.saptxt.poschef[0] = 128 + 31;
-                            }
-                            if self.sapglob.xj / 256
-                                > self.sapglob.destine[self.sapglob.tribu as usize - 1].posx as u16
-                            {
-                                self.saptxt.poschef[0] = 128 + 32;
-                            }
-                            if self.sapglob.yj / 256
-                                > self.sapglob.destine[self.sapglob.tribu as usize - 1].posy as u16
-                            {
-                                self.saptxt.poschef[2] = 128 + 33;
-                            }
-                            if self.sapglob.yj / 256
-                                < self.sapglob.destine[self.sapglob.tribu as usize - 1].posy as u16
-                            {
-                                self.saptxt.poschef[2] = 128 + 34;
-                            }
-                            let p = self.saptxt.poschef;
-                            self.bulle(&p, 1); /*affiche le commentaire*/
-                        }
-                    }
+                    /*bonjour*/
+                    self.bulle(mescon[70], 1);
                 }
             } else {
-                /*stock1 <> 0*/
-                /*flagornerie ou insulte*/
-                match self.sapglob.stock1 {
-                    1 => {
-                        /*insulte*/
-                        self.excite((200 * self.sapglob.stock2) as u16);
+                /*deja présenté*/
+                self.excite(600); /*on s'enerve*/
+            }
+            return;
+        }
+
+        if diquoi == 6 {
+            self.bonnechass();
+            return;
+        }
+        if diquoi == 7 || diquoi == 8
+        /*viens avec moi*/
+        {
+            self.viensavec();
+            return;
+        }
+
+        /*la phrase n'est ni je suis ni au revoir */
+        if self.sapglob.stock1 == 0 {
+            if diquoi == 1
+            /*qui est tu ?*/
+            {
+                if self.sapglob.enerv > 102 * 256 {
+                    self.excite(100);
+                } else {
+                    let mess_add = self.GetStrBkMot(129 + 3);
+
+                    self.cause(12, Some(&mess_add)); /*'je suis'*/
+                    if self.sapglob.fpress == 0 && self.sapglob.chef == 0 {
+                        /*et toi??*/
+                        let mescon = self.sap_lang.GetMesCon();
+                        self.bulle(mescon[64], 1);
+                        self.excite(200);
                     }
-                    2 => {
-                        /*flagornerie*/
-                        if self.sapglob.agress < 200 {
-                            self.sapglob.agress += 1;
-                            /*enervement diminue*/
-                            tfr = (self.sapglob.enerv as i32 - 100 * self.sapglob.stock2 as i32)
-                                as i16;
-                            if (tfr as i32) < (self.sapglob.enerv as i32) {
-                                self.sapglob.enerv = tfr as u16;
-                            }
-                            self.excite(0);
-                        } else {
-                            /*vantardise*/
-                            if self.sapglob.agress < 200 && self.sapglob.chef == 0
-                            /*si trop self.sapglob.agressif ça marche pas*/
-                            {
-                                self.sapglob.agress += 1;
-                                if self.random.Rnd() > (self.sapglob.enerv / 200) as i16 {
-                                    self.fuite();
-                                } else {
-                                    /*enervement diminue*/
-                                    tfr = (self.sapglob.enerv as i32
-                                        - 100 * self.sapglob.stock2 as i32)
-                                        as i16;
-                                    if (tfr as i32) < (self.sapglob.enerv as i32) {
-                                        self.sapglob.enerv = tfr as u16;
-                                    }
-                                    self.excite(0);
-                                }
-                            } else {
-                                /*il le prend pour une insulte*/
-                                self.excite((200 * self.sapglob.stock2) as u16);
-                            }
+                }
+                return;
+            }
+            if diquoi == 2
+            /*que veux tu*/
+            {
+                self.tuveuquoi();
+                return;
+            }
+            if diquoi == 3
+            /*que m'offres tu ?*/
+            {
+                if self.sapglob.enerv > 256 * 102
+                /*trop énervé pour négocier*/
+                {
+                    /*rien...*/
+                    let mescon = self.sap_lang.GetMesCon();
+                    self.bulle(mescon[65], 1);
+                    tfr = (self.sapglob.enerv as i32).wrapping_add(200) as i16;
+                    if (self.sapglob.enerv as i32) < (tfr as i32) {
+                        self.sapglob.enerv = tfr as u16;
+                    }
+                } else {
+                    if self.sapglob.fpress == 0 {
+                        self.cause(2, None); /*qui est tu ???*/
+                    } else {
+                        let mess_add =
+                            refer1[self.sapglob.echan.wrapping_sub(1) as usize].nomref[0];
+                        self.cause(15, Some(&[mess_add])); /*moi offrir*/
+                    }
+                }
+                return;
+            }
+            /*ou est ton self.sapglob.chef*/
+            if self.sapglob.chef != 0
+            /*c'est lui !!!*/
+            {
+                self.excite(32700); /*il s'excite*/
+            } else {
+                if self.sapglob.enerv > 51 * 256 {
+                    self.cause(16, None); /*je dirais rien*/
+                    tfr = (self.sapglob.enerv as i32).wrapping_add(256) as i16;
+                    if (self.sapglob.enerv as i32) < (tfr as i32) {
+                        self.sapglob.enerv = tfr as u16;
+                    }
+                } else {
+                    if self.sapglob.fpress == 0 {
+                        self.cause(2, None); /*qui est tu*/
+                    } else {
+                        self.saptxt.poschef[0] = 32;
+                        self.saptxt.poschef[2] = 32;
+                        /*determination de la position du self.sapglob.chef*/
+                        if self.sapglob.xj / 256
+                            < self.sapglob.destine[self.sapglob.tribu as usize - 1].posx as u16
+                        {
+                            self.saptxt.poschef[0] = 128 + 31;
                         }
+                        if self.sapglob.xj / 256
+                            > self.sapglob.destine[self.sapglob.tribu as usize - 1].posx as u16
+                        {
+                            self.saptxt.poschef[0] = 128 + 32;
+                        }
+                        if self.sapglob.yj / 256
+                            > self.sapglob.destine[self.sapglob.tribu as usize - 1].posy as u16
+                        {
+                            self.saptxt.poschef[2] = 128 + 33;
+                        }
+                        if self.sapglob.yj / 256
+                            < self.sapglob.destine[self.sapglob.tribu as usize - 1].posy as u16
+                        {
+                            self.saptxt.poschef[2] = 128 + 34;
+                        }
+                        let p = self.saptxt.poschef;
+                        self.bulle(&p, 1); /*affiche le commentaire*/
                     }
-                    _ => {
-                        /*vantardise par defaut*/
+                }
+            }
+        } else {
+            /*stock1 <> 0*/
+            /*flagornerie ou insulte*/
+            match self.sapglob.stock1 {
+                1 => {
+                    /*insulte*/
+                    self.excite((200 * self.sapglob.stock2) as u16);
+                }
+                2 => {
+                    /*flagornerie*/
+                    if self.sapglob.agress < 200 {
+                        self.sapglob.agress += 1;
+                        /*enervement diminue*/
+                        tfr = (self.sapglob.enerv as i32 - 100 * self.sapglob.stock2 as i32) as i16;
+                        if (tfr as i32) < (self.sapglob.enerv as i32) {
+                            self.sapglob.enerv = tfr as u16;
+                        }
+                        self.excite(0);
+                    } else {
+                        /*vantardise*/
                         if self.sapglob.agress < 200 && self.sapglob.chef == 0
                         /*si trop self.sapglob.agressif ça marche pas*/
                         {
@@ -1311,8 +1251,30 @@ impl Sapiens {
                             self.excite((200 * self.sapglob.stock2) as u16);
                         }
                     }
-                } /*fin du switch*/
-            }
+                }
+                _ => {
+                    /*vantardise par defaut*/
+                    if self.sapglob.agress < 200 && self.sapglob.chef == 0
+                    /*si trop self.sapglob.agressif ça marche pas*/
+                    {
+                        self.sapglob.agress += 1;
+                        if self.random.Rnd() > (self.sapglob.enerv / 200) as i16 {
+                            self.fuite();
+                        } else {
+                            /*enervement diminue*/
+                            tfr = (self.sapglob.enerv as i32 - 100 * self.sapglob.stock2 as i32)
+                                as i16;
+                            if (tfr as i32) < (self.sapglob.enerv as i32) {
+                                self.sapglob.enerv = tfr as u16;
+                            }
+                            self.excite(0);
+                        }
+                    } else {
+                        /*il le prend pour une insulte*/
+                        self.excite((200 * self.sapglob.stock2) as u16);
+                    }
+                }
+            } /*fin du switch*/
         }
     }
 

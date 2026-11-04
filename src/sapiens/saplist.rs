@@ -295,147 +295,129 @@ impl Sapiens {
 
         /* gestion souris pour clavm */
         self.aff_sour(self.sapglob.icone, self.sapglob.sposy, self.sapglob.sposx);
-        unsafe {
-            loop {
-                /* appel de grise mine */
-                self.gere_souris();
-                /* teste si bouton appuye*/
-                if self.sapglob.bouton > 0 {
-                    if self.sapglob.icone != INCONNU!(self.sapwind) && self.sapglob.icone != 0 {
-                        /* calcul des valeurs par defaut pour la liste selectionne*/
-                        /* deplacement dans la liste */
-                        if (self.sapglob.icone == UP!(self.sapwind))
-                            && (self.sapglob.tlpos[self.sapglob.s_menu as usize] > 1)
-                        {
-                            self.eff_sour();
-                            self.sapglob.tlpos[self.sapglob.s_menu as usize] -= 1;
-                            self.inimen(self.sapglob.s_menu as u16);
-                            self.aff_sour(
-                                self.sapglob.icone,
-                                self.sapglob.sposy,
-                                self.sapglob.sposx,
-                            );
-                        }
-                        if (self.sapglob.icone == DOWN!(self.sapwind))
-                            && (self.sapglob.tlpos[self.sapglob.s_menu as usize]
-                                <= (self.sapglob.liste(self.sapglob.stdlist).taille as u16
-                                    - tcnlin[self.sapglob.s_menu as usize] as u16)
-                                    as i8)
-                        {
-                            self.eff_sour();
-                            self.sapglob.tlpos[self.sapglob.s_menu as usize] += 1;
-                            self.inimen(self.sapglob.s_menu as u16);
-                            self.aff_sour(
-                                self.sapglob.icone,
-                                self.sapglob.sposy,
-                                self.sapglob.sposx,
-                            );
-                        }
-                        /* si selection et liste non vide */
-                        if (self.sapglob.icone == SELECT!(self.sapwind))
-                            && (self.sapglob.liste(self.sapglob.stdlist).taille > 0)
-                        {
-                            self.eff_sour();
-                            /* calcul de l'option selectionn�e */
-                            /* calcul position 53 du centre de la souris */
-                            y = self.sapglob.sposy / 7;
-                            /* calcul de l'option choisie*/
-                            self.sapglob.rega = (y - tclin[self.sapglob.s_menu as usize] as i16
-                                + self.sapglob.tlpos[self.sapglob.s_menu as usize] as i16
-                                - 1) as u8;
-                            if self.sapglob.rega < self.sapglob.liste(self.sapglob.stdlist).taille {
-                                let refer = self
-                                    .sap_lang
-                                    .GetRefer(self.sapglob.liste(self.sapglob.stdlist).typeRef);
-                                /*mise en place de stock1 et stock2*/
-                                let ref_ = refer.wrapping_add(
-                                    (self.sapglob.liste(self.sapglob.stdlist).elements
-                                        [self.sapglob.rega as usize]
-                                        - 1) as usize,
-                                );
-                                self.sapglob.stock1 = (*ref_).param1;
-                                self.sapglob.stock2 = (*ref_).param2;
-                                /*on affiche l'option choisie*/
-                                self.efbadi();
-                                if self.sapglob.s_menu <= 0 {
-                                    self.sapglob.s_action = (self.sapglob.rega + 1) as i16;
-                                }
-                                self.comment((120 + self.sapglob.s_action) as u16);
-                                self.InverseOption(self.sapglob.s_menu, self.sapglob.rega as i16);
-                                /* si sous menu affichage et sortie*/
-                                if self.sapglob.s_menu > 0 {
-                                    let refer = self.sap_lang.GetRefer(
-                                        self.sapglob.liste(self.saplist.sliste[1]).typeRef,
-                                    );
-
-                                    self.affcar(b' ' as i16);
-                                    let ref_ = refer.wrapping_add(
-                                        (self.sapglob.liste(self.saplist.sliste[1]).elements
-                                            [self.sapglob.rega as usize]
-                                            - 1) as usize,
-                                    );
-                                    self.mot(ref_ as *mut _);
-                                    self.TfrBadAss();
-                                    if self.sapglob.criter > 0 {
-                                        self.sapglob.rega =
-                                            self.sapglob.cross.elements[self.sapglob.rega as usize];
-                                    }
-                                    return;
-                                } else
-                                /* si menu principal */
-                                /* on affiche (ou reaffiche) le sous-menu*/
-                                {
-                                    self.sapglob.criter = self.sapglob.stock2;
-                                    if self.sapglob.criter > 0 {
-                                        self.sapglob.tlpos[1] = 1;
-                                    }
-                                    if self.sapglob.stock1 == 7 {
-                                        if self.sapglob.dervue != Vue::LATERALE {
-                                            self.primjauge(0);
-                                        }
-                                        self.afstat();
-                                    } else {
-                                        self.inimen(self.sapglob.stock1 as u16);
-                                    }
-                                }
-                                self.sapglob.sposx += 1; /* pour affichage */
-                                (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) =
-                                    self.vq_mouse();
-                            }
-                            self.aff_sour(
-                                self.sapglob.icone,
-                                self.sapglob.sposy,
-                                self.sapglob.sposx,
-                            );
-                        }
-                    } else if self.sapglob.icone == 0 {
-                        /* La souris est dans la partie haute de l'ecran */
-                        /* Bouton et pas d'icone */
-                        let pt = self
-                            .sapwind
-                            .ports
-                            .GetMouse()
-                            .zoom(self.sapwind.ports.window_zoom());
-
-                        r = Rect::new(
-                            (32 * ECHELLE) as i16,
-                            ECHELLE as i16,
-                            ((32 + 255) * ECHELLE) as i16,
-                            ((1 + 100) * ECHELLE) as i16,
-                        );
-                        /* Il n'y a personne et le click est dans l'aire */
-                        if self.sapglob.presence <= 0 && r.pt_in_rect(pt) {
-                            /* Click dans l'aire de l'image */
-                            /* On ouvre par defaut le menu'voir'*/
-                            self.InverseOption(0, 6);
-                            self.sapglob.s_action = 7;
-                            self.inimen(3);
-                            /* Demande le traitement */
-                            self.sapglob.rega = 0;
-                            return;
-                        }
-                        self.ClickInGenerique(pt);
+        loop {
+            /* appel de grise mine */
+            self.gere_souris();
+            /* teste si bouton appuye*/
+            if self.sapglob.bouton > 0 {
+                if self.sapglob.icone != INCONNU!(self.sapwind) && self.sapglob.icone != 0 {
+                    /* calcul des valeurs par defaut pour la liste selectionne*/
+                    /* deplacement dans la liste */
+                    if (self.sapglob.icone == UP!(self.sapwind))
+                        && (self.sapglob.tlpos[self.sapglob.s_menu as usize] > 1)
+                    {
+                        self.eff_sour();
+                        self.sapglob.tlpos[self.sapglob.s_menu as usize] -= 1;
+                        self.inimen(self.sapglob.s_menu as u16);
+                        self.aff_sour(self.sapglob.icone, self.sapglob.sposy, self.sapglob.sposx);
                     }
+                    if (self.sapglob.icone == DOWN!(self.sapwind))
+                        && (self.sapglob.tlpos[self.sapglob.s_menu as usize]
+                            <= (self.sapglob.liste(self.sapglob.stdlist).taille as u16
+                                - tcnlin[self.sapglob.s_menu as usize] as u16)
+                                as i8)
+                    {
+                        self.eff_sour();
+                        self.sapglob.tlpos[self.sapglob.s_menu as usize] += 1;
+                        self.inimen(self.sapglob.s_menu as u16);
+                        self.aff_sour(self.sapglob.icone, self.sapglob.sposy, self.sapglob.sposx);
+                    }
+                    /* si selection et liste non vide */
+                    if (self.sapglob.icone == SELECT!(self.sapwind))
+                        && (self.sapglob.liste(self.sapglob.stdlist).taille > 0)
+                    {
+                        self.eff_sour();
+                        /* calcul de l'option selectionn�e */
+                        /* calcul position 53 du centre de la souris */
+                        y = self.sapglob.sposy / 7;
+                        /* calcul de l'option choisie*/
+                        self.sapglob.rega = (y - tclin[self.sapglob.s_menu as usize] as i16
+                            + self.sapglob.tlpos[self.sapglob.s_menu as usize] as i16
+                            - 1) as u8;
+                        if self.sapglob.rega < self.sapglob.liste(self.sapglob.stdlist).taille {
+                            let refer = self
+                                .sap_lang
+                                .GetRefer(self.sapglob.liste(self.sapglob.stdlist).typeRef);
+                            /*mise en place de stock1 et stock2*/
+                            let ref_ = &refer[(self.sapglob.liste(self.sapglob.stdlist).elements
+                                [self.sapglob.rega as usize]
+                                - 1) as usize];
+                            self.sapglob.stock1 = ref_.param1;
+                            self.sapglob.stock2 = ref_.param2;
+                            /*on affiche l'option choisie*/
+                            self.efbadi();
+                            if self.sapglob.s_menu <= 0 {
+                                self.sapglob.s_action = (self.sapglob.rega + 1) as i16;
+                            }
+                            self.comment((120 + self.sapglob.s_action) as u16);
+                            self.InverseOption(self.sapglob.s_menu, self.sapglob.rega as i16);
+                            /* si sous menu affichage et sortie*/
+                            if self.sapglob.s_menu > 0 {
+                                let type_ref = self.sapglob.liste(self.saplist.sliste[1]).typeRef;
+                                self.affcar(b' ' as i16);
+                                let refer = self.sap_lang.GetRefer(type_ref);
+                                let ref_ =
+                                    &refer[(self.sapglob.liste(self.saplist.sliste[1]).elements
+                                        [self.sapglob.rega as usize]
+                                        - 1) as usize];
+                                let mot = ref_.nomref;
+                                self.mot(&mot);
+                                self.TfrBadAss();
+                                if self.sapglob.criter > 0 {
+                                    self.sapglob.rega =
+                                        self.sapglob.cross.elements[self.sapglob.rega as usize];
+                                }
+                                return;
+                            } else
+                            /* si menu principal */
+                            /* on affiche (ou reaffiche) le sous-menu*/
+                            {
+                                self.sapglob.criter = self.sapglob.stock2;
+                                if self.sapglob.criter > 0 {
+                                    self.sapglob.tlpos[1] = 1;
+                                }
+                                if self.sapglob.stock1 == 7 {
+                                    if self.sapglob.dervue != Vue::LATERALE {
+                                        self.primjauge(0);
+                                    }
+                                    self.afstat();
+                                } else {
+                                    self.inimen(self.sapglob.stock1 as u16);
+                                }
+                            }
+                            self.sapglob.sposx += 1; /* pour affichage */
+                            (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) =
+                                self.vq_mouse();
+                        }
+                        self.aff_sour(self.sapglob.icone, self.sapglob.sposy, self.sapglob.sposx);
+                    }
+                } else if self.sapglob.icone == 0 {
+                    /* La souris est dans la partie haute de l'ecran */
+                    /* Bouton et pas d'icone */
+                    let pt = self
+                        .sapwind
+                        .ports
+                        .GetMouse()
+                        .zoom(self.sapwind.ports.window_zoom());
+
+                    r = Rect::new(
+                        (32 * ECHELLE) as i16,
+                        ECHELLE as i16,
+                        ((32 + 255) * ECHELLE) as i16,
+                        ((1 + 100) * ECHELLE) as i16,
+                    );
+                    /* Il n'y a personne et le click est dans l'aire */
+                    if self.sapglob.presence <= 0 && r.pt_in_rect(pt) {
+                        /* Click dans l'aire de l'image */
+                        /* On ouvre par defaut le menu'voir'*/
+                        self.InverseOption(0, 6);
+                        self.sapglob.s_action = 7;
+                        self.inimen(3);
+                        /* Demande le traitement */
+                        self.sapglob.rega = 0;
+                        return;
+                    }
+                    self.ClickInGenerique(pt);
                 }
             }
         }
@@ -509,13 +491,11 @@ impl Sapiens {
     /***********************************************************************
                   MOT:Affiche un mot selon la reference std
     ***********************************************************************/
-    pub(crate) fn mot(&mut self, refer: *mut i8) {
-        unsafe {
-            let mut p = refer as *mut u8;
-            while *p != 0 {
-                self.affcar(*p as i16);
-                p = p.add(1);
-            }
+    pub(crate) fn mot(&mut self, refer: &[u8]) {
+        let mut p = 0;
+        while refer[p] != 0 {
+            self.affcar(refer[p] as i16);
+            p += 1;
         }
     }
 
@@ -524,14 +504,11 @@ impl Sapiens {
     ***********************************************************************/
     fn affmot(&mut self, debliste_id: ListeId, rang: u16) {
         let debliste = self.sapglob.liste(debliste_id);
-        unsafe {
-            if (rang as u8) < debliste.taille {
-                /*rang à afficher existe*/
-                let refer = self.sap_lang.GetRefer(debliste.typeRef);
-                self.mot(
-                    refer.add(debliste.elements[rang as usize].wrapping_sub(1) as usize) as *mut i8,
-                );
-            }
+        if (rang as u8) < debliste.taille {
+            /*rang à afficher existe*/
+            let refer = self.sap_lang.GetRefer(debliste.typeRef);
+            let mot = refer[debliste.elements[rang as usize].wrapping_sub(1) as usize].nomref;
+            self.mot(&mot);
         }
     }
 
@@ -595,7 +572,7 @@ impl Sapiens {
             }
         } else {
             /* Liste vide */
-            self.mot(c"...".as_ptr() as *mut i8);
+            self.mot(b"...\0");
         }
         /* Transfert de la liste sur l'ecran */
         r.InsetRect(-48, -48);
@@ -781,98 +758,95 @@ impl Sapiens {
                             INIMEN:Initialise Menu
     ***********************************************************************/
     pub(crate) fn inimen(&mut self, entmenu: u16) {
-        unsafe {
-            let mut j = 0;
-            let t = TickCount();
-            let refer1 = self.sap_lang.GetRefer1();
-
-            self.sapglob.menu = entmenu; /*force variable globale*/
-            self.sapglob.clin = tclin[self.sapglob.menu as usize] as u16;
-            self.sapglob.ccol = tccol[self.sapglob.menu as usize] as u16;
-            self.sapglob.colcdr = tcolcdr[self.sapglob.menu as usize] as u16;
-            self.sapglob.cnlin = tcnlin[self.sapglob.menu as usize] as u16;
-            self.sapglob.cncol = tcncol[self.sapglob.menu as usize] as u16;
-            self.sapglob.poscur = tposcur[self.sapglob.menu as usize];
-            self.sapglob.stdlist = self.sapglob.tstdlist[self.sapglob.menu as usize];
-            self.eff_sour();
-            if self.sapglob.menu != 0 {
-                /*pas menu 0*/
-                self.sapglob.smenu[1] = self.sapglob.menu as i8;
-                if self.sapglob.menu != self.sapglob.lastmen as u16 {
-                    /*deja affiche ?*/
-                    self.gemouvre(
-                        19,
-                        1,
-                        1,
-                        14,
-                        self.sapglob.clin,
-                        self.sapglob.ccol,
-                        self.sapglob.cnlin,
-                        self.sapglob.cncol,
-                    );
-                    self.encadre(
-                        self.sapglob.clin,
-                        self.sapglob.ccol,
-                        self.sapglob.cnlin,
-                        self.sapglob.cncol,
-                    );
-                    self.sapglob.lastmen = self.sapglob.menu as u8;
-                }
+        let mut j = 0;
+        let t = TickCount();
+        self.sapglob.menu = entmenu; /*force variable globale*/
+        self.sapglob.clin = tclin[self.sapglob.menu as usize] as u16;
+        self.sapglob.ccol = tccol[self.sapglob.menu as usize] as u16;
+        self.sapglob.colcdr = tcolcdr[self.sapglob.menu as usize] as u16;
+        self.sapglob.cnlin = tcnlin[self.sapglob.menu as usize] as u16;
+        self.sapglob.cncol = tcncol[self.sapglob.menu as usize] as u16;
+        self.sapglob.poscur = tposcur[self.sapglob.menu as usize];
+        self.sapglob.stdlist = self.sapglob.tstdlist[self.sapglob.menu as usize];
+        self.eff_sour();
+        if self.sapglob.menu != 0 {
+            /*pas menu 0*/
+            self.sapglob.smenu[1] = self.sapglob.menu as i8;
+            if self.sapglob.menu != self.sapglob.lastmen as u16 {
+                /*deja affiche ?*/
+                self.gemouvre(
+                    19,
+                    1,
+                    1,
+                    14,
+                    self.sapglob.clin,
+                    self.sapglob.ccol,
+                    self.sapglob.cnlin,
+                    self.sapglob.cncol,
+                );
+                self.encadre(
+                    self.sapglob.clin,
+                    self.sapglob.ccol,
+                    self.sapglob.cnlin,
+                    self.sapglob.cncol,
+                );
+                self.sapglob.lastmen = self.sapglob.menu as u8;
+            }
+        } else {
+            self.sapglob.criter = 0; /*menu principal : critere=0*/
+            if self.sapglob.presence != 0 && self.sapglob.presence < 5 {
+                self.sapglob.liste0.taille = 6;
             } else {
-                self.sapglob.criter = 0; /*menu principal : critere=0*/
-                if self.sapglob.presence != 0 && self.sapglob.presence < 5 {
-                    self.sapglob.liste0.taille = 6;
-                } else {
-                    self.sapglob.liste0.taille = 11;
-                }
-                if self.sapglob.mort == 0 {
-                    /* On demarre a zéro */
-                    self.sapglob.tlpos[0] = 1;
-                    self.sapglob.liste0.taille = 2;
-                    self.clrbadi();
-                    self.comment(136); /* La partie est fini */
-                }
+                self.sapglob.liste0.taille = 11;
             }
-            self.sapglob.lpos = self.sapglob.tlpos[self.sapglob.menu as usize] as u8;
-            /*reduction du nbre d'elements*/
-            if self.sapglob.criter != 0 {
-                /*critere retenu*/
-                let mut i = 0;
-                self.sapglob.lpos = 111;
-                while (i as u16) != self.sapglob.liste(self.sapglob.stdlist).taille as u16 {
-                    let rang = self.sapglob.liste(self.sapglob.stdlist).elements[i as usize]; /*rang de l'objet*/
-                    let valeur = (*refer1.add(rang.wrapping_sub(1) as usize)).param1 & 0xF0;
-                    if ((self.sapglob.criter == 1) && (valeur == 0x20))
-                        || ((self.sapglob.criter == 2) && (valeur == 0x40))
-                    {
-                        self.sapglob.zoneu.elements[j as usize] = rang;
-                        self.sapglob.cross.elements[j as usize] = i as u8;
-                        j += 1;
-                        if (i as i8) >= self.sapglob.tlpos[self.sapglob.menu as usize]
-                            && self.sapglob.lpos == 111
-                        {
-                            self.sapglob.lpos = j as u8;
-                        }
-                    }
-                    i += 1;
-                }
-                if self.sapglob.lpos == 111 {
-                    self.sapglob.lpos = 1;
-                }
-                self.sapglob.zoneu.taille = j as u8;
-                self.sapglob.stdlist = ListeId::Zoneu;
-                /* nlle position ds menu*/
-                self.sapglob.lpos = self.sapglob.tlpos[self.sapglob.menu as usize] as u8;
+            if self.sapglob.mort == 0 {
+                /* On demarre a zéro */
+                self.sapglob.tlpos[0] = 1;
+                self.sapglob.liste0.taille = 2;
+                self.clrbadi();
+                self.comment(136); /* La partie est fini */
             }
-            /*affichage de la liste*/
-            if self.sapglob.menu != 0 {
-                self.saplist.sliste[1] = self.sapglob.stdlist;
-                self.sapglob.smenu[1] = self.sapglob.menu as i8;
-            }
-            self.sapglob.s_menu = self.sapglob.menu as i16;
-            self.aflist(self.sapglob.stdlist);
-            while TickCount() < t + 6 {}
         }
+        self.sapglob.lpos = self.sapglob.tlpos[self.sapglob.menu as usize] as u8;
+        /*reduction du nbre d'elements*/
+        if self.sapglob.criter != 0 {
+            /*critere retenu*/
+            let mut i = 0;
+            self.sapglob.lpos = 111;
+            while (i as u16) != self.sapglob.liste(self.sapglob.stdlist).taille as u16 {
+                let rang = self.sapglob.liste(self.sapglob.stdlist).elements[i as usize]; /*rang de l'objet*/
+                let refer1 = self.sap_lang.GetRefer1();
+                let valeur = (&refer1[rang.wrapping_sub(1) as usize]).param1 & 0xF0;
+                if ((self.sapglob.criter == 1) && (valeur == 0x20))
+                    || ((self.sapglob.criter == 2) && (valeur == 0x40))
+                {
+                    self.sapglob.zoneu.elements[j as usize] = rang;
+                    self.sapglob.cross.elements[j as usize] = i as u8;
+                    j += 1;
+                    if (i as i8) >= self.sapglob.tlpos[self.sapglob.menu as usize]
+                        && self.sapglob.lpos == 111
+                    {
+                        self.sapglob.lpos = j as u8;
+                    }
+                }
+                i += 1;
+            }
+            if self.sapglob.lpos == 111 {
+                self.sapglob.lpos = 1;
+            }
+            self.sapglob.zoneu.taille = j as u8;
+            self.sapglob.stdlist = ListeId::Zoneu;
+            /* nlle position ds menu*/
+            self.sapglob.lpos = self.sapglob.tlpos[self.sapglob.menu as usize] as u8;
+        }
+        /*affichage de la liste*/
+        if self.sapglob.menu != 0 {
+            self.saplist.sliste[1] = self.sapglob.stdlist;
+            self.sapglob.smenu[1] = self.sapglob.menu as i8;
+        }
+        self.sapglob.s_menu = self.sapglob.menu as i16;
+        self.aflist(self.sapglob.stdlist);
+        while TickCount() < t + 6 {}
     }
 
     /***********************************************************************
@@ -1103,7 +1077,7 @@ impl Sapiens {
                     let index = self.sapglob.liste(self.saplist.sliste[1]).elements
                         [self.sapglob.rega as usize]
                         - 1;
-                    let nomref = unsafe { (*refer.add(index as usize)).nomref };
+                    let nomref = &refer[index as usize].nomref;
                     let texte: Vec<u8> = nomref
                         .iter()
                         .map(|&c| c as u8)

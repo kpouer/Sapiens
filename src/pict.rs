@@ -6,7 +6,7 @@
 //! sont extraites dans `data/pict/` et embarquées dans l'exécutable.
 
 use crate::port::Ports;
-use crate::shared::{Handle, PicHandle, Pic, Rect, rgb_to_index};
+use crate::shared::{Handle, Pic, PicHandle, Rect, rgb_to_index};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -117,7 +117,11 @@ fn decode_packbits_rect(r: &mut Reader) -> Option<Picture> {
     for _ in 0..n {
         r.u16()?; // value
         let (rr, gg, bb) = (r.u16()?, r.u16()?, r.u16()?);
-        pal.push(rgb_to_index((rr >> 8) as u8, (gg >> 8) as u8, (bb >> 8) as u8));
+        pal.push(rgb_to_index(
+            (rr >> 8) as u8,
+            (gg >> 8) as u8,
+            (bb >> 8) as u8,
+        ));
     }
     let [s_top, s_left, s_bottom, s_right] = r.rect()?;
     r.rect()?; // dstRect
@@ -175,9 +179,6 @@ pub(crate) fn get_picture(id: i16) -> PicHandle {
     map.insert(id, handle as usize);
     handle
 }
-
-/// `ReleaseResource` pour une `PICT` : sans effet (l'image reste en cache).
-pub(crate) fn release_picture(_h: Handle) {}
 
 impl Ports {
     /// `DrawPicture` : copie (srcCopy) l'image dans `dst` du port courant, à

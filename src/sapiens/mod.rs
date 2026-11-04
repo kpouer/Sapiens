@@ -265,7 +265,7 @@ pub(crate) enum FormeVue {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct reference {
-    pub(crate) nomref: [i8; 64],
+    pub(crate) nomref: [u8; 64],
     pub(crate) param1: u8,
     pub(crate) param2: u8,
 }

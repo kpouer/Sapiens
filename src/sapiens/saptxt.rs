@@ -8,7 +8,6 @@ use crate::sapiens::saptxt_es::Saptxt_es;
 use crate::sapiens::saptxt_fr::Saptxt_fr;
 use crate::sapiens::saptxt_gb::Saptxt_gb;
 use crate::sapiens::{TypeReference, reference};
-use std::ptr::addr_of;
 
 const DELTA_LANGUE: i16 = 1000;
 
@@ -66,11 +65,11 @@ qui choisissent la table selon `langue`.
 
 /* Remplit le char nomref[64] de `struct reference` depuis une chaine
 MacRoman, exactement comme le fait le C : zéro jusqu'au bout. */
-pub(crate) const fn nomref(s: &[u8]) -> [i8; 64] {
+pub(crate) const fn nomref(s: &[u8]) -> [u8; 64] {
     let mut out = [0; 64];
     let mut i = 0;
     while i < s.len() && i < 64 {
-        out[i] = s[i] as i8;
+        out[i] = s[i];
         i += 1;
     }
     out
@@ -84,46 +83,57 @@ pub(crate) struct SapLang {
 }
 
 impl SapLang {
-    pub(crate) fn GetRefer0(&self) -> *mut reference {
+    pub(crate) fn GetRefer0(&self) -> &[reference] {
         if langue() == FR {
-            addr_of!(self.saptxt_fr.refer0) as *mut reference
+            &self.saptxt_fr.refer0
         } else if langue() == ES {
-            addr_of!(self.saptxt_es.refer0) as *mut reference
+            &self.saptxt_es.refer0
         } else {
-            addr_of!(self.saptxt_gb.refer0) as *mut reference
+            &self.saptxt_gb.refer0
         }
     }
 
-    pub(crate) fn GetRefer1(&self) -> *mut reference {
+    pub(crate) fn GetRefer1(&self) -> &[reference] {
         if langue() == FR {
-            addr_of!(self.saptxt_fr.refer1) as *mut reference
+            &self.saptxt_fr.refer1
         } else if langue() == ES {
-            addr_of!(self.saptxt_es.refer1) as *mut reference
+            &self.saptxt_es.refer1
         } else {
-            addr_of!(self.saptxt_gb.refer1) as *mut reference
+            &self.saptxt_gb.refer1
         }
     }
 
-    pub(crate) fn GetRefer2(&self) -> *mut reference {
+    pub(crate) fn GetRefer2(&self) -> &[reference] {
         if langue() == FR {
-            addr_of!(self.saptxt_fr.refer2) as *mut reference
+            &self.saptxt_fr.refer2
         } else if langue() == ES {
-            addr_of!(self.saptxt_es.refer2) as *mut reference
+            &self.saptxt_es.refer2
         } else {
-            addr_of!(self.saptxt_gb.refer2) as *mut reference
+            &self.saptxt_gb.refer2
         }
     }
 
-    pub(crate) fn GetRefer3(&self) -> *mut reference {
+    pub(crate) fn GetRefer3(&self) -> &[reference] {
         if langue() == FR {
-            addr_of!(self.saptxt_fr.refer3) as *mut reference
+            &self.saptxt_fr.refer3
         } else if langue() == ES {
-            addr_of!(self.saptxt_es.refer3) as *mut reference
+            &self.saptxt_es.refer3
         } else {
-            addr_of!(self.saptxt_gb.refer3) as *mut reference
+            &self.saptxt_gb.refer3
         }
     }
-    pub(crate) fn GetRefer(&self, t: TypeReference) -> *mut reference {
+
+    pub(crate) fn GetRefer3_mut(&mut self) -> &mut [reference] {
+        if langue() == FR {
+            &mut self.saptxt_fr.refer3
+        } else if langue() == ES {
+            &mut self.saptxt_es.refer3
+        } else {
+            &mut self.saptxt_gb.refer3
+        }
+    }
+
+    pub(crate) fn GetRefer(&self, t: TypeReference) -> &[reference] {
         match t {
             TypeReference::REFER0 => self.GetRefer0(),
             TypeReference::REFER1 => self.GetRefer1(),

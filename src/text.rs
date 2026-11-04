@@ -691,7 +691,7 @@ mod tests {
         let w_apple = t.ports.CharWidth(0xF0u8 as i8);
         assert!(w_apple < 12, "avance .notdef surprenante : {w_apple}");
         let pen = Point { v: 10, h: 10 };
-        unsafe { t.ports.mainWindow.pen_loc = pen };
+        t.ports.mainWindow.pen_loc = pen;
         t.ports.DrawChar(0xF0u8 as i8);
         assert_eq!(t.count(), 0, "glyphe absent tracé quand même");
     }
