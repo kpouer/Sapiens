@@ -5,7 +5,6 @@
 #![allow(non_upper_case_globals)]
 
 use crate::Sapiens;
-use crate::sapiens::sapglob::ListeId::Liste8;
 use crate::sapiens::{
     CelluleId, IndexColor, ListeCle, NB_LIGNES_CIEL, SapCle, TypeMuse, TypeReference, Vue, cellule,
     liste, sap,
@@ -141,6 +140,221 @@ impl AnimPtr {
         Self { table, off: offset }
     }
 }
+
+pub(crate) static soma: [cellule; 53] = [
+    cellule {
+        adresse: CelluleId::Soif,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Fatig,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Faim,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Mort,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Bless,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Zoom,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Agilite,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Force,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Resistance,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Charisme,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Vie,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Sexe,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Viecopain,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Sap(SapId::Sap1, SapCle::Cross),
+        taille: 8,
+    },
+    cellule {
+        adresse: CelluleId::Sap(SapId::Sap3, SapCle::Cross),
+        taille: 8,
+    },
+    cellule {
+        adresse: CelluleId::Scenar,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Scenpr,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Ciel,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Terre,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Liste(ListeId::Liste1, ListeCle::Taille),
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Liste(ListeId::Liste1, ListeCle::Elements),
+        taille: 30,
+    },
+    cellule {
+        adresse: CelluleId::Tagress(0),
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Enetoi(0),
+        taille: 2,
+    },
+    cellule {
+        adresse: CelluleId::Tagress(1),
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Enetoi(1),
+        taille: 2,
+    },
+    cellule {
+        adresse: CelluleId::Tagress(2),
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Enetoi(2),
+        taille: 2,
+    },
+    cellule {
+        adresse: CelluleId::Tagress(3),
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Enetoi(3),
+        taille: 2,
+    },
+    cellule {
+        adresse: CelluleId::Xj,
+        taille: 2,
+    },
+    cellule {
+        adresse: CelluleId::Yj,
+        taille: 2,
+    },
+    cellule {
+        adresse: CelluleId::Dzeta,
+        taille: 2,
+    },
+    cellule {
+        adresse: CelluleId::Heure,
+        taille: 2,
+    },
+    cellule {
+        adresse: CelluleId::Sap(SapId::Sap3, SapCle::Vie),
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::SapTxtNomjoueur,
+        taille: 8,
+    },
+    cellule {
+        adresse: CelluleId::SapTxtNomcopain,
+        taille: 6,
+    },
+    cellule {
+        adresse: CelluleId::Present(2),
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Jour_act,
+        taille: 2,
+    },
+    cellule {
+        adresse: CelluleId::Param,
+        taille: 6,
+    },
+    cellule {
+        adresse: CelluleId::Tabclav1,
+        taille: 7,
+    },
+    cellule {
+        adresse: CelluleId::Tabclav2,
+        taille: 7,
+    },
+    cellule {
+        adresse: CelluleId::Liste(ListeId::Liste8, ListeCle::Element(4)),
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Liste(ListeId::Liste8, ListeCle::Element(5)),
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Bidon,
+        taille: 1,
+    },
+    cellule {
+        adresse: CelluleId::Sap3dFreqOrage,
+        taille: 4,
+    },
+    cellule {
+        adresse: CelluleId::Sap3dDistMinFoudroie,
+        taille: 4,
+    },
+    cellule {
+        adresse: CelluleId::Sap3dNbNuages,
+        taille: 4,
+    },
+    cellule {
+        adresse: CelluleId::Sap3dNbOiseaux,
+        taille: 4,
+    },
+    cellule {
+        adresse: CelluleId::Sap3dNbRochers,
+        taille: 4,
+    },
+    cellule {
+        adresse: CelluleId::Sap3dNbHommes,
+        taille: 4,
+    },
+    cellule {
+        adresse: CelluleId::Sap3dNbArbres,
+        taille: 4,
+    },
+    cellule {
+        adresse: CelluleId::SapcombNbHerbes,
+        taille: 4,
+    },
+    cellule {
+        adresse: CelluleId::Sap3dVitesseDeplacementNuages,
+        taille: 4,
+    },
+];
 
 pub(crate) struct Sapglob {
     /*définitions des variables globales*/
@@ -309,7 +523,6 @@ pub(crate) struct Sapglob {
     tabclav2: [u8; 7],
     pub(crate) param: [u8; 6],
 
-    pub(crate) soma: [cellule; 53], /* rempli dans init_glob */
     pub(crate) palhaute: Rc<RefCell<[i16; 32]>>,
     pub(crate) palbasse: Rc<RefCell<[i16; 32]>>,
     pub(crate) pal_chron: Rc<RefCell<[i16; 32]>>,
@@ -385,8 +598,8 @@ impl Sapiens {
             CelluleId::Sap3dNbRochers => octets(&mut self.sap3d.nbRochers),
             CelluleId::Sap3dNbHommes => octets(&mut self.sap3d.nbHommes),
             CelluleId::Sap3dNbArbres => octets(&mut self.sap3d.nbArbres),
-            CelluleId::Sap3dNbHerbes => octets(&mut self.sapcomb.nbHerbes),
-            CelluleId::Sap3VitesseDeplacementNuages => {
+            CelluleId::SapcombNbHerbes => octets(&mut self.sapcomb.nbHerbes),
+            CelluleId::Sap3dVitesseDeplacementNuages => {
                 octets(&mut self.sap3d.VitesseDeplacementNuages)
             }
         }
@@ -1432,8 +1645,6 @@ impl Default for Sapglob {
             tabclav1: [72, 80, 75, 77, 28, 57, 1],
             tabclav2: [18, 45, 31, 32, 34, 33, 1],
             param: [128, 128, 128, 128, 128, 0],
-
-            soma: [cellule::default(); 53], /* rempli dans init_glob */
             palhaute: Rc::new(RefCell::new([0; 32])),
             palbasse: Rc::new(RefCell::new([0; 32])),
             pal_chron: Rc::new(RefCell::new([0; 32])),
@@ -1842,7 +2053,7 @@ fn hc(h: i16, q: i16, pal: [i16; 32]) -> h_chron {
 
 impl Sapiens {
     /// Pointeurs reliant les tables entre elles (debban, tstdlist, peuple,
-    /// sapanim, adversaire, possession, soma). Equivalent des initialisateurs
+    /// sapanim, adversaire, possession). Equivalent des initialisateurs
     /// statiques auto-referents du C. A appeler avant sapiens_main.
     pub(crate) unsafe fn init_glob(&mut self) {
         self.sapglob.debban = [
@@ -2076,220 +2287,5 @@ impl Sapiens {
             }
             s.sapanim[14] = None;
         }
-
-        self.sapglob.soma = [
-            cellule {
-                adresse: CelluleId::Soif,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Fatig,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Faim,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Mort,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Bless,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Zoom,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Agilite,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Force,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Resistance,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Charisme,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Vie,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Sexe,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Viecopain,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Sap(SapId::Sap1, SapCle::Cross),
-                taille: 8,
-            },
-            cellule {
-                adresse: CelluleId::Sap(SapId::Sap3, SapCle::Cross),
-                taille: 8,
-            },
-            cellule {
-                adresse: CelluleId::Scenar,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Scenpr,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Ciel,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Terre,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Liste(ListeId::Liste1, ListeCle::Taille),
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Liste(ListeId::Liste1, ListeCle::Elements),
-                taille: 30,
-            },
-            cellule {
-                adresse: CelluleId::Tagress(0),
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Enetoi(0),
-                taille: 2,
-            },
-            cellule {
-                adresse: CelluleId::Tagress(1),
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Enetoi(1),
-                taille: 2,
-            },
-            cellule {
-                adresse: CelluleId::Tagress(2),
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Enetoi(2),
-                taille: 2,
-            },
-            cellule {
-                adresse: CelluleId::Tagress(3),
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Enetoi(3),
-                taille: 2,
-            },
-            cellule {
-                adresse: CelluleId::Xj,
-                taille: 2,
-            },
-            cellule {
-                adresse: CelluleId::Yj,
-                taille: 2,
-            },
-            cellule {
-                adresse: CelluleId::Dzeta,
-                taille: 2,
-            },
-            cellule {
-                adresse: CelluleId::Heure,
-                taille: 2,
-            },
-            cellule {
-                adresse: CelluleId::Sap(SapId::Sap3, SapCle::Vie),
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::SapTxtNomjoueur,
-                taille: 8,
-            },
-            cellule {
-                adresse: CelluleId::SapTxtNomcopain,
-                taille: 6,
-            },
-            cellule {
-                adresse: CelluleId::Present(2),
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Jour_act,
-                taille: 2,
-            },
-            cellule {
-                adresse: CelluleId::Param,
-                taille: 6,
-            },
-            cellule {
-                adresse: CelluleId::Tabclav1,
-                taille: 7,
-            },
-            cellule {
-                adresse: CelluleId::Tabclav2,
-                taille: 7,
-            },
-            cellule {
-                adresse: CelluleId::Liste(Liste8, ListeCle::Element(4)),
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Liste(Liste8, ListeCle::Element(5)),
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Bidon,
-                taille: 1,
-            },
-            cellule {
-                adresse: CelluleId::Sap3dFreqOrage,
-                taille: 4,
-            },
-            cellule {
-                adresse: CelluleId::Sap3dDistMinFoudroie,
-                taille: 4,
-            },
-            cellule {
-                adresse: CelluleId::Sap3dNbNuages,
-                taille: 4,
-            },
-            cellule {
-                adresse: CelluleId::Sap3dNbOiseaux,
-                taille: 4,
-            },
-            cellule {
-                adresse: CelluleId::Sap3dNbRochers,
-                taille: 4,
-            },
-            cellule {
-                adresse: CelluleId::Sap3dNbHommes,
-                taille: 4,
-            },
-            cellule {
-                adresse: CelluleId::Sap3dNbArbres,
-                taille: 4,
-            },
-            cellule {
-                adresse: CelluleId::Sap3dNbHerbes,
-                taille: 4,
-            },
-            cellule {
-                adresse: CelluleId::Sap3VitesseDeplacementNuages,
-                taille: 4,
-            },
-        ];
     }
 }

@@ -6,7 +6,7 @@
 //! sont extraites dans `data/pict/` et embarquées dans l'exécutable.
 
 use crate::port::Ports;
-use crate::shared::{Handle, Pic, PicHandle, Rect, rgb_to_index};
+use crate::shared::{Pic, PicHandle, Rect, rgb_to_index};
 use std::collections::HashMap;
 use std::sync::Mutex;
 

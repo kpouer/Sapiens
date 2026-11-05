@@ -160,7 +160,7 @@ fn spawn_game_thread(sapiens_timer: Arc<AtomicU64>, initial_zoom: f32) {
         .spawn(move || unsafe {
             let mut sapwind = SapWind::default();
             sapwind.set_zoom(initial_zoom);
-            // Pointeurs auto-référents de SAPGLOB.C (debban, peuple, soma...).
+            // Pointeurs auto-référents de SAPGLOB.C (debban, peuple...).
             let mut sapiens = Sapiens {
                 sapwclav: Sapwclav::with_sapiens_timer(sapiens_timer),
                 sapwind,

@@ -10,7 +10,7 @@ use crate::cbridge::{blackColor, fclose, fopen, getc, putc};
 use crate::exchange::{request_open_file, request_save_file};
 use crate::port::PortId;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
-use crate::sapiens::sapglob::{ListeId, SapId, tenerv};
+use crate::sapiens::sapglob::{ListeId, SapId, soma, tenerv};
 use crate::sapiens::sapwind::{ValideUpdate, bande};
 use crate::sapiens::sapwmus::{attends_bruit, quel_synthe};
 use crate::sapiens::{
@@ -1604,7 +1604,6 @@ impl Sapiens {
             putc(b'O' as i32, fichier);
             putc(b'D' as i32, fichier);
             self.random.initrnd(b'S' as i16, b'A' as i16, b'P' as i16);
-            let soma = self.sapglob.soma;
             for cellule in &soma {
                 for i in 0..cellule.taille as usize {
                     let car = (self.soma_mut(cellule.adresse)[i] as i16) ^ self.random.rnd0();
@@ -1660,7 +1659,6 @@ impl Sapiens {
                 && getc(fichier) == b'O' as i32
                 && getc(fichier) == b'D' as i32
             {
-                let soma = self.sapglob.soma;
                 for cellule in &soma {
                     for i in 0..cellule.taille as usize {
                         let mut car = getc(fichier) as i16;

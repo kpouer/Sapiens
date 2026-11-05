@@ -141,9 +141,8 @@ impl From<i16> for TypeMuse {
 
 pub(crate) const NOM_PREF: &[u8; 12] = b"Sapiens.cfg\0";
 
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub(crate) enum CelluleId {
-    #[default]
     Soif,
     Fatig,
     Faim,
@@ -184,8 +183,8 @@ pub(crate) enum CelluleId {
     Sap3dNbRochers,
     Sap3dNbHommes,
     Sap3dNbArbres,
-    Sap3dNbHerbes,
-    Sap3VitesseDeplacementNuages,
+    SapcombNbHerbes,
+    Sap3dVitesseDeplacementNuages,
 }
 
 #[derive(Debug, Copy, Clone)]
