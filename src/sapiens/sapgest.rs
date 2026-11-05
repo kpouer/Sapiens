@@ -1600,23 +1600,17 @@ impl Sapiens {
                 self.comment(92); /*erreur*/
                 return;
             }
-            let mut j: usize = 0;
-            let mut ptr = self.sapglob.soma[j].adresse as *mut u8;
             putc(b'G' as i32, fichier);
             putc(b'O' as i32, fichier);
             putc(b'D' as i32, fichier);
             self.random.initrnd(b'S' as i16, b'A' as i16, b'P' as i16);
-            while !ptr.is_null() {
-                let mut i: u16 = 0;
-                while i < self.sapglob.soma[j].taille as u16 {
-                    let car = ((*ptr) as i16) ^ self.random.rnd0();
+            let soma = self.sapglob.soma;
+            for cellule in &soma {
+                for i in 0..cellule.taille as usize {
+                    let car = (self.soma_mut(cellule.adresse)[i] as i16) ^ self.random.rnd0();
                     checksum = checksum.wrapping_add(car);
                     putc(car as i32, fichier);
-                    ptr = ptr.add(1);
-                    i += 1;
                 }
-                j += 1;
-                ptr = self.sapglob.soma[j].adresse as *mut u8;
             }
             checksum &= 255;
             putc(checksum as i32, fichier);
@@ -1641,8 +1635,6 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn charge(&mut self) {
         unsafe {
-            let mut ptr: *mut u8;
-            let mut j: usize;
             let mut checksum: i16 = 111;
 
             self.sapglob.flefba = 0;
@@ -1663,16 +1655,14 @@ impl Sapiens {
                 return;
             }
             self.primsap();
-            j = 0;
-            ptr = self.sapglob.soma[j].adresse as *mut u8;
             self.random.initrnd(b'S' as i16, b'A' as i16, b'P' as i16);
             if getc(fichier) == b'G' as i32
                 && getc(fichier) == b'O' as i32
                 && getc(fichier) == b'D' as i32
             {
-                while !ptr.is_null() {
-                    let mut i: u16 = 0;
-                    while i < self.sapglob.soma[j].taille as u16 {
+                let soma = self.sapglob.soma;
+                for cellule in &soma {
+                    for i in 0..cellule.taille as usize {
                         let mut car = getc(fichier) as i16;
                         if car < 0 {
                             self.sapglob.flefba = 0;
@@ -1682,12 +1672,8 @@ impl Sapiens {
                         }
                         checksum = checksum.wrapping_add(car);
                         car ^= self.random.rnd0();
-                        *ptr = car as u8;
-                        ptr = ptr.add(1);
-                        i += 1;
+                        self.soma_mut(cellule.adresse)[i] = car as u8;
                     }
-                    j += 1;
-                    ptr = self.sapglob.soma[j].adresse as *mut u8;
                 }
                 checksum &= 255;
                 if checksum != getc(fichier) as i16 {

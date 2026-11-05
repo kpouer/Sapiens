@@ -141,23 +141,72 @@ impl From<i16> for TypeMuse {
 
 pub(crate) const NOM_PREF: &[u8; 12] = b"Sapiens.cfg\0";
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub(crate) struct cellule {
-    pub(crate) adresse: *mut ::std::os::raw::c_void,
-    pub(crate) taille: u8,
-}
-impl Default for cellule {
-    fn default() -> Self {
-        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
+#[derive(Default, Debug, Copy, Clone)]
+pub(crate) enum CelluleId {
+    #[default]
+    Soif,
+    Fatig,
+    Faim,
+    Mort,
+    Bless,
+    Zoom,
+    Agilite,
+    Force,
+    Resistance,
+    Charisme,
+    Vie,
+    Sexe,
+    Viecopain,
+    Scenar,
+    Scenpr,
+    Ciel,
+    Xj,
+    Yj,
+    Dzeta,
+    Heure,
+    Jour_act,
+    Param,
+    Tabclav1,
+    Tabclav2,
+    Bidon,
+    Terre,
+    Tagress(usize),
+    Enetoi(usize),
+    Present(usize),
+    Sap(SapId, SapCle),
+    Liste(ListeId, ListeCle),
+    SapTxtNomjoueur,
+    SapTxtNomcopain,
+    Sap3dFreqOrage,
+    Sap3dDistMinFoudroie,
+    Sap3dNbNuages,
+    Sap3dNbOiseaux,
+    Sap3dNbRochers,
+    Sap3dNbHommes,
+    Sap3dNbArbres,
+    Sap3dNbHerbes,
+    Sap3VitesseDeplacementNuages,
 }
 
-#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub(crate) enum SapCle {
+    Cross,
+    Vie,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub(crate) enum ListeCle {
+    Taille,
+    Elements,
+    Element(usize),
+}
+
+#[derive(Default, Debug, Copy, Clone)]
+pub(crate) struct cellule {
+    pub(crate) adresse: CelluleId,
+    pub(crate) taille: u8,
+}
+
 #[derive(Debug, Clone, Default)]
 pub(crate) struct sap {
     pub(crate) colonne: i16,

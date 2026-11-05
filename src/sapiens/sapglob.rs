@@ -5,12 +5,13 @@
 #![allow(non_upper_case_globals)]
 
 use crate::Sapiens;
+use crate::sapiens::sapglob::ListeId::Liste8;
 use crate::sapiens::{
-    IndexColor, NB_LIGNES_CIEL, TypeMuse, TypeReference, Vue, cellule, liste, sap,
+    CelluleId, IndexColor, ListeCle, NB_LIGNES_CIEL, SapCle, TypeMuse, TypeReference, Vue, cellule,
+    liste, sap,
 };
 use crate::sapiens::{evt, gemcadre, gemnbrecad, h_chron};
 use std::cell::RefCell;
-use std::ptr::{addr_of_mut, null_mut};
 use std::rc::Rc;
 use strum::EnumIter;
 
@@ -308,7 +309,7 @@ pub(crate) struct Sapglob {
     tabclav2: [u8; 7],
     pub(crate) param: [u8; 6],
 
-    pub(crate) soma: [cellule; 54], /* rempli dans init_glob */
+    pub(crate) soma: [cellule; 53], /* rempli dans init_glob */
     pub(crate) palhaute: Rc<RefCell<[i16; 32]>>,
     pub(crate) palbasse: Rc<RefCell<[i16; 32]>>,
     pub(crate) pal_chron: Rc<RefCell<[i16; 32]>>,
@@ -326,6 +327,70 @@ pub(crate) struct Sapglob {
     pub(crate) bouton: i16,
     pub(crate) s_action: i16,
     pub(crate) smenu: [i8; 2],
+}
+
+/// Vue en octets (ordre natif) d'une valeur scalaire ou d'un tableau de scalaires.
+fn octets<T: Copy>(valeur: &mut T) -> &mut [u8] {
+    // SAFETY: n'est utilisé que sur des entiers / tableaux d'entiers (aucun padding,
+    // toute combinaison d'octets est une valeur valide).
+    unsafe { std::slice::from_raw_parts_mut(valeur as *mut T as *mut u8, size_of::<T>()) }
+}
+
+impl Sapiens {
+    /// Octets de la variable désignée par une cellule de `soma` (équivalent du
+    /// pointeur `adresse` du C), utilisés pour la sauvegarde / le chargement.
+    pub(crate) fn soma_mut(&mut self, cellule: CelluleId) -> &mut [u8] {
+        let g = &mut self.sapglob;
+        match cellule {
+            CelluleId::Soif => octets(&mut g.soif),
+            CelluleId::Fatig => octets(&mut g.fatig),
+            CelluleId::Faim => octets(&mut g.faim),
+            CelluleId::Mort => octets(&mut g.mort),
+            CelluleId::Bless => octets(&mut g.bless),
+            CelluleId::Zoom => octets(&mut g.zoom),
+            CelluleId::Agilite => octets(&mut g.agilite),
+            CelluleId::Force => octets(&mut g.force),
+            CelluleId::Resistance => octets(&mut g.resistance),
+            CelluleId::Charisme => octets(&mut g.charisme),
+            CelluleId::Vie => octets(&mut g.vie),
+            CelluleId::Sexe => octets(&mut g.sexe),
+            CelluleId::Viecopain => octets(&mut g.viecopain),
+            CelluleId::Scenar => octets(&mut g.scenar),
+            CelluleId::Scenpr => octets(&mut g.scenpr),
+            CelluleId::Ciel => octets(&mut g.ciel),
+            CelluleId::Xj => octets(&mut g.xj),
+            CelluleId::Yj => octets(&mut g.yj),
+            CelluleId::Dzeta => octets(&mut g.dzeta),
+            CelluleId::Heure => octets(&mut g.heure),
+            CelluleId::Jour_act => octets(&mut g.jour_act),
+            CelluleId::Param => octets(&mut g.param),
+            CelluleId::Tabclav1 => octets(&mut g.tabclav1),
+            CelluleId::Tabclav2 => octets(&mut g.tabclav2),
+            CelluleId::Bidon => octets(&mut g.bidon),
+            CelluleId::Terre => octets(&mut g.terre),
+            CelluleId::Tagress(i) => octets(&mut g.tagress[i]),
+            CelluleId::Enetoi(i) => octets(&mut g.enetoi[i]),
+            CelluleId::Present(i) => octets(&mut g.present[i]),
+            CelluleId::Sap(id, SapCle::Cross) => octets(&mut g.sap_mut(id).cross),
+            CelluleId::Sap(id, SapCle::Vie) => octets(&mut g.sap_mut(id).vie),
+            CelluleId::Liste(id, ListeCle::Taille) => octets(&mut g.liste_mut(id).taille),
+            CelluleId::Liste(id, ListeCle::Elements) => octets(&mut g.liste_mut(id).elements),
+            CelluleId::Liste(id, ListeCle::Element(i)) => octets(&mut g.liste_mut(id).elements[i]),
+            CelluleId::SapTxtNomjoueur => octets(&mut self.saptxt.nomjoueur),
+            CelluleId::SapTxtNomcopain => octets(&mut self.saptxt.nomcopain),
+            CelluleId::Sap3dFreqOrage => octets(&mut self.sap3d.FreqOrage),
+            CelluleId::Sap3dDistMinFoudroie => octets(&mut self.sap3d.DistMinFoudroie),
+            CelluleId::Sap3dNbNuages => octets(&mut self.sap3d.nbNuages),
+            CelluleId::Sap3dNbOiseaux => octets(&mut self.sap3d.nbOiseaux),
+            CelluleId::Sap3dNbRochers => octets(&mut self.sap3d.nbRochers),
+            CelluleId::Sap3dNbHommes => octets(&mut self.sap3d.nbHommes),
+            CelluleId::Sap3dNbArbres => octets(&mut self.sap3d.nbArbres),
+            CelluleId::Sap3dNbHerbes => octets(&mut self.sapcomb.nbHerbes),
+            CelluleId::Sap3VitesseDeplacementNuages => {
+                octets(&mut self.sap3d.VitesseDeplacementNuages)
+            }
+        }
+    }
 }
 
 impl Default for Sapglob {
@@ -1368,10 +1433,7 @@ impl Default for Sapglob {
             tabclav2: [18, 45, 31, 32, 34, 33, 1],
             param: [128, 128, 128, 128, 128, 0],
 
-            soma: [cellule {
-                adresse: null_mut(),
-                taille: 0,
-            }; 54], /* rempli dans init_glob */
+            soma: [cellule::default(); 53], /* rempli dans init_glob */
             palhaute: Rc::new(RefCell::new([0; 32])),
             palbasse: Rc::new(RefCell::new([0; 32])),
             pal_chron: Rc::new(RefCell::new([0; 32])),
@@ -2017,239 +2079,216 @@ impl Sapiens {
 
         self.sapglob.soma = [
             cellule {
-                adresse: addr_of_mut!(self.sapglob.soif) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Soif,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.fatig) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Fatig,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.faim) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Faim,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.mort) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Mort,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.bless) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Bless,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.zoom) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Zoom,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.agilite) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Agilite,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.force) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Force,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.resistance) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Resistance,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.charisme) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Charisme,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.vie) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Vie,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.sexe) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sexe,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.viecopain) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Viecopain,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.sap1.cross) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap(SapId::Sap1, SapCle::Cross),
                 taille: 8,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.sap3.cross) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap(SapId::Sap3, SapCle::Cross),
                 taille: 8,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.scenar) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Scenar,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.scenpr) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Scenpr,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.ciel) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Ciel,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.terre) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Terre,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.liste1.taille) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Liste(ListeId::Liste1, ListeCle::Taille),
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.liste1.elements) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Liste(ListeId::Liste1, ListeCle::Elements),
                 taille: 30,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.tagress[0]) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Tagress(0),
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.enetoi[0]) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Enetoi(0),
                 taille: 2,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.tagress[1]) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Tagress(1),
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.enetoi[1]) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Enetoi(1),
                 taille: 2,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.tagress[2]) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Tagress(2),
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.enetoi[2]) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Enetoi(2),
                 taille: 2,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.tagress[3]) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Tagress(3),
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.enetoi[3]) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Enetoi(3),
                 taille: 2,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.xj) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Xj,
                 taille: 2,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.yj) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Yj,
                 taille: 2,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.dzeta) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Dzeta,
                 taille: 2,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.heure) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Heure,
                 taille: 2,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.sap3.vie) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap(SapId::Sap3, SapCle::Vie),
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.saptxt.nomjoueur) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::SapTxtNomjoueur,
                 taille: 8,
             },
             cellule {
-                adresse: addr_of_mut!(self.saptxt.nomcopain) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::SapTxtNomcopain,
                 taille: 6,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.present[2]) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Present(2),
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.jour_act) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Jour_act,
                 taille: 2,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.param) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Param,
                 taille: 6,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.tabclav1) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Tabclav1,
                 taille: 7,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.tabclav2) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Tabclav2,
                 taille: 7,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.liste8.elements[4]) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Liste(Liste8, ListeCle::Element(4)),
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.liste8.elements[5]) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Liste(Liste8, ListeCle::Element(5)),
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapglob.bidon) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Bidon,
                 taille: 1,
             },
             cellule {
-                adresse: addr_of_mut!(self.sap3d.FreqOrage) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap3dFreqOrage,
                 taille: 4,
             },
             cellule {
-                adresse: addr_of_mut!(self.sap3d.DistMinFoudroie) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap3dDistMinFoudroie,
                 taille: 4,
             },
             cellule {
-                adresse: addr_of_mut!(self.sap3d.nbNuages) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap3dNbNuages,
                 taille: 4,
             },
             cellule {
-                adresse: addr_of_mut!(self.sap3d.nbOiseaux) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap3dNbOiseaux,
                 taille: 4,
             },
             cellule {
-                adresse: addr_of_mut!(self.sap3d.nbRochers) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap3dNbRochers,
                 taille: 4,
             },
             cellule {
-                adresse: addr_of_mut!(self.sap3d.nbHommes) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap3dNbHommes,
                 taille: 4,
             },
             cellule {
-                adresse: addr_of_mut!(self.sap3d.nbArbres) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap3dNbArbres,
                 taille: 4,
             },
             cellule {
-                adresse: addr_of_mut!(self.sapcomb.nbHerbes) as *mut _ as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap3dNbHerbes,
                 taille: 4,
             },
             cellule {
-                adresse: addr_of_mut!(self.sap3d.VitesseDeplacementNuages) as *mut _
-                    as *mut std::os::raw::c_void,
+                adresse: CelluleId::Sap3VitesseDeplacementNuages,
                 taille: 4,
-            },
-            cellule {
-                adresse: null_mut(),
-                taille: 0,
             },
         ];
     }
