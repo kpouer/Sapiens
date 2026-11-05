@@ -5,14 +5,14 @@
 ;-----------------------------------------------------------------------
 */
 use crate::acam::{
-    Alert, CarboniseSetCursorArrow, CheckItem, CtoU8, DisableItem, DisposHandle, DrawMenuBar,
-    EnableItem, FAUX, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, NewCWindow,
-    ParamText, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI, c_string,
+    Alert, CarboniseSetCursorArrow, CheckItem, DisableItem, DisposHandle, DrawMenuBar, EnableItem,
+    FAUX, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, NewCWindow, ParamText, Random,
+    SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI, c_string,
 };
 use crate::audio;
 use crate::cbridge::{
     DRVR, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, everyEvent, helvetica,
-    optionKey, strcpy, strlen, watchCursor, whiteColor,
+    optionKey, strlen, watchCursor, whiteColor,
 };
 use crate::exchange::event_queue::GetNextEvent;
 use crate::exchange::{publish_window_frame, take_menu_command};
@@ -182,7 +182,7 @@ impl Sapiens {
                         MessInit
 Affichage d'un message durant l'initialisation
 ***********************************************************************************/
-pub(crate) fn MessInit(_format: *mut i8) {}
+pub(crate) fn MessInit(_format: &str) {}
 
 impl Sapiens {
     /******************************************************************************************
@@ -202,15 +202,8 @@ impl SapWind {
     Recupere une chaine indexée dans une locale et la passe au format C
     <= Ptr sur la locale
     ******************************************************************************************/
-    pub(crate) fn GetStr(&mut self, index: i16) -> *mut i8 {
-        let s = &raw mut self.OneString as *mut i8;
-        GetIndString(
-            s as *mut c_void as StringPtr,
-            CvtDefaultLangRess(STR_VRAC as i16),
-            index,
-        );
-        PtoCstr(s as *mut u8);
-        s
+    pub(crate) fn GetStr(&mut self, index: i16) -> &'static str {
+        GetIndString(CvtDefaultLangRess(STR_VRAC as i16), index)
     }
 }
 
@@ -733,7 +726,7 @@ impl Ports {
     ***********************************************************************************************/
     unsafe fn AffStr(
         &mut self,
-        chaine: *mut i8,
+        chaine: &[u8],
         fonte: i16,
         size: i16,
         face: i16,
@@ -742,22 +735,21 @@ impl Ports {
     ) {
         let mut x: i16 = x_in;
 
-        let chaine = CtoU8(chaine);
         self.TextFont(fonte);
         self.TextSize(size);
         self.TextFace(face);
         if x < 0 {
-            x = (640 - self.StringWidth(&chaine)) / 2;
+            x = (640 - self.StringWidth(chaine)) / 2;
         }
         self.ForeColor(blackColor as i16);
         self.DoTextSize(size);
         self.DoMoveTo(x + 1, y + 1);
-        self.DrawString(&chaine);
+        self.DrawString(chaine);
         self.ForeColor(whiteColor as i16);
         self.DoMoveTo(x, y);
-        self.DrawString(&chaine);
+        self.DrawString(chaine);
         self.DoMoveTo(x - 1, y);
-        self.DrawString(&chaine);
+        self.DrawString(chaine);
         self.ForeColor(blackColor as i16);
     }
 }
@@ -805,7 +797,6 @@ impl Sapiens {
         let mut i: i16;
         let mut y: i16;
         let mut r: Rect = Rect::default();
-        let mut chaine: [i8; 255] = [0; 255];
 
         /* Init des chemins standards */
         self.InitCheminsSapiens();
@@ -840,9 +831,9 @@ impl Sapiens {
                 ReleaseResource(pict as Handle);
             }
             /* Affichage de la version de sapiens */
-            copie_chaine(&mut chaine, &GetVersionSapiens());
+            let chaine = GetVersionSapiens();
             self.sapwind.ports.AffStr(
-                &raw mut chaine as *mut i8,
+                chaine.as_bytes(),
                 helvetica as i16,
                 14,
                 bold as i16,
@@ -850,12 +841,9 @@ impl Sapiens {
                 r.bottom + 16,
             );
             /* Affichage des autres commentaires */
-            strcpy(
-                &raw mut chaine as *mut i8,
-                c"Copyright Didier & Olivier Guillion, 1986,1996,2005,2017".as_ptr(),
-            );
+            let chaine = b"Copyright Didier & Olivier Guillion, 1986,1996,2005,2017";
             self.sapwind.ports.AffStr(
-                &raw mut chaine as *mut i8,
+                chaine.as_slice(),
                 helvetica as i16,
                 16,
                 bold as i16,
@@ -866,22 +854,12 @@ impl Sapiens {
             y = 60 + 120 + 18 + 32;
             let num = CvtDefaultLangRess(1);
             loop {
-                GetIndString(
-                    &raw mut chaine as *mut u8 as *mut c_void as StringPtr,
-                    num,
-                    i,
-                );
+                let chaine = GetIndString(num, i);
                 i += 1;
-                PtoCstr(&raw mut chaine as *mut u8);
                 if strlen(&raw const chaine as *const i8) != 0 {
-                    self.sapwind.ports.AffStr(
-                        &raw mut chaine as *mut i8,
-                        helvetica as i16,
-                        16,
-                        bold as i16,
-                        -1,
-                        y,
-                    );
+                    self.sapwind
+                        .ports
+                        .AffStr(&chaine, helvetica as i16, 16, bold as i16, -1, y);
                 }
                 y += 18;
                 if strlen(&raw const chaine as *const i8) == 0 {

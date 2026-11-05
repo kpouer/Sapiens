@@ -329,27 +329,12 @@ fn str_resource(id: i16) -> &'static [&'static str] {
 
 /// Écrit dans `s` (chaîne Pascal, MacRoman) la chaîne n° `index` (base 1)
 /// de la ressource `STR#` `id`. Chaîne vide si elle n'existe pas.
-pub(crate) fn GetIndString(s: StringPtr, id: i16, index: i16) {
-    if s.is_null() {
-        return;
-    }
-    let text = usize::try_from(index - 1)
+pub(crate) fn GetIndString(id: i16, index: i16) -> &'static str {
+    usize::try_from(index - 1)
         .ok()
         .and_then(|i| str_resource(id).get(i))
         .copied()
-        .unwrap_or("");
-    unsafe {
-        let mut len = 0usize;
-        for c in text.chars() {
-            if len == 255 {
-                break;
-            }
-            let b = crate::text::unicode_to_mac_roman(c).unwrap_or(b'?');
-            *s.add(1 + len) = b;
-            len += 1;
-        }
-        *s = len as u8;
-    }
+        .unwrap_or("")
 }
 
 // ---------------------------------------------------------------------------

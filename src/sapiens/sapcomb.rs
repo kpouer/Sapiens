@@ -353,7 +353,7 @@ impl Sapiens {
     L'utilisateur a cliqué dans la zone haute : on regarde si le click a eu lieu
     dans une case du génerique
     ***********************************************************************/
-    fn AffStrVolatile(&mut self, pt: Point, chaine: &[u8]) {
+    fn AffStrVolatile(&mut self, pt: Point, chaine: &str) {
         if !chaine.is_empty() {
             let mut raff = Rect::new(pt.h - 8, pt.v - 8, pt.h + 100, pt.v + 40);
             if raff.left < 0 {
@@ -368,7 +368,7 @@ impl Sapiens {
             self.sapwind.ports.DoTextSize(9);
             self.sapwind
                 .ports
-                .DoTextBox(chaine, &raff, teJustLeft as i16);
+                .DoTextBox(chaine.as_bytes(), &raff, teJustLeft as i16);
             raff.InsetRect(-4, -4);
             self.sapwind.ports.DoFrameRect(&raff);
             self.delai(60);
@@ -394,43 +394,31 @@ impl Sapiens {
                     self.sapglob.peuple(i).poslcoeur * ECHELLE as i16 + 36,
                 );
                 if r.pt_in_rect(pt) {
-                    let mut chaine: [i8; 255] = [0; 255];
-                    if self.sapglob.peuple(i).vie == 0 {
-                        copie_chaine(&raw mut chaine as *mut i8, self.sapwind.GetStr(19));
+                    let chaine = if self.sapglob.peuple(i).vie == 0 {
+                        self.sapwind.GetStr(19)
                     } else if i as usize == 0 {
-                        copie_chaine(&raw mut chaine as *mut i8, self.sapwind.GetStr(27));
+                        self.sapwind.GetStr(27)
                     } else if i as usize == 2 {
-                        copie_chaine(&raw mut chaine as *mut i8, self.sapwind.GetStr(29));
+                        self.sapwind.GetStr(29)
                     } else {
-                        copie_chaine(&raw mut chaine as *mut i8, self.sapwind.GetStr(28));
-                    }
-                    let chaine = CStr::from_ptr(&chaine as *const i8).to_bytes();
+                        self.sapwind.GetStr(28)
+                    };
                     self.AffStrVolatile(pt, chaine);
                 }
                 /* Dans le cadre de la tete */
                 r.OffsetRect(0, 44);
                 if r.pt_in_rect(pt) {
-                    let mut chaine: [i8; 255] = [0; 255];
-                    if self.sapglob.peuple(i).vie == 0 {
-                        copie_chaine(&raw mut chaine as *mut i8, self.sapwind.GetStr(19));
+                    let chaine = if self.sapglob.peuple(i).vie == 0 {
+                        self.sapwind.GetStr(19)
                     } else if i as usize == 0 {
-                        sprintf_nom(
-                            &raw mut chaine as *mut i8,
-                            self.sapwind.GetStr(15),
-                            &raw const self.saptxt.nomjoueur as *mut i8,
-                        );
+                        &format!(self.sapwind.GetStr(15), self.saptxt.nomjoueur,)
                     } else if i as usize == 2 {
-                        sprintf_nom(
-                            &raw mut chaine as *mut i8,
-                            self.sapwind.GetStr(16),
-                            &raw const self.saptxt.nomcopain as *mut i8,
-                        );
+                        &format!(self.sapwind.GetStr(16), self.saptxt.nomcopain,)
                     } else if i as usize == 1 {
-                        copie_chaine(&raw mut chaine as *mut i8, self.sapwind.GetStr(17));
+                        self.sapwind.GetStr(17)
                     } else {
-                        copie_chaine(&raw mut chaine as *mut i8, self.sapwind.GetStr(18));
-                    }
-                    let chaine = CStr::from_ptr(&chaine as *const i8).to_bytes();
+                        self.sapwind.GetStr(18)
+                    };
                     self.AffStrVolatile(pt, chaine);
                 }
             }
