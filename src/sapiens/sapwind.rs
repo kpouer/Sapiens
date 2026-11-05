@@ -5,7 +5,7 @@
 ;-----------------------------------------------------------------------
 */
 use crate::acam::{
-    Alert, CarboniseSetCursorArrow, CheckItem, CtoPstr, DisableItem, DisposHandle, DrawMenuBar,
+    Alert, CarboniseSetCursorArrow, CheckItem, CtoU8, DisableItem, DisposHandle, DrawMenuBar,
     EnableItem, FAUX, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, NewCWindow,
     ParamText, PtoCstr, Random, SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI, c_string,
 };
@@ -742,24 +742,23 @@ impl Ports {
     ) {
         let mut x: i16 = x_in;
 
-        CtoPstr(chaine);
+        let chaine = CtoU8(chaine);
         self.TextFont(fonte);
         self.TextSize(size);
         self.TextFace(face);
         if x < 0 {
-            x = (640 - self.StringWidth(chaine as *mut u8)) / 2;
+            x = (640 - self.StringWidth(&chaine)) / 2;
         }
         self.ForeColor(blackColor as i16);
         self.DoTextSize(size);
         self.DoMoveTo(x + 1, y + 1);
-        self.DrawString(chaine as *mut u8);
+        self.DrawString(&chaine);
         self.ForeColor(whiteColor as i16);
         self.DoMoveTo(x, y);
-        self.DrawString(chaine as *mut u8);
+        self.DrawString(&chaine);
         self.DoMoveTo(x - 1, y);
-        self.DrawString(chaine as *mut u8);
+        self.DrawString(&chaine);
         self.ForeColor(blackColor as i16);
-        PtoCstr(chaine as *mut u8);
     }
 }
 

@@ -206,6 +206,16 @@ pub(crate) fn CtoPstr(str: *mut i8) -> *mut u8 {
     }
 }
 
+pub(crate) fn CtoU8(str: *mut i8) -> Vec<u8> {
+    unsafe {
+        let mut len: usize = 0;
+        while *str.add(len) != 0 && len < 255 {
+            len += 1;
+        }
+        std::slice::from_raw_parts(str as *const u8, len).to_vec()
+    }
+}
+
 /// Ressources `STR#` extraites de `c_code/Rsrc/sapiens.rsrc`.
 /// Les identifiants suivent `CvtLangRess` : base + 1000 * langue
 /// (0 = français, 1000 = anglais, 2000 = espagnol).

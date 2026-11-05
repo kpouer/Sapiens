@@ -10,9 +10,9 @@
 use std::sync::atomic::{AtomicI16, Ordering};
 
 use crate::Sapiens;
-use crate::acam::{CarboniseSetCursorArrow, CtoPstr, FAUX, GetCursor, SetCursor, TickCount, VRAI};
+use crate::acam::{CarboniseSetCursorArrow, FAUX, GetCursor, SetCursor, TickCount, VRAI};
 use crate::cbridge::watchCursor;
-use crate::cbridge::{FILE, feof, fprintf, fscanf, strcmp, strcpy};
+use crate::cbridge::{FILE, feof, fprintf, fscanf, strcmp};
 use crate::port::PortId;
 use crate::sapiens::sapw3d::distance;
 use crate::sapiens::sapwind::ValideUpdate;
@@ -21,7 +21,7 @@ use crate::sapiens::{
     NB_HERBE_AV_PLAN, NB_HOMMES, NB_MAX_HERBE_AV_PLAN, NB_NUAGES, NB_NUAGES_MAX, NB_OISEAUX,
     NB_OISEAUX_MAX, NB_ROCHERS, NB_ROCHERS_MAX,
 };
-use crate::shared::{Boolean, RGBColor, StringPtr};
+use crate::shared::{Boolean, RGBColor};
 
 const VITESSE_DEPLACEMENT_OISEAUX: u16 = 10;
 const MONT1: i16 = 1;
@@ -3294,93 +3294,49 @@ impl Sapiens {
     Gestion de l'animation finale
     ***********************************************************************/
     pub(crate) fn Final(&mut self) {
-        unsafe {
-            let mut n: i64 = 0;
-            let mut dx: i64;
-            let mut dy: i64;
-            let mut dist: i16;
-            let mut mont: Mont = Mont::default();
-            let mut rgb: RGBColor = RGBColor {
-                red: 0,
-                green: 0,
-                blue: 0,
-            };
-            let mut chaine: [i8; 255] = [0; 255];
-
-            SetCursor(GetCursor(watchCursor as i16));
-            self.DefautDecor3d();
-            self.sapglob.heure = 0;
-            while self.sapglob.heure < 40 {
-                self.chrono(1);
-            }
-            self.sapglob.jour_dsk = 0;
-            self.sapglob.xj = 0x5800;
-            self.sapglob.yj = 0x5400;
-            self.sapglob.dzeta = 768;
-            self.sapglob.zj = 40;
-            self.clrbadi();
-            self.comment(133); /* Le temps passe */
-            for _ in 0..5 {
-                /* Les arbres augmentent en nombre */
-                for _ in 0..15 {
-                    for e in 0..self.sap3d.nbNuages {
-                        let mont = &mut self.sap3d.aigoual[e as usize];
-                        mont.posx =
-                            (self.sapglob.xj as i64 + self.random.myRandom(-5000, 5000)) as u16;
-                        mont.posy =
-                            (self.sapglob.yj as i64 + self.random.myRandom(-5000, 5000)) as u16;
-                    }
-                    self.GereInterface();
-                    for i in self.sap3d.PremArbre..self.sap3d.PremArbre + self.sap3d.nbArbres {
-                        let mut p = self.sap3d.aigoual[i as usize];
-                        dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
-                        dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
-                        dist = distance(dx, dy);
-                        /* L'arbre est éloigné de plus de 2000 m */
-                        if dist > 2000 && self.random.myRandom(0, 1000) > 900 {
-                            /* On le rapproche */
-                            p.posx =
-                                (self.sapglob.xj as i64 + self.random.myRandom(-750, 750)) as u16;
-                            p.posy =
-                                (self.sapglob.yj as i64 + self.random.myRandom(-5000, -500)) as u16;
-                            dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
-                            dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
-                            dist = distance(dx, dy);
-                            if dist < 50 {
-                                p.posx = 65000;
-                                p.posy = 65000;
-                            }
-                        }
-                        self.sap3d.aigoual[i as usize] = p;
-                    }
-                    self.AvanceSol(1);
-                    self.sapglob.heure = self.random.myRandom(0, 90) as u16;
-                    self.affich(self.sapglob.dzeta as u16);
-                    self.sapwind.ports.tfrima();
-                    self.delai(0);
-                    WaitTick(5);
+        let mut n: i64 = 0;
+        let mut dx: i64;
+        let mut dy: i64;
+        let mut dist: i16;
+        let mut mont: Mont = Mont::default();
+        let mut rgb: RGBColor = RGBColor {
+            red: 0,
+            green: 0,
+            blue: 0,
+        };
+        SetCursor(GetCursor(watchCursor as i16));
+        self.DefautDecor3d();
+        self.sapglob.heure = 0;
+        while self.sapglob.heure < 40 {
+            self.chrono(1);
+        }
+        self.sapglob.jour_dsk = 0;
+        self.sapglob.xj = 0x5800;
+        self.sapglob.yj = 0x5400;
+        self.sapglob.dzeta = 768;
+        self.sapglob.zj = 40;
+        self.clrbadi();
+        self.comment(133); /* Le temps passe */
+        for _ in 0..5 {
+            /* Les arbres augmentent en nombre */
+            for _ in 0..15 {
+                for e in 0..self.sap3d.nbNuages {
+                    let mont = &mut self.sap3d.aigoual[e as usize];
+                    mont.posx = (self.sapglob.xj as i64 + self.random.myRandom(-5000, 5000)) as u16;
+                    mont.posy = (self.sapglob.yj as i64 + self.random.myRandom(-5000, 5000)) as u16;
                 }
-                /* Erosion des montagnes */
-                for i in 0..self.sap3d.aigoual.len() {
-                    let p = &mut self.sap3d.aigoual[i];
-                    if p.forme.is_some_and(|id| id.forme().hauteur == 0) {
-                        /* C'est une montagne elle diminue */
-                        if p.ign > 10 {
-                            p.ign -= 10;
-                        }
-                    }
-                }
-                /* Déplacement des rochers */
-                for i in self.sap3d.PremRocher..self.sap3d.PremRocher + self.sap3d.nbRochers {
+                self.GereInterface();
+                for i in self.sap3d.PremArbre..self.sap3d.PremArbre + self.sap3d.nbArbres {
                     let mut p = self.sap3d.aigoual[i as usize];
                     dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
                     dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
                     dist = distance(dx, dy);
+                    /* L'arbre est éloigné de plus de 2000 m */
                     if dist > 2000 && self.random.myRandom(0, 1000) > 900 {
-                        p.posx =
-                            (self.sapglob.xj as i64 + self.random.myRandom(-1000, 1000)) as u16;
+                        /* On le rapproche */
+                        p.posx = (self.sapglob.xj as i64 + self.random.myRandom(-750, 750)) as u16;
                         p.posy =
-                            (self.sapglob.yj as i64 + self.random.myRandom(-1000, -100)) as u16;
+                            (self.sapglob.yj as i64 + self.random.myRandom(-5000, -500)) as u16;
                         dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
                         dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
                         dist = distance(dx, dy);
@@ -3391,108 +3347,133 @@ impl Sapiens {
                     }
                     self.sap3d.aigoual[i as usize] = p;
                 }
-                /* Les arbres diminuent en nombre */
-                for _ in 0..15 {
-                    for e in 0..self.sap3d.nbNuages {
-                        let mont = &mut self.sap3d.aigoual[e as usize];
-                        mont.posx =
-                            (self.sapglob.xj as i64 + self.random.myRandom(-5000, 5000)) as u16;
-                        mont.posy =
-                            (self.sapglob.yj as i64 + self.random.myRandom(-5000, 5000)) as u16;
-                    }
-                    self.GereInterface();
-                    for i in self.sap3d.PremArbre..self.sap3d.PremArbre + self.sap3d.nbArbres {
-                        let mut p = self.sap3d.aigoual[i as usize];
-                        dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
-                        dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
-                        dist = distance(dx, dy);
-                        if dist < 3000 && self.random.myRandom(0, 1000) > 900 {
-                            p.posx = 65000;
-                            p.posy = 65000;
-                        }
-                        self.sap3d.aigoual[i as usize] = p;
-                    }
-                    self.sapglob.heure = self.random.myRandom(0, 90) as u16;
-                    self.AvanceSol(1);
-                    self.affich(self.sapglob.dzeta as u16);
-                    self.sapwind.ports.tfrima();
-                    self.delai(0);
-                    WaitTick(5);
-                }
-            }
-            for e in 0..self.sap3d.nbNuages {
-                let mont = &mut self.sap3d.aigoual[e as usize];
-                mont.posx = (self.sapglob.xj as i64 + self.random.myRandom(-2000, 2000)) as u16;
-                mont.posy = (self.sapglob.yj as i64 + self.random.myRandom(-2000, 2000)) as u16;
-            }
-            for _ in 0..100 {
-                self.sap3d.FreqEclair = 900;
-                /* Erosion des rochers */
-                for i in self.sap3d.PremRocher..self.sap3d.PremRocher + self.sap3d.nbRochers {
-                    if self.random.myRandom(0, 1000) > 900 {
-                        self.sap3d.aigoual[i as usize].posx = 65000;
-                        self.sap3d.aigoual[i as usize].posy = 65000;
-                    }
-                }
-                /* Disparition des arbres */
-                for i in self.sap3d.PremArbre..self.sap3d.PremArbre + self.sap3d.nbArbres {
-                    if self.random.myRandom(0, 1000) > 900 {
-                        self.sap3d.aigoual[i as usize].posx = 65000;
-                        self.sap3d.aigoual[i as usize].posy = 65000;
-                    }
-                }
-                mont.ign = self.random.myRandom(15, 60) as u16;
-                mont.forme = Some(FormeId::Building);
-                mont.posx = (self.sapglob.xj as i64 + self.random.myRandom(-750, 750)) as u16;
-                mont.posy = (self.sapglob.yj as i64 + self.random.myRandom(-10000, -500)) as u16;
-                self.sap3d.aigoual.push(mont);
+                self.AvanceSol(1);
                 self.sapglob.heure = self.random.myRandom(0, 90) as u16;
                 self.affich(self.sapglob.dzeta as u16);
                 self.sapwind.ports.tfrima();
                 self.delai(0);
-                self.chrono(1);
                 WaitTick(5);
             }
-            self.sapglob.heure = 512;
-            for _ in 0..400 {
-                self.sapglob.yj = self.sapglob.yj.wrapping_sub(30);
+            /* Erosion des montagnes */
+            for i in 0..self.sap3d.aigoual.len() {
+                let p = &mut self.sap3d.aigoual[i];
+                if p.forme.is_some_and(|id| id.forme().hauteur == 0) {
+                    /* C'est une montagne elle diminue */
+                    if p.ign > 10 {
+                        p.ign -= 10;
+                    }
+                }
+            }
+            /* Déplacement des rochers */
+            for i in self.sap3d.PremRocher..self.sap3d.PremRocher + self.sap3d.nbRochers {
+                let mut p = self.sap3d.aigoual[i as usize];
+                dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
+                dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
+                dist = distance(dx, dy);
+                if dist > 2000 && self.random.myRandom(0, 1000) > 900 {
+                    p.posx = (self.sapglob.xj as i64 + self.random.myRandom(-1000, 1000)) as u16;
+                    p.posy = (self.sapglob.yj as i64 + self.random.myRandom(-1000, -100)) as u16;
+                    dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
+                    dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
+                    dist = distance(dx, dy);
+                    if dist < 50 {
+                        p.posx = 65000;
+                        p.posy = 65000;
+                    }
+                }
+                self.sap3d.aigoual[i as usize] = p;
+            }
+            /* Les arbres diminuent en nombre */
+            for _ in 0..15 {
+                for e in 0..self.sap3d.nbNuages {
+                    let mont = &mut self.sap3d.aigoual[e as usize];
+                    mont.posx = (self.sapglob.xj as i64 + self.random.myRandom(-5000, 5000)) as u16;
+                    mont.posy = (self.sapglob.yj as i64 + self.random.myRandom(-5000, 5000)) as u16;
+                }
+                self.GereInterface();
+                for i in self.sap3d.PremArbre..self.sap3d.PremArbre + self.sap3d.nbArbres {
+                    let mut p = self.sap3d.aigoual[i as usize];
+                    dx = (p.posx as i64 - self.sapglob.xj as i64).abs();
+                    dy = (p.posy as i64 - self.sapglob.yj as i64).abs();
+                    dist = distance(dx, dy);
+                    if dist < 3000 && self.random.myRandom(0, 1000) > 900 {
+                        p.posx = 65000;
+                        p.posy = 65000;
+                    }
+                    self.sap3d.aigoual[i as usize] = p;
+                }
+                self.sapglob.heure = self.random.myRandom(0, 90) as u16;
+                self.AvanceSol(1);
                 self.affich(self.sapglob.dzeta as u16);
                 self.sapwind.ports.tfrima();
                 self.delai(0);
-                self.chrono(1);
-                WaitTick(2);
+                WaitTick(5);
             }
-            self.sapwind.ports.set(PortId::Ecran1);
-            self.sapwind.ports.TextFont(0); /* times */
-            self.sapwind.ports.DoTextSize(64);
-            strcpy(chaine.as_mut_ptr(), c"THE END".as_ptr());
-            CtoPstr(chaine.as_mut_ptr());
-            dx = (512
-                - self
-                    .sapwind
-                    .ports
-                    .StringWidth(chaine.as_mut_ptr() as StringPtr) as i64)
-                / 2;
-            for _ in 0..256 {
-                n += 256;
-                self.chrono(1);
-                self.chrono(1);
-                rgb.red = n as u16;
-                rgb.green = n as u16;
-                rgb.blue = n as u16;
-                self.sapwind.ports.RGBForeColor(&rgb);
-                self.sapwind.ports.DoMoveTo(dx as i16, 64);
-                self.affich(self.sapglob.dzeta as u16);
-                self.delai(0);
-                self.sapwind
-                    .ports
-                    .DrawString(chaine.as_mut_ptr() as StringPtr);
-                self.sapwind.ports.tfrima();
-                WaitTick(1);
-            }
-            CarboniseSetCursorArrow();
-            self.sapwind.ports.set(PortId::MainWindow);
         }
+        for e in 0..self.sap3d.nbNuages {
+            let mont = &mut self.sap3d.aigoual[e as usize];
+            mont.posx = (self.sapglob.xj as i64 + self.random.myRandom(-2000, 2000)) as u16;
+            mont.posy = (self.sapglob.yj as i64 + self.random.myRandom(-2000, 2000)) as u16;
+        }
+        for _ in 0..100 {
+            self.sap3d.FreqEclair = 900;
+            /* Erosion des rochers */
+            for i in self.sap3d.PremRocher..self.sap3d.PremRocher + self.sap3d.nbRochers {
+                if self.random.myRandom(0, 1000) > 900 {
+                    self.sap3d.aigoual[i as usize].posx = 65000;
+                    self.sap3d.aigoual[i as usize].posy = 65000;
+                }
+            }
+            /* Disparition des arbres */
+            for i in self.sap3d.PremArbre..self.sap3d.PremArbre + self.sap3d.nbArbres {
+                if self.random.myRandom(0, 1000) > 900 {
+                    self.sap3d.aigoual[i as usize].posx = 65000;
+                    self.sap3d.aigoual[i as usize].posy = 65000;
+                }
+            }
+            mont.ign = self.random.myRandom(15, 60) as u16;
+            mont.forme = Some(FormeId::Building);
+            mont.posx = (self.sapglob.xj as i64 + self.random.myRandom(-750, 750)) as u16;
+            mont.posy = (self.sapglob.yj as i64 + self.random.myRandom(-10000, -500)) as u16;
+            self.sap3d.aigoual.push(mont);
+            self.sapglob.heure = self.random.myRandom(0, 90) as u16;
+            self.affich(self.sapglob.dzeta as u16);
+            self.sapwind.ports.tfrima();
+            self.delai(0);
+            self.chrono(1);
+            WaitTick(5);
+        }
+        self.sapglob.heure = 512;
+        for _ in 0..400 {
+            self.sapglob.yj = self.sapglob.yj.wrapping_sub(30);
+            self.affich(self.sapglob.dzeta as u16);
+            self.sapwind.ports.tfrima();
+            self.delai(0);
+            self.chrono(1);
+            WaitTick(2);
+        }
+        self.sapwind.ports.set(PortId::Ecran1);
+        self.sapwind.ports.TextFont(0); /* times */
+        self.sapwind.ports.DoTextSize(64);
+        let chaine = b"THE END";
+        dx = (512 - self.sapwind.ports.StringWidth(chaine.as_ref()) as i64) / 2;
+        for _ in 0..256 {
+            n += 256;
+            self.chrono(1);
+            self.chrono(1);
+            rgb.red = n as u16;
+            rgb.green = n as u16;
+            rgb.blue = n as u16;
+            self.sapwind.ports.RGBForeColor(&rgb);
+            self.sapwind.ports.DoMoveTo(dx as i16, 64);
+            self.affich(self.sapglob.dzeta as u16);
+            self.delai(0);
+            self.sapwind.ports.DrawString(chaine.as_ref());
+            self.sapwind.ports.tfrima();
+            WaitTick(1);
+        }
+        CarboniseSetCursorArrow();
+        self.sapwind.ports.set(PortId::MainWindow);
     }
 }
 
