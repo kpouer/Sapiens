@@ -200,7 +200,7 @@ pub(crate) enum ListeCle {
     Element(usize),
 }
 
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub(crate) struct cellule {
     pub(crate) adresse: CelluleId,
     pub(crate) taille: u8,

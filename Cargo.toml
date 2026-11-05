@@ -12,6 +12,7 @@ log = "0.4.34"
 rfd = "0.17"
 strum = { version = "0.28", features = ["derive"] }
 cpal = { version = "0.18.2", default-features = false }
+bytemuck = { version = "1.25", features = ["min_const_generics"] }
 
 [features]
 default = []

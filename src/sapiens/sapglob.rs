@@ -10,6 +10,7 @@ use crate::sapiens::{
     liste, sap,
 };
 use crate::sapiens::{evt, gemcadre, gemnbrecad, h_chron};
+use bytemuck::bytes_of_mut;
 use std::cell::RefCell;
 use std::rc::Rc;
 use strum::EnumIter;
@@ -542,65 +543,60 @@ pub(crate) struct Sapglob {
     pub(crate) smenu: [i8; 2],
 }
 
-/// Vue en octets (ordre natif) d'une valeur scalaire ou d'un tableau de scalaires.
-fn octets<T: Copy>(valeur: &mut T) -> &mut [u8] {
-    // SAFETY: n'est utilisé que sur des entiers / tableaux d'entiers (aucun padding,
-    // toute combinaison d'octets est une valeur valide).
-    unsafe { std::slice::from_raw_parts_mut(valeur as *mut T as *mut u8, size_of::<T>()) }
-}
-
 impl Sapiens {
     /// Octets de la variable désignée par une cellule de `soma` (équivalent du
     /// pointeur `adresse` du C), utilisés pour la sauvegarde / le chargement.
     pub(crate) fn soma_mut(&mut self, cellule: CelluleId) -> &mut [u8] {
         let g = &mut self.sapglob;
         match cellule {
-            CelluleId::Soif => octets(&mut g.soif),
-            CelluleId::Fatig => octets(&mut g.fatig),
-            CelluleId::Faim => octets(&mut g.faim),
-            CelluleId::Mort => octets(&mut g.mort),
-            CelluleId::Bless => octets(&mut g.bless),
-            CelluleId::Zoom => octets(&mut g.zoom),
-            CelluleId::Agilite => octets(&mut g.agilite),
-            CelluleId::Force => octets(&mut g.force),
-            CelluleId::Resistance => octets(&mut g.resistance),
-            CelluleId::Charisme => octets(&mut g.charisme),
-            CelluleId::Vie => octets(&mut g.vie),
-            CelluleId::Sexe => octets(&mut g.sexe),
-            CelluleId::Viecopain => octets(&mut g.viecopain),
-            CelluleId::Scenar => octets(&mut g.scenar),
-            CelluleId::Scenpr => octets(&mut g.scenpr),
-            CelluleId::Ciel => octets(&mut g.ciel),
-            CelluleId::Xj => octets(&mut g.xj),
-            CelluleId::Yj => octets(&mut g.yj),
-            CelluleId::Dzeta => octets(&mut g.dzeta),
-            CelluleId::Heure => octets(&mut g.heure),
-            CelluleId::Jour_act => octets(&mut g.jour_act),
-            CelluleId::Param => octets(&mut g.param),
-            CelluleId::Tabclav1 => octets(&mut g.tabclav1),
-            CelluleId::Tabclav2 => octets(&mut g.tabclav2),
-            CelluleId::Bidon => octets(&mut g.bidon),
-            CelluleId::Terre => octets(&mut g.terre),
-            CelluleId::Tagress(i) => octets(&mut g.tagress[i]),
-            CelluleId::Enetoi(i) => octets(&mut g.enetoi[i]),
-            CelluleId::Present(i) => octets(&mut g.present[i]),
-            CelluleId::Sap(id, SapCle::Cross) => octets(&mut g.sap_mut(id).cross),
-            CelluleId::Sap(id, SapCle::Vie) => octets(&mut g.sap_mut(id).vie),
-            CelluleId::Liste(id, ListeCle::Taille) => octets(&mut g.liste_mut(id).taille),
-            CelluleId::Liste(id, ListeCle::Elements) => octets(&mut g.liste_mut(id).elements),
-            CelluleId::Liste(id, ListeCle::Element(i)) => octets(&mut g.liste_mut(id).elements[i]),
-            CelluleId::SapTxtNomjoueur => octets(&mut self.saptxt.nomjoueur),
-            CelluleId::SapTxtNomcopain => octets(&mut self.saptxt.nomcopain),
-            CelluleId::Sap3dFreqOrage => octets(&mut self.sap3d.FreqOrage),
-            CelluleId::Sap3dDistMinFoudroie => octets(&mut self.sap3d.DistMinFoudroie),
-            CelluleId::Sap3dNbNuages => octets(&mut self.sap3d.nbNuages),
-            CelluleId::Sap3dNbOiseaux => octets(&mut self.sap3d.nbOiseaux),
-            CelluleId::Sap3dNbRochers => octets(&mut self.sap3d.nbRochers),
-            CelluleId::Sap3dNbHommes => octets(&mut self.sap3d.nbHommes),
-            CelluleId::Sap3dNbArbres => octets(&mut self.sap3d.nbArbres),
-            CelluleId::SapcombNbHerbes => octets(&mut self.sapcomb.nbHerbes),
+            CelluleId::Soif => bytes_of_mut(&mut g.soif),
+            CelluleId::Fatig => bytes_of_mut(&mut g.fatig),
+            CelluleId::Faim => bytes_of_mut(&mut g.faim),
+            CelluleId::Mort => bytes_of_mut(&mut g.mort),
+            CelluleId::Bless => bytes_of_mut(&mut g.bless),
+            CelluleId::Zoom => bytes_of_mut(&mut g.zoom),
+            CelluleId::Agilite => bytes_of_mut(&mut g.agilite),
+            CelluleId::Force => bytes_of_mut(&mut g.force),
+            CelluleId::Resistance => bytes_of_mut(&mut g.resistance),
+            CelluleId::Charisme => bytes_of_mut(&mut g.charisme),
+            CelluleId::Vie => bytes_of_mut(&mut g.vie),
+            CelluleId::Sexe => bytes_of_mut(&mut g.sexe),
+            CelluleId::Viecopain => bytes_of_mut(&mut g.viecopain),
+            CelluleId::Scenar => bytes_of_mut(&mut g.scenar),
+            CelluleId::Scenpr => bytes_of_mut(&mut g.scenpr),
+            CelluleId::Ciel => bytes_of_mut(&mut g.ciel),
+            CelluleId::Xj => bytes_of_mut(&mut g.xj),
+            CelluleId::Yj => bytes_of_mut(&mut g.yj),
+            CelluleId::Dzeta => bytes_of_mut(&mut g.dzeta),
+            CelluleId::Heure => bytes_of_mut(&mut g.heure),
+            CelluleId::Jour_act => bytes_of_mut(&mut g.jour_act),
+            CelluleId::Param => bytes_of_mut(&mut g.param),
+            CelluleId::Tabclav1 => bytes_of_mut(&mut g.tabclav1),
+            CelluleId::Tabclav2 => bytes_of_mut(&mut g.tabclav2),
+            CelluleId::Bidon => bytes_of_mut(&mut g.bidon),
+            CelluleId::Terre => bytes_of_mut(&mut g.terre),
+            CelluleId::Tagress(i) => bytes_of_mut(&mut g.tagress[i]),
+            CelluleId::Enetoi(i) => bytes_of_mut(&mut g.enetoi[i]),
+            CelluleId::Present(i) => bytes_of_mut(&mut g.present[i]),
+            CelluleId::Sap(id, SapCle::Cross) => bytes_of_mut(&mut g.sap_mut(id).cross),
+            CelluleId::Sap(id, SapCle::Vie) => bytes_of_mut(&mut g.sap_mut(id).vie),
+            CelluleId::Liste(id, ListeCle::Taille) => bytes_of_mut(&mut g.liste_mut(id).taille),
+            CelluleId::Liste(id, ListeCle::Elements) => bytes_of_mut(&mut g.liste_mut(id).elements),
+            CelluleId::Liste(id, ListeCle::Element(i)) => {
+                bytes_of_mut(&mut g.liste_mut(id).elements[i])
+            }
+            CelluleId::SapTxtNomjoueur => bytes_of_mut(&mut self.saptxt.nomjoueur),
+            CelluleId::SapTxtNomcopain => bytes_of_mut(&mut self.saptxt.nomcopain),
+            CelluleId::Sap3dFreqOrage => bytes_of_mut(&mut self.sap3d.FreqOrage),
+            CelluleId::Sap3dDistMinFoudroie => bytes_of_mut(&mut self.sap3d.DistMinFoudroie),
+            CelluleId::Sap3dNbNuages => bytes_of_mut(&mut self.sap3d.nbNuages),
+            CelluleId::Sap3dNbOiseaux => bytes_of_mut(&mut self.sap3d.nbOiseaux),
+            CelluleId::Sap3dNbRochers => bytes_of_mut(&mut self.sap3d.nbRochers),
+            CelluleId::Sap3dNbHommes => bytes_of_mut(&mut self.sap3d.nbHommes),
+            CelluleId::Sap3dNbArbres => bytes_of_mut(&mut self.sap3d.nbArbres),
+            CelluleId::SapcombNbHerbes => bytes_of_mut(&mut self.sapcomb.nbHerbes),
             CelluleId::Sap3dVitesseDeplacementNuages => {
-                octets(&mut self.sap3d.VitesseDeplacementNuages)
+                bytes_of_mut(&mut self.sap3d.VitesseDeplacementNuages)
             }
         }
     }
