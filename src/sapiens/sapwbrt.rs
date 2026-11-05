@@ -130,7 +130,7 @@ impl Ports {
     /****************************************************************************
                 DoTextBox
     *****************************************************************************/
-    pub(crate) fn DoTextBox(&mut self, text: &[u8], box_: &Rect, just: i16) {
+    pub(crate) fn DoTextBox(&mut self, text: &str, box_: &Rect, just: i16) {
         let dest = self.DoZoomRect(box_);
         self.TextBox(text, &dest, just);
     }

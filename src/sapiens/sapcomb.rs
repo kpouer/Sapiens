@@ -35,7 +35,6 @@ use crate::sapiens::{
 };
 use crate::shared::{Boolean, Point, Rect};
 use crate::{DEBBEST, Sapiens};
-use std::ffi::CStr;
 use std::sync::atomic::Ordering;
 use strum::IntoEnumIterator;
 
@@ -368,7 +367,7 @@ impl Sapiens {
             self.sapwind.ports.DoTextSize(9);
             self.sapwind
                 .ports
-                .DoTextBox(chaine.as_bytes(), &raff, teJustLeft as i16);
+                .DoTextBox(chaine, &raff, teJustLeft as i16);
             raff.InsetRect(-4, -4);
             self.sapwind.ports.DoFrameRect(&raff);
             self.delai(60);
@@ -2405,43 +2404,6 @@ impl Sapiens {
                 self.latera();
             }
         } /*infini .... et un peu plus*/
-    }
-}
-
-/* Copie une chaine C dans un tampon C (strcpy) */
-#[deprecated]
-unsafe fn copie_chaine(buf: *mut i8, s: *mut i8) {
-    unsafe {
-        if s.is_null() {
-            if !buf.is_null() {
-                *buf = 0;
-            }
-            return;
-        }
-        let src = CStr::from_ptr(s);
-        for (i, b) in src.to_bytes().iter().enumerate() {
-            *buf.add(i) = *b as i8;
-        }
-        *buf.add(src.to_bytes().len()) = 0;
-    }
-}
-
-/* Remplace un sprintf(format, %s -> nom) minimaliste */
-#[deprecated]
-unsafe fn sprintf_nom(buf: *mut i8, format: *mut i8, nom: *mut i8) {
-    unsafe {
-        let fmt = CStr::from_ptr(format);
-        let f = fmt.to_string_lossy();
-        let nn = if nom.is_null() {
-            String::new()
-        } else {
-            CStr::from_ptr(nom).to_string_lossy().into_owned()
-        };
-        let out = f.replacen("%s", &nn, 1);
-        for (i, b) in out.as_bytes().iter().enumerate() {
-            *buf.add(i) = *b as i8;
-        }
-        *buf.add(out.len()) = 0;
     }
 }
 

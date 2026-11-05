@@ -12,7 +12,7 @@ use crate::acam::{
 use crate::audio;
 use crate::cbridge::{
     DRVR, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, everyEvent, helvetica,
-    optionKey, strlen, watchCursor, whiteColor,
+    optionKey, watchCursor, whiteColor,
 };
 use crate::exchange::event_queue::GetNextEvent;
 use crate::exchange::{publish_window_frame, take_menu_command};
@@ -77,7 +77,6 @@ pub(crate) struct SapWind {
     pub(crate) mob3D: i16,
     pub(crate) Fonte14: i16,
     pub(crate) Fonte10: i16,
-    OneString: [i8; 200],
 }
 
 impl Default for SapWind {
@@ -98,7 +97,6 @@ impl Default for SapWind {
             mob3D: 0,
             Fonte14: 0,
             Fonte10: 0,
-            OneString: [0; 200],
         }
     }
 }
@@ -144,15 +142,6 @@ taille de la chaine longue suivi de la chaine longue
 ******************************************************************************************/
 pub(crate) fn GetVersionSapiens() -> String {
     "Rust".to_string()
-}
-
-/** Remplace `vsprintf` (sans varargs) : copie `s` dans le tampon C. */
-fn copie_chaine(buf: &mut [i8], s: &str) {
-    let n = s.len().min(buf.len() - 1);
-    for (i, b) in s.as_bytes()[..n].iter().enumerate() {
-        buf[i] = *b as i8;
-    }
-    buf[n] = 0;
 }
 
 impl Sapiens {

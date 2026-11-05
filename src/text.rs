@@ -552,7 +552,7 @@ impl Ports {
     /// `just` : 0 = gauche (teJustLeft), 1 = centré (teJustCenter), 2 = droite
     /// (teJustRight). Le texte est centré verticalement dans le rectangle, clippé
     /// par pixel au port (via `plot`).
-    pub(crate) fn TextBox(&mut self, text: &[u8], boxr: &Rect, just: i16) {
+    pub(crate) fn TextBox(&mut self, text: &str, boxr: &Rect, just: i16) {
         if boxr.is_empty() {
             return;
         }
@@ -561,6 +561,7 @@ impl Ports {
         let (fam, bold, size) = fdt_state(p);
         // Largeur totale (i32, le texte peut déborder d'un i16).
         let mut total = 0;
+        let text = text.as_bytes();
         for &c in text {
             total += get_glyph(fam, bold, size, decode(c)).advance as i32;
         }
@@ -709,7 +710,7 @@ mod tests {
         t.ports.TextFont(2);
         t.ports.TextSize(14);
         t.ports.TextFace(0);
-        let text = b"THE END";
+        let text = "THE END";
         let boxr = Rect {
             top: 10,
             left: 20,
