@@ -856,13 +856,18 @@ impl Sapiens {
             loop {
                 let chaine = GetIndString(num, i);
                 i += 1;
-                if strlen(&raw const chaine as *const i8) != 0 {
-                    self.sapwind
-                        .ports
-                        .AffStr(&chaine, helvetica as i16, 16, bold as i16, -1, y);
+                if !chaine.is_empty() {
+                    self.sapwind.ports.AffStr(
+                        chaine.as_bytes(),
+                        helvetica as i16,
+                        16,
+                        bold as i16,
+                        -1,
+                        y,
+                    );
                 }
                 y += 18;
-                if strlen(&raw const chaine as *const i8) == 0 {
+                if chaine.is_empty() {
                     break;
                 }
             }
@@ -878,7 +883,7 @@ impl Sapiens {
             if !FixeMenu(CvtDefaultLangRess(0)) {
                 /* MENU_BAR */
                 let x = self.sapwind.GetStr(11);
-                self.Collapse(c_string(x as *mut u8));
+                self.Collapse(x);
                 SapiensExit(-1);
             }
             self.FixeMenusReduit();
@@ -897,7 +902,7 @@ impl Sapiens {
             /* On charge les mobs */
             if !self.InitMobs() {
                 let x = self.sapwind.GetStr(11);
-                self.Collapse(c_string(x as *mut u8));
+                self.Collapse(x);
                 SapiensExit(-1);
             }
             self.InitCouleurFontes();

@@ -383,44 +383,28 @@ impl Sapiens {
     dans une case du generique
     ***********************************************************************/
     pub(crate) fn ClickInGenerique(&mut self, pt: Point) {
-        unsafe {
-            /* on balaye les quatre sapiens*/
-            for i in SapId::iter() {
-                /* Dans le symbole du coeur */
-                let mut r = Rect::new(
-                    self.sapglob.peuple(i).posccoeur * ECHELLE as i16 - 4,
-                    self.sapglob.peuple(i).poslcoeur * ECHELLE as i16 - 4,
-                    self.sapglob.peuple(i).posccoeur * ECHELLE as i16 + 36,
-                    self.sapglob.peuple(i).poslcoeur * ECHELLE as i16 + 36,
-                );
-                if r.pt_in_rect(pt) {
-                    let chaine = if self.sapglob.peuple(i).vie == 0 {
-                        self.sapwind.GetStr(19)
-                    } else if i as usize == 0 {
-                        self.sapwind.GetStr(27)
-                    } else if i as usize == 2 {
-                        self.sapwind.GetStr(29)
-                    } else {
-                        self.sapwind.GetStr(28)
-                    };
-                    self.AffStrVolatile(pt, chaine);
-                }
-                /* Dans le cadre de la tete */
-                r.OffsetRect(0, 44);
-                if r.pt_in_rect(pt) {
-                    let chaine = if self.sapglob.peuple(i).vie == 0 {
-                        self.sapwind.GetStr(19)
-                    } else if i as usize == 0 {
-                        &format!(self.sapwind.GetStr(15), self.saptxt.nomjoueur,)
-                    } else if i as usize == 2 {
-                        &format!(self.sapwind.GetStr(16), self.saptxt.nomcopain,)
-                    } else if i as usize == 1 {
-                        self.sapwind.GetStr(17)
-                    } else {
-                        self.sapwind.GetStr(18)
-                    };
-                    self.AffStrVolatile(pt, chaine);
-                }
+        /* on balaye les quatre sapiens*/
+        for i in SapId::iter() {
+            /* Dans le symbole du coeur */
+            let r = Rect::new(
+                self.sapglob.peuple(i).posccoeur * ECHELLE as i16 - 4,
+                self.sapglob.peuple(i).poslcoeur * ECHELLE as i16 - 4,
+                self.sapglob.peuple(i).posccoeur * ECHELLE as i16 + 36,
+                self.sapglob.peuple(i).poslcoeur * ECHELLE as i16 + 36,
+            );
+            if r.pt_in_rect(pt) {
+                let chaine: String = if self.sapglob.peuple(i).vie == 0 {
+                    self.sapwind.GetStr(19).to_string()
+                } else if i as usize == 0 {
+                    fmt_nom(self.sapwind.GetStr(15), &self.saptxt.nomjoueur)
+                } else if i as usize == 2 {
+                    fmt_nom(self.sapwind.GetStr(16), &self.saptxt.nomcopain)
+                } else if i as usize == 1 {
+                    self.sapwind.GetStr(17).to_string()
+                } else {
+                    self.sapwind.GetStr(18).to_string()
+                };
+                self.AffStrVolatile(pt, &chaine);
             }
         }
     }
@@ -2459,4 +2443,11 @@ unsafe fn sprintf_nom(buf: *mut i8, format: *mut i8, nom: *mut i8) {
         }
         *buf.add(out.len()) = 0;
     }
+}
+
+/// Équivalent de `sprintf(format, nom)` : remplace le premier `%s` par `nom`
+/// (tableau d'octets terminé par un NUL).
+fn fmt_nom(format: &str, nom: &[u8]) -> String {
+    let end = nom.iter().position(|&b| b == 0).unwrap_or(nom.len());
+    format.replacen("%s", &String::from_utf8_lossy(&nom[..end]), 1)
 }
