@@ -7,7 +7,7 @@
 use crate::acam::{
     Alert, CarboniseSetCursorArrow, CheckItem, DisableItem, DisposHandle, DrawMenuBar, EnableItem,
     FAUX, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, NewCWindow, ParamText, Random,
-    SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI, c_string,
+    SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI,
 };
 use crate::audio;
 use crate::cbridge::{
@@ -101,8 +101,6 @@ impl Default for SapWind {
     }
 }
 
-static TRANS_VIDE: [u8; 1] = [0];
-
 /**************** HIRES: Passe en resolution *******************/
 pub(crate) fn hires() -> i16 {
     1
@@ -157,12 +155,7 @@ impl Sapiens {
 
         /* On fixe la zone à la zone de secours de l'interface */
         CarboniseSetCursorArrow();
-        ParamText(
-            message.into(),
-            c_string(TRANS_VIDE.as_ptr() as *mut u8),
-            c_string(TRANS_VIDE.as_ptr() as *mut u8),
-            c_string(TRANS_VIDE.as_ptr() as *mut u8),
-        );
+        ParamText(message.into(), "", "", "");
         self.DoAlertSapiens(CvtDefaultLangRess(134)); /* ALRT_COLLAPSE */
     }
 }
@@ -340,12 +333,7 @@ impl Sapiens {
                                     DoInfo
     ******************************************************************************************/
     pub(crate) fn DoInfo(&mut self) {
-        ParamText(
-            GetVersionSapiens(),
-            c_string(TRANS_VIDE.as_ptr() as *mut u8),
-            c_string(TRANS_VIDE.as_ptr() as *mut u8),
-            c_string(TRANS_VIDE.as_ptr() as *mut u8),
-        );
+        ParamText(GetVersionSapiens(), "", "", "");
         self.DoAlertSapiens(CvtDefaultLangRess(2)); /* ALRT_INFO */
     }
 
@@ -713,15 +701,7 @@ impl Ports {
     /**********************************************************************************************
                                                                     AffStr
     ***********************************************************************************************/
-    unsafe fn AffStr(
-        &mut self,
-        chaine: &str,
-        fonte: i16,
-        size: i16,
-        face: i16,
-        x_in: i16,
-        y: i16,
-    ) {
+    unsafe fn AffStr(&mut self, chaine: &str, fonte: i16, size: i16, face: i16, x_in: i16, y: i16) {
         let mut x: i16 = x_in;
 
         self.TextFont(fonte);
@@ -831,14 +811,9 @@ impl Sapiens {
             );
             /* Affichage des autres commentaires */
             let chaine = "Copyright Didier & Olivier Guillion, 1986,1996,2005,2017";
-            self.sapwind.ports.AffStr(
-                chaine,
-                helvetica as i16,
-                16,
-                bold as i16,
-                -1,
-                r.bottom + 32,
-            );
+            self.sapwind
+                .ports
+                .AffStr(chaine, helvetica as i16, 16, bold as i16, -1, r.bottom + 32);
             i = 1;
             y = 60 + 120 + 18 + 32;
             let num = CvtDefaultLangRess(1);
@@ -846,14 +821,9 @@ impl Sapiens {
                 let chaine = GetIndString(num, i);
                 i += 1;
                 if !chaine.is_empty() {
-                    self.sapwind.ports.AffStr(
-                        chaine,
-                        helvetica as i16,
-                        16,
-                        bold as i16,
-                        -1,
-                        y,
-                    );
+                    self.sapwind
+                        .ports
+                        .AffStr(chaine, helvetica as i16, 16, bold as i16, -1, y);
                 }
                 y += 18;
                 if chaine.is_empty() {

@@ -356,12 +356,12 @@ pub(crate) fn c_string(p: StringPtr) -> String {
 }
 
 /// Substitution des quatre zones `^0`..`^3` des alertes (Toolbox Mac).
-pub(crate) fn ParamText(p1: String, p2: String, p3: String, p4: String) {
+pub(crate) fn ParamText(p1: String, p2: &str, p3: &str, p4: &str) {
     let mut g = PARAM_TEXT.lock().unwrap();
     g[0] = p1;
-    g[1] = p2;
-    g[2] = p3;
-    g[3] = p4;
+    g[1] = p2.to_string();
+    g[2] = p3.to_string();
+    g[3] = p4.to_string();
 }
 
 /// Affiche une alerte via egui et attend l'item choisi. Bloquant côté C.
