@@ -160,6 +160,7 @@ pub(crate) fn NewPtr(size: i64) -> Ptr {
     alloc_pixels(size.max(0) as usize)
 }
 
+#[deprecated]
 pub(crate) fn DisposHandle(h: Handle) {
     if h.is_null() {
         return;
@@ -170,49 +171,6 @@ pub(crate) fn DisposHandle(h: Handle) {
             free_pixels(inner as *mut u8);
         }
         free_pixels(h as *mut u8);
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Chaînes Pascal
-// ---------------------------------------------------------------------------
-
-pub(crate) fn PtoCstr(str: StringPtr) -> *mut i8 {
-    if str.is_null() {
-        return std::ptr::null_mut();
-    }
-    unsafe {
-        let len = *str;
-        let p = str.add(1);
-        std::ptr::copy(p, str, len as usize);
-        *str.add(len as usize) = 0;
-        str as *mut i8
-    }
-}
-
-pub(crate) fn CtoPstr(str: *mut i8) -> *mut u8 {
-    if str.is_null() {
-        return std::ptr::null_mut();
-    }
-    unsafe {
-        let mut len: usize = 0;
-        while *str.add(len) != 0 && len < 255 {
-            len += 1;
-        }
-        let p = str as *mut u8;
-        std::ptr::copy(p, p.add(1), len);
-        *p = len as u8;
-        p
-    }
-}
-
-pub(crate) fn CtoU8(str: *mut i8) -> Vec<u8> {
-    unsafe {
-        let mut len: usize = 0;
-        while *str.add(len) != 0 && len < 255 {
-            len += 1;
-        }
-        std::slice::from_raw_parts(str as *const u8, len).to_vec()
     }
 }
 
@@ -343,17 +301,6 @@ pub(crate) fn GetIndString(id: i16, index: i16) -> &'static str {
 
 static PARAM_TEXT: Mutex<[String; 4]> =
     Mutex::new([String::new(), String::new(), String::new(), String::new()]);
-
-pub(crate) fn c_string(p: StringPtr) -> String {
-    if p.is_null() {
-        return String::new();
-    }
-    unsafe {
-        std::ffi::CStr::from_ptr(p as *const i8)
-            .to_string_lossy()
-            .into_owned()
-    }
-}
 
 /// Substitution des quatre zones `^0`..`^3` des alertes (Toolbox Mac).
 pub(crate) fn ParamText(p1: String, p2: &str, p3: &str, p4: &str) {

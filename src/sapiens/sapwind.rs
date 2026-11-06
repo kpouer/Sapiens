@@ -274,11 +274,9 @@ impl Sapiens {
                                     AdjustMenus
     ******************************************************************************************/
     pub(crate) fn AdjustMenus(&self) {
-        let mut menu: MenuHandle;
-
         let _g = self.sapwind.ports.on(PortId::MainWindow);
 
-        menu = GetMHandle(CvtDefaultLangRess(128)); /* menuPomme */
+        let mut menu = GetMHandle(CvtDefaultLangRess(128)); /* menuPomme */
         menu = GetMHandle(CvtDefaultLangRess(129)); /* menuFichier */
         if self.sapwind.MenuReduit {
             DisableItem(menu, 0);
