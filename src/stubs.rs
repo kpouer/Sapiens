@@ -6,12 +6,11 @@
 
 #![allow(non_snake_case)]
 
-use crate::cbridge::{MenuHandle, OSErr, SndChannelPtr, WindowPtr};
+use crate::cbridge::{MenuHandle, OSErr, WindowPtr};
 use crate::exchange::{INPUT, MOUSE_EVENT_SCALE};
 use crate::port;
 use crate::port::{PortId, Ports};
 use crate::shared::*;
-use std::ffi::c_void;
 
 // ---------------------------------------------------------------------------
 // Gestion des fenetres / evenements
@@ -62,9 +61,9 @@ pub(crate) extern "C" fn SelectWindow(_w: WindowPtr) {}
 pub(crate) extern "C" fn FindWindow(_pt: Point, _window: *mut WindowPtr) -> i16 {
     crate::cbridge::inContent as i16
 }
-pub(crate) extern "C" fn SystemClick(_event: *const EventRecord, _w: WindowPtr) {}
-pub(crate) extern "C" fn SystemTask() {}
-pub(crate) extern "C" fn DragWindow(_w: WindowPtr, _pt: Point, _bounds: *const Rect) {}
+pub(crate) fn SystemClick(_event: *const EventRecord, _w: WindowPtr) {}
+pub(crate) fn SystemTask() {}
+pub(crate) fn DragWindow(_w: WindowPtr, _pt: Point, _bounds: *const Rect) {}
 
 impl Ports {
     pub(crate) fn SizeWindow(
@@ -122,27 +121,8 @@ pub(crate) fn GetRectFilePng(_name: &str, _r: &mut Rect) -> Boolean {
 // ---------------------------------------------------------------------------
 // Timers / chemins temporaires
 // ---------------------------------------------------------------------------
-
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn PushPath() {}
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn PopPath() {}
-
-// ---------------------------------------------------------------------------
-// Son
-// ---------------------------------------------------------------------------
-
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SndNewChannel(
-    _chan: *mut SndChannelPtr,
-    _synth: i16,
-    _init: i16,
-    _userRoutine: *mut c_void,
-) -> OSErr {
-    0
-}
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn SndPlay(_chan: SndChannelPtr, _snd: SndListHandle, _async: Boolean) {}
+pub(crate) fn PushPath() {}
+pub(crate) fn PopPath() {}
 
 // ---------------------------------------------------------------------------
 // Images offscreen (restants)
@@ -151,17 +131,10 @@ pub(crate) extern "C" fn SndPlay(_chan: SndChannelPtr, _snd: SndListHandle, _asy
 pub(crate) fn ConvertPNGFileToOffscreen(_fileName: &str) -> Option<SapPort> {
     None
 }
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn CarboniseInvalRect(_r: *const Rect) {}
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn CarboniseValideUpdate() {}
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn CarboniseGetMenuBarHeight() -> i16 {
+pub(crate) fn CarboniseInvalRect(_r: *const Rect) {}
+pub(crate) fn CarboniseValideUpdate() {}
+pub(crate) fn CarboniseGetMenuBarHeight() -> i16 {
     0
-}
-#[unsafe(no_mangle)]
-pub(crate) extern "C" fn CarboniseNewUserItemProc(_proc: *mut c_void) -> Handle {
-    std::ptr::null_mut()
 }
 
 // ---------------------------------------------------------------------------
