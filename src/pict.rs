@@ -11,7 +11,8 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
 /// Image décodée : un indice de la LUT globale par pixel.
-struct Picture {
+#[derive(Debug)]
+pub(crate) struct Picture {
     w: usize,
     h: usize,
     idx: Vec<u8>,
@@ -164,11 +165,10 @@ impl Pict {
         if let Entry::Vacant(e) = self.pictures.entry(id) {
             let pic = resource_bytes(id).and_then(decode)?;
             let frame = Rect::new(0, 0, pic.w as i16, pic.h as i16);
-            let pic: &'static Picture = Box::leak(Box::new(pic));
             let master = Pic {
                 picSize: 0,
                 picFrame: frame,
-                pict: pic as *const Picture as usize,
+                pict: pic,
             };
             e.insert(master);
         }
@@ -181,11 +181,7 @@ impl Ports {
     /// `DrawPicture` : copie (srcCopy) l'image dans `dst` du port courant, à
     /// l'échelle du rectangle, avec clip.
     pub(crate) fn DrawPicture(&mut self, p: &Pic, dst: &Rect) {
-        let pict = p.pict as *const Picture;
-        if pict.is_null() {
-            return;
-        }
-        let pict = unsafe { &*pict };
+        let pict = &p.pict;
         let dw = (dst.right - dst.left) as i32;
         let dh = (dst.bottom - dst.top) as i32;
         if dw <= 0 || dh <= 0 || pict.w == 0 || pict.h == 0 {

@@ -11,6 +11,7 @@
 #![allow(non_snake_case)]
 
 use crate::cbridge::TEText;
+use crate::pict::Picture;
 use std::ffi::c_void;
 use std::ops::ShrAssign;
 use std::sync::Mutex;
@@ -26,13 +27,12 @@ pub(crate) type DialogPtr = *mut c_void;
 pub(crate) type RgnHandle = *mut c_void;
 pub(crate) type Cursor = *mut c_void;
 pub(crate) type SndListHandle = *mut *mut c_void;
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
+
+#[derive(Debug)]
 pub(crate) struct Pic {
     pub(crate) picSize: i16,
     pub(crate) picFrame: Rect,
-    /// Image décodée (`pict::Picture`), 0 si absente.
-    pub(crate) pict: usize,
+    pub(crate) pict: Picture,
 }
 pub(crate) type PicHandle = *mut *mut Pic;
 pub(crate) type TEHandle = *mut *mut TEText;
