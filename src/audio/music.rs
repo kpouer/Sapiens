@@ -20,31 +20,33 @@ struct Instr {
     decal_note: i8,
 }
 
-const fn ins(program: u8, decal_note: i8) -> Instr {
-    Instr {
-        program,
-        decal_note,
+impl Instr {
+    const fn new(program: u8, decal_note: i8) -> Self {
+        Self {
+            program,
+            decal_note,
+        }
     }
 }
 
-const INS1: Instr = ins(33, 0);
-const INS2: Instr = ins(116, 12);
-const INS4: Instr = ins(116, 12);
-const INS6: Instr = ins(12, 0);
-const INS8: Instr = ins(75, 12);
-const INS21: Instr = ins(7, 0);
-const INS22: Instr = ins(115, 0);
-const INS24: Instr = ins(37, 0);
-const INS25: Instr = ins(119, 0);
-const INS27: Instr = ins(117, 0);
-const INS28: Instr = ins(118, 0);
-const INS29: Instr = ins(87, 0);
-const INS2A: Instr = ins(110, 0);
-const INS2B: Instr = ins(113, 0);
-const INS2C: Instr = ins(32, 0);
-const INS2D: Instr = ins(30, 12);
-const INS2E: Instr = ins(28, 0);
-const INS2F: Instr = ins(118, 0);
+const INS1: Instr = Instr::new(33, 0);
+const INS2: Instr = Instr::new(116, 12);
+const INS4: Instr = Instr::new(116, 12);
+const INS6: Instr = Instr::new(12, 0);
+const INS8: Instr = Instr::new(75, 12);
+const INS21: Instr = Instr::new(7, 0);
+const INS22: Instr = Instr::new(115, 0);
+const INS24: Instr = Instr::new(37, 0);
+const INS25: Instr = Instr::new(119, 0);
+const INS27: Instr = Instr::new(117, 0);
+const INS28: Instr = Instr::new(118, 0);
+const INS29: Instr = Instr::new(87, 0);
+const INS2A: Instr = Instr::new(110, 0);
+const INS2B: Instr = Instr::new(113, 0);
+const INS2C: Instr = Instr::new(32, 0);
+const INS2D: Instr = Instr::new(30, 12);
+const INS2E: Instr = Instr::new(28, 0);
+const INS2F: Instr = Instr::new(118, 0);
 
 static TABINS1: [Instr; 16] = [
     INS1, INS1, INS2, INS1, INS4, INS1, INS6, INS1, INS8, INS1, INS1, INS1, INS1, INS1, INS1, INS1,
