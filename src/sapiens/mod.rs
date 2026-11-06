@@ -8,7 +8,7 @@
 #![allow(non_camel_case_types)]
 
 use crate::sapiens::sapglob::{AnimPtr, ListeId, SapId};
-use crate::shared::{Ptr, RGBColor};
+use crate::shared::RGBColor;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -58,7 +58,7 @@ impl Default for liste {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub(crate) struct PalCoul {
     pub(crate) nbEntrees: i16,
     pub(crate) tabIndex: Vec<i16>,
@@ -71,36 +71,27 @@ const DEFAULT_PALCOUL: PalCoul = PalCoul {
     tabRgb: Vec::new(),
 };
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Default, Debug, Clone)]
 pub(crate) struct Mob {
     pub(crate) indexPalette: i16,
     pub(crate) nbcol: i16,
     pub(crate) nbligne: i16,
     pub(crate) vide: i16,
-    pub(crate) datas: Ptr,
+    pub(crate) datas: Vec<u8>,
 }
+
+const DEFAULT_MOB: Mob = Mob {
+    indexPalette: 0,
+    nbcol: 0,
+    nbligne: 0,
+    vide: 0,
+    datas: Vec::new(),
+};
 
 impl Mob {
     /// Données du mob (`nbcol * nbligne` index de couleur), vide si non chargé.
     pub(crate) fn data(&self) -> &[u8] {
-        if self.datas.is_null() {
-            return &[];
-        }
-        let len = (self.nbcol.max(0) as usize) * (self.nbligne.max(0) as usize);
-        // SAFETY: `datas` est alloué par `NewPtr(nbcol * nbligne)` au chargement
-        // et reste valide jusqu'au `DisposePtr` qui le remet à null.
-        unsafe { std::slice::from_raw_parts(self.datas, len) }
-    }
-}
-
-impl Default for Mob {
-    fn default() -> Self {
-        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
+        &self.datas
     }
 }
 

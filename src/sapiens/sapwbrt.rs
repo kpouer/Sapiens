@@ -1,6 +1,6 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
-use crate::acam::{NewPtr, SectRect};
+use crate::acam::SectRect;
 use crate::cbridge::{FILE, blackColor, fclose, fopen, getc, patOr, srcCopy, whiteColor};
 use crate::langue::Langue::GB;
 use crate::port::{PortId, Ports};
@@ -8,11 +8,11 @@ use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapgest::Sapgest;
 use crate::sapiens::saptxt::{CvtDefaultLangRess, CvtLangRess};
 use crate::sapiens::sapwind::{SapiensExit, ValideUpdate};
-use crate::sapiens::{DEFAULT_PALCOUL, ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalCoul};
-use crate::shared::{Ptr, RGBColor, Rect, RgnHandle, SapPort};
+use crate::sapiens::{DEFAULT_MOB, DEFAULT_PALCOUL, ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalCoul};
+use crate::shared::{RGBColor, Rect, RgnHandle, SapPort};
 use crate::stubs::{
     CarboniseInvalRect, CarboniseSetPatGray, CarboniseValideUpdate, ConvertPNGFileToOffscreen,
-    DisposePtr, FixeCheminRelatif, GetRectFilePng, PopPath, PushPath, SaisitChemin,
+    FixeCheminRelatif, GetRectFilePng, PopPath, PushPath, SaisitChemin,
 };
 use crate::{Sapiens, cbridge, port};
 
@@ -152,25 +152,22 @@ impl Ports {
                                 Read
 => Lecture d'une zone
 ******************************************************************************************/
-fn Read(f: *mut FILE, mut p: Ptr, taille: i64) -> bool {
-    let mut t = taille;
-    unsafe {
-        while t > 0 {
-            *p = getc(f) as u8;
-            p = p.add(1);
-            t -= 1;
+fn Read_u8(f: *mut FILE) -> u8 {
+    unsafe { getc(f) as u8 }
+}
+
+fn Read_i16(f: *mut FILE) -> i16 {
+    unsafe { ((getc(f) as i16) << 8) | (getc(f) as i16) }
+}
+
+fn Read(f: *mut FILE, taille: usize) -> Vec<u8> {
+    let mut pixels = Vec::with_capacity(taille);
+    for _ in 0..taille {
+        unsafe {
+            pixels.push(getc(f) as u8);
         }
     }
-    true
-}
-/******************************************************************
-                    wintel2moto
-Les fichiers .BRT stockent les entiers sur 2 octets en big-endian
-(Mac) : swap octets sur petit-boutiste (identite sur gros-boutiste)
-******************************************************************/
-fn wintel2moto(x: i16) -> i16 {
-    let u = x as u16;
-    (((u << 8) & 0xFF00) | ((u >> 8) & 0x00FF)) as i16
+    pixels
 }
 
 impl Sapiens {
@@ -182,12 +179,12 @@ impl Sapiens {
     ******************************************************************/
     pub(crate) fn ChargeFichierBrt(&mut self, nom: &str, id: i16, nbMobs: i16, vide: i16) -> i16 {
         let f: *mut FILE;
-        let mut nbcol: i16 = 0;
-        let mut nbligne: i16 = 0;
-        let mut nb_objets: i16 = 0;
-        let mut r: u8 = 0;
-        let mut g: u8 = 0;
-        let mut b: u8 = 0;
+        let mut nbcol;
+        let mut nbligne;
+        let mut nb_objets;
+        let mut r;
+        let mut g;
+        let mut b;
         unsafe {
             let chaine = cbridge::convert_to_c_char_ptr(nom);
             /* On ouvre le fichier en lecture */
@@ -211,9 +208,7 @@ impl Sapiens {
                 return -1;
             }
             /* Nombre d'entrees dans la PalCoul */
-            if !Read(f, &mut r as *mut u8 as Ptr, 1) {
-                return -1;
-            }
+            r = Read_u8(f);
             let n = (r as i16) + 1;
             let palette = &mut self.sapwbrt.TabPalette[self.sapwbrt.nbPalettes as usize];
             palette.nbEntrees = n;
@@ -221,15 +216,9 @@ impl Sapiens {
             palette.tabIndex = vec![0; n as usize];
             /* On memorise le nombre d'entrees de la PalCoul */
             for i in 0..n as usize {
-                if !Read(f, &mut r as *mut u8 as Ptr, 1) {
-                    return -1;
-                }
-                if !Read(f, &mut g as *mut u8 as Ptr, 1) {
-                    return -1;
-                }
-                if !Read(f, &mut b as *mut u8 as Ptr, 1) {
-                    return -1;
-                }
+                r = Read_u8(f);
+                g = Read_u8(f);
+                b = Read_u8(f);
                 let rgb = &mut palette.tabRgb[i];
                 rgb.red = ((r as u16) << 8) + r as u16;
                 rgb.green = ((g as u16) << 8) + g as u16;
@@ -237,11 +226,8 @@ impl Sapiens {
                 palette.tabIndex[i] = SapColor2Index(rgb);
             }
             /* On charge les donnees de configuration */
-            if !Read(f, &mut nb_objets as *mut i16 as Ptr, 2) {
-                return -1;
-            }
-            /* wintel2moto : swap octets sur petit-boutiste */
-            nb_objets = wintel2moto(nb_objets);
+            /* Read_i16 lit deja en big-endian (equivalent de wintel2moto) */
+            nb_objets = Read_i16(f);
             if nb_objets != nbMobs {
                 println!("ChargeFichierBrt err : {nom} nb_objets={nb_objets} nbMobs={nbMobs}");
                 SapiensExit(-1);
@@ -251,28 +237,14 @@ impl Sapiens {
             let mut curid = id;
             while i > 0 {
                 i -= 1;
-                if !Read(f, &mut nbcol as *mut i16 as Ptr, 2) {
-                    return -1;
-                }
-                if !Read(f, &mut nbligne as *mut i16 as Ptr, 2) {
-                    return -1;
-                }
-                /* wintel2moto : swap octets sur petit-boutiste */
-                nbcol = wintel2moto(nbcol);
-                nbligne = wintel2moto(nbligne);
-                let taille = (nbcol as i64) * (nbligne as i64);
+                nbcol = Read_i16(f);
+                nbligne = Read_i16(f);
+                let taille = (nbcol as usize) * (nbligne as usize);
                 self.sapwbrt.TabMob[curid as usize].nbcol = nbcol;
                 self.sapwbrt.TabMob[curid as usize].nbligne = nbligne;
                 self.sapwbrt.TabMob[curid as usize].indexPalette = self.sapwbrt.nbPalettes;
-                self.sapwbrt.TabMob[curid as usize].datas = NewPtr(taille);
+                self.sapwbrt.TabMob[curid as usize].datas = Read(f, taille);
                 self.sapwbrt.TabMob[curid as usize].vide = vide;
-                if self.sapwbrt.TabMob[curid as usize].datas.is_null() {
-                    self.Collapse("Plus de place memoire");
-                    return -1;
-                }
-                if !Read(f, self.sapwbrt.TabMob[curid as usize].datas, taille) {
-                    return -1;
-                }
                 curid = (curid as i32 + 1) as i16;
                 if curid as i32 >= NB_MAX_MOB as i32 {
                     self.Collapse("NB_MAX_MOB depasse");
@@ -334,10 +306,7 @@ impl Sapiens {
     ******************************************************************/
     pub(crate) fn LibereDataMobs(&mut self) {
         for mob in &mut self.sapwbrt.TabMob {
-            if !mob.datas.is_null() {
-                DisposePtr(mob.datas);
-            }
-            mob.datas = std::ptr::null_mut();
+            mob.datas.clear();
         }
         self.sapwbrt.nbPalettes = 0;
     }
@@ -1252,7 +1221,7 @@ impl Sapiens {
 pub(crate) struct Sapwbrt {
     TabPalette: [PalCoul; 16],
     nbPalettes: i16,
-    pub(crate) TabMob: [Mob; 640usize],
+    pub(crate) TabMob: [Mob; 640],
 }
 
 impl Default for Sapwbrt {
@@ -1260,7 +1229,7 @@ impl Default for Sapwbrt {
         Self {
             TabPalette: [DEFAULT_PALCOUL; 16],
             nbPalettes: 0,
-            TabMob: unsafe { std::mem::zeroed() },
+            TabMob: [DEFAULT_MOB; 640],
         }
     }
 }
