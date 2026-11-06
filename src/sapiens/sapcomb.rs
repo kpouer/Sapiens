@@ -76,9 +76,9 @@ impl Sapiens {
     /***********************************************************************
                     DECSOU:Essoufflement
     ***********************************************************************/
-    pub(crate) fn decsou(&mut self, sap_id: SapId, combien: u16) {
+    pub(crate) fn decsou(&mut self, sap_id: SapId, combien: u8) {
         let s = self.sapglob.sap_mut(sap_id);
-        let tfr = s.souffle.wrapping_sub(combien as u8);
+        let tfr = s.souffle.wrapping_sub(combien);
         if tfr < s.souffle {
             s.souffle = tfr; /* ok souffle diminue */
             return;
@@ -90,8 +90,8 @@ impl Sapiens {
 /***********************************************************************
                 INCSOU:Recupere du souffle
 ***********************************************************************/
-pub(crate) const fn incsou(s: &mut sap, combien: u16) {
-    let tfr = s.souffle.wrapping_add(combien as u8);
+pub(crate) const fn incsou(s: &mut sap, combien: u8) {
+    let tfr = s.souffle.wrapping_add(combien);
     if tfr > s.souffle {
         s.souffle = tfr;
     } else {

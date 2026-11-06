@@ -1100,8 +1100,8 @@ impl Sapiens {
             self.sapglob.palhaute = Rc::clone(&self.saplist.pal2);
             self.primjauge(1);
             self.AfficheSuite();
-            let mut cont: i8 = 1;
-            let mut pos: i8;
+            let mut cont = 1;
+            let mut pos;
             self.sapglob.sposx = 160;
             self.sapglob.dsposx = 160;
             self.sapglob.sposy = 50;
