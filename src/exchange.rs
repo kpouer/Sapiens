@@ -116,8 +116,7 @@ pub(crate) fn take_title() -> Option<String> {
 
 /* Commande de menu en attente : posee par le thread egui (src/main.rs, barre
 de menus et raccourcis Cmd), reprise par le thread C dans GereInterface, car
-le `&mut Sapiens` du jeu n'existe que sur le thread C. 0 = rien en attente
-(MenuSelect/MenuKey renvoient 0 quand le clic n'est pas dans un menu). */
+le `&mut Sapiens` du jeu n'existe que sur le thread C. 0 = rien en attente. */
 static MENU_COMMAND: AtomicI32 = AtomicI32::new(0);
 
 /// Depose une commande de menu depuis le thread egui (barre de menus, raccourcis

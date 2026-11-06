@@ -12,6 +12,8 @@ pub(crate) mod cbridge;
 mod dialogs;
 pub(crate) mod exchange;
 pub(crate) mod langue;
+#[cfg(target_os = "macos")]
+mod native_menu;
 pub(crate) mod pict;
 pub(crate) mod port;
 pub(crate) mod sapiens;
@@ -26,8 +28,10 @@ use crate::exchange::{
     clear_events, cursor_hidden, cursor_shape, push_event, set_menu_command, take_title,
     take_ui_request, take_window_frame,
 };
+#[cfg(not(target_os = "macos"))]
+use crate::langue::Langue;
 use crate::langue::{
-    LangMode, Langue, effective_lang, langue, load_lang_mode, save_lang_mode, set_game_language,
+    LangMode, effective_lang, langue, load_lang_mode, save_lang_mode, set_game_language,
 };
 use crate::sapiens::sap3d::Sap3d;
 use crate::sapiens::sapcomb::Sapcomb;
@@ -135,8 +139,9 @@ fn timer_loop(t: Arc<AtomicU64>) {
 /// Marge de sécurité (en points egui) pour que la fenêtre tienne à l'écran,
 /// titre, barre de menus du système et dock compris.
 const STARTUP_MARGIN: f32 = 48.0;
-/// Hauteur approximative de la barre de menus interne avant la première frame.
-const MENU_H_ESTIMATE: f32 = 24.0;
+/// Hauteur approximative de la barre de menus interne avant la première frame
+/// (nulle sur macOS : la barre est celle du système, hors de la fenêtre).
+const MENU_H_ESTIMATE: f32 = if cfg!(target_os = "macos") { 0.0 } else { 24.0 };
 
 /// Zoom initial : 200 % si le moniteur peut contenir la fenêtre (1280×800 plus
 /// la barre de menus), sinon 100 %. Une préférence sauvegardée (`Sapiens.cfg`)
@@ -174,6 +179,7 @@ fn spawn_game_thread(sapiens_timer: Arc<AtomicU64>, initial_zoom: f32) {
 }
 
 /// Sous-menu « Fichier → Langue » : Auto / Français / Anglais / Espagnol.
+#[cfg(not(target_os = "macos"))]
 fn render_language_menu(ui: &mut egui::Ui, mode: &mut LangMode) {
     let lang = langue();
     let title = match lang {
@@ -230,6 +236,9 @@ struct SapiensApp {
     last_port_size: Option<(usize, usize)>,
     /// Dernière image du port fenêtre publiée par le thread C.
     frame: Option<WindowFrame>,
+    /// Barre de menus native, créée à la première frame (`NSApp` prêt).
+    #[cfg(target_os = "macos")]
+    native_menu: Option<native_menu::NativeMenuBar>,
 }
 
 enum ActiveDialog {
@@ -256,6 +265,8 @@ impl SapiensApp {
             monitor_wait: 0,
             last_port_size: None,
             frame: None,
+            #[cfg(target_os = "macos")]
+            native_menu: None,
         }
     }
 
@@ -292,6 +303,75 @@ impl SapiensApp {
                 });
             }
         }
+    }
+
+    /// Barre de menus native macOS : les raccourcis Cmd sont des équivalents
+    /// clavier du `NSMenu`, qui les intercepte avant egui.
+    #[cfg(target_os = "macos")]
+    fn render_menu_bar(&mut self, _ctx: &egui::Context) -> Option<i32> {
+        match native_menu::NativeMenuBar::sync(&mut self.native_menu, self.lang_mode)? {
+            native_menu::MenuAction::Command(r) => Some(r),
+            native_menu::MenuAction::Lang(opt) => {
+                if self.active_dialog.is_none() {
+                    self.lang_mode = opt;
+                    set_game_language(effective_lang(opt));
+                    save_lang_mode(opt);
+                }
+                None
+            }
+        }
+    }
+
+    /// Barre de menus egui (Windows/Linux) et raccourcis clavier associés.
+    #[cfg(not(target_os = "macos"))]
+    fn render_menu_bar(&mut self, ctx: &egui::Context) -> Option<i32> {
+        // Raccourcis clavier (équivalents MenuKey) avant la barre de menus.
+        if self.active_dialog.is_none() {
+            handle_shortcuts(ctx);
+        }
+
+        // Barre de menus Mac reconstituée (modèle → src/acam.rs).
+        let menus = acam::menus_snapshot();
+        let mut command: Option<i32> = None;
+        egui::TopBottomPanel::top("menus").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                for menu in &menus {
+                    if menu.enabled {
+                        egui::menu::menu_button(ui, &menu.title, |ui| {
+                            for item in &menu.items {
+                                if item.sep {
+                                    // Dans le menu Fichier, insère le choix de
+                                    // langue entre « Préférences… » et « Quitter ».
+                                    if menu.base_id == 129 && item.index == 6 {
+                                        ui.separator();
+                                        render_language_menu(ui, &mut self.lang_mode);
+                                        ui.separator();
+                                    } else {
+                                        ui.separator();
+                                    }
+                                } else {
+                                    let label = if item.checked {
+                                        format!("✓ {}", item.text)
+                                    } else {
+                                        item.text.clone()
+                                    };
+                                    if ui
+                                        .add_enabled(item.enabled, egui::Button::new(label))
+                                        .clicked()
+                                    {
+                                        command = Some(menu_result(menu.id, item.index));
+                                        ui.close_menu();
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        ui.add_enabled(false, egui::Button::new(&menu.title));
+                    }
+                }
+            });
+        });
+        command
     }
 
     fn render_dialogs(&mut self, ctx: &egui::Context) {
@@ -405,52 +485,7 @@ impl eframe::App for SapiensApp {
             set_game_language(effective);
         }
 
-        // Raccourcis clavier (équivalents MenuKey) avant la barre de menus.
-        if self.active_dialog.is_none() {
-            handle_shortcuts(ctx);
-        }
-
-        // Barre de menus Mac reconstituée (modèle → src/acam.rs).
-        let menus = acam::menus_snapshot();
-        let mut command: Option<i32> = None;
-        egui::TopBottomPanel::top("menus").show(ctx, |ui| {
-            egui::menu::bar(ui, |ui| {
-                for menu in &menus {
-                    if menu.enabled {
-                        egui::menu::menu_button(ui, &menu.title, |ui| {
-                            for item in &menu.items {
-                                if item.sep {
-                                    // Dans le menu Fichier, insère le choix de
-                                    // langue entre « Préférences… » et « Quitter ».
-                                    if menu.base_id == 129 && item.index == 6 {
-                                        ui.separator();
-                                        render_language_menu(ui, &mut self.lang_mode);
-                                        ui.separator();
-                                    } else {
-                                        ui.separator();
-                                    }
-                                } else {
-                                    let label = if item.checked {
-                                        format!("✓ {}", item.text)
-                                    } else {
-                                        item.text.clone()
-                                    };
-                                    if ui
-                                        .add_enabled(item.enabled, egui::Button::new(label))
-                                        .clicked()
-                                    {
-                                        command = Some(menu_result(menu.id, item.index));
-                                        ui.close_menu();
-                                    }
-                                }
-                            }
-                        });
-                    } else {
-                        ui.add_enabled(false, egui::Button::new(&menu.title));
-                    }
-                }
-            });
-        });
+        let command = self.render_menu_bar(ctx);
         if self.active_dialog.is_none()
             && let Some(r) = command
         {
@@ -795,6 +830,7 @@ fn menu_result(menu_id: i16, item: i16) -> i32 {
 
 /// Raccourcis clavier Cmd du Mac (équivalents `MenuKey`) : Cmd+N (Nouveau),
 /// Cmd+O (Charger), Cmd+S (Sauver), Cmd+Q (Quitter), Cmd+/ (Aide).
+#[cfg(not(target_os = "macos"))]
 fn handle_shortcuts(ctx: &egui::Context) {
     let (command, keys) = ctx.input(|i| {
         (

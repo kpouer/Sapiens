@@ -343,8 +343,8 @@ pub(crate) fn SetWTitle(_w: &SapPort, title: String) {
 // reconstituée ici : titres et items se déduisent du code C (SAPWIND.C) et
 // des libellés du jeu (« Fichier »/« Archivo »/« File », SAPGEST.C). Les
 // actions, elles, restent en C : `DoMenuCommand(menuID<<16|item)`, appelée
-// par egui (src/main.rs). `DisableItem`/`EnableItem`/`CheckItem` posent
-// l'état (depuis `AdjustMenus`, thread C) ; egui relit cet état via
+// par la barre egui (src/main.rs) ou native macOS (src/native_menu.rs). `DisableItem`/`EnableItem`/`CheckItem` posent
+// l'état (depuis `AdjustMenus`, thread C) ; l'UI relit cet état via
 // `menus_snapshot` à chaque frame.
 
 /// Décalage d'ID appliqué par `CvtDefaultLangRess` selon la langue (SAPIENS.H).
@@ -397,11 +397,6 @@ pub(crate) struct MenuModel {
 }
 
 pub(crate) static MENU_MODEL: Mutex<Option<MenuModel>> = Mutex::new(None);
-
-/// Emplacement stable du « handle » de barre de menus : `GetNewMBar` renvoie
-/// son adresse (FixeMenu passera ce pointeur à `DisposHandle`, no-op sur un
-/// entier de mémoire statique, d'où `Slot8` pour que le `*h` ne pante pas).
-static mut MENU_BAR_HANDLE: Slot8 = Slot8([0; 8]);
 
 fn fresh_menu(id_base: i16, title: L10n, lang: Langue, items: &[(L10n, bool)]) -> Menu {
     Menu {
@@ -473,9 +468,8 @@ fn menu_handle_ptr(menu: &Menu) -> MenuHandle {
     (menu as *const Menu) as *mut c_void
 }
 
-pub(crate) fn GetNewMBar(_menuBarID: i16) -> Handle {
+pub(crate) fn GetNewMBar(_menuBarID: i16) {
     *MENU_MODEL.lock().unwrap() = Some(build_model());
-    unsafe { core::ptr::addr_of_mut!(MENU_BAR_HANDLE) as *mut _ }
 }
 
 pub(crate) fn GetMHandle(menuID: i16) -> MenuHandle {
@@ -491,10 +485,6 @@ pub(crate) fn GetMHandle(menuID: i16) -> MenuHandle {
     }
 }
 
-pub(crate) fn SetMenuBar(_menuBar: Handle) {}
-
-pub(crate) fn DrawMenuBar() {}
-
 fn find_menu(menus: &mut [Menu], handle: MenuHandle) -> Option<&mut Menu> {
     if handle.is_null() {
         return None;
@@ -503,32 +493,6 @@ fn find_menu(menus: &mut [Menu], handle: MenuHandle) -> Option<&mut Menu> {
         .iter_mut()
         .find(|menu| menu_handle_ptr(menu) == handle)
         .map(|menu| &mut *menu)
-}
-
-fn menu_at(menus: &[Menu], handle: MenuHandle) -> Option<&Menu> {
-    if handle.is_null() {
-        return None;
-    }
-    menus
-        .iter()
-        .find(|menu| menu_handle_ptr(menu) == handle)
-        .map(|menu| &*menu)
-}
-
-fn handle_is_known(menus: &[Menu], handle: MenuHandle) -> bool {
-    menu_at(menus, handle).is_some()
-}
-
-fn label_for(menus: &[Menu], handle: MenuHandle, item: i16) -> Option<&'static str> {
-    let lang = langue();
-    let menu = menu_at(menus, handle)?;
-    if item <= 0 {
-        Some(menu.title.label(lang))
-    } else {
-        menu.items
-            .get((item - 1) as usize)
-            .map(|it| it.l.label(lang))
-    }
 }
 
 pub(crate) fn DisableItem(menu: MenuHandle, item: i16) {
@@ -561,39 +525,6 @@ pub(crate) fn CheckItem(menu: MenuHandle, item: i16, checked: Boolean) {
         && let Some(it) = menu.items.get_mut((item - 1) as usize)
     {
         it.checked = checked;
-    }
-}
-
-/// `GetItem` remplit le tampon Pascal avec le libellé courant de l'item
-/// (`SAPWIND.C` l'utilise pour les noms de desk accessory de l'Apple menu).
-pub(crate) fn GetItem(menu: MenuHandle, item: i16, text: StringPtr) {
-    let blank = |text: StringPtr| unsafe {
-        *text = 0;
-    };
-    if text.is_null() {
-        return;
-    }
-    let g = MENU_MODEL.lock().unwrap();
-    let Some(m) = &*g else {
-        blank(text);
-        return;
-    };
-    let label = if handle_is_known(&m.menus, menu) {
-        self::label_for(&m.menus, menu, item)
-    } else {
-        None
-    };
-    drop(g);
-    match label {
-        Some(s) => {
-            let bytes = s.as_bytes();
-            let n = bytes.len().min(255);
-            unsafe {
-                *text = n as u8;
-                std::ptr::copy_nonoverlapping(bytes.as_ptr(), text.add(1), n);
-            }
-        }
-        None => blank(text),
     }
 }
 

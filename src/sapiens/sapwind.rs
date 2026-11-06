@@ -5,14 +5,14 @@
 ;-----------------------------------------------------------------------
 */
 use crate::acam::{
-    Alert, CarboniseSetCursorArrow, CheckItem, DisableItem, DisposHandle, DrawMenuBar, EnableItem,
-    FAUX, GetCursor, GetIndString, GetItem, GetMHandle, GetNewMBar, NewCWindow, ParamText, Random,
-    SetCursor, SetMenuBar, SetWTitle, TickCount, VRAI,
+    Alert, CarboniseSetCursorArrow, CheckItem, DisableItem, EnableItem, FAUX, GetCursor,
+    GetIndString, GetMHandle, GetNewMBar, NewCWindow, ParamText, Random, SetCursor, SetWTitle,
+    TickCount, VRAI,
 };
 use crate::audio;
 use crate::cbridge::{
-    DRVR, MenuHandle, WindowPtr, blackColor, bold, charCodeMask, cmdKey, everyEvent, helvetica,
-    optionKey, watchCursor, whiteColor,
+    WindowPtr, blackColor, bold, charCodeMask, everyEvent, helvetica, optionKey, watchCursor,
+    whiteColor,
 };
 use crate::exchange::event_queue::GetNextEvent;
 use crate::exchange::{publish_window_frame, take_menu_command};
@@ -23,15 +23,13 @@ use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::CvtDefaultLangRess;
 use crate::sapiens::sapwbrt::SetPathInData;
 use crate::sapiens::{ECHELLE, STR_VRAC, Vue};
-use crate::shared::{Boolean, EventRecord, Handle, RGBColor, Rect, StringPtr};
+use crate::shared::{Boolean, EventRecord, RGBColor, Rect};
 use crate::stubs::{
-    AddResMenu, CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseValideUpdate, DragWindow,
-    FindWindow, FrontWindow, HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect,
-    OpenDeskAcc, PopPath, PushPath, SelectWindow, SystemClick, SystemTask,
+    CarboniseInvalRect, CarboniseValideUpdate, DragWindow, FindWindow, FrontWindow,
+    InitDefautConfigSortieNumerique, PopPath, PushPath, SelectWindow, SystemClick, SystemTask,
 };
 use crate::{Sapiens, cbridge};
 use cbridge::*;
-use std::ffi::c_void;
 use std::process::exit;
 /******************** Constantes (SAPIENS.H / acam.h) *******************/
 const ALRT_VERSION: i16 = 133;
@@ -275,8 +273,7 @@ impl Sapiens {
     pub(crate) fn AdjustMenus(&self) {
         let _g = self.sapwind.ports.on(PortId::MainWindow);
 
-        let mut menu = GetMHandle(CvtDefaultLangRess(128)); /* menuPomme */
-        menu = GetMHandle(CvtDefaultLangRess(129)); /* menuFichier */
+        let mut menu = GetMHandle(CvtDefaultLangRess(129)); /* menuFichier */
         if self.sapwind.MenuReduit {
             DisableItem(menu, 0);
         } else {
@@ -294,7 +291,6 @@ impl Sapiens {
         CheckItem(menu, iEchelle200, self.sapwind.SapZoom == 2.0);
         CheckItem(menu, iEchelle300, self.sapwind.SapZoom == 3.0);
         CheckItem(menu, iEchelle400, self.sapwind.SapZoom == 4.0);
-        DrawMenuBar();
     }
 
     /******************************************************************************************
@@ -348,15 +344,7 @@ impl Sapiens {
             match menuItem {
                 itemInformation => self.DoInfo(),
                 itemAide => self.DoAide(),
-                _ => {
-                    let mut daName: [u8; 256] = [0; 256];
-                    GetItem(
-                        GetMHandle(CvtDefaultLangRess(128)),
-                        menuItem,
-                        &raw mut daName as *mut u8,
-                    );
-                    OpenDeskAcc(&raw mut daName as *mut c_void as StringPtr);
-                }
+                _ => {}
             }
         } else if menuID == CvtDefaultLangRess(129) {
             /* menuFichier */
@@ -402,9 +390,7 @@ impl Sapiens {
             self.sapwind.FixeTailleMainWindow();
             self.RedessineFenetre();
         }
-        HiliteMenu(0);
         self.AdjustMenus();
-        DrawMenuBar();
     }
 
     /*******************************************************************
@@ -413,11 +399,9 @@ impl Sapiens {
     => evenement a traiter
     ********************************************************************/
     pub(crate) fn DoEvtClavier(&mut self, ev: &EventRecord) {
-        if ev.modifiers & cmdKey as i16 != 0 {
-            let _car = (ev.message & 0xFF) as i16;
-            self.AdjustMenus();
-            self.DoMenuCommand(MenuKey((ev.message & charCodeMask as i64) as i16) as i32);
-        } else if ev.modifiers & optionKey as i16 != 0 {
+        /* Les raccourcis Cmd sont traites par la barre de menus (egui ou
+        native) : ils n'arrivent jamais ici. */
+        if ev.modifiers & optionKey as i16 != 0 {
             let mut i: i16;
             let car: i16 = ((ev.message & 0xFF00) >> 8) as i16;
             if car == 0x11
@@ -497,19 +481,8 @@ fn CalcIndexPalette(palette: &mut [i16]) {
                         FixeMenu
 => Numero de la menu Bar à installer, Numero du menu Pomme de cette menuBar
 ********************************************************************/
-pub(crate) fn FixeMenu(n: i16) -> Boolean {
-    let menuBar: Handle = GetNewMBar(n); /* read menus into menu bar */
-    if menuBar.is_null() {
-        return FAUX;
-    }
-    SetMenuBar(menuBar); /* install menus */
-    DisposHandle(menuBar);
-    let menu: MenuHandle = GetMHandle(CvtDefaultLangRess(128)); /* menuPomme */
-    if !menu.is_null() {
-        AddResMenu(menu, DRVR as i64); /* add DA names to Apple menu */
-    }
-    DrawMenuBar();
-    VRAI
+pub(crate) fn FixeMenu(n: i16) {
+    GetNewMBar(n); /* read menus into menu bar */
 }
 
 impl Sapiens {
@@ -741,13 +714,7 @@ impl SapWind {
         /* On la centre sur l'aire generale de l'ecran */
         rect.OffsetRect(
             aireDevice.left + (aireDevice.right - aireDevice.left - largeur as i16) / 2,
-            aireDevice.top
-                + (CarboniseGetMenuBarHeight() + 8)
-                + (aireDevice.bottom
-                    - aireDevice.top
-                    - CarboniseGetMenuBarHeight()
-                    - hauteur as i16)
-                    / 2,
+            aireDevice.top + 8 + (aireDevice.bottom - aireDevice.top - hauteur as i16) / 2,
         );
         /* On crée la fenetre principale */
         self.ports.mainWindow = NewCWindow(&rect);
@@ -836,12 +803,7 @@ impl Sapiens {
             ValideUpdate();
             /* On initialise le menu */
             MessInit(self.sapwind.GetStr(26)); /* Initialisation du menu */
-            if !FixeMenu(CvtDefaultLangRess(0)) {
-                /* MENU_BAR */
-                let x = self.sapwind.GetStr(11);
-                self.Collapse(x);
-                SapiensExit(-1);
-            }
+            FixeMenu(CvtDefaultLangRess(0)); /* MENU_BAR */
             self.FixeMenusReduit();
             self.sapwind.ports.set(PortId::MainWindow);
             MessInit(self.sapwind.GetStr(20)); /* Initialsations des ecrans */
@@ -910,10 +872,6 @@ impl Sapiens {
                     part = FindWindow(event.where_, &mut windowResult);
                     /* Où a-t'on cliqué ??? */
                     match part as u32 {
-                        /* Dans la barre de menu , alors on le traite */
-                        inMenuBar => {
-                            self.DoMenuCommand(MenuSelect(event.where_));
-                        }
                         /* Sur le bureau, alors le bureau se débrouille ... sauf si c'est un pseudo document */
                         inSysWindow => {
                             SystemClick(&event, windowResult);

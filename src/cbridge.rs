@@ -60,7 +60,6 @@ pub(crate) const keyUp: u32 = 4;
 // Codes d'événement et résultats de `FindWindow` (Inside Macintosh).
 pub(crate) const mouseDown: u32 = 1;
 pub(crate) const mouseUp: u32 = 2;
-pub(crate) const inMenuBar: u32 = 1;
 pub(crate) const inSysWindow: u32 = 2;
 pub(crate) const inContent: u32 = 3;
 pub(crate) const inDrag: u32 = 4;
@@ -90,7 +89,6 @@ impl Default for __sbuf {
 pub(crate) const patOr: u32 = 1;
 pub(crate) const srcCopy: u32 = 0;
 
-pub(crate) const DRVR: u32 = 1146246738;
 pub(crate) type fpos_t = __darwin_off_t;
 
 #[repr(C)]

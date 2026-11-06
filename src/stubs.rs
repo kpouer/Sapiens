@@ -6,7 +6,7 @@
 
 #![allow(non_snake_case)]
 
-use crate::cbridge::{MenuHandle, OSErr, WindowPtr};
+use crate::cbridge::{OSErr, WindowPtr};
 use crate::exchange::{INPUT, MOUSE_EVENT_SCALE};
 use crate::port;
 use crate::port::{PortId, Ports};
@@ -57,7 +57,7 @@ pub(crate) extern "C" fn FrontWindow() -> WindowPtr {
 }
 pub(crate) extern "C" fn SelectWindow(_w: WindowPtr) {}
 /// Un seul « bureau » : tout clic est dans le contenu de la fenêtre de jeu
-/// (la barre de menu est gérée par egui, qui ne pousse pas d'événement).
+/// (la barre de menus, egui ou native, ne pousse pas d'événement).
 pub(crate) extern "C" fn FindWindow(_pt: Point, _window: *mut WindowPtr) -> i16 {
     crate::cbridge::inContent as i16
 }
@@ -92,16 +92,6 @@ impl Ports {
 // Menus
 // ---------------------------------------------------------------------------
 
-pub(crate) fn MenuSelect(_pt: Point) -> i32 {
-    0
-}
-pub(crate) fn MenuKey(_ch: i16) -> i64 {
-    0
-}
-pub(crate) fn AddResMenu(_menu: MenuHandle, _type: i64) {}
-pub(crate) fn HiliteMenu(_menuID: i16) {}
-pub(crate) fn OpenDeskAcc(_name: StringPtr) {}
-
 // ---------------------------------------------------------------------------
 // Controles (ascenseurs)
 // ---------------------------------------------------------------------------
@@ -133,9 +123,6 @@ pub(crate) fn ConvertPNGFileToOffscreen(_fileName: &str) -> Option<SapPort> {
 }
 pub(crate) fn CarboniseInvalRect(_r: *const Rect) {}
 pub(crate) fn CarboniseValideUpdate() {}
-pub(crate) fn CarboniseGetMenuBarHeight() -> i16 {
-    0
-}
 
 // ---------------------------------------------------------------------------
 // Divers systeme
