@@ -30,10 +30,14 @@ pub(crate) const SCREEN: Rect = Rect {
 pub(crate) struct Ports {
     /// Port graphique courant (ce que dessine le C).
     pub(crate) current: Rc<Cell<PortId>>,
+    #[allow(non_snake_case)]
     pub(crate) mainWindow: SapPort,
+    #[allow(non_snake_case)]
     pub(crate) Ecran1: SapPort,
+    #[allow(non_snake_case)]
     pub(crate) Ecran2: SapPort,
     pub(crate) debecr: SapPort,
+    #[allow(non_snake_case)]
     pub(crate) BuffMouse: SapPort,
     pub(crate) sapwcart: Sapwcart,
 }

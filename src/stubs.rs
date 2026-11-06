@@ -114,11 +114,7 @@ pub(crate) fn CarboniseSetPatGray() {}
 // Ressources / memoire (restants)
 // ---------------------------------------------------------------------------
 
-pub(crate) fn ReleaseResource(_h: Handle) {}
 pub(crate) fn DisposePtr(_p: Ptr) {}
-pub(crate) fn GetPicture(resID: i16) -> PicHandle {
-    crate::pict::get_picture(resID)
-}
 pub(crate) fn GetRectFilePng(_name: &str, _r: &mut Rect) -> Boolean {
     false
 }

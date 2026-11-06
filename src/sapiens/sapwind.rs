@@ -23,12 +23,11 @@ use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::CvtDefaultLangRess;
 use crate::sapiens::sapwbrt::SetPathInData;
 use crate::sapiens::{ECHELLE, STR_VRAC, Vue};
-use crate::shared::{Boolean, EventRecord, Handle, PicHandle, RGBColor, Rect, StringPtr};
+use crate::shared::{Boolean, EventRecord, Handle, RGBColor, Rect, StringPtr};
 use crate::stubs::{
     AddResMenu, CarboniseGetMenuBarHeight, CarboniseInvalRect, CarboniseValideUpdate, DragWindow,
-    FindWindow, FrontWindow, GetPicture, HiliteMenu, InitDefautConfigSortieNumerique, MenuKey,
-    MenuSelect, OpenDeskAcc, PopPath, PushPath, ReleaseResource, SelectWindow, SystemClick,
-    SystemTask,
+    FindWindow, FrontWindow, HiliteMenu, InitDefautConfigSortieNumerique, MenuKey, MenuSelect,
+    OpenDeskAcc, PopPath, PushPath, SelectWindow, SystemClick, SystemTask,
 };
 use crate::{Sapiens, cbridge};
 use cbridge::*;
@@ -588,30 +587,31 @@ impl Sapiens {
     }
 }
 
-impl Ports {
+impl Sapiens {
     /***********************************************************************************
                                      AfficheFond
     Affiche le tramage de fond de la fenetre
     ***********************************************************************************/
     pub(crate) fn AfficheFond(&mut self, port_id: PortId) {
-        let _g = self.on(port_id);
-        let sap_port = self.port(port_id);
+        let _g = self.sapwind.ports.on(port_id);
+        let sap_port = self.sapwind.ports.port(port_id);
         let portRect = sap_port.bounds;
         /* Le fond au-dessus de l'awale */
-        let picMotif: PicHandle = GetPicture(128) as PicHandle;
-        let mut y: i16 = 0;
-        while y < portRect.bottom {
-            let mut x: i16 = 0;
-            while x < portRect.right + 16 {
-                self.BackColor(whiteColor as i16);
-                self.ForeColor(blackColor as i16);
-                let r = Rect::new(x, y, x + 64, y + 64);
-                self.DrawPicture(picMotif, &r);
-                x += 64;
+        let picMotif = self.pict.GetPicture(128);
+        if let Some(picMotif) = picMotif {
+            let mut y = 0;
+            while y < portRect.bottom {
+                let mut x: i16 = 0;
+                while x < portRect.right + 16 {
+                    self.sapwind.ports.BackColor(whiteColor as i16);
+                    self.sapwind.ports.ForeColor(blackColor as i16);
+                    let r = Rect::new(x, y, x + 64, y + 64);
+                    self.sapwind.ports.DrawPicture(picMotif, &r);
+                    x += 64;
+                }
+                y += 64;
             }
-            y += 64;
         }
-        ReleaseResource(picMotif as Handle);
     }
 }
 
@@ -783,19 +783,18 @@ impl Sapiens {
         self.sapwind.InitMainWindow();
         self.sapwind.ports.FixeTitreMainWindow();
         self.sapwind.ports.set(PortId::MainWindow);
-        self.sapwind.ports.AfficheFond(PortId::MainWindow);
+        self.AfficheFond(PortId::MainWindow);
         /* On affiche le logo centre */
-        let pict = GetPicture(134) as PicHandle;
+        let pict = self.pict.GetPicture(134);
         unsafe {
-            if !pict.is_null() {
-                r = (**pict).picFrame;
+            if let Some(pict) = pict {
+                r = pict.picFrame;
                 r.OffsetRect(
                     ((320 * ECHELLE as i16 as i64 - (r.right - r.left) as i64) / 2) as i16,
                     60,
                 );
                 let rdest = self.sapwind.ports.DoZoomRect(&r);
                 self.sapwind.ports.DrawPicture(pict, &rdest);
-                ReleaseResource(pict as Handle);
             }
             /* Affichage de la version de sapiens */
             let chaine = GetVersionSapiens();
@@ -853,7 +852,7 @@ impl Sapiens {
             /* Fabrique les luts */
             self.sapwcvt.FabriqueLuts();
             self.sapwind.ports.set(PortId::Debecr);
-            self.sapwind.ports.AfficheFond(PortId::Debecr);
+            self.AfficheFond(PortId::Debecr);
             /* Buffer de la souris*/
             MessInit(self.sapwind.GetStr(22)); /*Chargement des graphismes */
             /* On charge les mobs */

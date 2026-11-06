@@ -12,7 +12,7 @@ use crate::sapiens::{DEFAULT_PALCOUL, ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalC
 use crate::shared::{Ptr, RGBColor, Rect, RgnHandle, SapPort};
 use crate::stubs::{
     CarboniseInvalRect, CarboniseSetPatGray, CarboniseValideUpdate, ConvertPNGFileToOffscreen,
-    DisposePtr, FixeCheminRelatif, GetPicture, GetRectFilePng, PopPath, PushPath, SaisitChemin,
+    DisposePtr, FixeCheminRelatif, GetRectFilePng, PopPath, PushPath, SaisitChemin,
 };
 use crate::{Sapiens, cbridge, port};
 
@@ -1237,11 +1237,11 @@ impl Sapiens {
                 );
             }
         } else {
-            let mut pict = GetPicture(CvtDefaultLangRess(num));
-            if pict.is_null() {
-                pict = GetPicture(CvtLangRess(GB as i16, num));
+            let mut pict = self.pict.GetPicture(CvtDefaultLangRess(num));
+            if pict.is_none() {
+                pict = self.pict.GetPicture(CvtLangRess(GB as i16, num));
             }
-            if !pict.is_null() {
+            if let Some(pict) = pict {
                 self.sapwind.ports.DrawPicture(pict, &rDest);
             }
         }

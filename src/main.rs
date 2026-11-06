@@ -52,6 +52,7 @@ use shared::{EventRecord, Point, lut_rgb};
 use std::sync::mpsc::Sender;
 
 use crate::cbridge::{cmdKey, controlKey, keyDown, mouseDown, mouseUp, optionKey, shiftKey};
+use crate::pict::Pict;
 
 fn main() {
     // Le code C ouvre les fichiers relatifs (data/mobs/*.BRT) dans le répertoire
@@ -214,6 +215,7 @@ struct Sapiens {
     sapwcvt: Sapwcvt,
     saptxt: Saptxt,
     sap_lang: SapLang,
+    pict: Pict,
 }
 
 struct SapiensApp {

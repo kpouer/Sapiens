@@ -6,9 +6,9 @@
 //! sont extraites dans `data/pict/` et embarquées dans l'exécutable.
 
 use crate::port::Ports;
-use crate::shared::{Pic, PicHandle, Rect, rgb_to_index};
+use crate::shared::{Pic, Rect, rgb_to_index};
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::collections::hash_map::Entry;
 
 /// Image décodée : un indice de la LUT globale par pixel.
 struct Picture {
@@ -153,47 +153,35 @@ fn decode_packbits_rect(r: &mut Reader) -> Option<Picture> {
     Some(Picture { w, h, idx })
 }
 
-/// Images décodées, par id de ressource (jamais libérées : ReleaseResource
-/// est sans effet, comme pour une ressource restée en mémoire).
-static PICTURES: Mutex<Option<HashMap<i16, usize>>> = Mutex::new(None);
+#[derive(Default)]
+pub(crate) struct Pict {
+    pictures: HashMap<i16, Pic>,
+}
 
-/// `GetPicture` : renvoie le `PicHandle` de la ressource `id`, ou nul si elle
-/// n'existe pas.
-pub(crate) fn get_picture(id: i16) -> PicHandle {
-    let mut g = PICTURES.lock().unwrap();
-    let map = g.get_or_insert_with(HashMap::new);
-    if let Some(&handle) = map.get(&id) {
-        return handle as PicHandle;
+impl Pict {
+    #[allow(non_snake_case)]
+    pub(crate) fn GetPicture(&mut self, id: i16) -> Option<&Pic> {
+        if let Entry::Vacant(e) = self.pictures.entry(id) {
+            let pic = resource_bytes(id).and_then(decode)?;
+            let frame = Rect::new(0, 0, pic.w as i16, pic.h as i16);
+            let pic: &'static Picture = Box::leak(Box::new(pic));
+            let master = Pic {
+                picSize: 0,
+                picFrame: frame,
+                pict: pic as *const Picture as usize,
+            };
+            e.insert(master);
+        }
+        self.pictures.get(&id)
     }
-    let Some(pic) = resource_bytes(id).and_then(decode) else {
-        return std::ptr::null_mut();
-    };
-    let frame = Rect::new(0, 0, pic.w as i16, pic.h as i16);
-    let pic: &'static Picture = Box::leak(Box::new(pic));
-    let master: &'static mut *mut Pic = Box::leak(Box::new(Box::leak(Box::new(Pic {
-        picSize: 0,
-        picFrame: frame,
-        pict: pic as *const Picture as usize,
-    })) as *mut Pic));
-    let handle = master as *mut *mut Pic;
-    map.insert(id, handle as usize);
-    handle
 }
 
 impl Ports {
+    #[allow(non_snake_case)]
     /// `DrawPicture` : copie (srcCopy) l'image dans `dst` du port courant, à
     /// l'échelle du rectangle, avec clip.
-    pub(crate) fn DrawPicture(&mut self, pic: PicHandle, dst: &Rect) {
-        if pic.is_null() {
-            return;
-        }
-        let pict = unsafe {
-            let p = *pic;
-            if p.is_null() {
-                return;
-            }
-            (*p).pict as *const Picture
-        };
+    pub(crate) fn DrawPicture(&mut self, p: &Pic, dst: &Rect) {
+        let pict = p.pict as *const Picture;
         if pict.is_null() {
             return;
         }
