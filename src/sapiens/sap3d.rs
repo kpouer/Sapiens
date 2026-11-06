@@ -3455,8 +3455,8 @@ impl Sapiens {
         self.sapwind.ports.set(PortId::Ecran1);
         self.sapwind.ports.TextFont(0); /* times */
         self.sapwind.ports.DoTextSize(64);
-        let chaine = b"THE END";
-        dx = (512 - self.sapwind.ports.StringWidth(chaine.as_ref()) as i64) / 2;
+        let chaine = "THE END";
+        dx = (512 - self.sapwind.ports.StringWidth(chaine) as i64) / 2;
         for _ in 0..256 {
             n += 256;
             self.chrono(1);
@@ -3468,7 +3468,7 @@ impl Sapiens {
             self.sapwind.ports.DoMoveTo(dx as i16, 64);
             self.affich(self.sapglob.dzeta as u16);
             self.delai(0);
-            self.sapwind.ports.DrawString(chaine.as_ref());
+            self.sapwind.ports.DrawString(chaine);
             self.sapwind.ports.tfrima();
             WaitTick(1);
         }

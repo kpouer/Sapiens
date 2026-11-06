@@ -715,7 +715,7 @@ impl Ports {
     ***********************************************************************************************/
     unsafe fn AffStr(
         &mut self,
-        chaine: &[u8],
+        chaine: &str,
         fonte: i16,
         size: i16,
         face: i16,
@@ -822,7 +822,7 @@ impl Sapiens {
             /* Affichage de la version de sapiens */
             let chaine = GetVersionSapiens();
             self.sapwind.ports.AffStr(
-                chaine.as_bytes(),
+                &chaine,
                 helvetica as i16,
                 14,
                 bold as i16,
@@ -830,9 +830,9 @@ impl Sapiens {
                 r.bottom + 16,
             );
             /* Affichage des autres commentaires */
-            let chaine = b"Copyright Didier & Olivier Guillion, 1986,1996,2005,2017";
+            let chaine = "Copyright Didier & Olivier Guillion, 1986,1996,2005,2017";
             self.sapwind.ports.AffStr(
-                chaine.as_slice(),
+                chaine,
                 helvetica as i16,
                 16,
                 bold as i16,
@@ -847,7 +847,7 @@ impl Sapiens {
                 i += 1;
                 if !chaine.is_empty() {
                     self.sapwind.ports.AffStr(
-                        chaine.as_bytes(),
+                        chaine,
                         helvetica as i16,
                         16,
                         bold as i16,

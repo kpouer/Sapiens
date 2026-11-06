@@ -274,6 +274,16 @@ fn decode(b: u8) -> char {
     }
 }
 
+/// Renvoie `c` s'il est représentable en MacRoman, `'?'` sinon.
+#[inline]
+fn to_mac_char(c: char) -> char {
+    if c.is_ascii() || MAC_ROMAN.contains(&c) {
+        c
+    } else {
+        '?'
+    }
+}
+
 /// Convertit un caractère Unicode en octet MacRoman. `None` si le caractère
 /// n'existe pas dans l'encodage historique (utilisé pour la saisie clavier).
 pub(crate) fn unicode_to_mac_roman(c: char) -> Option<u8> {
@@ -521,29 +531,29 @@ impl Ports {
         draw_glyph(p, loc.h, loc.v, &g);
     }
 
-    /// Dessine une chaîne Pascal (1er octet = longueur), avance le crayon.
-    pub(crate) fn DrawString(&mut self, s: &[u8]) {
+    /// Dessine une chaîne (convertie en MacRoman, `?` si non représentable), avance le crayon.
+    pub(crate) fn DrawString(&mut self, s: &str) {
         let p = self.current_mut();
 
         let (fam, bold, size) = fdt_state(p);
         let by = p.pen_loc.v;
         let mut h = p.pen_loc.h;
-        for c in s {
-            let g = get_glyph(fam, bold, size, decode(*c));
+        for c in s.chars() {
+            let g = get_glyph(fam, bold, size, to_mac_char(c));
             draw_glyph(p, h, by, &g);
             h = h.wrapping_add(g.advance);
         }
         p.pen_loc.h = h;
     }
 
-    /// Largeur d'une chaîne Pascal dans la fonte courante.
-    pub(crate) fn StringWidth(&mut self, s: &[u8]) -> i16 {
+    /// Largeur d'une chaîne (convertie en MacRoman) dans la fonte courante.
+    pub(crate) fn StringWidth(&mut self, s: &str) -> i16 {
         let p = self.current();
 
         let (fam, bold, size) = fdt_state(p);
         let mut w = 0;
-        for c in s {
-            w += get_glyph(fam, bold, size, decode(*c)).advance as i32;
+        for c in s.chars() {
+            w += get_glyph(fam, bold, size, to_mac_char(c)).advance as i32;
         }
         w.clamp(i16::MIN as i32, i16::MAX as i32) as i16
     }
@@ -693,9 +703,9 @@ mod tests {
         t.ports.TextFont(1);
         t.ports.TextSize(12);
         t.ports.TextFace(1);
-        let s = b"WXYZ";
-        t.ports.DrawString(s.as_slice());
-        let w = t.ports.StringWidth(s.as_slice());
+        let s = "WXYZ";
+        t.ports.DrawString(s);
+        let w = t.ports.StringWidth(s);
         assert!(w > 16, "largeur étrange : {w}");
         let n = t.count();
         assert!(n > 60, "trop peu de pixels tracés : {n}");
