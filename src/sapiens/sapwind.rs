@@ -21,7 +21,7 @@ use crate::port;
 use crate::port::{PortId, Ports};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::CvtDefaultLangRess;
-use crate::sapiens::sapwbrt::SetPathInData;
+use crate::sapiens::sapwbrt::{FileError, SetPathInData};
 use crate::sapiens::{ECHELLE, STR_VRAC, Vue};
 use crate::shared::{Boolean, EventRecord, RGBColor, Rect};
 use crate::stubs::{
@@ -453,7 +453,10 @@ impl Sapiens {
             }
             if car == 0x0f {
                 /*R*/
-                self.InitMobs();
+                if let Err(e) = self.InitMobs() {
+                    log::error!("InitMobs : {e}");
+                    self.Collapse(e.to_string());
+                }
             }
         } else {
             let car: i16 = (ev.message & charCodeMask as i64) as i16;
@@ -490,7 +493,7 @@ impl Sapiens {
                         InitMobs
     Charge ou recharge les mobs
     ******************************************************************/
-    pub(crate) fn InitMobs(&mut self) -> Boolean {
+    pub(crate) fn InitMobs(&mut self) -> Result<(), FileError> {
         let mut nb: i16;
 
         let _g = self.sapwind.ports.on(PortId::Ecran1);
@@ -499,64 +502,31 @@ impl Sapiens {
         PushPath();
         SetPathInData(&self.sapgest, c"Mobs".as_ptr() as *mut i8);
         self.sapwind.mobBambou = 0;
-        nb = self.ChargeFichierBrt("WBAMBOU.BRT", self.sapwind.mobBambou + 1, 26, 0); /*0, 21 Mobs */
-        if nb < 0 {
-            return FAUX;
-        }
+        nb = self.ChargeFichierBrt("WBAMBOU.BRT", self.sapwind.mobBambou + 1, 26, 0)?; /*0, 21 Mobs */
         self.sapwind.mobFace = self.sapwind.mobBambou + nb;
-        nb = self.ChargeFichierBrt("WFACE.BRT", self.sapwind.mobFace + 1, 31, 0); /* Base 21,29 mobs */
-        if nb < 0 {
-            return FAUX;
-        }
+        nb = self.ChargeFichierBrt("WFACE.BRT", self.sapwind.mobFace + 1, 31, 0)?; /* Base 21,29 mobs */
         self.sapwind.mobFeuille = self.sapwind.mobFace + nb;
-        nb = self.ChargeFichierBrt("WFEUILLE.BRT", self.sapwind.mobFeuille + 1, 36, 11); /* Base 50 36 mobs */
-        if nb < 0 {
-            return FAUX;
-        }
+        nb = self.ChargeFichierBrt("WFEUILLE.BRT", self.sapwind.mobFeuille + 1, 36, 11)?; /* Base 50 36 mobs */
         self.sapwind.mobFleches = self.sapwind.mobFeuille + nb;
-        nb = self.ChargeFichierBrt("WFLECHES.BRT", self.sapwind.mobFleches + 1, 20, 0); /* Base 8618 mobs */
-        if nb < 0 {
-            return FAUX;
-        }
+        nb = self.ChargeFichierBrt("WFLECHES.BRT", self.sapwind.mobFleches + 1, 20, 0)?; /* Base 8618 mobs */
         self.sapwind.mobSapmob = self.sapwind.mobFleches + nb;
-        nb = self.ChargeFichierBrt("WSAPMOB.BRT", self.sapwind.mobSapmob + 1, 141, 0); /*Base 120+1,151 mobs */
-        if nb < 0 {
-            return FAUX;
-        }
+        nb = self.ChargeFichierBrt("WSAPMOB.BRT", self.sapwind.mobSapmob + 1, 141, 0)?; /*Base 120+1,151 mobs */
         self.sapwind.mobAvplan = self.sapwind.mobSapmob + nb;
-        nb = self.ChargeFichierBrt("WAVPLAN.BRT", self.sapwind.mobAvplan + 1, 9, 13);
+        nb = self.ChargeFichierBrt("WAVPLAN.BRT", self.sapwind.mobAvplan + 1, 9, 13)?;
         self.sapcomb.nbMobHerbes = nb;
-        if nb < 0 {
-            return FAUX;
-        }
         self.sapwind.mobAvplanSpec = self.sapwind.mobAvplan + nb;
-        nb = self.ChargeFichierBrt("WAVSPEC.BRT", self.sapwind.mobAvplanSpec + 1, 4, 0);
+        nb = self.ChargeFichierBrt("WAVSPEC.BRT", self.sapwind.mobAvplanSpec + 1, 4, 0)?;
         self.sapcomb.nbAvplanSpec = nb;
-        if nb < 0 {
-            return FAUX;
-        }
         self.sapwind.mobSilex = self.sapwind.mobAvplanSpec + nb;
-        nb = self.ChargeFichierBrt("WSILEX.BRT", self.sapwind.mobSilex + 1, 15, 0);
-        if nb < 0 {
-            return FAUX;
-        }
+        nb = self.ChargeFichierBrt("WSILEX.BRT", self.sapwind.mobSilex + 1, 15, 0)?;
         self.sapwind.mob3D = self.sapwind.mobSilex + nb;
-        nb = self.ChargeFichierBrt("W3D.BRT", self.sapwind.mob3D + 1, 38, 0);
-        if nb < 0 {
-            return FAUX;
-        }
+        nb = self.ChargeFichierBrt("W3D.BRT", self.sapwind.mob3D + 1, 38, 0)?;
         self.sapwind.Fonte14 = self.sapwind.mob3D + nb;
-        nb = self.ChargeFichierBrt("Geneva14.BRT", self.sapwind.Fonte14 + 1, 120, 0);
-        if nb < 0 {
-            return FAUX;
-        }
+        nb = self.ChargeFichierBrt("Geneva14.BRT", self.sapwind.Fonte14 + 1, 120, 0)?;
         self.sapwind.Fonte10 = self.sapwind.Fonte14 + nb;
-        nb = self.ChargeFichierBrt("Geneva10.BRT", self.sapwind.Fonte10 + 1, 120, 0);
-        if nb < 0 {
-            return FAUX;
-        }
+        self.ChargeFichierBrt("Geneva10.BRT", self.sapwind.Fonte10 + 1, 120, 0)?;
         PopPath();
-        VRAI
+        Ok(())
     }
 }
 
@@ -818,7 +788,8 @@ impl Sapiens {
             /* Buffer de la souris*/
             MessInit(self.sapwind.GetStr(22)); /*Chargement des graphismes */
             /* On charge les mobs */
-            if !self.InitMobs() {
+            if let Err(e) = self.InitMobs() {
+                log::error!("InitMobs : {e}");
                 let x = self.sapwind.GetStr(11);
                 self.Collapse(x);
                 SapiensExit(-1);

@@ -515,30 +515,34 @@ impl eframe::App for SapiensApp {
                 )));
             }
         }
-        if window.is_none() {
-            egui::CentralPanel::default()
-                .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
-                .show(ctx, |ui| {
-                    ui.centered_and_justified(|ui| {
-                        ui.label(
-                            egui::RichText::new("Initialisation de Sapiens…")
-                                .color(egui::Color32::WHITE),
-                        );
-                    });
-                });
-            ctx.request_repaint_after(std::time::Duration::from_millis(10));
-        } else {
-            if let Some(d) = &mut self.dump {
-                d.tick(window.unwrap());
-            }
 
-            egui::CentralPanel::default()
-                .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
-                .show(ctx, |ui| {
-                    ui.centered_and_justified(|ui| {
-                        ui.add(egui::Image::new(self.tex.as_ref().unwrap()));
+        match window {
+            None => {
+                egui::CentralPanel::default()
+                    .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
+                    .show(ctx, |ui| {
+                        ui.centered_and_justified(|ui| {
+                            ui.label(
+                                egui::RichText::new("Initialisation de Sapiens…")
+                                    .color(egui::Color32::WHITE),
+                            );
+                        });
                     });
-                });
+                ctx.request_repaint_after(std::time::Duration::from_millis(10));
+            }
+            Some(window) => {
+                if let Some(d) = &mut self.dump {
+                    d.tick(window);
+                }
+
+                egui::CentralPanel::default()
+                    .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
+                    .show(ctx, |ui| {
+                        ui.centered_and_justified(|ui| {
+                            ui.add(egui::Image::new(self.tex.as_ref().unwrap()));
+                        });
+                    });
+            }
         }
 
         self.render_dialogs(ctx);

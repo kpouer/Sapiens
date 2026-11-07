@@ -2,7 +2,6 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 
-use std::ffi::CString;
 pub(crate) type __int64_t = ::std::os::raw::c_longlong;
 
 pub(crate) type OSErr = i16;
@@ -136,9 +135,4 @@ unsafe extern "C" {
     pub(crate) fn feof(arg1: *mut FILE) -> i32;
     pub(crate) fn fclose(arg1: *mut FILE) -> i32;
     pub(crate) fn getc(arg1: *mut FILE) -> i32;
-}
-
-pub fn convert_to_c_char_ptr(s: &str) -> *mut i8 {
-    let c_string = CString::new(s).unwrap();
-    c_string.into_raw()
 }
