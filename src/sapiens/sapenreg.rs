@@ -6,7 +6,6 @@ use crate::acam::FAUX;
 use crate::cbridge::strlen;
 use crate::shared::Boolean;
 use log::warn;
-use std::ffi::CStr;
 
 const TabCvt1: &[u8; 16] = b"AEUTNZPFSRDGJKLM";
 const TabCvt2: &[u8; 16] = b"123456789-XWZTNH";
@@ -28,8 +27,7 @@ fn Code(base: u16) -> u16 {
     d0
 }
 
-pub(crate) extern "C" fn VerifNumSerie(str: *mut i8) -> Boolean {
-    let str = unsafe { CStr::from_ptr(str).to_bytes() };
+pub(crate) fn VerifNumSerie(str: &str) -> Boolean {
     if str.len() < 9 {
         warn!("Invalid serial number length {}", str.len());
         return false;
@@ -37,6 +35,7 @@ pub(crate) extern "C" fn VerifNumSerie(str: *mut i8) -> Boolean {
     let mut clef: u16 = 0;
     let mut base: u16 = 0;
 
+    let str = str.as_bytes();
     for i in (0..8usize).step_by(2) {
         let n = str[i];
         let j = match TabCvt1.iter().position(|x| *x == n) {
@@ -62,14 +61,9 @@ pub(crate) extern "C" fn VerifNumSerie(str: *mut i8) -> Boolean {
     true
 }
 
+#[derive(Default)]
 pub(crate) struct Sapenreg {
-    pub(crate) numSerie: [i8; 80],
-}
-
-impl Default for Sapenreg {
-    fn default() -> Self {
-        Self { numSerie: [0; 80] }
-    }
+    pub(crate) numSerie: String,
 }
 
 /**********************************************************************************
@@ -80,9 +74,9 @@ Teste si l'exemplaire est enregistré
 impl Sapiens {
     pub(crate) fn IsEnreg(&mut self) -> Boolean {
         /* On extrait le nom et le numero de serie */
-        if strlen(&self.saptxt.nomjoueur) == 0 || strlen(&self.sapenreg.numSerie) == 0 {
+        if strlen(&self.saptxt.nomjoueur) == 0 || self.sapenreg.numSerie.is_empty() {
             return FAUX;
         }
-        VerifNumSerie(&raw mut self.sapenreg.numSerie as *mut _)
+        VerifNumSerie(&self.sapenreg.numSerie)
     }
 }
