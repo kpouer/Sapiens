@@ -6,7 +6,7 @@
 ***********************************************************************/
 use crate::Sapiens;
 use crate::acam::{FAUX, TickCount, VRAI};
-use crate::cbridge::{blackColor, fclose, fopen, getc};
+use crate::cbridge::blackColor;
 use crate::exchange::{request_open_file, request_save_file};
 use crate::port::PortId;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
@@ -1628,38 +1628,32 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn charge(&mut self) {
         unsafe {
-            let mut checksum: i16 = 111;
-
             self.sapglob.flefba = 0;
 
             let Some(mut chemin) = request_open_file("sap", "") else {
                 return;
             };
             chemin.set_extension("sap");
-            let Some(chemin_c) = chemin_c(&chemin) else {
+            let path = PathBuf::from(&chemin);
+            self.sapgest.dernier_fichier = Some(chemin);
+            self.sapglob.flefba = 0;
+            let Ok(mut fichier) = File::open(path) else {
                 self.comment(92);
                 return;
             };
-            self.sapgest.dernier_fichier = Some(chemin);
-            let fichier = fopen(chemin_c.as_ptr(), c"rb".as_ptr());
-            self.sapglob.flefba = 0;
-            if fichier.is_null() {
-                self.comment(92);
-                return;
-            }
             self.primsap();
             self.random.initrnd(b'S' as i16, b'A' as i16, b'P' as i16);
-            if getc(fichier) == b'G' as i32
-                && getc(fichier) == b'O' as i32
-                && getc(fichier) == b'D' as i32
+            let mut checksum: i16 = 111;
+            if fichier.read_u8().unwrap_or(0) == b'G'
+                && fichier.read_u8().unwrap_or(0) == b'O'
+                && fichier.read_u8().unwrap_or(0) == b'D'
             {
                 for cellule in &soma {
                     for i in 0..cellule.taille as usize {
-                        let mut car = getc(fichier) as i16;
+                        let mut car = fichier.read_u8().map(|c| c as i16).unwrap_or(-1);
                         if car < 0 {
                             self.sapglob.flefba = 0;
                             self.comment(92); /*erreur*/
-                            fclose(fichier);
                             return;
                         }
                         checksum = checksum.wrapping_add(car);
@@ -1668,7 +1662,7 @@ impl Sapiens {
                     }
                 }
                 checksum &= 255;
-                if checksum != getc(fichier) as i16 {
+                if checksum != fichier.read_u8().map(|c| c as i16).unwrap_or(-1) {
                     self.sapglob.flefba = 0;
                     self.comment(92); /*erreur*/
                     self.primsap(); /*Nyak nyak !!!*/
@@ -1678,8 +1672,7 @@ impl Sapiens {
                 self.comment(92); /*erreur*/
             }
             self.CreeDecor3d(true);
-            self.sap3d.ChargeEltsDecorsMobiles(fichier);
-            fclose(fichier);
+            let _ = self.sap3d.ChargeEltsDecorsMobiles(&mut fichier);
             self.sapglob.minute = 0;
             self.sapglob.zj = 0;
             self.chrono(0); /*pour couleur*/

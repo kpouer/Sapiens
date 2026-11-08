@@ -5,18 +5,16 @@
 #![allow(non_snake_case)]
 
 use std::fs::File;
-use std::io::Write;
+use std::io::{Read, Write};
 // Le moteur 3D : formes, objets 3D (ObjetsRef), décor (nuages, éclairs,
 // oiseaux, arbres, rochers) et animation finale.
 // Consommé par les autres modules du port (SAPGEST.C → sapgest.rs, etc.).
-use std::sync::atomic::{AtomicI16, Ordering};
-
 use crate::Sapiens;
 use crate::acam::{CarboniseSetCursorArrow, FAUX, GetCursor, SetCursor, TickCount, VRAI};
 use crate::cbridge::watchCursor;
-use crate::cbridge::{FILE, feof, fscanf, strcmp};
 use crate::port::PortId;
 use crate::sapiens::sapw3d::distance;
+use crate::sapiens::sapwbrt::FileError;
 use crate::sapiens::sapwind::ValideUpdate;
 use crate::sapiens::{
     BASEMOB, DIST_MIN_FOUDROIE, FREQ_ORAGE, Forme, FormeId, Mont, MontId, NB_ARBRES, NB_ARBRES_MAX,
@@ -24,6 +22,7 @@ use crate::sapiens::{
     NB_OISEAUX_MAX, NB_ROCHERS, NB_ROCHERS_MAX,
 };
 use crate::shared::{Boolean, RGBColor};
+use std::sync::atomic::{AtomicI16, Ordering};
 
 const VITESSE_DEPLACEMENT_OISEAUX: u16 = 10;
 const MONT1: i16 = 1;
@@ -3530,32 +3529,34 @@ impl Sap3d {
     /***********************************************************************
                              ChargeEltsDecorsMobiles
     ***********************************************************************/
-    pub(crate) unsafe extern "C" fn ChargeEltsDecorsMobiles(&mut self, f: *mut FILE) {
-        unsafe {
-            let mut chaine: [i8; 255] = [0; 255];
-            let mut x: i64 = 0;
-            let mut y: i64 = 0;
-
-            fscanf(f, c" %s".as_ptr(), chaine.as_mut_ptr());
-            if strcmp(chaine.as_ptr(), c"MAGIC".as_ptr()) != 0 {
-                return;
+    pub(crate) fn ChargeEltsDecorsMobiles(&mut self, f: &mut impl Read) -> Result<(), FileError> {
+        let mut contenu = Vec::new();
+        f.read_to_end(&mut contenu)?;
+        let contenu = String::from_utf8_lossy(&contenu);
+        let mut tokens = contenu.split_whitespace();
+        if tokens.next() != Some("MAGIC") {
+            return Err(FileError::BadHeader);
+        }
+        while let Some(token) = tokens.next() {
+            if token != "Foudroye" {
+                continue;
             }
-            while feof(f) == 0 {
-                chaine[0] = 0;
-                fscanf(f, c"%s".as_ptr(), chaine.as_mut_ptr());
-                if strcmp(chaine.as_ptr(), c"Foudroye".as_ptr()) == 0 {
-                    fscanf(f, c" %ld %ld".as_ptr(), &mut x, &mut y);
-                    for mont in self.aigoual.iter_mut() {
-                        if mont.forme.is_some_and(|id| id.forme().hauteur == 1)
-                            && mont.posx == x as u16
-                            && mont.posy == y as u16
-                        {
-                            mont.forme = Some(FormeId::Foudroye);
-                        }
-                    }
+            let (Some(x), Some(y)) = (
+                tokens.next().and_then(|v| v.parse::<i64>().ok()),
+                tokens.next().and_then(|v| v.parse::<i64>().ok()),
+            ) else {
+                break;
+            };
+            for mont in self.aigoual.iter_mut() {
+                if mont.forme.is_some_and(|id| id.forme().hauteur == 1)
+                    && mont.posx == x as u16
+                    && mont.posy == y as u16
+                {
+                    mont.forme = Some(FormeId::Foudroye);
                 }
             }
         }
+        Ok(())
     }
 
     /***********************************************************************
@@ -3780,5 +3781,96 @@ impl Sapiens {
                 self.inimen(2);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests_elts_decors_mobiles {
+    use super::*;
+    use std::io::{Cursor, Seek};
+
+    fn arbre() -> FormeId {
+        [
+            FormeId::Peupli,
+            FormeId::Chene,
+            FormeId::Noiset,
+            FormeId::Genevr,
+            FormeId::Hetre,
+        ]
+        .into_iter()
+        .find(|id| id.forme().hauteur == 1)
+        .expect("aucune forme d'arbre de hauteur 1")
+    }
+
+    fn sap3d_avec_arbres(id: FormeId) -> Sap3d {
+        let mut s = Sap3d::default();
+        for (x, y) in [(10, 20), (30, 40), (50, 60)] {
+            s.aigoual.push(Mont {
+                posx: x,
+                posy: y,
+                forme: Some(id),
+                ..Mont::default()
+            });
+        }
+        s
+    }
+
+    #[test]
+    fn sauve_puis_charge_arbres_foudroyes() {
+        let id = arbre();
+        let mut source = sap3d_avec_arbres(id);
+        source.aigoual[1].forme = Some(FormeId::Foudroye);
+
+        let dir = std::env::temp_dir().join("sapiens_test_elts_decors");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("foudroye.bin");
+        {
+            let mut f = File::create(&path).unwrap();
+            f.write_all(b"prefixe binaire \xff\x00").unwrap();
+            source.SauveEltsDecorsMobiles(&mut f).unwrap();
+        }
+        let mut f = File::open(&path).unwrap();
+        // On saute le préfixe comme le fait `charge` avant d'appeler la fonction.
+        f.seek_relative(b"prefixe binaire \xff\x00".len() as i64)
+            .unwrap();
+        let mut cible = sap3d_avec_arbres(id);
+        cible.ChargeEltsDecorsMobiles(&mut f).unwrap();
+        let _ = std::fs::remove_file(&path);
+
+        assert_eq!(cible.aigoual[0].forme, Some(id));
+        assert_eq!(cible.aigoual[1].forme, Some(FormeId::Foudroye));
+        assert_eq!(cible.aigoual[2].forme, Some(id));
+    }
+
+    #[test]
+    fn mauvais_entete() {
+        let mut s = sap3d_avec_arbres(arbre());
+        let mut c = Cursor::new(b"\nPAS_MAGIC\nFoudroye 10 20\n".to_vec());
+        assert!(matches!(
+            s.ChargeEltsDecorsMobiles(&mut c),
+            Err(FileError::BadHeader)
+        ));
+        assert!(s.aigoual.iter().all(|m| m.forme != Some(FormeId::Foudroye)));
+    }
+
+    #[test]
+    fn fichier_vide_ou_sans_entree() {
+        let mut s = sap3d_avec_arbres(arbre());
+        assert!(
+            s.ChargeEltsDecorsMobiles(&mut Cursor::new(Vec::new()))
+                .is_err()
+        );
+        let mut c = Cursor::new(b"\nMAGIC\n".to_vec());
+        s.ChargeEltsDecorsMobiles(&mut c).unwrap();
+        assert!(s.aigoual.iter().all(|m| m.forme != Some(FormeId::Foudroye)));
+    }
+
+    #[test]
+    fn entree_tronquee_ignoree() {
+        let mut s = sap3d_avec_arbres(arbre());
+        let mut c = Cursor::new(b"\nMAGIC\nFoudroye 10 20\nFoudroye 30".to_vec());
+        s.ChargeEltsDecorsMobiles(&mut c).unwrap();
+        assert_eq!(s.aigoual[0].forme, Some(FormeId::Foudroye));
+        assert_ne!(s.aigoual[1].forme, Some(FormeId::Foudroye));
     }
 }
