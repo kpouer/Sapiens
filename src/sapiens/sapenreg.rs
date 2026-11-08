@@ -80,13 +80,9 @@ Teste si l'exemplaire est enregistré
 impl Sapiens {
     pub(crate) fn IsEnreg(&mut self) -> Boolean {
         /* On extrait le nom et le numero de serie */
-        unsafe {
-            if strlen(&raw const self.saptxt.nomjoueur as *const _) == 0
-                || strlen(&raw const self.sapenreg.numSerie as *const _) == 0
-            {
-                return FAUX;
-            }
-            VerifNumSerie(&raw mut self.sapenreg.numSerie as *mut _)
+        if strlen(&self.saptxt.nomjoueur) == 0 || strlen(&self.sapenreg.numSerie) == 0 {
+            return FAUX;
         }
+        VerifNumSerie(&raw mut self.sapenreg.numSerie as *mut _)
     }
 }

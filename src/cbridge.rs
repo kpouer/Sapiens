@@ -37,6 +37,8 @@ pub(crate) const whiteColor: u32 = 30;
 pub(crate) const patOr: u32 = 1;
 pub(crate) const srcCopy: u32 = 0;
 
-unsafe extern "C" {
-    pub(crate) fn strlen(__s: *const i8) -> u64;
+pub(crate) fn strlen<T: Copy + Default + PartialEq>(buf: &[T]) -> usize {
+    buf.iter()
+        .position(|&c| c == T::default())
+        .unwrap_or(buf.len())
 }
