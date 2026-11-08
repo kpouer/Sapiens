@@ -124,13 +124,10 @@ impl Default for __sFILE {
 }
 
 unsafe extern "C" {
-    pub(crate) fn putc(arg1: i32, arg2: *mut FILE) -> i32;
-
     pub(crate) fn strlen(__s: *const i8) -> u64;
     pub(crate) fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
     pub(crate) fn strcpy(__dst: *mut i8, __src: *const i8) -> *mut i8;
     pub(crate) fn fopen(__filename: *const i8, __mode: *const i8) -> *mut FILE;
-    pub(crate) fn fprintf(arg1: *mut FILE, arg2: *const i8, ...) -> i32;
     pub(crate) fn fscanf(arg1: *mut FILE, arg2: *const i8, ...) -> i32;
     pub(crate) fn feof(arg1: *mut FILE) -> i32;
     pub(crate) fn fclose(arg1: *mut FILE) -> i32;

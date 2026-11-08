@@ -6,11 +6,12 @@
 ***********************************************************************/
 use crate::Sapiens;
 use crate::acam::{FAUX, TickCount, VRAI};
-use crate::cbridge::{blackColor, fclose, fopen, getc, putc};
+use crate::cbridge::{blackColor, fclose, fopen, getc};
 use crate::exchange::{request_open_file, request_save_file};
 use crate::port::PortId;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapglob::{ListeId, SapId, soma, tenerv};
+use crate::sapiens::saptxt::Saptxt;
 use crate::sapiens::sapwind::{ValideUpdate, bande};
 use crate::sapiens::sapwmus::{attends_bruit, quel_synthe};
 use crate::sapiens::{
@@ -19,7 +20,10 @@ use crate::sapiens::{
 };
 use crate::shared::{Boolean, Point, RGBColor, Rect};
 use crate::stubs::{CarboniseInvalRect, SaisitChemin, SetPathApplication};
+use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::ffi::CString;
+use std::fs::File;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::ptr::null_mut;
 use std::rc::Rc;
@@ -1532,9 +1536,8 @@ fn chemin_c(path: &Path) -> Option<CString> {
     CString::new(path.as_os_str().as_encoded_bytes()).ok()
 }
 
-fn nom_joueur(sapiens: &Sapiens) -> String {
-    let bytes: Vec<u8> = sapiens
-        .saptxt
+fn nom_joueur(saptxt: &Saptxt) -> String {
+    let bytes: Vec<u8> = saptxt
         .nomjoueur
         .iter()
         .map(|b| *b as u8)
@@ -1551,7 +1554,7 @@ fn nom_defaut_sauvegarde(sapiens: &Sapiens) -> String {
         .and_then(|p| p.file_stem())
         .map(|n| n.to_string_lossy().into_owned())
         .filter(|n| !n.is_empty())
-        .unwrap_or_else(|| nom_joueur(sapiens))
+        .unwrap_or_else(|| nom_joueur(&sapiens.saptxt))
 }
 
 impl Sapiens {
@@ -1573,60 +1576,51 @@ impl Sapiens {
     /***********************************************************************
                                     SAUVE:
     ***********************************************************************/
-    pub(crate) extern "C" fn sauve(&mut self) {
-        unsafe {
-            let mut checksum: i16 = 111;
-            self.sapglob.flefba = 0;
-            if self.sapglob.jour_act == self.sapglob.jour_dsk {
-                self.comment(113); /*Une seule aventure par jour*/
-                return;
-            }
-
-            let nom = nom_defaut_sauvegarde(self);
-            let Some(mut chemin) = request_save_file("sap", &nom) else {
-                return;
-            };
-            chemin.set_extension("sap");
-            let Some(chemin_c) = chemin_c(&chemin) else {
-                self.sapglob.flefba = 0;
-                self.comment(92); /*erreur*/
-                return;
-            };
-            self.sapgest.dernier_fichier = Some(chemin.clone());
-            let _ = std::fs::remove_file(&chemin);
-            let mut fichier = fopen(chemin_c.as_ptr(), c"wb".as_ptr());
-            if fichier.is_null() {
-                self.sapglob.flefba = 0;
-                self.comment(92); /*erreur*/
-                return;
-            }
-            putc(b'G' as i32, fichier);
-            putc(b'O' as i32, fichier);
-            putc(b'D' as i32, fichier);
-            self.random.initrnd(b'S' as i16, b'A' as i16, b'P' as i16);
-            for cellule in &soma {
-                for i in 0..cellule.taille as usize {
-                    let car = (self.soma_mut(cellule.adresse)[i] as i16) ^ self.random.rnd0();
-                    checksum = checksum.wrapping_add(car);
-                    putc(car as i32, fichier);
-                }
-            }
-            checksum &= 255;
-            putc(checksum as i32, fichier);
-            self.sap3d.SauveEltsDecorsMobiles(fichier);
-            fclose(fichier);
-            fichier = fopen(chemin_c.as_ptr(), c"rb".as_ptr());
-            if fichier.is_null() || getc(fichier) != b'G' as i32 {
-                if !fichier.is_null() {
-                    fclose(fichier);
-                }
-                self.sapglob.flefba = 0;
-                self.comment(92); /*erreur*/
-                return;
-            }
-            self.sapglob.jour_dsk = self.sapglob.jour_act;
-            fclose(fichier);
+    pub(crate) fn sauve(&mut self) {
+        self.sapglob.flefba = 0;
+        if self.sapglob.jour_act == self.sapglob.jour_dsk {
+            self.comment(113); /*Une seule aventure par jour*/
+            return;
         }
+
+        let nom = nom_defaut_sauvegarde(self);
+        let Some(mut chemin) = request_save_file("sap", &nom) else {
+            return;
+        };
+        chemin.set_extension("sap");
+        self.sapgest.dernier_fichier = Some(chemin.clone());
+        let Ok(mut fichier) = File::create(&chemin) else {
+            self.sapglob.flefba = 0;
+            self.comment(92); /*erreur*/
+            return;
+        };
+        let mut ecriture_ok = fichier.write_all(b"GOD").is_ok();
+        self.random.initrnd(b'S' as i16, b'A' as i16, b'P' as i16);
+        let mut checksum: i16 = 111;
+        for cellule in &soma {
+            for i in 0..cellule.taille as usize {
+                let car = (self.soma_mut(cellule.adresse)[i] as i16) ^ self.random.rnd0();
+                checksum = checksum.wrapping_add(car);
+                ecriture_ok &= fichier.write_u8(car as u8).is_ok();
+            }
+        }
+        checksum &= 255;
+        ecriture_ok &= fichier.write_u8(checksum as u8).is_ok();
+        ecriture_ok &= self.sap3d.SauveEltsDecorsMobiles(&mut fichier).is_ok();
+        ecriture_ok &= fichier.flush().is_ok();
+        drop(fichier);
+
+        let Ok(mut fichier) = File::open(&chemin) else {
+            self.sapglob.flefba = 0;
+            self.comment(92); /*erreur*/
+            return;
+        };
+        if !ecriture_ok || fichier.read_u8().unwrap_or(0) != b'G' {
+            self.sapglob.flefba = 0;
+            self.comment(92); /*erreur*/
+            return;
+        }
+        self.sapglob.jour_dsk = self.sapglob.jour_act;
     }
 
     /***********************************************************************

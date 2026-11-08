@@ -4,6 +4,8 @@
 ***********************************************************************/
 #![allow(non_snake_case)]
 
+use std::fs::File;
+use std::io::Write;
 // Le moteur 3D : formes, objets 3D (ObjetsRef), décor (nuages, éclairs,
 // oiseaux, arbres, rochers) et animation finale.
 // Consommé par les autres modules du port (SAPGEST.C → sapgest.rs, etc.).
@@ -12,7 +14,7 @@ use std::sync::atomic::{AtomicI16, Ordering};
 use crate::Sapiens;
 use crate::acam::{CarboniseSetCursorArrow, FAUX, GetCursor, SetCursor, TickCount, VRAI};
 use crate::cbridge::watchCursor;
-use crate::cbridge::{FILE, feof, fprintf, fscanf, strcmp};
+use crate::cbridge::{FILE, feof, fscanf, strcmp};
 use crate::port::PortId;
 use crate::sapiens::sapw3d::distance;
 use crate::sapiens::sapwind::ValideUpdate;
@@ -3561,21 +3563,17 @@ impl Sap3d {
     Sauve dans le fichier aventure en entrée les éléments variables du décor :
     arbres foudroyés...
     **********************************************************************/
-    pub(crate) unsafe extern "C" fn SauveEltsDecorsMobiles(&self, f: *mut FILE) {
-        unsafe {
-            fprintf(f, c"\nMAGIC\n".as_ptr());
-            for mont in self.aigoual.iter() {
-                /* C'est un arbre et même coordonnée */
-                if mont.forme == Some(FormeId::Foudroye) {
-                    fprintf(
-                        f,
-                        c"Foudroye %ld %ld\n".as_ptr(),
-                        mont.posx as i64,
-                        mont.posy as i64,
-                    );
-                }
+    pub(crate) fn SauveEltsDecorsMobiles(&self, f: &mut File) -> Result<(), std::io::Error> {
+        f.write_all(b"\nMAGIC\n")?;
+        for mont in self.aigoual.iter() {
+            /* C'est un arbre et même coordonnée */
+            if mont.forme == Some(FormeId::Foudroye) {
+                // c'est in format de sauvegarde il est pas dépendant de l'OS
+                #[allow(clippy::write_with_newline)]
+                write!(f, "Foudroye {} {}\n", mont.posx as i64, mont.posy as i64)?;
             }
         }
+        Ok(())
     }
 }
 
