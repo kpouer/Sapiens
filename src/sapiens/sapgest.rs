@@ -1817,3 +1817,127 @@ impl Sapiens {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::exchange::TEST_FILE;
+
+    /// `Sapiens` est volumineux : on l'exécute dans un thread à grosse pile.
+    fn avec_sapiens(f: impl FnOnce(&mut Sapiens) + Send + 'static) {
+        std::thread::Builder::new()
+            .stack_size(32 * 1024 * 1024)
+            .spawn(move || {
+                let mut sapiens = Sapiens::default();
+                unsafe { sapiens.init_glob() };
+                sapiens.CalculeToutDegrades();
+                let h = sapiens
+                    .sapglob
+                    .tabheur
+                    .iter()
+                    .find(|e| e.q != 0)
+                    .unwrap()
+                    .clone();
+                sapiens.sapw3d.FixeDegradesFonctionHeure(h);
+                f(&mut sapiens);
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    /// Impose le fichier « choisi » dans la boîte de dialogue simulée.
+    fn choisit_fichier(nom: &str) -> PathBuf {
+        let chemin =
+            std::env::temp_dir().join(format!("sapiens_test_{}_{nom}.sap", std::process::id()));
+        TEST_FILE.with(|p| *p.borrow_mut() = Some(chemin.clone()));
+        chemin
+    }
+
+    #[test]
+    fn sauve_puis_charge_restaure_les_variables() {
+        avec_sapiens(|sapiens| {
+            let chemin = choisit_fichier("roundtrip");
+            sapiens.sapglob.jour_act = 1;
+            sapiens.sapglob.soif = 200;
+            sapiens.sapglob.faim = 210;
+            sapiens.sapglob.fatig = 220;
+            sapiens.sapglob.zoom = 99;
+            sapiens.sapglob.agilite = 7;
+            sapiens.sapglob.force = 9;
+            sapiens.sapglob.xj = 0x1234;
+            sapiens.sapglob.yj = 0x2345;
+            sapiens.sauve();
+            assert!(chemin.exists());
+            assert_eq!(sapiens.sapglob.jour_dsk, sapiens.sapglob.jour_act);
+
+            sapiens.sapglob.soif = 0;
+            sapiens.sapglob.faim = 0;
+            sapiens.sapglob.fatig = 0;
+            sapiens.sapglob.zoom = 0;
+            sapiens.sapglob.agilite = 0;
+            sapiens.sapglob.force = 0;
+            sapiens.sapglob.xj = 0;
+            sapiens.sapglob.yj = 0;
+            sapiens.charge();
+
+            assert_eq!(sapiens.sapglob.zoom, 99);
+            assert_eq!(sapiens.sapglob.agilite, 7);
+            assert_eq!(sapiens.sapglob.force, 9);
+            assert_eq!(sapiens.sapglob.xj, 0x1234);
+            assert_eq!(sapiens.sapglob.yj, 0x2345);
+            // charge() appelle chrono(0), qui fait baisser un peu ces quotas
+            assert!((190..=200).contains(&sapiens.sapglob.soif));
+            assert!((200..=210).contains(&sapiens.sapglob.faim));
+            assert!((210..=220).contains(&sapiens.sapglob.fatig));
+            let _ = std::fs::remove_file(chemin);
+        });
+    }
+
+    #[test]
+    fn sauve_ecrit_un_fichier_god_avec_magic() {
+        avec_sapiens(|sapiens| {
+            let chemin = choisit_fichier("format");
+            sapiens.sapglob.jour_act = 1;
+            sapiens.sauve();
+            let octets = std::fs::read(&chemin).unwrap();
+            assert_eq!(&octets[..3], b"GOD");
+            assert!(octets.windows(5).any(|w| w == b"MAGIC"));
+            let _ = std::fs::remove_file(chemin);
+        });
+    }
+
+    #[test]
+    fn sauve_refuse_une_deuxieme_aventure_le_meme_jour() {
+        avec_sapiens(|sapiens| {
+            let chemin = choisit_fichier("memejour");
+            sapiens.sapglob.jour_act = 1;
+            sapiens.sapglob.jour_dsk = 1;
+            sapiens.sauve();
+            assert!(!chemin.exists());
+        });
+    }
+
+    #[test]
+    fn charge_fichier_corrompu_reinitialise_la_partie() {
+        avec_sapiens(|sapiens| {
+            let chemin = choisit_fichier("checksum");
+            sapiens.sapglob.jour_act = 1;
+            sapiens.sauve();
+            let mut octets = std::fs::read(&chemin).unwrap();
+            let taille: usize = soma.iter().map(|c| c.taille as usize).sum();
+            octets[3 + taille] ^= 0xFF; // octet de checksum
+            std::fs::write(&chemin, octets).unwrap();
+
+            sapiens.sapglob.soif = 12;
+            sapiens.sapglob.zoom = 33;
+            sapiens.charge();
+            // checksum faux => primsap() : valeurs de départ, mort remis à 0
+            // (chrono(0) a pu baisser légèrement les quotas ensuite)
+            assert!(sapiens.sapglob.soif >= 240);
+            assert_eq!(sapiens.sapglob.zoom, 120);
+            assert_eq!(sapiens.sapglob.mort, 0);
+            let _ = std::fs::remove_file(chemin);
+        });
+    }
+}

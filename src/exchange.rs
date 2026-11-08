@@ -307,6 +307,7 @@ pub(crate) fn request_preferences(initial: PreferencesRequest) -> Option<Prefere
 }
 
 /// Demande un fichier à charger (thread C).
+#[cfg(not(test))]
 pub(crate) fn request_open_file(extension: &str, default_name: &str) -> Option<PathBuf> {
     let req = FileRequest {
         extension: extension.to_string(),
@@ -322,6 +323,7 @@ pub(crate) fn request_open_file(extension: &str, default_name: &str) -> Option<P
 }
 
 /// Demande un nom de fichier pour sauvegarder (thread C).
+#[cfg(not(test))]
 pub(crate) fn request_save_file(extension: &str, default_name: &str) -> Option<PathBuf> {
     let req = FileRequest {
         extension: extension.to_string(),
@@ -334,4 +336,21 @@ pub(crate) fn request_save_file(extension: &str, default_name: &str) -> Option<P
         UiResponse::File(path) => path,
         _ => None,
     }
+}
+
+/// En test, les boîtes de dialogue fichier sont remplacées par ce chemin imposé.
+#[cfg(test)]
+thread_local! {
+    pub(crate) static TEST_FILE: std::cell::RefCell<Option<PathBuf>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+pub(crate) fn request_open_file(_extension: &str, _default_name: &str) -> Option<PathBuf> {
+    TEST_FILE.with(|p| p.borrow().clone())
+}
+
+#[cfg(test)]
+pub(crate) fn request_save_file(_extension: &str, _default_name: &str) -> Option<PathBuf> {
+    TEST_FILE.with(|p| p.borrow().clone())
 }
