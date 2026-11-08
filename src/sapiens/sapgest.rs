@@ -1854,56 +1854,89 @@ mod tests {
         chemin
     }
 
+    /// Aventure de référence (octets produits par la version d'origine du format).
+    /// Régénérable avec `UPDATE_GOLDEN=1 cargo test sauve_produit`.
+    const AVENTURE_REFERENCE: &[u8] = include_bytes!("testdata/aventure_reference.sap");
+
+    /// Place l'état de jeu de référence (valeurs plausibles et distinctes).
+    fn etat_reference(sapiens: &mut Sapiens) {
+        let g = &mut sapiens.sapglob;
+        g.soif = 200;
+        g.fatig = 190;
+        g.faim = 180;
+        g.mort = 4;
+        g.bless = 170;
+        g.zoom = 120;
+        g.agilite = 7;
+        g.force = 9;
+        g.resistance = 11;
+        g.charisme = 13;
+        g.vie = 15;
+        g.sexe = 1;
+        g.scenar = 2;
+        g.scenpr = 20;
+        g.ciel = 3;
+        g.terre = 5;
+        g.xj = 0x5800;
+        g.yj = 0x5400;
+        g.dzeta = 768;
+        g.heure = 42;
+        g.jour_act = 3;
+        g.jour_dsk = 0;
+    }
+
     #[test]
-    fn sauve_puis_charge_restaure_les_variables() {
+    fn sauve_produit_le_fichier_de_reference() {
         avec_sapiens(|sapiens| {
-            let chemin = choisit_fichier("roundtrip");
-            sapiens.sapglob.jour_act = 1;
-            sapiens.sapglob.soif = 200;
-            sapiens.sapglob.faim = 210;
-            sapiens.sapglob.fatig = 220;
-            sapiens.sapglob.zoom = 99;
-            sapiens.sapglob.agilite = 7;
-            sapiens.sapglob.force = 9;
-            sapiens.sapglob.xj = 0x1234;
-            sapiens.sapglob.yj = 0x2345;
+            let chemin = choisit_fichier("golden_sauve");
+            etat_reference(sapiens);
             sapiens.sauve();
-            assert!(chemin.exists());
-            assert_eq!(sapiens.sapglob.jour_dsk, sapiens.sapglob.jour_act);
-
-            sapiens.sapglob.soif = 0;
-            sapiens.sapglob.faim = 0;
-            sapiens.sapglob.fatig = 0;
-            sapiens.sapglob.zoom = 0;
-            sapiens.sapglob.agilite = 0;
-            sapiens.sapglob.force = 0;
-            sapiens.sapglob.xj = 0;
-            sapiens.sapglob.yj = 0;
-            sapiens.charge();
-
-            assert_eq!(sapiens.sapglob.zoom, 99);
-            assert_eq!(sapiens.sapglob.agilite, 7);
-            assert_eq!(sapiens.sapglob.force, 9);
-            assert_eq!(sapiens.sapglob.xj, 0x1234);
-            assert_eq!(sapiens.sapglob.yj, 0x2345);
-            // charge() appelle chrono(0), qui fait baisser un peu ces quotas
-            assert!((190..=200).contains(&sapiens.sapglob.soif));
-            assert!((200..=210).contains(&sapiens.sapglob.faim));
-            assert!((210..=220).contains(&sapiens.sapglob.fatig));
-            let _ = std::fs::remove_file(chemin);
+            let octets = std::fs::read(&chemin).unwrap();
+            let _ = std::fs::remove_file(&chemin);
+            if std::env::var_os("UPDATE_GOLDEN").is_some() {
+                std::fs::write(
+                    concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/src/sapiens/testdata/aventure_reference.sap"
+                    ),
+                    &octets,
+                )
+                .unwrap();
+                return;
+            }
+            assert_eq!(octets, AVENTURE_REFERENCE);
         });
     }
 
     #[test]
-    fn sauve_ecrit_un_fichier_god_avec_magic() {
+    fn charge_lit_le_fichier_de_reference() {
         avec_sapiens(|sapiens| {
-            let chemin = choisit_fichier("format");
-            sapiens.sapglob.jour_act = 1;
-            sapiens.sauve();
-            let octets = std::fs::read(&chemin).unwrap();
-            assert_eq!(&octets[..3], b"GOD");
-            assert!(octets.windows(5).any(|w| w == b"MAGIC"));
-            let _ = std::fs::remove_file(chemin);
+            let chemin = choisit_fichier("golden_charge");
+            std::fs::write(&chemin, AVENTURE_REFERENCE).unwrap();
+            sapiens.charge();
+            let _ = std::fs::remove_file(&chemin);
+
+            let g = &sapiens.sapglob;
+            assert_eq!(g.mort, 4);
+            assert_eq!(g.zoom, 120);
+            assert_eq!(g.agilite, 7);
+            assert_eq!(g.force, 9);
+            assert_eq!(g.resistance, 11);
+            assert_eq!(g.charisme, 13);
+            assert_eq!(g.vie, 15);
+            assert_eq!(g.sexe, 1);
+            assert_eq!(g.scenar, 2);
+            assert_eq!(g.scenpr, 20);
+            assert_eq!(g.ciel, 3);
+            assert_eq!(g.terre, 5);
+            assert_eq!(g.xj, 0x5800);
+            assert_eq!(g.yj, 0x5400);
+            assert_eq!(g.jour_act, 3);
+            // charge() appelle chrono(0), qui peut faire baisser légèrement ces quotas
+            assert!((190..=200).contains(&g.soif), "soif = {}", g.soif);
+            assert!((180..=190).contains(&g.fatig), "fatig = {}", g.fatig);
+            assert!((170..=180).contains(&g.faim), "faim = {}", g.faim);
+            assert!((160..=170).contains(&g.bless), "bless = {}", g.bless);
         });
     }
 
@@ -1922,22 +1955,34 @@ mod tests {
     fn charge_fichier_corrompu_reinitialise_la_partie() {
         avec_sapiens(|sapiens| {
             let chemin = choisit_fichier("checksum");
-            sapiens.sapglob.jour_act = 1;
-            sapiens.sauve();
-            let mut octets = std::fs::read(&chemin).unwrap();
+            let mut octets = AVENTURE_REFERENCE.to_vec();
             let taille: usize = soma.iter().map(|c| c.taille as usize).sum();
             octets[3 + taille] ^= 0xFF; // octet de checksum
             std::fs::write(&chemin, octets).unwrap();
 
-            sapiens.sapglob.soif = 12;
-            sapiens.sapglob.zoom = 33;
             sapiens.charge();
+            let _ = std::fs::remove_file(chemin);
             // checksum faux => primsap() : valeurs de départ, mort remis à 0
             // (chrono(0) a pu baisser légèrement les quotas ensuite)
-            assert!(sapiens.sapglob.soif >= 240);
-            assert_eq!(sapiens.sapglob.zoom, 120);
             assert_eq!(sapiens.sapglob.mort, 0);
+            assert_eq!(sapiens.sapglob.scenar, 1);
+            assert!(sapiens.sapglob.soif >= 240);
+        });
+    }
+
+    #[test]
+    fn charge_fichier_sans_en_tete_god_ne_charge_rien() {
+        avec_sapiens(|sapiens| {
+            let chemin = choisit_fichier("entete");
+            let mut octets = AVENTURE_REFERENCE.to_vec();
+            octets[0] = b'X';
+            std::fs::write(&chemin, octets).unwrap();
+
+            sapiens.charge();
             let _ = std::fs::remove_file(chemin);
+            // les variables du fichier ne sont pas lues
+            assert_ne!(sapiens.sapglob.agilite, 7);
+            assert_ne!(sapiens.sapglob.force, 9);
         });
     }
 }
