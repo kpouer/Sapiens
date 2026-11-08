@@ -10,7 +10,6 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 
-use crate::cbridge::TEText;
 use crate::pict::Picture;
 use std::ffi::c_void;
 use std::ops::ShrAssign;
@@ -34,10 +33,7 @@ pub(crate) struct Pic {
     pub(crate) picFrame: Rect,
     pub(crate) pict: Picture,
 }
-pub(crate) type PicHandle = *mut *mut Pic;
-pub(crate) type TEHandle = *mut *mut TEText;
 
-pub(crate) type StringPtr = *mut u8;
 pub(crate) type KeyMap = [u64; 4];
 
 #[repr(C)]

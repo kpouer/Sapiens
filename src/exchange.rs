@@ -338,7 +338,6 @@ pub(crate) fn request_save_file(extension: &str, default_name: &str) -> Option<P
     }
 }
 
-/// En test, les boîtes de dialogue fichier sont remplacées par ce chemin imposé.
 #[cfg(test)]
 thread_local! {
     pub(crate) static TEST_FILE: std::cell::RefCell<Option<PathBuf>> =

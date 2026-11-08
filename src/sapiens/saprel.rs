@@ -3,13 +3,12 @@
                 SAPREL : Module relationnel (SAPREL.C porté en Rust)
                     (c) god Le 7 Novembre 1986
 ***********************************************************************/
-use std::ptr::addr_of;
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
 
 use crate::Sapiens;
 use crate::acam::{FAUX, TickCount, VRAI};
-use crate::cbridge::{strcpy, whiteColor};
+use crate::cbridge::whiteColor;
 use crate::port::PortId;
 use crate::sapiens::c_str::ChaineC;
 use crate::sapiens::sapglob::{ListeId, SapId, Sapglob, tabprf, tenerv, tobje};
@@ -923,34 +922,34 @@ impl Sapiens {
         /*c'est ds la poche*/
         /*on recopie sap2 sur sap3*/
         self.sapglob.sap3.cross = self.sapglob.sap2.cross; /*parametres*/
-        unsafe {
-            if self.sapglob.presence < 5 {
-                strcpy(
-                    addr_of!(self.saptxt.nomcopain) as *mut i8,
-                    addr_of!(self.saptxt.nomadversaire) as *const i8,
-                ); /*nom*/
-            } else {
-                self.saptxt.nomcopain[0] = 128 + 45; /*Ton ami*/
-                self.saptxt.nomcopain[1] = 0;
-            }
-            self.prm(SapId::Sap3, qui as i16);
-            let sap2 = &self.sapglob.sap2;
-            let sap3 = &mut self.sapglob.sap3;
-            sap3.colonne = sap2.colonne;
-            sap3.sens = sap2.sens;
-            sap3.coeur = sap2.coeur;
-            sap3.cptrsouffle = 1;
-            self.prm(SapId::Sap2, 0);
-            if self.sapglob.dervue != Vue::PAYSAGE
-            /* on est en vue laterale*/
-            {
-                self.sapglob.presence = 0;
-                self.trobsv(1);
-            }
-            self.sapglob.echan = 0;
-            let liste_id = self.sapglob.peuple_mut(SapId::Sap3).possession;
-            self.sapglob.liste_mut(liste_id).taille = 0;
+        if self.sapglob.presence < 5 {
+            /*nom*/
+            let src = &self.saptxt.nomadversaire;
+            let len = src.iter().position(|&b| b == 0).unwrap_or(src.len());
+            let n = len.min(self.saptxt.nomcopain.len() - 1);
+            self.saptxt.nomcopain[..n].copy_from_slice(&src[..n]);
+            self.saptxt.nomcopain[n] = 0;
+        } else {
+            self.saptxt.nomcopain[0] = 128 + 45; /*Ton ami*/
+            self.saptxt.nomcopain[1] = 0;
         }
+        self.prm(SapId::Sap3, qui as i16);
+        let sap2 = &self.sapglob.sap2;
+        let sap3 = &mut self.sapglob.sap3;
+        sap3.colonne = sap2.colonne;
+        sap3.sens = sap2.sens;
+        sap3.coeur = sap2.coeur;
+        sap3.cptrsouffle = 1;
+        self.prm(SapId::Sap2, 0);
+        if self.sapglob.dervue != Vue::PAYSAGE
+        /* on est en vue laterale*/
+        {
+            self.sapglob.presence = 0;
+            self.trobsv(1);
+        }
+        self.sapglob.echan = 0;
+        let liste_id = self.sapglob.peuple_mut(SapId::Sap3).possession;
+        self.sapglob.liste_mut(liste_id).taille = 0;
         self.generique(true);
     }
 

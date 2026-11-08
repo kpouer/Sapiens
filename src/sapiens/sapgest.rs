@@ -1627,62 +1627,60 @@ impl Sapiens {
                                     CHARGE:
     ***********************************************************************/
     pub(crate) fn charge(&mut self) {
-        unsafe {
-            self.sapglob.flefba = 0;
+        self.sapglob.flefba = 0;
 
-            let Some(mut chemin) = request_open_file("sap", "") else {
-                return;
-            };
-            chemin.set_extension("sap");
-            let path = PathBuf::from(&chemin);
-            self.sapgest.dernier_fichier = Some(chemin);
-            self.sapglob.flefba = 0;
-            let Ok(mut fichier) = File::open(path) else {
-                self.comment(92);
-                return;
-            };
-            self.primsap();
-            self.random.initrnd(b'S' as i16, b'A' as i16, b'P' as i16);
-            let mut checksum: i16 = 111;
-            if fichier.read_u8().unwrap_or(0) == b'G'
-                && fichier.read_u8().unwrap_or(0) == b'O'
-                && fichier.read_u8().unwrap_or(0) == b'D'
-            {
-                for cellule in &soma {
-                    for i in 0..cellule.taille as usize {
-                        let mut car = fichier.read_u8().map(|c| c as i16).unwrap_or(-1);
-                        if car < 0 {
-                            self.sapglob.flefba = 0;
-                            self.comment(92); /*erreur*/
-                            return;
-                        }
-                        checksum = checksum.wrapping_add(car);
-                        car ^= self.random.rnd0();
-                        self.soma_mut(cellule.adresse)[i] = car as u8;
+        let Some(mut chemin) = request_open_file("sap", "") else {
+            return;
+        };
+        chemin.set_extension("sap");
+        let path = PathBuf::from(&chemin);
+        self.sapgest.dernier_fichier = Some(chemin);
+        self.sapglob.flefba = 0;
+        let Ok(mut fichier) = File::open(path) else {
+            self.comment(92);
+            return;
+        };
+        self.primsap();
+        self.random.initrnd(b'S' as i16, b'A' as i16, b'P' as i16);
+        let mut checksum: i16 = 111;
+        if fichier.read_u8().unwrap_or(0) == b'G'
+            && fichier.read_u8().unwrap_or(0) == b'O'
+            && fichier.read_u8().unwrap_or(0) == b'D'
+        {
+            for cellule in &soma {
+                for i in 0..cellule.taille as usize {
+                    let mut car = fichier.read_u8().map(|c| c as i16).unwrap_or(-1);
+                    if car < 0 {
+                        self.sapglob.flefba = 0;
+                        self.comment(92); /*erreur*/
+                        return;
                     }
+                    checksum = checksum.wrapping_add(car);
+                    car ^= self.random.rnd0();
+                    self.soma_mut(cellule.adresse)[i] = car as u8;
                 }
-                checksum &= 255;
-                if checksum != fichier.read_u8().map(|c| c as i16).unwrap_or(-1) {
-                    self.sapglob.flefba = 0;
-                    self.comment(92); /*erreur*/
-                    self.primsap(); /*Nyak nyak !!!*/
-                    self.sapglob.mort = 0;
-                }
-            } else {
+            }
+            checksum &= 255;
+            if checksum != fichier.read_u8().map(|c| c as i16).unwrap_or(-1) {
+                self.sapglob.flefba = 0;
                 self.comment(92); /*erreur*/
+                self.primsap(); /*Nyak nyak !!!*/
+                self.sapglob.mort = 0;
             }
-            self.CreeDecor3d(true);
-            let _ = self.sap3d.ChargeEltsDecorsMobiles(&mut fichier);
-            self.sapglob.minute = 0;
-            self.sapglob.zj = 0;
-            self.chrono(0); /*pour couleur*/
-            self.sapglob.jour_dsk = self.sapglob.jour_act;
-            self.affich(self.sapglob.dzeta as u16);
-            self.sapwind.ports.tfrima();
-            self.generique(VRAI);
-            if self.sapglob.scenar == 6 {
-                self.sceveu(6); /* Ouaaais c'est lui !!!!!*/
-            }
+        } else {
+            self.comment(92); /*erreur*/
+        }
+        self.CreeDecor3d(true);
+        let _ = self.sap3d.ChargeEltsDecorsMobiles(&mut fichier);
+        self.sapglob.minute = 0;
+        self.sapglob.zj = 0;
+        self.chrono(0); /*pour couleur*/
+        self.sapglob.jour_dsk = self.sapglob.jour_act;
+        self.affich(self.sapglob.dzeta as u16);
+        self.sapwind.ports.tfrima();
+        self.generique(VRAI);
+        if self.sapglob.scenar == 6 {
+            self.sceveu(6); /* Ouaaais c'est lui !!!!!*/
         }
     }
 
