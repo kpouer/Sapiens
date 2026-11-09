@@ -38,23 +38,12 @@ pub(crate) mod sapwmess;
 pub(crate) mod sapwmus;
 pub(crate) mod sapwpref;
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Default, Debug, Copy, Clone)]
 pub(crate) struct liste {
     pub(crate) typeRef: TypeReference,
     pub(crate) taille: u8,
     pub(crate) maxtaille: u8,
     pub(crate) elements: [u8; 30],
-}
-
-impl Default for liste {
-    fn default() -> Self {
-        let mut s = ::std::mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            ::std::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
-            s.assume_init()
-        }
-    }
 }
 
 #[derive(Default, Debug, Clone)]
@@ -94,8 +83,9 @@ impl Mob {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Default)]
 pub(crate) enum TypeReference {
+    #[default]
     REFER0,
     REFER1,
     REFER2,
