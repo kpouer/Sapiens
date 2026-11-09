@@ -51,7 +51,7 @@ static formonde: [u8; 100] = [
 ];
 
 pub(crate) struct Sapgest {
-    forsyl: *const u8,
+    forsyl: &'static [u8],
     palSilex: [u16; 8],
     /* Dernier fichier d'aventure charge ou sauve (nom par defaut du dialogue) */
     dernier_fichier: Option<PathBuf>,
@@ -60,7 +60,7 @@ pub(crate) struct Sapgest {
 impl Default for Sapgest {
     fn default() -> Self {
         Self {
-            forsyl: forsy1.as_ptr(),
+            forsyl: &forsy1,
             palSilex: [0; 8],
             dernier_fichier: None,
         }
@@ -273,7 +273,7 @@ impl Sapiens {
         let mut i: i16 = 0;
         let mut ecart: u32 = 0;
         while i < NB_LIGNE_SILEX {
-            let f = unsafe { *self.sapgest.forsyl.add((i / 2) as usize) } as i16;
+            let f = self.sapgest.forsyl[(i / 2) as usize] as i16;
             let mut trav1 = (NB_COL_SILEX / 2) - 2 * f - self.tabgau(i); /*ecart par rapport à ma gauche*/
             if trav1 < 0 {
                 trav1 = -trav1;
@@ -325,7 +325,7 @@ impl Sapiens {
         /*dessin de la forme ideale a obtenir*/
         let mut i: i16 = 0;
         while i < NB_LIGNE_SILEX {
-            let f = unsafe { *self.sapgest.forsyl.add((i / 2) as usize) } as i16;
+            let f = self.sapgest.forsyl[(i / 2) as usize] as i16;
             if f != 0 {
                 self.plot_ecr(i / 2 + 1, 160 + f, 0x007);
                 self.plot_ecr(i / 2 + 1, 160 - f, 0x007);
@@ -361,11 +361,10 @@ impl Sapiens {
             if delta1 < 0 {
                 delta1 = 0;
             }
-            unsafe {
-                posTheo = (*self.sapgest.forsyl.add((y / 2) as usize) as i16
-                    + *self.sapgest.forsyl.add((y / 2 + 1) as usize) as i16)
-                    / 2;
-            }
+            let index = y as usize / 2;
+            // bug dans le Code C original avec dépassement de tableau
+            let next = (index + 1).min(self.sapgest.forsyl.len() - 1);
+            posTheo = (self.sapgest.forsyl[index] as i16 + self.sapgest.forsyl[next] as i16) / 2;
             pos1 = (NB_COL_SILEX / 2) - posTheo - delta1; /* position gauche du nucleus */
             delta1 = delta1.wrapping_add(self.random.myRandom(-1, 2) as i16);
             if delta1 < 0 {
@@ -653,11 +652,7 @@ impl Sapiens {
             }
         }
         /* On fixe l'ecart stochastique gauche et droite */
-        self.sapgest.forsyl = if regb == 0 {
-            forsy1.as_ptr()
-        } else {
-            forsy2.as_ptr()
-        };
+        self.sapgest.forsyl = if regb == 0 { &forsy1 } else { &forsy2 };
 
         /* Effacement du centre : on remplit avec une pierre noire */
         self.FabriqueNucleus();
