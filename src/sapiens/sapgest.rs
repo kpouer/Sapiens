@@ -779,7 +779,7 @@ impl Sapiens {
     /***********************************************************************
                             GETNOM:Saisi un nom de la taille donnée
     ***********************************************************************/
-    fn getnom(&mut self, mess: i16, position: *mut i8, taille: i16) -> i16 {
+    fn getnom(&mut self, mess: i16, taille: i16) -> Option<(usize, [u8; 8])> {
         let mut pos: i16 = 0;
         let mut car: i16;
 
@@ -791,61 +791,58 @@ impl Sapiens {
             self.sapglob.zoneu.elements[i as usize] = 32; /*on vide la zone*/
             i += 1;
         }
-        unsafe {
+        loop {
+            /* On affiche le commentaire */
+            self.efbadi();
+            self.comment(mess as u16);
+            let mut i: i16 = 0;
+            while i < taille && self.sapglob.zoneu.elements[i as usize] != b' ' {
+                self.affcarmess(self.sapglob.zoneu.elements[i as usize] as i16);
+                i += 1;
+            }
+            self.affcarmess(2); /* Curseur */
+            self.TfrBadAss();
             loop {
-                /* On affiche le commentaire */
-                self.efbadi();
-                self.comment(mess as u16);
-                let mut i: i16 = 0;
-                while i < taille && self.sapglob.zoneu.elements[i as usize] != b' ' {
-                    self.affcarmess(self.sapglob.zoneu.elements[i as usize] as i16);
-                    i += 1;
+                car = self.litclav();
+                if car != 0 {
+                    break;
                 }
-                self.affcarmess(2); /* Curseur */
+            }
+            if car == 13 {
+                /* Validation : test des trapsures */
+                for (t, trap_array) in TRAPS.iter().enumerate() {
+                    let mut oktrap: i16 = 1;
+                    for (j, trap) in trap_array.iter().enumerate() {
+                        if (trap & 223) != (self.sapglob.zoneu.elements[j] & 223) {
+                            oktrap = 0;
+                        }
+                    }
+                    if oktrap != 0 {
+                        self.trapsure(t as i16);
+                        pos = 0;
+                    }
+                }
+                let result = if pos != 0 {
+                    /*au moins un caractere*/
+                    let mut nom = [0u8; 8];
+                    let n = (taille as usize).min(nom.len());
+                    nom[..n].copy_from_slice(&self.sapglob.zoneu.elements[..n]);
+                    Some((pos as usize, nom))
+                } else {
+                    None
+                };
+                self.efbadass();
                 self.TfrBadAss();
-                loop {
-                    car = self.litclav();
-                    if car != 0 {
-                        break;
-                    }
+                return result;
+            }
+            if car > 32 && car <= b'z' as i16 && !(car >= b'0' as i16 && car <= b'9' as i16) {
+                if pos < taille {
+                    self.sapglob.zoneu.elements[pos as usize] = car as u8;
+                    pos += 1;
                 }
-                if car == 13 {
-                    /* Validation : test des trapsures */
-                    for (t, trap_array) in TRAPS.iter().enumerate() {
-                        let mut oktrap: i16 = 1;
-                        for (j, trap) in trap_array.iter().enumerate() {
-                            if (trap & 223) != (self.sapglob.zoneu.elements[j] & 223) {
-                                oktrap = 0;
-                            }
-                        }
-                        if oktrap != 0 {
-                            self.trapsure(t as i16);
-                            pos = 0;
-                        }
-                    }
-                    if pos != 0 {
-                        /*au moins un caractere*/
-                        let mut p = position;
-                        let mut i: i16 = 0;
-                        while i < taille {
-                            *p = self.sapglob.zoneu.elements[i as usize] as i8;
-                            p = p.add(1);
-                            i += 1;
-                        }
-                    }
-                    self.efbadass();
-                    self.TfrBadAss();
-                    return pos;
-                }
-                if car > 32 && car <= b'z' as i16 && !(car >= b'0' as i16 && car <= b'9' as i16) {
-                    if pos < taille {
-                        self.sapglob.zoneu.elements[pos as usize] = car as u8;
-                        pos += 1;
-                    }
-                } else if car == 8 && pos != 0 {
-                    pos -= 1;
-                    self.sapglob.zoneu.elements[pos as usize] = 32;
-                }
+            } else if car == 8 && pos != 0 {
+                pos -= 1;
+                self.sapglob.zoneu.elements[pos as usize] = 32;
             }
         }
     }
@@ -1054,13 +1051,12 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn defsap(&mut self) {
         self.sapglob.sapvit = 0;
-        let nomjoueur_ptr = &raw mut self.saptxt.nomjoueur as *mut i8;
-        let taille = self.getnom(88, nomjoueur_ptr, 8);
-        if taille == 0 {
+        let Some((taille, nom)) = self.getnom(88, 8) else {
             return;
-        }
+        };
+        self.saptxt.nomjoueur[..nom.len()].copy_from_slice(&nom);
         self.sapglob.flefba = 0;
-        self.saptxt.nomjoueur[taille as usize] = 0;
+        self.saptxt.nomjoueur[taille] = 0;
         /* definitions des quotas personnage*/
         for i in 0..5usize {
             self.sapglob.param[i] = 130;
