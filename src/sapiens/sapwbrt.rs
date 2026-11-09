@@ -7,12 +7,10 @@ use crate::langue::Langue::GB;
 use crate::port::{PortId, Ports};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtDefaultLangRess, CvtLangRess};
-use crate::sapiens::sapwind::ValideUpdate;
 use crate::sapiens::{DEFAULT_MOB, DEFAULT_PALCOUL, ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalCoul};
-use crate::shared::{RGBColor, Rect, RgnHandle, SapPort};
+use crate::shared::{RGBColor, Rect, SapPort};
 use crate::stubs::{
-    CarboniseInvalRect, CarboniseSetPatGray, CarboniseValideUpdate, ConvertPNGFileToOffscreen,
-    GetRectFilePng,
+    CarboniseSetPatGray, CarboniseValideUpdate, ConvertPNGFileToOffscreen, GetRectFilePng,
 };
 use crate::{Sapiens, port};
 use byteorder::{BigEndian, ReadBytesExt};
@@ -142,14 +140,12 @@ impl Ports {
     /****************************************************************************
                 DoScrollRect
     *****************************************************************************/
-    pub(crate) fn DoScrollRect(&mut self, r: &Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
+    pub(crate) fn DoScrollRect(&mut self, r: &Rect, dh: i16, dv: i16) {
         let z = self.zoom();
         let dest = self.DoZoomRect(r);
         let bdh = (dh as f32 * z) as i16;
         let bdv = (dv as f32 * z) as i16;
-        self.ScrollRect(&dest, bdh, bdv, updateRgn);
-        CarboniseInvalRect(r);
-        ValideUpdate();
+        self.ScrollRect(&dest, bdh, bdv);
     }
 }
 

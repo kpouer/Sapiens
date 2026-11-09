@@ -71,9 +71,7 @@ impl Sapiens {
         );
         i = 0;
         while i < self.sapwmess.rMess.right - self.sapwmess.rMess.left {
-            self.sapwind
-                .ports
-                .DoScrollRect(&self.sapwmess.rMess, 8, 0, core::ptr::null_mut());
+            self.sapwind.ports.DoScrollRect(&self.sapwmess.rMess, 8, 0);
             self.sapwind.ports.DoEraseRect(&reff);
             i += 8;
         }

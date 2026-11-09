@@ -978,27 +978,19 @@ impl Ports {
         }
     }
 
-    pub(crate) fn ScrollRect(&mut self, r: &Rect, dh: i16, dv: i16, updateRgn: RgnHandle) {
+    pub(crate) fn ScrollRect(&mut self, src: &Rect, dh: i16, dv: i16) {
         let p = self.current_id();
-        unsafe {
-            let src = *r;
-            if src.is_empty() {
-                return;
-            }
-            let mut dst = src;
-            dst.left = dst.left.wrapping_add(dh);
-            dst.right = dst.right.wrapping_add(dh);
-            dst.top = dst.top.wrapping_add(dv);
-            dst.bottom = dst.bottom.wrapping_add(dv);
-            let clipped = src.intersect(&dst);
-            if !clipped.is_empty() {
-                self.CopyBits(p, p, &clipped, &clipped, 0);
-            }
-            if !updateRgn.is_null() {
-                let union_ = src.union(&dst);
-                *(updateRgn as *mut Rect) = union_;
-                // Région non vide
-            }
+        if src.is_empty() {
+            return;
+        }
+        let mut dst = *src;
+        dst.left = dst.left.wrapping_add(dh);
+        dst.right = dst.right.wrapping_add(dh);
+        dst.top = dst.top.wrapping_add(dv);
+        dst.bottom = dst.bottom.wrapping_add(dv);
+        let clipped = src.intersect(&dst);
+        if !clipped.is_empty() {
+            self.CopyBits(p, p, &clipped, &clipped, 0);
         }
     }
 
