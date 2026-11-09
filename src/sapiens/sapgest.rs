@@ -1401,7 +1401,7 @@ impl Sapiens {
         let r = Rect::new(0, 0, 600, 400);
         self.TfrEcr(Some(r));
         let r = Rect::new(0, 0, 320 * ECHELLE as i16, 200 * ECHELLE as i16);
-        CarboniseInvalRect(&raw const r);
+        CarboniseInvalRect(&r);
         ValideUpdate();
     }
 

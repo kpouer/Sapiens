@@ -45,7 +45,7 @@ impl Sapiens {
             self.sapwmess.rMess,
             &self.sapwmess.rMess,
         );
-        CarboniseInvalRect(&raw const self.sapwmess.rMess);
+        CarboniseInvalRect(&self.sapwmess.rMess);
     }
 
     /****************************************************************************

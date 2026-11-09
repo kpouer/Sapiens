@@ -11,8 +11,7 @@ use crate::acam::{
 };
 use crate::audio;
 use crate::cbridge::{
-    WindowPtr, blackColor, bold, charCodeMask, everyEvent, helvetica, optionKey, watchCursor,
-    whiteColor,
+    blackColor, bold, charCodeMask, everyEvent, helvetica, optionKey, watchCursor, whiteColor,
 };
 use crate::exchange::event_queue::GetNextEvent;
 use crate::exchange::{publish_window_frame, take_menu_command};
@@ -762,7 +761,7 @@ impl Sapiens {
         let timeBase = TickCount() + 5 * 60;
 
         r = self.sapwind.aire_rect();
-        CarboniseInvalRect(&raw const r);
+        CarboniseInvalRect(&r);
         ValideUpdate();
         /* On initialise le menu */
         MessInit(self.sapwind.GetStr(26)); /* Initialisation du menu */
@@ -808,9 +807,6 @@ impl Sapiens {
     Gestion générale de l'interface
     ********************************************************************/
     pub(crate) fn GereInterface(&mut self) {
-        let mut part;
-        let mut windowResult = WindowPtr::default();
-
         /* Commande de menu venue de la barre egui : elle s'execute ici, sur le
         thread C, la ou vit le `&mut Sapiens`. Le swap a ete fait, donc un modal
         qui repompe GereInterface ne la relira pas. */
@@ -832,7 +828,7 @@ impl Sapiens {
                     /* On cherche quelle fenetre a été cliquée */
                     let mut event = event;
                     event.where_ = self.sapwind.ports.event_point(event.where_);
-                    part = FindWindow(event.where_, &mut windowResult);
+                    let (part, windowResult) = FindWindow(event.where_);
                     /* Où a-t'on cliqué ??? */
                     match part as u32 {
                         /* Sur le bureau, alors le bureau se débrouille ... sauf si c'est un pseudo document */

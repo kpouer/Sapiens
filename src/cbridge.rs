@@ -9,8 +9,6 @@ pub(crate) const optionKey: u32 = 2048;
 pub(crate) const teJustLeft: u32 = 0;
 pub(crate) const geneva: u32 = 0;
 
-pub(crate) type WindowPtr = *mut ::std::os::raw::c_void;
-
 pub(crate) const charCodeMask: u32 = 255;
 pub(crate) const cmdKey: u32 = 256;
 pub(crate) const shiftKey: u32 = 512;

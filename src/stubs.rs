@@ -6,7 +6,6 @@
 
 #![allow(non_snake_case)]
 
-use crate::cbridge::WindowPtr;
 use crate::exchange::{INPUT, MOUSE_EVENT_SCALE};
 use crate::port;
 use crate::port::{PortId, Ports};
@@ -52,18 +51,18 @@ impl Ports {
     }
 }
 
-pub(crate) fn FrontWindow() -> WindowPtr {
-    std::ptr::null_mut()
+pub(crate) fn FrontWindow() -> PortId {
+    PortId::MainWindow
 }
-pub(crate) fn SelectWindow(_w: WindowPtr) {}
+pub(crate) fn SelectWindow(_w: PortId) {}
 /// Un seul « bureau » : tout clic est dans le contenu de la fenêtre de jeu
 /// (la barre de menus, egui ou native, ne pousse pas d'événement).
-pub(crate) fn FindWindow(_pt: Point, _window: *mut WindowPtr) -> i16 {
-    crate::cbridge::inContent as i16
+pub(crate) fn FindWindow(_pt: Point) -> (i16, PortId) {
+    (crate::cbridge::inContent as i16, PortId::MainWindow)
 }
-pub(crate) fn SystemClick(_event: *const EventRecord, _w: WindowPtr) {}
+pub(crate) fn SystemClick(_event: &EventRecord, _w: PortId) {}
 pub(crate) fn SystemTask() {}
-pub(crate) fn DragWindow(_w: WindowPtr, _pt: Point, _bounds: *const Rect) {}
+pub(crate) fn DragWindow(_w: PortId, _pt: Point, _bounds: &Rect) {}
 
 impl Ports {
     pub(crate) fn SizeWindow(
@@ -73,7 +72,7 @@ impl Ports {
         wHeight: i16,
         _update: Boolean,
     ) {
-        /* Un `WindowPtr` est ici un `SapPort` : redimensionner la fenêtre revient à
+        /* Une fenêtre est ici un `SapPort` : redimensionner la fenêtre revient à
         reallouer son tampon (menu « Échelle », `FixeTailleMainWindow`). */
         let old = self.port(port_id).bounds;
         port::resize(
@@ -114,7 +113,7 @@ pub(crate) fn GetRectFilePng(_name: &str, _r: &mut Rect) -> Boolean {
 pub(crate) fn ConvertPNGFileToOffscreen(_fileName: &str) -> Option<SapPort> {
     None
 }
-pub(crate) fn CarboniseInvalRect(_r: *const Rect) {}
+pub(crate) fn CarboniseInvalRect(_r: &Rect) {}
 pub(crate) fn CarboniseValideUpdate() {}
 
 // ---------------------------------------------------------------------------
