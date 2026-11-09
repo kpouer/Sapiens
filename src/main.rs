@@ -163,7 +163,7 @@ fn spawn_game_thread(sapiens_timer: Arc<AtomicU64>, initial_zoom: f32) {
     std::thread::Builder::new()
         .name("sapiens_c".into())
         .stack_size(32 * 1024 * 1024)
-        .spawn(move || unsafe {
+        .spawn(move || {
             let mut sapwind = SapWind::default();
             sapwind.set_zoom(initial_zoom);
             // Pointeurs auto-référents de SAPGLOB.C (debban, peuple...).

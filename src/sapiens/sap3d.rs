@@ -3679,107 +3679,105 @@ impl Sapiens {
 
 impl Sapiens {
     pub(crate) fn clav3d(&mut self) {
-        unsafe {
-            let mut car: i16;
-            let mut cptemps: i16 = 1;
-            let mut cpt_cart: i16 = 0;
-            let mut cont: Boolean = VRAI;
-            let mut posTimer: u64;
+        let mut car: i16;
+        let mut cptemps: i16 = 1;
+        let mut cpt_cart: i16 = 0;
+        let mut cont: Boolean = VRAI;
+        let mut posTimer: u64;
 
-            self.sapglob.dismin = 0;
-            //reset_mouse();
-            /* On ne remet à zéro que la position en colonne */
-            loop {
-                (self.sapglob.bouton, self.sapglob.dsposx, self.sapglob.sposy) = self.vq_mouse();
-                if self.sapglob.bouton == 0 {
-                    break;
+        self.sapglob.dismin = 0;
+        //reset_mouse();
+        /* On ne remet à zéro que la position en colonne */
+        loop {
+            (self.sapglob.bouton, self.sapglob.dsposx, self.sapglob.sposy) = self.vq_mouse();
+            if self.sapglob.bouton == 0 {
+                break;
+            }
+        }
+        loop {
+            posTimer = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
+            //bouge_souris();
+            self.affich(self.sapglob.dzeta as u16);
+            self.sapwind.ports.tfrima();
+            if self.sap3d.okcarte != 0 {
+                if cpt_cart == 0 {
+                    cpt_cart = 5;
+                    self.carte();
+                } else {
+                    cpt_cart -= 1;
                 }
             }
-
-            loop {
-                posTimer = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
-                //bouge_souris();
-                self.affich(self.sapglob.dzeta as u16);
-                self.sapwind.ports.tfrima();
-                if self.sap3d.okcarte != 0 {
-                    if cpt_cart == 0 {
-                        cpt_cart = 5;
-                        self.carte();
+            self.sapdep(self.sapglob.dzeta, self.sapglob.sapvit as i16);
+            if cptemps == 1 {
+                cptemps = 5;
+                self.chrono(0);
+            } else {
+                cptemps -= 1;
+                self.chrono(1);
+            }
+            self.zoninf();
+            self.PosePluie();
+            car = self.getkey3d();
+            if car != 0 {
+                if (car & 1) != 0 && self.sapglob.sapvit < 20 {
+                    self.sapglob.icone = self.sapwind.mobBambou + 23;
+                    self.sapglob.sapvit += 2;
+                }
+                if (car & 2) != 0 && self.sapglob.sapvit != 0 {
+                    self.sapglob.icone = self.sapwind.mobBambou + 24;
+                    if self.sapglob.sapvit < 4 {
+                        self.sapglob.sapvit = 0;
                     } else {
-                        cpt_cart -= 1;
+                        self.sapglob.sapvit -= 4;
                     }
                 }
-                self.sapdep(self.sapglob.dzeta, self.sapglob.sapvit as i16);
-                if cptemps == 1 {
-                    cptemps = 5;
-                    self.chrono(0);
-                } else {
-                    cptemps -= 1;
-                    self.chrono(1);
+                if (car & 8) != 0 {
+                    self.sapglob.icone = self.sapwind.mobBambou + 26;
+                    self.sapglob.dzeta = (self.sapglob.dzeta - 8) & 0x3FF;
                 }
-                self.zoninf();
-                self.PosePluie();
-                car = self.getkey3d();
-                if car != 0 {
-                    if (car & 1) != 0 && self.sapglob.sapvit < 20 {
-                        self.sapglob.icone = self.sapwind.mobBambou + 23;
-                        self.sapglob.sapvit += 2;
-                    }
-                    if (car & 2) != 0 && self.sapglob.sapvit != 0 {
-                        self.sapglob.icone = self.sapwind.mobBambou + 24;
-                        if self.sapglob.sapvit < 4 {
-                            self.sapglob.sapvit = 0;
-                        } else {
-                            self.sapglob.sapvit -= 4;
-                        }
-                    }
-                    if (car & 8) != 0 {
-                        self.sapglob.icone = self.sapwind.mobBambou + 26;
-                        self.sapglob.dzeta = (self.sapglob.dzeta - 8) & 0x3FF;
-                    }
-                    if (car & 4) != 0 {
-                        self.sapglob.icone = self.sapwind.mobBambou + 25;
-                        self.sapglob.dzeta = (self.sapglob.dzeta + 8) & 0x3FF;
-                    }
-                    /* si bouton de gauche */
-                    if (car & 32) != 0 {
-                        while (self.getkey3d() & 32) != 0 { /* Anti repeat */ }
-                        self.sap3d.okcarte ^= 1;
-                        if self.sap3d.okcarte != 0 {
-                            cpt_cart = 0;
-                        } else {
-                            self.affomb(crate::DEBFLECH!(self.sapwind) + 17, 180, 280, 5, 5, VRAI); /* OFF */
-                        }
-                    }
-                    /* Sortie */
-                    if (car & 64) != 0 {
-                        cont = FAUX;
-                    }
-                } else {
-                    self.sapglob.icone = self.sapwind.mobBambou + 20;
+                if (car & 4) != 0 {
+                    self.sapglob.icone = self.sapwind.mobBambou + 25;
+                    self.sapglob.dzeta = (self.sapglob.dzeta + 8) & 0x3FF;
                 }
-                /* Synchronisation de la trame */
-                while posTimer
-                    > self
-                        .sapwclav
-                        .sapiens_timer
-                        .load(Ordering::Relaxed)
-                        .wrapping_sub(9)
-                { /* Attente de trame */ }
+                /* si bouton de gauche */
+                if (car & 32) != 0 {
+                    while (self.getkey3d() & 32) != 0 { /* Anti repeat */ }
+                    self.sap3d.okcarte ^= 1;
+                    if self.sap3d.okcarte != 0 {
+                        cpt_cart = 0;
+                    } else {
+                        self.affomb(crate::DEBFLECH!(self.sapwind) + 17, 180, 280, 5, 5, VRAI); /* OFF */
+                    }
+                }
+                /* Sortie */
+                if (car & 64) != 0 {
+                    cont = FAUX;
+                }
+            } else {
+                self.sapglob.icone = self.sapwind.mobBambou + 20;
+            }
+            /* Synchronisation de la trame */
+            while posTimer
+                > self
+                    .sapwclav
+                    .sapiens_timer
+                    .load(Ordering::Relaxed)
+                    .wrapping_sub(9)
+            { /* Attente de trame */ }
 
-                if self.sapglob.presence != 0 || self.sapglob.mort == 0 || !cont {
-                    break;
-                }
+            if self.sapglob.presence != 0 || self.sapglob.mort == 0 || !cont {
+                break;
             }
-            /* On transfère l'écran1 sur Debecr */
-            self.tfrvirt();
-            /* Une présence humaine ? */
-            if self.sapglob.presence != 0 && self.sapglob.presence <= 4 {
-                /* On ouvre par défaut le menu 'dire' */
-                self.InverseOption(0, 4);
-                self.sapglob.s_action = 5;
-                self.inimen(2);
-            }
+        }
+
+        /* On transfère l'écran1 sur Debecr */
+        self.tfrvirt();
+        /* Une présence humaine ? */
+        if self.sapglob.presence != 0 && self.sapglob.presence <= 4 {
+            /* On ouvre par défaut le menu 'dire' */
+            self.InverseOption(0, 4);
+            self.sapglob.s_action = 5;
+            self.inimen(2);
         }
     }
 }

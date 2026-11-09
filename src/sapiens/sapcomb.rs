@@ -1231,19 +1231,17 @@ impl Sapiens {
                     DEPLAT:Deplacement de vue laterale
     ***********************************************************************/
     pub(crate) fn deplat(&mut self) {
-        unsafe {
-            /*position en colonne*/
-            let sap1 = &mut self.sapglob.sap1;
-            if sap1.colonne < 32 {
-                self.sapglob.ldzeta = (self.sapglob.dzeta + 512) & 0x03FF;
-                sap1.colonne = LIMITE_DROITE - 1;
-            } else {
-                self.sapglob.ldzeta = self.sapglob.dzeta;
-                sap1.colonne = LIMITE_GAUCHE + 1;
-            }
-            self.sapdep(self.sapglob.ldzeta, 46); /* 46 est la vitesse*/
-            self.sapglob.minute = 0;
+        /*position en colonne*/
+        let sap1 = &mut self.sapglob.sap1;
+        if sap1.colonne < 32 {
+            self.sapglob.ldzeta = (self.sapglob.dzeta + 512) & 0x03FF;
+            sap1.colonne = LIMITE_DROITE - 1;
+        } else {
+            self.sapglob.ldzeta = self.sapglob.dzeta;
+            sap1.colonne = LIMITE_GAUCHE + 1;
         }
+        self.sapdep(self.sapglob.ldzeta, 46); /* 46 est la vitesse*/
+        self.sapglob.minute = 0;
         self.chrono(0);
     }
 

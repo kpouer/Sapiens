@@ -1401,7 +1401,7 @@ impl Sapiens {
     /**************************************************************************
                         InitVueLaterale
     **************************************************************************/
-    unsafe fn InitVueLaterale(&mut self) {
+    fn InitVueLaterale(&mut self) {
         if self.sapglob.dervue != Vue::LATERALE {
             self.sapglob.ldzeta = self.sapglob.dzeta;
         }
@@ -1438,74 +1438,72 @@ impl Sapiens {
         if self.sapglob.presence != 0 {
             return; /* si il ya quelun alors on est poli*/
         }
-        unsafe {
-            if regb == 0 {
-                /* vue 4 D*/
-                self.saprel.LastObsv = 0;
-                self.sapglob.dismin = 0;
-                self.sapglob.lastmen = 255;
-                self.clrbadi();
-                self.sapglob.dervue = Vue::PAYSAGE;
-                /* gestion de la vue 3d */
-                self.MenuFenetres(FAUX as i16);
-                self.AffichePictAide(1);
-                self.clav3d();
-                self.MenuFenetres(VRAI as i16);
-                self.pos0_mouse();
-                /* Une presence a ete rencontrée : on initialise la
-                vue laterale */
-                if self.sapglob.presence != 0 {
-                    /* On initialise la vue laterale */
-                    regb = 1;
+        if regb == 0 {
+            /* vue 4 D*/
+            self.saprel.LastObsv = 0;
+            self.sapglob.dismin = 0;
+            self.sapglob.lastmen = 255;
+            self.clrbadi();
+            self.sapglob.dervue = Vue::PAYSAGE;
+            /* gestion de la vue 3d */
+            self.MenuFenetres(FAUX as i16);
+            self.AffichePictAide(1);
+            self.clav3d();
+            self.MenuFenetres(VRAI as i16);
+            self.pos0_mouse();
+            /* Une presence a ete rencontrée : on initialise la
+            vue laterale */
+            if self.sapglob.presence != 0 {
+                /* On initialise la vue laterale */
+                regb = 1;
+            }
+        }
+        if regb == 1 {
+            /*vue laterale*/
+            self.saprel.LastObsv = 1;
+            self.InitVueLaterale();
+            return;
+        }
+        if regb == 2 {
+            /*panaroma*/
+            while self.getkey(0) != 0 { /* vide */ }
+            self.sapglob.dervue = Vue::PAYSAGE;
+            dzetdep = self.sapglob.dzeta as u16;
+            loop {
+                posTimer = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
+                self.affich(self.sapglob.dzeta as u16);
+                self.sapwind.ports.tfrima();
+                self.sapglob.dzeta = ((self.sapglob.dzeta as i32 + 16) & 0x3FF) as i16;
+                while posTimer
+                    > self
+                        .sapwclav
+                        .sapiens_timer
+                        .load(Ordering::Relaxed)
+                        .wrapping_sub(8)
+                { /* vide */ }
+                if dzetdep as i32 == self.sapglob.dzeta as i32 {
+                    break;
+                }
+                if self.getkey(0) != 0 {
+                    break;
                 }
             }
-            if regb == 1 {
-                /*vue laterale*/
-                self.saprel.LastObsv = 1;
-                self.InitVueLaterale();
-                return;
-            }
-            if regb == 2 {
-                /*panaroma*/
-                while self.getkey(0) != 0 { /* vide */ }
-                self.sapglob.dervue = Vue::PAYSAGE;
-                dzetdep = self.sapglob.dzeta as u16;
-                loop {
-                    posTimer = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
-                    self.affich(self.sapglob.dzeta as u16);
-                    self.sapwind.ports.tfrima();
-                    self.sapglob.dzeta = ((self.sapglob.dzeta as i32 + 16) & 0x3FF) as i16;
-                    while posTimer
-                        > self
-                            .sapwclav
-                            .sapiens_timer
-                            .load(Ordering::Relaxed)
-                            .wrapping_sub(8)
-                    { /* vide */ }
-                    if dzetdep as i32 == self.sapglob.dzeta as i32 {
-                        break;
-                    }
-                    if self.getkey(0) != 0 {
-                        break;
-                    }
-                }
-            }
-            if regb == 3 {
-                /*carte*/
-                self.sapglob.dervue = Vue::PAYSAGE;
-                self.gemouvre(
-                    self.sapglob.clin,
-                    self.sapglob.ccol,
-                    self.sapglob.cnlin,
-                    self.sapglob.cncol,
-                    15,
-                    30,
-                    8,
-                    15,
-                );
-                self.zoocar();
-                self.sapglob.lastmen = 255;
-            }
+        }
+        if regb == 3 {
+            /*carte*/
+            self.sapglob.dervue = Vue::PAYSAGE;
+            self.gemouvre(
+                self.sapglob.clin,
+                self.sapglob.ccol,
+                self.sapglob.cnlin,
+                self.sapglob.cncol,
+                15,
+                30,
+                8,
+                15,
+            );
+            self.zoocar();
+            self.sapglob.lastmen = 255;
         }
         self.inimen(0);
         self.pos0_mouse();

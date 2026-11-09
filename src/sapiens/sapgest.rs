@@ -1788,7 +1788,7 @@ mod tests {
             .stack_size(32 * 1024 * 1024)
             .spawn(move || {
                 let mut sapiens = Sapiens::default();
-                unsafe { sapiens.init_glob() };
+                sapiens.init_glob();
                 sapiens.CalculeToutDegrades();
                 let h = sapiens
                     .sapglob

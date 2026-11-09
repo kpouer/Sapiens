@@ -2051,7 +2051,7 @@ impl Sapiens {
     /// Pointeurs reliant les tables entre elles (debban, tstdlist, peuple,
     /// sapanim, adversaire, possession). Equivalent des initialisateurs
     /// statiques auto-referents du C. A appeler avant sapiens_main.
-    pub(crate) unsafe fn init_glob(&mut self) {
+    pub(crate) fn init_glob(&mut self) {
         self.sapglob.debban = [
             /*marche*/
             [
