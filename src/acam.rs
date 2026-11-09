@@ -151,29 +151,6 @@ pub(crate) fn CarboniseSetCursorArrow() {
     set_cursor_shape(CursorShape::Arrow);
 }
 
-// ---------------------------------------------------------------------------
-// Mémoire
-// ---------------------------------------------------------------------------
-
-#[deprecated]
-pub(crate) fn NewPtr(size: i64) -> Ptr {
-    alloc_pixels(size.max(0) as usize)
-}
-
-#[deprecated]
-pub(crate) fn DisposHandle(h: Handle) {
-    if h.is_null() {
-        return;
-    }
-    unsafe {
-        let inner = *h;
-        if !inner.is_null() {
-            free_pixels(inner as *mut u8);
-        }
-        free_pixels(h as *mut u8);
-    }
-}
-
 /// Ressources `STR#` extraites de `c_code/Rsrc/sapiens.rsrc`.
 /// Les identifiants suivent `CvtLangRess` : base + 1000 * langue
 /// (0 = français, 1000 = anglais, 2000 = espagnol).
