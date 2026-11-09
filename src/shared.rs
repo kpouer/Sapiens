@@ -13,10 +13,6 @@
 use crate::pict::Picture;
 use std::ffi::c_void;
 use std::ops::ShrAssign;
-use std::sync::Mutex;
-// ---------------------------------------------------------------------------
-// Types repr(C)
-// ---------------------------------------------------------------------------
 
 pub(crate) type Boolean = bool;
 pub(crate) type Handle = *mut *mut c_void;
@@ -184,38 +180,6 @@ pub(crate) struct SapPort {
     /// Facteur d'échelle de ce port : 1.0 sauf pour la fenêtre principale,
     /// qui suit le menu « Échelle » (`SapZoom`).
     pub(crate) zoom: f32,
-}
-
-// ---------------------------------------------------------------------------
-// Registre des allocations (Ptr/Handle) pour pouvoir les libérer
-// ---------------------------------------------------------------------------
-
-#[deprecated]
-pub(crate) static ALLOCS: Mutex<Vec<(usize, usize)>> = Mutex::new(Vec::new());
-
-#[deprecated]
-pub(crate) fn alloc_pixels(len: usize) -> *mut u8 {
-    let mut v: Vec<u8> = vec![0u8; len.max(1)];
-    let p = v.as_mut_ptr();
-    std::mem::forget(v);
-    ALLOCS.lock().unwrap().push((p as usize, len.max(1)));
-    p
-}
-
-#[deprecated]
-pub(crate) fn free_pixels(ptr: *mut u8) {
-    if ptr.is_null() {
-        return;
-    }
-    let addr = ptr as usize;
-    let mut guard = ALLOCS.lock().unwrap();
-    if let Some(pos) = guard.iter().position(|(a, _)| *a == addr) {
-        let (_, len) = guard.swap_remove(pos);
-        unsafe {
-            drop(Vec::from_raw_parts(ptr, 0, len.max(1)));
-        }
-    }
-    // Libre. On retente une fois avec un nouvel emplacement de mémoire.
 }
 
 // ---------------------------------------------------------------------------
