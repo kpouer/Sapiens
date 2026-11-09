@@ -816,7 +816,7 @@ impl Sapiens {
             while (i as u16) != self.sapglob.liste(self.sapglob.stdlist).taille as u16 {
                 let rang = self.sapglob.liste(self.sapglob.stdlist).elements[i as usize]; /*rang de l'objet*/
                 let refer1 = self.sap_lang.GetRefer1();
-                let valeur = (&refer1[rang.wrapping_sub(1) as usize]).param1 & 0xF0;
+                let valeur = refer1[rang.wrapping_sub(1) as usize].param1 & 0xF0;
                 if ((self.sapglob.criter == 1) && (valeur == 0x20))
                     || ((self.sapglob.criter == 2) && (valeur == 0x40))
                 {
@@ -1080,7 +1080,7 @@ impl Sapiens {
                     let nomref = &refer[index as usize].nomref;
                     let texte: Vec<u8> = nomref
                         .iter()
-                        .map(|&c| c as u8)
+                        .copied()
                         .take_while(|&c| c != 0)
                         .chain(std::iter::once(0))
                         .collect();

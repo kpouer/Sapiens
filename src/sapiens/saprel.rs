@@ -104,7 +104,7 @@ impl Sapiens {
     }
 
     fn TailleCarMess<'a>(&mut self, debut: &'a [u8], tx: i16, ty: i16) -> (&'a [u8], i16, i16) {
-        let car = debut[0] as u8 as i16;
+        let car = debut[0] as i16;
         let ret = &debut[1..];
         let mut taillex = tx;
         let mut tailley = ty;

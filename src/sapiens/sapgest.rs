@@ -1529,7 +1529,7 @@ fn nom_joueur(saptxt: &Saptxt) -> String {
     let bytes: Vec<u8> = saptxt
         .nomjoueur
         .iter()
-        .map(|b| *b as u8)
+        .copied()
         .take_while(|b| *b != 0)
         .collect();
     String::from_utf8_lossy(&bytes).into_owned()

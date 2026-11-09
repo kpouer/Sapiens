@@ -126,7 +126,10 @@ fn cursor_id(c: Cursor) -> Option<i16> {
         let base = core::ptr::addr_of!(CURSOR_SLOTS) as usize;
         let addr = c as usize;
         let align = core::mem::size_of::<Slot8>();
-        if addr >= base && addr < base + NB_CURSOR_SLOTS * align && (addr - base) % align == 0 {
+        if addr >= base
+            && addr < base + NB_CURSOR_SLOTS * align
+            && (addr - base).is_multiple_of(align)
+        {
             Some(core::ptr::read_unaligned(c as *const i16).wrapping_sub(1))
         } else {
             None
