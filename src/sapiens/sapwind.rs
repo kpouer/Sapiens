@@ -638,7 +638,7 @@ impl Ports {
     /**********************************************************************************************
                                                                     AffStr
     ***********************************************************************************************/
-    unsafe fn AffStr(&mut self, chaine: &str, fonte: i16, size: i16, face: i16, x_in: i16, y: i16) {
+    fn AffStr(&mut self, chaine: &str, fonte: i16, size: i16, face: i16, x_in: i16, y: i16) {
         let mut x: i16 = x_in;
 
         self.TextFont(fonte);
@@ -717,92 +717,90 @@ impl Sapiens {
         self.AfficheFond(PortId::MainWindow);
         /* On affiche le logo centre */
         let pict = self.pict.GetPicture(134);
-        unsafe {
-            if let Some(pict) = pict {
-                r = pict.picFrame;
-                r.OffsetRect(
-                    ((320 * ECHELLE as i16 as i64 - (r.right - r.left) as i64) / 2) as i16,
-                    60,
-                );
-                let rdest = self.sapwind.ports.DoZoomRect(&r);
-                self.sapwind.ports.DrawPicture(pict, &rdest);
-            }
-            /* Affichage de la version de sapiens */
-            let chaine = GetVersionSapiens();
-            self.sapwind.ports.AffStr(
-                &chaine,
-                helvetica as i16,
-                14,
-                bold as i16,
-                -1,
-                r.bottom + 16,
+        if let Some(pict) = pict {
+            r = pict.picFrame;
+            r.OffsetRect(
+                ((320 * ECHELLE as i16 as i64 - (r.right - r.left) as i64) / 2) as i16,
+                60,
             );
-            /* Affichage des autres commentaires */
-            let chaine = "Copyright Didier & Olivier Guillion, 1986,1996,2005,2017";
-            self.sapwind
-                .ports
-                .AffStr(chaine, helvetica as i16, 16, bold as i16, -1, r.bottom + 32);
-            i = 1;
-            y = 60 + 120 + 18 + 32;
-            let num = CvtDefaultLangRess(1);
-            loop {
-                let chaine = GetIndString(num, i);
-                i += 1;
-                if !chaine.is_empty() {
-                    self.sapwind
-                        .ports
-                        .AffStr(chaine, helvetica as i16, 16, bold as i16, -1, y);
-                }
-                y += 18;
-                if chaine.is_empty() {
-                    break;
-                }
-            }
-            /* Le générique est dessiné : on le présente avant l'attente */
-            publish_window_frame(self.sapwind.ports.window(), true);
-            let timeBase = TickCount() + 5 * 60;
-
-            r = self.sapwind.aire_rect();
-            CarboniseInvalRect(&raw const r);
-            ValideUpdate();
-            /* On initialise le menu */
-            MessInit(self.sapwind.GetStr(26)); /* Initialisation du menu */
-            FixeMenu(CvtDefaultLangRess(0)); /* MENU_BAR */
-            self.FixeMenusReduit();
-            self.sapwind.ports.set(PortId::MainWindow);
-            MessInit(self.sapwind.GetStr(20)); /* Initialsations des ecrans */
-            CalcIndexPalette(self.saplist.pal1.borrow_mut().as_mut());
-            CalcIndexPalette(self.saplist.pal2.borrow_mut().as_mut());
-            self.sapwind.ports.set(PortId::Ecran1);
-            MessInit(self.sapwind.GetStr(21)); /* Initialsations des palettes */
-            /* Fabrique les luts */
-            self.sapwcvt.FabriqueLuts();
-            self.sapwind.ports.set(PortId::Debecr);
-            self.AfficheFond(PortId::Debecr);
-            /* Buffer de la souris*/
-            MessInit(self.sapwind.GetStr(22)); /*Chargement des graphismes */
-            /* On charge les mobs */
-            if let Err(e) = self.InitMobs() {
-                log::error!("InitMobs : {e}");
-                let x = self.sapwind.GetStr(11);
-                self.Collapse(x);
-                SapiensExit(-1);
-            }
-            self.InitCouleurFontes();
-            MessInit(self.sapwind.GetStr(23)); /*Chargement des dégradés */
-            /* On calcule tout les degrades*/
-            self.CalculeToutDegrades();
-            MessInit(self.sapwind.GetStr(24)); /*Chargement des décors trois 3 */
-            self.CalculeEtoiles();
-            MessInit(self.sapwind.GetStr(25)); /* Initialisation de la musique */
-            /* Initialisation de la musique */
-            while timeBase > TickCount() {
-                core::hint::spin_loop();
-            }
-            /* Transfert de l'ecran */
-            CarboniseSetCursorArrow();
-            firstInit
+            let rdest = self.sapwind.ports.DoZoomRect(&r);
+            self.sapwind.ports.DrawPicture(pict, &rdest);
         }
+        /* Affichage de la version de sapiens */
+        let chaine = GetVersionSapiens();
+        self.sapwind.ports.AffStr(
+            &chaine,
+            helvetica as i16,
+            14,
+            bold as i16,
+            -1,
+            r.bottom + 16,
+        );
+        /* Affichage des autres commentaires */
+        let chaine = "Copyright Didier & Olivier Guillion, 1986,1996,2005,2017";
+        self.sapwind
+            .ports
+            .AffStr(chaine, helvetica as i16, 16, bold as i16, -1, r.bottom + 32);
+        i = 1;
+        y = 60 + 120 + 18 + 32;
+        let num = CvtDefaultLangRess(1);
+        loop {
+            let chaine = GetIndString(num, i);
+            i += 1;
+            if !chaine.is_empty() {
+                self.sapwind
+                    .ports
+                    .AffStr(chaine, helvetica as i16, 16, bold as i16, -1, y);
+            }
+            y += 18;
+            if chaine.is_empty() {
+                break;
+            }
+        }
+        /* Le générique est dessiné : on le présente avant l'attente */
+        publish_window_frame(self.sapwind.ports.window(), true);
+        let timeBase = TickCount() + 5 * 60;
+
+        r = self.sapwind.aire_rect();
+        CarboniseInvalRect(&raw const r);
+        ValideUpdate();
+        /* On initialise le menu */
+        MessInit(self.sapwind.GetStr(26)); /* Initialisation du menu */
+        FixeMenu(CvtDefaultLangRess(0)); /* MENU_BAR */
+        self.FixeMenusReduit();
+        self.sapwind.ports.set(PortId::MainWindow);
+        MessInit(self.sapwind.GetStr(20)); /* Initialsations des ecrans */
+        CalcIndexPalette(self.saplist.pal1.borrow_mut().as_mut());
+        CalcIndexPalette(self.saplist.pal2.borrow_mut().as_mut());
+        self.sapwind.ports.set(PortId::Ecran1);
+        MessInit(self.sapwind.GetStr(21)); /* Initialsations des palettes */
+        /* Fabrique les luts */
+        self.sapwcvt.FabriqueLuts();
+        self.sapwind.ports.set(PortId::Debecr);
+        self.AfficheFond(PortId::Debecr);
+        /* Buffer de la souris*/
+        MessInit(self.sapwind.GetStr(22)); /*Chargement des graphismes */
+        /* On charge les mobs */
+        if let Err(e) = self.InitMobs() {
+            log::error!("InitMobs : {e}");
+            let x = self.sapwind.GetStr(11);
+            self.Collapse(x);
+            SapiensExit(-1);
+        }
+        self.InitCouleurFontes();
+        MessInit(self.sapwind.GetStr(23)); /*Chargement des dégradés */
+        /* On calcule tout les degrades*/
+        self.CalculeToutDegrades();
+        MessInit(self.sapwind.GetStr(24)); /*Chargement des décors trois 3 */
+        self.CalculeEtoiles();
+        MessInit(self.sapwind.GetStr(25)); /* Initialisation de la musique */
+        /* Initialisation de la musique */
+        while timeBase > TickCount() {
+            core::hint::spin_loop();
+        }
+        /* Transfert de l'ecran */
+        CarboniseSetCursorArrow();
+        firstInit
     }
 
     /*******************************************************************
