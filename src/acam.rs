@@ -616,47 +616,44 @@ fn fill_rect(p: &mut SapPort, r: &Rect, color: u8) {
 }
 
 /// Trace un segment de droite épais (taille du crayon), avec clip.
-fn draw_line(port: *mut SapPort, x0: i16, y0: i16, x1: i16, y1: i16) {
-    unsafe {
-        let p = &mut *port;
-        p.open_acc = p.open_acc.union(&Rect {
-            top: y0.min(y1),
-            left: x0.min(x1),
-            bottom: (y0.max(y1) as i32 + 1).min(32767) as i16,
-            right: (x0.max(x1) as i32 + 1).min(32767) as i16,
-        });
-        let pw = p.pen_size.h.max(1) as i32;
-        let ph = p.pen_size.v.max(1) as i32;
-        let c = p.fore_index;
-        let x0 = x0 as i32;
-        let y0 = y0 as i32;
-        let x1 = x1 as i32;
-        let y1 = y1 as i32;
-        let dx = (x1 - x0).abs();
-        let sx = if x0 < x1 { 1 } else { -1 };
-        let dy = -(y1 - y0).abs();
-        let sy = if y0 < y1 { 1 } else { -1 };
-        let mut err = dx + dy;
-        let (mut x, mut y) = (x0, y0);
+fn draw_line(p: &mut SapPort, x0: i16, y0: i16, x1: i16, y1: i16) {
+    p.open_acc = p.open_acc.union(&Rect {
+        top: y0.min(y1),
+        left: x0.min(x1),
+        bottom: (y0.max(y1) as i32 + 1).min(32767) as i16,
+        right: (x0.max(x1) as i32 + 1).min(32767) as i16,
+    });
+    let pw = p.pen_size.h.max(1) as i32;
+    let ph = p.pen_size.v.max(1) as i32;
+    let c = p.fore_index;
+    let x0 = x0 as i32;
+    let y0 = y0 as i32;
+    let x1 = x1 as i32;
+    let y1 = y1 as i32;
+    let dx = (x1 - x0).abs();
+    let sx = if x0 < x1 { 1 } else { -1 };
+    let dy = -(y1 - y0).abs();
+    let sy = if y0 < y1 { 1 } else { -1 };
+    let mut err = dx + dy;
+    let (mut x, mut y) = (x0, y0);
 
-        loop {
-            for py in y..y + ph {
-                for px in x..x + pw {
-                    plot(p, px as i16, py as i16, c);
-                }
+    loop {
+        for py in y..y + ph {
+            for px in x..x + pw {
+                plot(p, px as i16, py as i16, c);
             }
-            if x == x1 && y == y1 {
-                break;
-            }
-            let e2 = 2 * err;
-            if e2 >= dy {
-                err += dy;
-                x += sx;
-            }
-            if e2 <= dx {
-                err += dx;
-                y += sy;
-            }
+        }
+        if x == x1 && y == y1 {
+            break;
+        }
+        let e2 = 2 * err;
+        if e2 >= dy {
+            err += dy;
+            x += sx;
+        }
+        if e2 <= dx {
+            err += dx;
+            y += sy;
         }
     }
 }
