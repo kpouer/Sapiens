@@ -11,16 +11,9 @@
 #![allow(non_snake_case)]
 
 use crate::pict::Picture;
-use std::ffi::c_void;
 use std::ops::ShrAssign;
 
 pub(crate) type Boolean = bool;
-pub(crate) type Handle = *mut *mut c_void;
-pub(crate) type Ptr = *mut u8;
-pub(crate) type CGrafPtr = *mut c_void;
-pub(crate) type DialogPtr = *mut c_void;
-pub(crate) type RgnHandle = *mut c_void;
-pub(crate) type SndListHandle = *mut *mut c_void;
 
 #[derive(Debug)]
 pub(crate) struct Pic {
@@ -31,7 +24,6 @@ pub(crate) struct Pic {
 
 pub(crate) type KeyMap = [u64; 4];
 
-#[repr(C)]
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub(crate) struct Point {
     pub(crate) h: i16,
@@ -50,7 +42,6 @@ impl Point {
     }
 }
 
-#[repr(C)]
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub(crate) struct Rect {
     pub(crate) top: i16,

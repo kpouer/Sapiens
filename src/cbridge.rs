@@ -2,8 +2,6 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 
-pub(crate) type __int64_t = ::std::os::raw::c_longlong;
-
 pub(crate) type MenuHandle = *mut ::std::os::raw::c_void;
 pub(crate) const everyEvent: u32 = 65535;
 pub(crate) const helvetica: u32 = 2;
