@@ -10,13 +10,12 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 
-use crate::cbridge::{MenuHandle, watchCursor};
+use crate::cbridge::watchCursor;
 use crate::exchange::{Cursor, request_alert, set_cursor_shape, set_title};
 use crate::langue::{Langue, langue};
 use crate::port;
 use crate::port::{PortId, Ports};
 use crate::shared::*;
-use std::ffi::c_void;
 use std::sync::Mutex;
 use std::time::Instant;
 
@@ -313,8 +312,11 @@ struct Menu {
     items: Vec<MenuItem>,
 }
 
-/// Modèle complet de la barre de menus. Les `Menu` sont dans des `Box` dont
-/// l'adresse (le `MenuHandle`) est stable tant que la langue ne change pas.
+/// Handle de menu : l'id courant du menu (avec l'offset langue), `None` si le
+/// menu n'existe pas. Valable tant que la langue ne change pas.
+pub(crate) type MenuHandle = Option<i16>;
+
+/// Modèle complet de la barre de menus.
 pub(crate) struct MenuModel {
     /// Langue avec laquelle le modèle a été construit (0/1/2).
     lang: Langue,
@@ -389,35 +391,22 @@ pub(crate) fn build_model() -> MenuModel {
     }
 }
 
-fn menu_handle_ptr(menu: &Menu) -> MenuHandle {
-    (menu as *const Menu) as *mut c_void
-}
-
 pub(crate) fn GetNewMBar(_menuBarID: i16) {
     *MENU_MODEL.lock().unwrap() = Some(build_model());
 }
 
 pub(crate) fn GetMHandle(menuID: i16) -> MenuHandle {
     let g = MENU_MODEL.lock().unwrap();
-    match &*g {
-        Some(m) => m
-            .menus
-            .iter()
-            .find(|menu| menu.id == menuID)
-            .map(menu_handle_ptr)
-            .unwrap_or(std::ptr::null_mut()),
-        None => std::ptr::null_mut(),
-    }
+    g.as_ref()?
+        .menus
+        .iter()
+        .find(|menu| menu.id == menuID)
+        .map(|menu| menu.id)
 }
 
 fn find_menu(menus: &mut [Menu], handle: MenuHandle) -> Option<&mut Menu> {
-    if handle.is_null() {
-        return None;
-    }
-    menus
-        .iter_mut()
-        .find(|menu| menu_handle_ptr(menu) == handle)
-        .map(|menu| &mut *menu)
+    let id = handle?;
+    menus.iter_mut().find(|menu| menu.id == id)
 }
 
 pub(crate) fn DisableItem(menu: MenuHandle, item: i16) {
