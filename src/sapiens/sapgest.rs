@@ -1060,242 +1060,239 @@ impl Sapiens {
             return;
         }
         self.sapglob.flefba = 0;
-        unsafe {
-            *(&raw mut self.saptxt.nomjoueur as *mut i8).add(taille as usize) = 0;
-            /* definitions des quotas personnage*/
-            for i in 0..5usize {
-                self.sapglob.param[i] = 130;
-            }
-            self.sapglob.param[5] = 20;
-            self.generique(VRAI);
-            self.comment(89); /*   XX ou XY ???*/
-            let mut car: u8 = 0;
-            self.sapwind.reset_clav();
-            self.sapglob.init_and_check_texts();
-            let homme = self.sapglob.homme;
-            let femme = self.sapglob.femme;
-            while car != homme && car != femme {
-                car = (self.litclav() & 223) as u8;
-            }
-            self.affcarmess(car as i16);
-            self.TfrBadAss();
-            if car == homme {
-                self.sapglob.sexe = 1;
-                let sap1 = &mut self.sapglob.sap1;
-                sap1.cross[FormeVue::BUSTE as usize] = 0;
-                sap1.cross[FormeVue::TETE as usize] = 0;
-            } else {
-                self.sapglob.sexe = 0;
-                let sap1 = &mut self.sapglob.sap1;
-                sap1.cross[FormeVue::BUSTE as usize] = 8;
-                sap1.cross[FormeVue::TETE as usize] = 12;
-            }
-            self.sapglob.pal_chron = Rc::clone(&self.sapglob.palhaute);
-            self.sapglob.palhaute = Rc::clone(&self.saplist.pal2);
-            self.primjauge(1);
-            self.AfficheSuite();
-            let mut cont = 1;
-            let mut pos;
-            self.sapglob.sposx = 160;
-            self.sapglob.dsposx = 160;
-            self.sapglob.sposy = 50;
-            self.sapglob.dsposy = 50;
-            let mut r = Rect::new(
-                16 * ECHELLE as i16,
-                0,
-                (320 - 16) * ECHELLE as i16,
-                200 * ECHELLE as i16,
-            );
-            self.FixeAireNoMouse(r);
-
-            /* Selection des Kotas de force */
-            while cont != 0 {
-                loop {
-                    (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
-                    self.aff_sour(
-                        self.sapwind.mobBambou + 21,
-                        self.sapglob.sposy,
-                        self.sapglob.sposx,
-                    );
-                    if self.sapglob.bouton == 0 {
-                        break;
-                    }
-                }
-
-                if MouseDansSuite(self.sapglob.sposx, self.sapglob.sposy) {
-                    self.affomb(
-                        self.sapwind.mobFleches + 20,
-                        AIRE_SUITE.top,
-                        AIRE_SUITE.left,
-                        2,
-                        2,
-                        true,
-                    );
-                    cont = 0; /*esc*/
-                    self.sapglob.agilite = if self.sapglob.param[0] < 223 {
-                        self.sapglob.param[0] + 32
-                    } else {
-                        255
-                    };
-                    self.sapglob.force = self.sapglob.param[1];
-                    self.sapglob.charisme = self.sapglob.param[2];
-                    self.sapglob.vie = self.sapglob.param[3];
-                    self.sapglob.resistance = self.sapglob.param[4];
-                    while self.getkey(0) != 0 { /* Epuise le clavier */ }
-                } else {
-                    let pt = Point::new(self.sapglob.sposx, self.sapglob.sposy);
-                    let mut i: i16 = 0;
-                    while i < 5 {
-                        r = self.AireJauge(i);
-                        if r.pt_in_rect(pt) {
-                            pos = i as i8;
-                            /* Fleche */
-                            self.affomb(
-                                self.sapwind.mobFleches + MOB_DESIGNE_BASE,
-                                r.top - 4,
-                                86,
-                                0,
-                                0,
-                                true,
-                            );
-                            loop {
-                                let rval = self.AireValJauge(pos as i16);
-                                /* On augmente la jauge */
-                                if self.sapglob.sposx > rval.right
-                                    && self.sapglob.param[5] != 0
-                                    && self.sapglob.param[pos as usize]
-                                        < self.sapglob.maxparam[self.sapglob.sexe as usize]
-                                            [pos as usize]
-                                {
-                                    self.sapglob.param[5] -= 1;
-                                    self.sapglob.param[pos as usize] += 1;
-                                }
-                                if self.sapglob.sposx < rval.right
-                                    && self.sapglob.param[5] < 254
-                                    && self.sapglob.param[pos as usize] != 0
-                                {
-                                    self.sapglob.param[5] += 1;
-                                    self.sapglob.param[pos as usize] -= 1;
-                                }
-                                (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) =
-                                    self.vq_mouse();
-                                self.jauge(pos as i16, true);
-                                /* Quantite restante */
-                                self.jauge(5, true);
-                                self.aff_sour(
-                                    self.sapwind.mobBambou + MOB_FRAPPE_BASE,
-                                    self.sapglob.sposy,
-                                    self.sapglob.sposx,
-                                );
-                                if self.sapglob.bouton == 0 {
-                                    break;
-                                }
-                            } /* while(bouton) */
-                            self.primjauge(1);
-                            self.AfficheSuite();
-                            i = 255;
-                        }
-                        i += 1;
-                    }
-                }
-            }
-            /*selection de l'apparence*/
-            self.eff_sour();
-            cont = 1;
-            pos = 0;
-            self.prm(SapId::Sap1, -1);
-            self.effima(0x050);
-            self.tfrvirt();
-            self.sapwind.ports.tfrima();
-            self.sapglob.flefba = 0;
-            self.eff_sour();
-            while cont != 0 {
-                {
-                    let sap1 = &mut self.sapglob.sap1;
-                    sap1.colonne = 28;
-                    sap1.sens = 1;
-                }
-                self.effima(0x050); //??
-                self.mvtsap(SapId::Sap1);
-                self.sapwind.ports.tfrdemi();
-                self.tfrvirt();
-                self.AfficheSuite();
-
-                self.affomb(
-                    self.sapwind.mobFleches + MOB_DESIGNE_BASE,
-                    (pos as i16 * 2 + 6) * 7 + 1,
-                    100,
-                    4,
-                    4,
-                    VRAI,
+        self.saptxt.nomjoueur[taille as usize] = 0;
+        /* definitions des quotas personnage*/
+        for i in 0..5usize {
+            self.sapglob.param[i] = 130;
+        }
+        self.sapglob.param[5] = 20;
+        self.generique(VRAI);
+        self.comment(89); /*   XX ou XY ???*/
+        let mut car: u8 = 0;
+        self.sapwind.reset_clav();
+        self.sapglob.init_and_check_texts();
+        let homme = self.sapglob.homme;
+        let femme = self.sapglob.femme;
+        while car != homme && car != femme {
+            car = (self.litclav() & 223) as u8;
+        }
+        self.affcarmess(car as i16);
+        self.TfrBadAss();
+        if car == homme {
+            self.sapglob.sexe = 1;
+            let sap1 = &mut self.sapglob.sap1;
+            sap1.cross[FormeVue::BUSTE as usize] = 0;
+            sap1.cross[FormeVue::TETE as usize] = 0;
+        } else {
+            self.sapglob.sexe = 0;
+            let sap1 = &mut self.sapglob.sap1;
+            sap1.cross[FormeVue::BUSTE as usize] = 8;
+            sap1.cross[FormeVue::TETE as usize] = 12;
+        }
+        self.sapglob.pal_chron = Rc::clone(&self.sapglob.palhaute);
+        self.sapglob.palhaute = Rc::clone(&self.saplist.pal2);
+        self.primjauge(1);
+        self.AfficheSuite();
+        let mut cont = 1;
+        let mut pos;
+        self.sapglob.sposx = 160;
+        self.sapglob.dsposx = 160;
+        self.sapglob.sposy = 50;
+        self.sapglob.dsposy = 50;
+        let mut r = Rect::new(
+            16 * ECHELLE as i16,
+            0,
+            (320 - 16) * ECHELLE as i16,
+            200 * ECHELLE as i16,
+        );
+        self.FixeAireNoMouse(r);
+        /* Selection des Kotas de force */
+        while cont != 0 {
+            loop {
+                (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
+                self.aff_sour(
+                    self.sapwind.mobBambou + 21,
+                    self.sapglob.sposy,
+                    self.sapglob.sposx,
                 );
-                loop {
-                    (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
-                    self.aff_sour(
-                        self.sapwind.mobBambou + 21,
-                        self.sapglob.sposy,
-                        self.sapglob.sposx,
-                    );
-                    if self.sapglob.bouton == 0 {
-                        break;
-                    }
+                if self.sapglob.bouton == 0 {
+                    break;
                 }
+            }
 
-                if MouseDansSuite(self.sapglob.sposx, self.sapglob.sposy) {
-                    self.affomb(
-                        self.sapwind.mobFleches + 20,
-                        AIRE_SUITE.top,
-                        AIRE_SUITE.left,
-                        2,
-                        2,
-                        true,
-                    );
-                    cont = 0; /*esc*/
+            if MouseDansSuite(self.sapglob.sposx, self.sapglob.sposy) {
+                self.affomb(
+                    self.sapwind.mobFleches + 20,
+                    AIRE_SUITE.top,
+                    AIRE_SUITE.left,
+                    2,
+                    2,
+                    true,
+                );
+                cont = 0; /*esc*/
+                self.sapglob.agilite = if self.sapglob.param[0] < 223 {
+                    self.sapglob.param[0] + 32
                 } else {
-                    pos = (self.sapglob.sposy > 53) as i8;
-                    self.sapglob.dsposy = self.sapglob.sposy;
-                    self.sapglob.dsposx = self.sapglob.sposx;
-                    if (self.sapglob.bouton & 1) != 0 {
-                        /*gauche*/
-                        if pos != 0 {
-                            let sap1 = &mut self.sapglob.sap1;
-                            sap1.cross[FormeVue::BUSTE as usize] =
-                                sap1.cross[FormeVue::BUSTE as usize].wrapping_add(2); /*Buste*/
-                            if self.sapglob.sexe != 0 {
-                                if sap1.cross[FormeVue::BUSTE as usize] >= 8 {
-                                    sap1.cross[FormeVue::BUSTE as usize] = 0;
-                                }
-                            } else if sap1.cross[FormeVue::BUSTE as usize] >= 16 {
-                                sap1.cross[FormeVue::BUSTE as usize] = 8;
-                            }
-                        } else {
-                            let sap1 = &mut self.sapglob.sap1;
-                            sap1.cross[FormeVue::TETE as usize] =
-                                sap1.cross[FormeVue::TETE as usize].wrapping_add(2); /*tete*/
-                            if self.sapglob.sexe != 0 {
-                                if sap1.cross[FormeVue::TETE as usize] > 6 {
-                                    sap1.cross[FormeVue::TETE as usize] = 0;
-                                }
-                            } else if sap1.cross[FormeVue::TETE as usize] > 22 {
-                                sap1.cross[FormeVue::TETE as usize] = 12;
-                            }
-                        }
+                    255
+                };
+                self.sapglob.force = self.sapglob.param[1];
+                self.sapglob.charisme = self.sapglob.param[2];
+                self.sapglob.vie = self.sapglob.param[3];
+                self.sapglob.resistance = self.sapglob.param[4];
+                while self.getkey(0) != 0 { /* Epuise le clavier */ }
+            } else {
+                let pt = Point::new(self.sapglob.sposx, self.sapglob.sposy);
+                let mut i: i16 = 0;
+                while i < 5 {
+                    r = self.AireJauge(i);
+                    if r.pt_in_rect(pt) {
+                        pos = i as i8;
+                        /* Fleche */
+                        self.affomb(
+                            self.sapwind.mobFleches + MOB_DESIGNE_BASE,
+                            r.top - 4,
+                            86,
+                            0,
+                            0,
+                            true,
+                        );
                         loop {
+                            let rval = self.AireValJauge(pos as i16);
+                            /* On augmente la jauge */
+                            if self.sapglob.sposx > rval.right
+                                && self.sapglob.param[5] != 0
+                                && self.sapglob.param[pos as usize]
+                                    < self.sapglob.maxparam[self.sapglob.sexe as usize]
+                                        [pos as usize]
+                            {
+                                self.sapglob.param[5] -= 1;
+                                self.sapglob.param[pos as usize] += 1;
+                            }
+                            if self.sapglob.sposx < rval.right
+                                && self.sapglob.param[5] < 254
+                                && self.sapglob.param[pos as usize] != 0
+                            {
+                                self.sapglob.param[5] += 1;
+                                self.sapglob.param[pos as usize] -= 1;
+                            }
                             (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) =
                                 self.vq_mouse();
-                            if (self.sapglob.bouton & 1) == 0 {
+                            self.jauge(pos as i16, true);
+                            /* Quantite restante */
+                            self.jauge(5, true);
+                            self.aff_sour(
+                                self.sapwind.mobBambou + MOB_FRAPPE_BASE,
+                                self.sapglob.sposy,
+                                self.sapglob.sposx,
+                            );
+                            if self.sapglob.bouton == 0 {
                                 break;
                             }
+                        } /* while(bouton) */
+                        self.primjauge(1);
+                        self.AfficheSuite();
+                        i = 255;
+                    }
+                    i += 1;
+                }
+            }
+        }
+        /*selection de l'apparence*/
+        self.eff_sour();
+        cont = 1;
+        pos = 0;
+        self.prm(SapId::Sap1, -1);
+        self.effima(0x050);
+        self.tfrvirt();
+        self.sapwind.ports.tfrima();
+        self.sapglob.flefba = 0;
+        self.eff_sour();
+        while cont != 0 {
+            {
+                let sap1 = &mut self.sapglob.sap1;
+                sap1.colonne = 28;
+                sap1.sens = 1;
+            }
+            self.effima(0x050); //??
+            self.mvtsap(SapId::Sap1);
+            self.sapwind.ports.tfrdemi();
+            self.tfrvirt();
+            self.AfficheSuite();
+
+            self.affomb(
+                self.sapwind.mobFleches + MOB_DESIGNE_BASE,
+                (pos as i16 * 2 + 6) * 7 + 1,
+                100,
+                4,
+                4,
+                VRAI,
+            );
+            loop {
+                (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) = self.vq_mouse();
+                self.aff_sour(
+                    self.sapwind.mobBambou + 21,
+                    self.sapglob.sposy,
+                    self.sapglob.sposx,
+                );
+                if self.sapglob.bouton == 0 {
+                    break;
+                }
+            }
+
+            if MouseDansSuite(self.sapglob.sposx, self.sapglob.sposy) {
+                self.affomb(
+                    self.sapwind.mobFleches + 20,
+                    AIRE_SUITE.top,
+                    AIRE_SUITE.left,
+                    2,
+                    2,
+                    true,
+                );
+                cont = 0; /*esc*/
+            } else {
+                pos = (self.sapglob.sposy > 53) as i8;
+                self.sapglob.dsposy = self.sapglob.sposy;
+                self.sapglob.dsposx = self.sapglob.sposx;
+                if (self.sapglob.bouton & 1) != 0 {
+                    /*gauche*/
+                    if pos != 0 {
+                        let sap1 = &mut self.sapglob.sap1;
+                        sap1.cross[FormeVue::BUSTE as usize] =
+                            sap1.cross[FormeVue::BUSTE as usize].wrapping_add(2); /*Buste*/
+                        if self.sapglob.sexe != 0 {
+                            if sap1.cross[FormeVue::BUSTE as usize] >= 8 {
+                                sap1.cross[FormeVue::BUSTE as usize] = 0;
+                            }
+                        } else if sap1.cross[FormeVue::BUSTE as usize] >= 16 {
+                            sap1.cross[FormeVue::BUSTE as usize] = 8;
+                        }
+                    } else {
+                        let sap1 = &mut self.sapglob.sap1;
+                        sap1.cross[FormeVue::TETE as usize] =
+                            sap1.cross[FormeVue::TETE as usize].wrapping_add(2); /*tete*/
+                        if self.sapglob.sexe != 0 {
+                            if sap1.cross[FormeVue::TETE as usize] > 6 {
+                                sap1.cross[FormeVue::TETE as usize] = 0;
+                            }
+                        } else if sap1.cross[FormeVue::TETE as usize] > 22 {
+                            sap1.cross[FormeVue::TETE as usize] = 12;
+                        }
+                    }
+                    loop {
+                        (self.sapglob.bouton, self.sapglob.sposx, self.sapglob.sposy) =
+                            self.vq_mouse();
+                        if (self.sapglob.bouton & 1) == 0 {
+                            break;
                         }
                     }
                 }
             }
-            self.eff_sour();
-            /* On est enregistre le personnage a une massue */
-            self.sapglob.palhaute = Rc::clone(&self.sapglob.pal_chron);
-            self.DebutAventure(false);
-            self.FixeAireNoMouseAireBasse();
         }
+        self.eff_sour();
+        /* On est enregistre le personnage a une massue */
+        self.sapglob.palhaute = Rc::clone(&self.sapglob.pal_chron);
+        self.DebutAventure(false);
+        self.FixeAireNoMouseAireBasse();
     }
 }
 
