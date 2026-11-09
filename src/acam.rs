@@ -237,7 +237,7 @@ pub(crate) fn ParamText(p1: String, p2: &str, p3: &str, p4: &str) {
 }
 
 /// Affiche une alerte via egui et attend l'item choisi. Bloquant côté C.
-pub(crate) fn Alert(alert_id: i16, _filter: *mut c_void) -> i16 {
+pub(crate) fn Alert(alert_id: i16) -> i16 {
     let params = PARAM_TEXT.lock().unwrap().clone();
     request_alert(alert_id, params)
 }

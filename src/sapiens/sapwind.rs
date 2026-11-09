@@ -168,7 +168,7 @@ impl Sapiens {
                                         DoAlertSapiens
     ******************************************************************************************/
     pub(crate) fn DoAlertSapiens(&mut self, num: i16) -> i16 {
-        let n = Alert(num, core::ptr::null_mut());
+        let n = Alert(num);
         self.tfrvirt();
         self.TfrEcr(None);
         n
@@ -707,7 +707,7 @@ impl Sapiens {
         /* Choix de la langue*/
         if langue_i16() == -1 {
             CarboniseSetCursorArrow();
-            set_langue((Alert(ALRT_VERSION, core::ptr::null_mut()) - 1).into());
+            set_langue((Alert(ALRT_VERSION) - 1).into());
             SetCursor(GetCursor(watchCursor as i16));
         }
         self.sapglob.init_and_check_texts();
