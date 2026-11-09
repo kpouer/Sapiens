@@ -1,4 +1,4 @@
-#![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
+#![allow(non_snake_case)]
 /***********************************************************************
                 SAPREL : Module relationnel (SAPREL.C porté en Rust)
                     (c) god Le 7 Novembre 1986
@@ -14,7 +14,7 @@ use crate::sapiens::c_str::ChaineC;
 use crate::sapiens::sapglob::{ListeId, SapId, Sapglob, tabprf, tenerv, tobje};
 use crate::sapiens::sapw3d::distance;
 use crate::sapiens::sapwmus::attends_bruit;
-use crate::sapiens::{NBREVTDESTINE, NBREVTHEURE, Vue, evt};
+use crate::sapiens::{NBREVTDESTINE, NBREVTHEURE, Vue};
 use crate::shared::Rect;
 
 const ECHELLE: i16 = 2;
@@ -1515,76 +1515,71 @@ impl Sapiens {
             ZONEVT:Determine un evt en fonction de la position
     ***********************************************************************/
     pub(crate) fn zonevt(&mut self, okmess: u16) -> i16 {
-        let mut dieu: *mut evt;
-        let mut nuit: bool;
-        let mut qui: u8;
-        let mut dist: i16;
-        unsafe {
-            /*on balaye tout les evts*/
-            for i in 0..NBREVTDESTINE as i16 {
-                dieu = &raw mut self.sapglob.destine[i as usize];
-                dist = distance(
-                    (*dieu).posx as i64 * 256 - self.sapglob.xj as i64,
-                    (*dieu).posy as i64 * 256 - self.sapglob.yj as i64,
-                );
-                dist /= 256;
-                /*dist est mis a jour*/
-                if dist > (*dieu).distmax as i16
+        /*on balaye tout les evts*/
+        for i in 0..NBREVTDESTINE as i16 {
+            let dieu = &self.sapglob.destine[i as usize];
+            let mut dist = distance(
+                dieu.posx as i64 * 256 - self.sapglob.xj as i64,
+                dieu.posy as i64 * 256 - self.sapglob.yj as i64,
+            );
+            dist /= 256;
+            /*dist est mis a jour*/
+            if dist > dieu.distmax as i16 {
                 /*dans la zone d'influence*/
+                let dieu = &mut self.sapglob.destine[i as usize];
+                dieu.type_ &= 127; /*on revalide la zone en clearant le bit 128*/
+            } else
+            /*ok on est ds la zone*/
+            {
+                /*la zone est-elle valide ??,sommes mous assez central*/
+                if dieu.type_ & 128 == 0
+                    && (dist as i32 * 12 + 10) < (self.random.Rnd() as u16) as i32
                 {
-                    (*dieu).type_ &= 127; /*on revalide la zone en clearant le bit 128*/
-                } else
-                /*ok on est ds la zone*/
-                {
-                    /*la zone est-elle valide ??,sommes mous assez central*/
-                    if (*dieu).type_ & 128 == 0
-                        && (dist as i32 * 12 + 10) < (self.random.Rnd() as u16) as i32
-                    {
-                        /*on compare
-                        la densité probabiliste de la zone*/
-                        if self.random.Rnd() >= (*dieu).rnd as i16 {
-                            /* on affiche un message (l'evt n'a???*/
-                            if self.random.Rnd() > 240 && okmess != 0 {
-                                self.efbadi();
-                                self.comment((*dieu).message as u16);
-                                return 0;
-                            }
-                        } else {
-                            if (*dieu).evt == 0
+                    /*on compare
+                    la densité probabiliste de la zone*/
+                    if self.random.Rnd() >= dieu.rnd as i16 {
+                        /* on affiche un message (l'evt n'a???*/
+                        if self.random.Rnd() > 240 && okmess != 0 {
+                            self.efbadi();
+                            let dieu = &self.sapglob.destine[i as usize];
+                            self.comment(dieu.message as u16);
+                            return 0;
+                        }
+                    } else {
+                        if dieu.evt == 0 {
                             /*eau ??*/
+                            self.sapglob.source += 1;
+                            self.sapglob.liste4.taille = 1;
+                            self.sapglob.tlpos[4] = 1;
+                            self.sapglob.liste4.elements[0] = 2;
+                            self.efbadi();
+                            self.comment(76); /*tu entends une source*/
+                            return 0;
+                        } else {
+                            /* est ce un self.sapglob.chef ???*/
+                            self.sapglob.chef = if dieu.evt > 127 { 1 } else { 0 };
+                            let qui = dieu.evt & 127;
+                            /* one shot !!!*/
+                            if dieu.type_ != 0 {
+                                let dieu = &mut self.sapglob.destine[i as usize];
+                                dieu.type_ |= 128;
+                            }
+                            let nuit = self.sapglob.heure > 512;
+                            /* test spécifiques a la presence et au moment de la journée*/
+                            if self.sapglob.chef != 0
+                                || (nuit && qui != 5 && self.random.Rnd() > 222)
+                                || (!nuit && qui == 5 && self.random.Rnd() > 222)
+                                || (nuit && qui == 5)
+                                || (!nuit && qui != 5)
                             {
-                                self.sapglob.source += 1;
-                                self.sapglob.liste4.taille = 1;
-                                self.sapglob.tlpos[4] = 1;
-                                self.sapglob.liste4.elements[0] = 2;
-                                self.efbadi();
-                                self.comment(76); /*tu entends une source*/
-                                return 0;
-                            } else {
-                                /* est ce un self.sapglob.chef ???*/
-                                self.sapglob.chef = if (*dieu).evt > 127 { 1 } else { 0 };
-                                qui = (*dieu).evt & 127;
-                                /* one shot !!!*/
-                                if (*dieu).type_ != 0 {
-                                    (*dieu).type_ |= 128;
-                                }
-                                nuit = self.sapglob.heure > 512;
-                                /* test spécifiques a la presence et au moment de la journée*/
-                                if self.sapglob.chef != 0
-                                    || (nuit && qui != 5 && self.random.Rnd() > 222)
-                                    || (!nuit && qui == 5 && self.random.Rnd() > 222)
-                                    || (nuit && qui == 5)
-                                    || (!nuit && qui != 5)
-                                {
-                                    return qui as i16;
-                                }
-                            } /*evt =eau ou vivant*/
-                        } /*Rnd correct*/
-                    } /*zone valide*/
-                } /*dans la zone*/
-            } /*pour tout les elements*/
-            0
-        }
+                                return qui as i16;
+                            }
+                        } /*evt =eau ou vivant*/
+                    } /*Rnd correct*/
+                } /*zone valide*/
+            } /*dans la zone*/
+        } /*pour tout les elements*/
+        0
     }
 
     /***********************************************************************
