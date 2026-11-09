@@ -361,9 +361,11 @@ impl Sapiens {
             if delta1 < 0 {
                 delta1 = 0;
             }
-            posTheo = (unsafe { *self.sapgest.forsyl.add((y / 2) as usize) } as i16
-                + unsafe { *self.sapgest.forsyl.add((y / 2 + 1) as usize) } as i16)
-                / 2;
+            unsafe {
+                posTheo = (*self.sapgest.forsyl.add((y / 2) as usize) as i16
+                    + *self.sapgest.forsyl.add((y / 2 + 1) as usize) as i16)
+                    / 2;
+            }
             pos1 = (NB_COL_SILEX / 2) - posTheo - delta1; /* position gauche du nucleus */
             delta1 = delta1.wrapping_add(self.random.myRandom(-1, 2) as i16);
             if delta1 < 0 {

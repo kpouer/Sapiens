@@ -7,7 +7,6 @@
 // Gestion C de la 3d (cf. Sources/SAPW3D.C, (c) Og le 19-1-1996) :
 // dégradés de palette en fonction de l'heure, ciel nocturne et étoiles,
 // sol en lignes successives, pluie et éclairs, visualisation des montagnes.
-#![allow(unsafe_op_in_unsafe_fn)]
 
 use crate::Sapiens;
 use crate::acam::{Random, TickCount};
