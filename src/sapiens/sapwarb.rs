@@ -185,8 +185,7 @@ impl Sapiens {
     /**************************************************************************
                                 arbre
     ***************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn arbre(&mut self, ligne: i16, colonne: i16) {
+    pub(crate) fn arbre(&mut self, ligne: i16, colonne: i16) {
         let _g = self.sapwind.ports.on(PortId::Ecran1);
         /* La position du meteore varie de 74 a 0 puis de 0 a 74 */
         if self.sapglob.heure > 512 {

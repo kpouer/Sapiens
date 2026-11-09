@@ -176,8 +176,7 @@ impl Sapiens {
     ;             2.Vitesse de progression
     ;
     ************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn sapdep(&mut self, angle: i16, vitesse: i16) {
+    pub(crate) unsafe fn sapdep(&mut self, angle: i16, vitesse: i16) {
         self.sapglob.xj = (self.sapglob.xj as i64
             + (((cosshort(angle) as i64) * (vitesse as i64)) >> 8))
             .clamp(0, 65535) as u16;
@@ -767,8 +766,7 @@ impl Sapiens {
                                      PosePluie
     Quand il pleut il ya des flaques par terre
     ***************************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) unsafe extern "C" fn PosePluie(&mut self) {
+    pub(crate) unsafe fn PosePluie(&mut self) {
         if self.sap3d.FreqEclair < 1000 && self.sap3d.FreqEclair > 500 {
             /* Si pas deja de l'eau par terre on mets de l'eau a terre */
             if self.sapglob.liste4.taille > 0

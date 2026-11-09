@@ -316,8 +316,7 @@ impl Sapiens {
     /******************************************************************************************
                                     ConfirmePerteAventure
     ******************************************************************************************/
-    #[unsafe(no_mangle)]
-    pub(crate) extern "C" fn ConfirmePerteAventure(&mut self) -> Boolean {
+    pub(crate) fn ConfirmePerteAventure(&mut self) -> Boolean {
         self.souris.MontreSouris();
         self.DoAlertSapiens(CvtDefaultLangRess(1)) == 1 /* ALRT_PERTE_PARTIE */
     }

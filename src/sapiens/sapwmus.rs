@@ -42,7 +42,7 @@ impl Sapiens {
                 attends_bruit
 ***************************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn attends_bruit() {
+pub(crate) fn attends_bruit() {
     audio::wait_sfx();
 }
 
@@ -50,13 +50,13 @@ pub(crate) extern "C" fn attends_bruit() {
                 quel_synthe
 ***************************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn quel_synthe(_n: i16) {}
+pub(crate) fn quel_synthe(_n: i16) {}
 
 /*************************************************************************
                 reset_synthe
 ***************************************************************************/
 #[unsafe(no_mangle)]
-pub(crate) extern "C" fn reset_synthe() {}
+pub(crate) fn reset_synthe() {}
 
 impl Sapiens {
     /*************************************************************************

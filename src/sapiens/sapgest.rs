@@ -21,10 +21,9 @@ use crate::sapiens::{
 use crate::shared::{Boolean, Point, RGBColor, Rect};
 use crate::stubs::{CarboniseInvalRect, SaisitChemin, SetPathApplication};
 use byteorder::{ReadBytesExt, WriteBytesExt};
-use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::ptr::null_mut;
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
@@ -864,7 +863,7 @@ impl Sapiens {
                             DebutAventure
     Initialise decor 3d, et affiche le copyright
     ***********************************************************************/
-    pub(crate) extern "C" fn DebutAventure(&mut self, isFirst: Boolean) {
+    pub(crate) fn DebutAventure(&mut self, isFirst: Boolean) {
         self.FixeMenusReduit();
         self.primsap();
         self.generique(FAUX);
@@ -1002,7 +1001,7 @@ impl Sapiens {
     Trace une jauge dans Debecr
     => numero de la jauge, indeicateur de transfert sur le reel
     ***********************************************************************/
-    pub(crate) extern "C" fn jauge(&mut self, i: i16, tfr: Boolean) {
+    pub(crate) fn jauge(&mut self, i: i16, tfr: Boolean) {
         let _g = self.sapwind.ports.on(PortId::Debecr);
         let rval = self.AireValJauge(i);
         self.AfficheCadreJauge(i);
@@ -1062,7 +1061,7 @@ impl Sapiens {
     /***********************************************************************
                             DEFSAP: Defini un sapiens
     ***********************************************************************/
-    pub(crate) extern "C" fn defsap(&mut self) {
+    pub(crate) fn defsap(&mut self) {
         self.sapglob.sapvit = 0;
         let nomjoueur_ptr = &raw mut self.saptxt.nomjoueur as *mut i8;
         let taille = self.getnom(88, nomjoueur_ptr, 8);
@@ -1530,10 +1529,6 @@ impl Sapiens {
         self.CreeDecor3d(true);
         self.sapwind.FixeTailleMainWindow();
     }
-}
-
-fn chemin_c(path: &Path) -> Option<CString> {
-    CString::new(path.as_os_str().as_encoded_bytes()).ok()
 }
 
 fn nom_joueur(saptxt: &Saptxt) -> String {

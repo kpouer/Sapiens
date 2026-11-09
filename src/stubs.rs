@@ -52,13 +52,13 @@ impl Ports {
     }
 }
 
-pub(crate) extern "C" fn FrontWindow() -> WindowPtr {
+pub(crate) fn FrontWindow() -> WindowPtr {
     std::ptr::null_mut()
 }
-pub(crate) extern "C" fn SelectWindow(_w: WindowPtr) {}
+pub(crate) fn SelectWindow(_w: WindowPtr) {}
 /// Un seul « bureau » : tout clic est dans le contenu de la fenêtre de jeu
 /// (la barre de menus, egui ou native, ne pousse pas d'événement).
-pub(crate) extern "C" fn FindWindow(_pt: Point, _window: *mut WindowPtr) -> i16 {
+pub(crate) fn FindWindow(_pt: Point, _window: *mut WindowPtr) -> i16 {
     crate::cbridge::inContent as i16
 }
 pub(crate) fn SystemClick(_event: *const EventRecord, _w: WindowPtr) {}
@@ -127,20 +127,16 @@ pub(crate) fn CarboniseValideUpdate() {}
 // Divers systeme
 // ---------------------------------------------------------------------------
 
-pub(crate) extern "C" fn InitDefautConfigSortieNumerique() {}
+pub(crate) fn InitDefautConfigSortieNumerique() {}
 
 // ---------------------------------------------------------------------------
 // Volumes / chemins
 // ---------------------------------------------------------------------------
 
-pub(crate) extern "C" fn SaisitChemin(
-    _volRefNum: *mut i16,
-    _libPath: *mut i8,
-    _numPath: *mut i64,
-) -> Boolean {
+pub(crate) fn SaisitChemin(_volRefNum: *mut i16, _libPath: *mut i8, _numPath: *mut i64) -> Boolean {
     false
 }
-pub(crate) extern "C" fn SetPathApplication() {}
-pub(crate) extern "C" fn FixeCheminRelatif(_volRef: i16, _pathBase: i64, _path: *mut i8) -> OSErr {
+pub(crate) fn SetPathApplication() {}
+pub(crate) fn FixeCheminRelatif(_volRef: i16, _pathBase: i64, _path: *mut i8) -> OSErr {
     0
 }
