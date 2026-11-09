@@ -24,7 +24,6 @@ pub(crate) type Ptr = *mut u8;
 pub(crate) type CGrafPtr = *mut c_void;
 pub(crate) type DialogPtr = *mut c_void;
 pub(crate) type RgnHandle = *mut c_void;
-pub(crate) type Cursor = *mut c_void;
 pub(crate) type SndListHandle = *mut *mut c_void;
 
 #[derive(Debug)]

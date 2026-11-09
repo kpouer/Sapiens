@@ -24,7 +24,7 @@ pub(crate) mod text;
 use crate::acam::Random;
 use crate::dialogs::PreferencesState;
 use crate::exchange::{
-    AlertRequest, CursorShape, INPUT, MOUSE_EVENT_SCALE, UiRequest, UiResponse, WindowFrame,
+    AlertRequest, Cursor, INPUT, MOUSE_EVENT_SCALE, UiRequest, UiResponse, WindowFrame,
     clear_events, cursor_hidden, cursor_shape, push_event, set_menu_command, take_title,
     take_ui_request, take_window_frame,
 };
@@ -436,11 +436,11 @@ impl SapiensApp {
     }
 }
 
-impl From<CursorShape> for CursorIcon {
-    fn from(value: CursorShape) -> Self {
+impl From<Cursor> for CursorIcon {
+    fn from(value: Cursor) -> Self {
         match value {
-            CursorShape::Arrow => CursorIcon::Default,
-            CursorShape::Watch => CursorIcon::Progress,
+            Cursor::Arrow => CursorIcon::Default,
+            Cursor::Watch => CursorIcon::Progress,
         }
     }
 }

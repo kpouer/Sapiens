@@ -36,46 +36,46 @@ use std::time::{Duration, Instant};
 
 /// Forme de curseur demandée par le code C.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum CursorShape {
+pub(crate) enum Cursor {
     Arrow = 0,
     Watch = 1,
 }
 
-impl Display for CursorShape {
+impl Display for Cursor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            CursorShape::Arrow => "Arrow",
-            CursorShape::Watch => "Watch",
+            Cursor::Arrow => "Arrow",
+            Cursor::Watch => "Watch",
         };
         write!(f, "{}", str)
     }
 }
 
-impl From<u8> for CursorShape {
+impl From<u8> for Cursor {
     fn from(value: u8) -> Self {
         match value {
-            0 => CursorShape::Arrow,
-            1 => CursorShape::Watch,
+            0 => Cursor::Arrow,
+            1 => Cursor::Watch,
             _ => {
                 error!("Unexpected cursor shape {value}");
-                CursorShape::Arrow
+                Cursor::Arrow
             }
         }
     }
 }
 
-static CURSOR_SHAPE: AtomicU8 = AtomicU8::new(CursorShape::Arrow as u8);
+static CURSOR_SHAPE: AtomicU8 = AtomicU8::new(Cursor::Arrow as u8);
 static CURSOR_HIDDEN: AtomicBool = AtomicBool::new(false);
 
 /// Pose la forme du curseur (thread C). Log seulement si elle change : le
 /// code jeu la reposait à chaque opération.
-pub(crate) fn set_cursor_shape(shape: CursorShape) {
+pub(crate) fn set_cursor_shape(shape: Cursor) {
     if CURSOR_SHAPE.swap(shape as u8, Ordering::SeqCst) != shape as u8 {
         info!("curseur forme = {shape}");
     }
 }
 
-pub(crate) fn cursor_shape() -> CursorShape {
+pub(crate) fn cursor_shape() -> Cursor {
     CURSOR_SHAPE.load(Ordering::SeqCst).into()
 }
 
