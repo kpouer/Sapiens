@@ -812,7 +812,7 @@ impl Sapiens {
         let _g = self.sapwind.ports.on(PortId::Ecran1);
         self.sapglob.zj =
             self.CalculeAltitude(self.sapglob.xj as i16, self.sapglob.yj as i16) as u16;
-        let angle = ((self.sapglob.dzeta as f32) * (3.1415927_f32)) as f64 / 512.0;
+        let angle = ((self.sapglob.dzeta as f32) * (std::f32::consts::PI)) as f64 / 512.0;
         let ca = (-angle).cos() as f32;
         let sa = (-angle).sin() as f32;
 
