@@ -4,7 +4,6 @@
 
 pub(crate) type __int64_t = ::std::os::raw::c_longlong;
 
-pub(crate) type OSErr = i16;
 pub(crate) type MenuHandle = *mut ::std::os::raw::c_void;
 pub(crate) const everyEvent: u32 = 65535;
 pub(crate) const helvetica: u32 = 2;

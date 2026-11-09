@@ -19,12 +19,11 @@ use crate::sapiens::{
     NB_ROCHERS_MAX, PRECISION_SILEX, Vue,
 };
 use crate::shared::{Boolean, Point, RGBColor, Rect};
-use crate::stubs::{CarboniseInvalRect, SaisitChemin, SetPathApplication};
+use crate::stubs::CarboniseInvalRect;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::ptr::null_mut;
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
 
@@ -56,9 +55,6 @@ pub(crate) struct Sapgest {
     palSilex: [u16; 8],
     /* Dernier fichier d'aventure charge ou sauve (nom par defaut du dialogue) */
     dernier_fichier: Option<PathBuf>,
-    /* Volume et repertoire de l'application (ex-globals SAPIENS.H) */
-    pub(crate) PathApplication: i64,
-    pub(crate) volumeApplication: i16,
 }
 
 impl Default for Sapgest {
@@ -67,8 +63,6 @@ impl Default for Sapgest {
             forsyl: forsy1.as_ptr(),
             palSilex: [0; 8],
             dernier_fichier: None,
-            PathApplication: 0,
-            volumeApplication: 0,
         }
     }
 }
@@ -1550,21 +1544,6 @@ fn nom_defaut_sauvegarde(sapiens: &Sapiens) -> String {
         .map(|n| n.to_string_lossy().into_owned())
         .filter(|n| !n.is_empty())
         .unwrap_or_else(|| nom_joueur(&sapiens.saptxt))
-}
-
-impl Sapiens {
-    /******************************************************************
-                               InitCheminsSapiens
-    Initialise les chemins de l'application
-    ********************************************************************/
-    pub(crate) fn InitCheminsSapiens(&mut self) {
-        SaisitChemin(
-            &raw mut self.sapgest.volumeApplication,
-            null_mut(),
-            &raw mut self.sapgest.PathApplication,
-        );
-        SetPathApplication();
-    }
 }
 
 impl Sapiens {

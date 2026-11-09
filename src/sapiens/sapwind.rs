@@ -21,12 +21,12 @@ use crate::port;
 use crate::port::{PortId, Ports};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::CvtDefaultLangRess;
-use crate::sapiens::sapwbrt::{FileError, SetPathInData};
+use crate::sapiens::sapwbrt::FileError;
 use crate::sapiens::{ECHELLE, STR_VRAC, Vue};
 use crate::shared::{Boolean, EventRecord, RGBColor, Rect};
 use crate::stubs::{
     CarboniseInvalRect, CarboniseValideUpdate, DragWindow, FindWindow, FrontWindow,
-    InitDefautConfigSortieNumerique, PopPath, PushPath, SelectWindow, SystemClick, SystemTask,
+    InitDefautConfigSortieNumerique, SelectWindow, SystemClick, SystemTask,
 };
 use crate::{Sapiens, cbridge};
 use cbridge::*;
@@ -498,8 +498,6 @@ impl Sapiens {
         let _g = self.sapwind.ports.on(PortId::Ecran1);
 
         self.LibereDataMobs();
-        PushPath();
-        SetPathInData(&self.sapgest, c"Mobs".as_ptr() as *mut i8);
         self.sapwind.mobBambou = 0;
         nb = self.ChargeFichierBrt("WBAMBOU.BRT", self.sapwind.mobBambou + 1, 26, 0)?; /*0, 21 Mobs */
         self.sapwind.mobFace = self.sapwind.mobBambou + nb;
@@ -524,7 +522,6 @@ impl Sapiens {
         nb = self.ChargeFichierBrt("Geneva14.BRT", self.sapwind.Fonte14 + 1, 120, 0)?;
         self.sapwind.Fonte10 = self.sapwind.Fonte14 + nb;
         self.ChargeFichierBrt("Geneva10.BRT", self.sapwind.Fonte10 + 1, 120, 0)?;
-        PopPath();
         Ok(())
     }
 }
@@ -701,8 +698,6 @@ impl Sapiens {
         let mut y: i16;
         let mut r: Rect = Rect::default();
 
-        /* Init des chemins standards */
-        self.InitCheminsSapiens();
         SetCursor(GetCursor(watchCursor as i16));
         self.FixeAireNoMouseAireBasse();
         /* On charge les preferences */

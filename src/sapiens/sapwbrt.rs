@@ -6,14 +6,13 @@ use crate::cbridge::{blackColor, patOr, srcCopy, whiteColor};
 use crate::langue::Langue::GB;
 use crate::port::{PortId, Ports};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
-use crate::sapiens::sapgest::Sapgest;
 use crate::sapiens::saptxt::{CvtDefaultLangRess, CvtLangRess};
 use crate::sapiens::sapwind::ValideUpdate;
 use crate::sapiens::{DEFAULT_MOB, DEFAULT_PALCOUL, ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalCoul};
 use crate::shared::{RGBColor, Rect, RgnHandle, SapPort};
 use crate::stubs::{
     CarboniseInvalRect, CarboniseSetPatGray, CarboniseValideUpdate, ConvertPNGFileToOffscreen,
-    FixeCheminRelatif, GetRectFilePng, PopPath, PushPath, SaisitChemin,
+    GetRectFilePng,
 };
 use crate::{Sapiens, port};
 use byteorder::{BigEndian, ReadBytesExt};
@@ -39,23 +38,6 @@ pub(crate) enum FileError {
         nb_objets: i16,
         nb_mobs: i16,
     },
-}
-
-/***********************************************************************
-               SetPathInData
-=> id de la picture,aire
-***********************************************************************/
-pub(crate) fn SetPathInData(sapgest: &Sapgest, name: *mut i8) {
-    let mut vol: i16 = 0;
-    let mut path: i64 = 0;
-
-    FixeCheminRelatif(
-        sapgest.volumeApplication,
-        sapgest.PathApplication,
-        c"data".as_ptr() as *mut i8,
-    );
-    SaisitChemin(&mut vol, std::ptr::null_mut(), &mut path);
-    FixeCheminRelatif(vol, path, name);
 }
 
 impl Ports {
@@ -1175,10 +1157,8 @@ impl Sapiens {
     ***********************************************************************/
     pub(crate) fn AffichePictDansAire(&mut self, num: i16, r: &Rect) {
         let rDest = self.sapwind.ports.DoZoomRect(r);
-        PushPath();
         /* recherche de la picture en fichier */
         let nom = format!("image_{}.png", CvtDefaultLangRess(num),);
-        SetPathInData(&self.sapgest, c"images".as_ptr() as *mut i8);
         let mut rpng = Rect::default();
         if GetRectFilePng(&nom, &mut rpng) {
             let offscreen = ConvertPNGFileToOffscreen(&nom);
@@ -1202,7 +1182,6 @@ impl Sapiens {
                 self.sapwind.ports.DrawPicture(pict, &rDest);
             }
         }
-        PopPath();
     }
 }
 

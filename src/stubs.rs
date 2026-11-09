@@ -6,7 +6,7 @@
 
 #![allow(non_snake_case)]
 
-use crate::cbridge::{OSErr, WindowPtr};
+use crate::cbridge::WindowPtr;
 use crate::exchange::{INPUT, MOUSE_EVENT_SCALE};
 use crate::port;
 use crate::port::{PortId, Ports};
@@ -108,12 +108,6 @@ pub(crate) fn GetRectFilePng(_name: &str, _r: &mut Rect) -> Boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Timers / chemins temporaires
-// ---------------------------------------------------------------------------
-pub(crate) fn PushPath() {}
-pub(crate) fn PopPath() {}
-
-// ---------------------------------------------------------------------------
 // Images offscreen (restants)
 // ---------------------------------------------------------------------------
 
@@ -128,15 +122,3 @@ pub(crate) fn CarboniseValideUpdate() {}
 // ---------------------------------------------------------------------------
 
 pub(crate) fn InitDefautConfigSortieNumerique() {}
-
-// ---------------------------------------------------------------------------
-// Volumes / chemins
-// ---------------------------------------------------------------------------
-
-pub(crate) fn SaisitChemin(_volRefNum: *mut i16, _libPath: *mut i8, _numPath: *mut i64) -> Boolean {
-    false
-}
-pub(crate) fn SetPathApplication() {}
-pub(crate) fn FixeCheminRelatif(_volRef: i16, _pathBase: i64, _path: *mut i8) -> OSErr {
-    0
-}
