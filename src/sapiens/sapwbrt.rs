@@ -381,9 +381,9 @@ impl Sapiens {
         /* Nombre de lignes a tracer */
         for _ in 0..ty.max(0) {
             /* Debut de  ligne */
-            let mut pecr = pdeb;
+            let start = pdeb;
             pdeb += tailleLigne;
-            for _ in 0..tx.max(0) {
+            for pecr in (start..).take(tx.max(0) as usize) {
                 /* l'index de la couleur est extrait */
                 let coul = src[p];
                 p += 1;
@@ -391,7 +391,6 @@ impl Sapiens {
                 if coul != vide {
                     port.put(pecr, couleur as u8);
                 }
-                pecr += 1;
             }
             /* Donnees perdues si le mob est coupe en colonne */
             p += delttx as usize;
@@ -445,9 +444,9 @@ impl Sapiens {
         for _ in 0..ty.max(0) {
             yc += 1;
             /* Debut de  ligne */
-            let mut pecr = pdeb;
+            let start = pdeb;
             pdeb += tailleLigne;
-            for _ in 0..tx.max(0) {
+            for pecr in (start..).take(tx.max(0) as usize) {
                 /* l'index de la couleur est extrait dans le mob */
                 let coul = src[p];
                 p += 1;
@@ -463,7 +462,6 @@ impl Sapiens {
                     /* Conversion de l'index de couleur en index ST */
                     port.put(pecr, tab_i[coul as usize] as u8);
                 }
-                pecr += 1;
             }
         }
     }

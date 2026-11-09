@@ -151,14 +151,14 @@ fn arpege(notes: &[f32], step: f32, amp: f32, sr: f32) -> Vec<f32> {
     let mut out = vec![0.0; n];
     for (k, &freq) in notes.iter().enumerate() {
         let start = (sr * step * k as f32) as usize;
-        for i in start..n {
+        for (i, item) in out.iter_mut().enumerate().take(n).skip(start) {
             let t = (i - start) as f32 / sr;
             if t > 0.42 {
                 break;
             }
             let env = (-t * 5.0).exp() * (t * 160.0).min(1.0);
             let p = std::f32::consts::TAU * freq * t;
-            out[i] += (p.sin() + 0.25 * (2.0 * p).sin()) * env * amp * 0.55;
+            *item += (p.sin() + 0.25 * (2.0 * p).sin()) * env * amp * 0.55;
         }
     }
     fade_in_out(&mut out, sr);
@@ -210,11 +210,11 @@ fn double_clic(duration: f32, sr: f32) -> Vec<f32> {
     let mut out = vec![0.0; n];
     for (k, &freq) in [880.0, 1320.0].iter().enumerate() {
         let start = (sr * 0.045 * k as f32) as usize;
-        for i in start..n {
+        for (i, item) in out.iter_mut().enumerate().take(n).skip(start) {
             let t = (i - start) as f32 / sr;
             let env = (-t * 45.0).exp();
             let p = std::f32::consts::TAU * freq * t;
-            out[i] += p.sin() * env * 0.40;
+            *item += p.sin() * env * 0.40;
         }
     }
     fade_in_out(&mut out, sr);

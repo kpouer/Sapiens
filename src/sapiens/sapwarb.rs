@@ -170,7 +170,7 @@ impl Sapiens {
                 if lr < 1 {
                     lr = 1;
                 }
-                (ang, lr, lo) = self.calpar(largeur); /*Largeur longueur deltangle */
+                (ang, _, lo) = self.calpar(largeur); /*Largeur longueur deltangle */
                 ang = angle - ang;
                 if ang < 10 {
                     ang = 124 - ang;
