@@ -1,4 +1,4 @@
-#![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
+#![allow(non_snake_case)]
 use crate::acam::Index2Color;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::shared::RGBColor;

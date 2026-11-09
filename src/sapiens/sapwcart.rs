@@ -1,4 +1,4 @@
-#![allow(unsafe_op_in_unsafe_fn, non_snake_case)]
+#![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
 
 use crate::Sapiens;

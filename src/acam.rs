@@ -9,7 +9,6 @@
 
 #![allow(dead_code)]
 #![allow(non_snake_case)]
-#![allow(unsafe_op_in_unsafe_fn)]
 
 use crate::cbridge::{MenuHandle, watchCursor};
 use crate::exchange::{Cursor, request_alert, set_cursor_shape, set_title};
