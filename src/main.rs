@@ -266,6 +266,8 @@ struct SapiensApp {
     game_started: bool,
     monitor_wait: u32,
     last_port_size: Option<(usize, usize)>,
+    /// Hauteur de la barre de menus egui (0 avec la barre native macOS).
+    menu_h: f32,
     /// Dernière image du port fenêtre publiée par le thread C.
     frame: Option<WindowFrame>,
     /// Barre de menus native, créée à la première frame (`NSApp` prêt).
@@ -296,6 +298,7 @@ impl SapiensApp {
             game_started: false,
             monitor_wait: 0,
             last_port_size: None,
+            menu_h: 0.0,
             frame: None,
             #[cfg(target_os = "macos")]
             native_menu: None,
@@ -365,7 +368,7 @@ impl SapiensApp {
         // Barre de menus Mac reconstituée (modèle → src/acam.rs).
         let menus = acam::menus_snapshot();
         let mut command: Option<i32> = None;
-        egui::TopBottomPanel::top("menus").show(ctx, |ui| {
+        let panel = egui::TopBottomPanel::top("menus").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 for menu in &menus {
                     if menu.enabled {
@@ -403,6 +406,7 @@ impl SapiensApp {
                 }
             });
         });
+        self.menu_h = panel.response.rect.height();
         command
     }
 
@@ -414,10 +418,11 @@ impl SapiensApp {
             match dialog {
                 ActiveDialog::Alert { request, .. } => {
                     let spec = dialogs::alert_spec(request, lang);
-                    let modal = egui::Modal::new(egui::Id::new("sapiens_alert")).show(ctx, |ui| {
-                        ui.set_min_width(360.0);
-                        dialogs::render_alert(ui, &spec)
-                    });
+                    let modal =
+                        egui::Modal::new(egui::Id::unique("sapiens_alert")).show(ctx, |ui| {
+                            ui.set_min_width(360.0);
+                            dialogs::render_alert(ui, &spec)
+                        });
                     if let Some(item) = modal
                         .inner
                         .or_else(|| modal.should_close().then_some(spec.dismiss))
@@ -427,7 +432,7 @@ impl SapiensApp {
                 }
                 ActiveDialog::Preferences { state, .. } => {
                     let modal =
-                        egui::Modal::new(egui::Id::new("sapiens_preferences")).show(ctx, |ui| {
+                        egui::Modal::new(egui::Id::unique("sapiens_preferences")).show(ctx, |ui| {
                             ui.set_min_width(420.0);
                             dialogs::render_preferences(ui, state, lang)
                         });
@@ -478,10 +483,11 @@ impl From<Cursor> for CursorIcon {
 }
 
 impl eframe::App for SapiensApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         // Le thread C a besoin de la taille du moniteur pour choisir le zoom
         // initial ; on le lance dès que l'information est disponible (repli sur
         // 100 % si la plateforme ne la fournit pas).
+        let ctx = ui.ctx();
         if !self.game_started {
             if let Some(monitor) = ctx.input(|i| i.viewport().monitor_size) {
                 spawn_game_thread(self.sapiens_timer.clone(), startup_zoom(monitor));
@@ -527,7 +533,10 @@ impl eframe::App for SapiensApp {
         // Le thread du jeu est bloqué quand un modal egui est ouvert :
         // `record_input` vide alors la file pour ne pas rejouer les frappes
         // accumulées à la fermeture.
-        record_input(ctx, self.active_dialog.is_none());
+        // Zone de jeu : toute la zone de contenu, sous la barre de menus.
+        let mut game_area = ctx.content_rect();
+        game_area.min.y += self.menu_h;
+        record_input(ctx, game_area, self.active_dialog.is_none());
         let new_frame = take_window_frame();
         if let Some(f) = new_frame {
             self.tex =
@@ -540,7 +549,7 @@ impl eframe::App for SapiensApp {
             let (w, h) = (f.w, f.h);
             if w > 0 && h > 0 && self.last_port_size != Some((w, h)) {
                 self.last_port_size = Some((w, h));
-                let menu_h = (ctx.available_rect().top() - ctx.screen_rect().top()).max(0.0);
+                let menu_h = self.menu_h;
                 ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(
                     w as f32,
                     h as f32 + menu_h,
@@ -552,7 +561,7 @@ impl eframe::App for SapiensApp {
             None => {
                 egui::CentralPanel::default()
                     .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
-                    .show(ctx, |ui| {
+                    .show(ui, |ui| {
                         ui.centered_and_justified(|ui| {
                             ui.label(
                                 egui::RichText::new("Initialisation de Sapiens…")
@@ -560,7 +569,8 @@ impl eframe::App for SapiensApp {
                             );
                         });
                     });
-                ctx.request_repaint_after(std::time::Duration::from_millis(10));
+                ui.ctx()
+                    .request_repaint_after(std::time::Duration::from_millis(10));
             }
             Some(window) => {
                 if let Some(d) = &mut self.dump {
@@ -569,7 +579,7 @@ impl eframe::App for SapiensApp {
 
                 egui::CentralPanel::default()
                     .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
-                    .show(ctx, |ui| {
+                    .show(ui, |ui| {
                         ui.centered_and_justified(|ui| {
                             ui.add(egui::Image::new(self.tex.as_ref().unwrap()));
                         });
@@ -577,6 +587,7 @@ impl eframe::App for SapiensApp {
             }
         }
 
+        let ctx = ui.ctx();
         self.render_dialogs(ctx);
         // Rafraîchissement permanent (boucle de jeu C).
         ctx.request_repaint();
@@ -594,10 +605,7 @@ fn frame_image(f: &WindowFrame) -> egui::ColorImage {
             egui::Color32::from_rgb(r, g, b)
         })
         .collect();
-    egui::ColorImage {
-        size: [f.w, f.h],
-        pixels,
-    }
+    egui::ColorImage::new([f.w, f.h], pixels)
 }
 
 /// Alimente l'état d'entrée partagé (utilisé par les stubs GetMouse/Button au
@@ -608,8 +616,7 @@ fn frame_image(f: &WindowFrame) -> egui::ColorImage {
 /// consommée par `GetNextEvent`. `accept_events` est faux quand un dialogue
 /// modal est ouvert : le thread du jeu est alors bloqué et ne doit pas recevoir
 /// les frappes destinées à la boîte de dialogue.
-fn record_input(ctx: &egui::Context, accept_events: bool) {
-    let area = ctx.available_rect();
+fn record_input(ctx: &egui::Context, area: egui::Rect, accept_events: bool) {
     let (mh, mv) = ctx
         .pointer_interact_pos()
         .map(|pos| {
