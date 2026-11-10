@@ -3,6 +3,7 @@
 
 use crate::acam::SectRect;
 use crate::cbridge::{blackColor, patOr, srcCopy, whiteColor};
+use crate::data::Brt;
 use crate::langue::Langue::GB;
 use crate::port::{PortId, Ports};
 use crate::sapiens::sapcolorcvt::SapColor2Index;
@@ -14,8 +15,7 @@ use crate::stubs::{
 };
 use crate::{Sapiens, port};
 use byteorder::{BigEndian, ReadBytesExt};
-use std::fs::File;
-use std::io::Read;
+use std::io::{Cursor, Read};
 use thiserror::Error;
 
 const TAILLE_TFR: u32 = 66;
@@ -32,7 +32,7 @@ pub(crate) enum FileError {
     MaxMob,
     #[error("Charge fichier Brt : {nom} nb_objets={nb_objets} nbMobs={nb_mobs}")]
     MobCountMismatch {
-        nom: String,
+        nom: Brt,
         nb_objets: i16,
         nb_mobs: i16,
     },
@@ -158,13 +158,13 @@ impl Sapiens {
     ******************************************************************/
     pub(crate) fn ChargeFichierBrt(
         &mut self,
-        nom: &str,
+        nom: Brt,
         id: i16,
         nbMobs: i16,
         vide: i16,
     ) -> Result<i16, FileError> {
         /* On ouvre le fichier en lecture */
-        let mut f = File::open(nom)?;
+        let mut f = Cursor::new(nom.get());
         let mut header = [0; 4];
         f.read_exact(&mut header)?;
         if header != *b"BRUT" {
@@ -196,7 +196,7 @@ impl Sapiens {
         let nb_objets = f.read_i16::<BigEndian>()?;
         if nb_objets != nbMobs {
             return Err(FileError::MobCountMismatch {
-                nom: nom.to_string(),
+                nom,
                 nb_objets,
                 nb_mobs: nbMobs,
             });

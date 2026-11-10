@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 pub(crate) mod acam;
 mod audio;
 pub(crate) mod cbridge;
+pub mod data;
 mod dialogs;
 pub(crate) mod exchange;
 pub(crate) mod langue;
@@ -59,20 +60,6 @@ use std::sync::mpsc::Sender;
 use std::time::Instant;
 
 fn main() {
-    // Le code C ouvre les fichiers relatifs (data/mobs/*.BRT) dans le répertoire
-    // courant ; on se place donc sous data/mobs.
-    if let Ok(md) = std::env::var("CARGO_MANIFEST_DIR") {
-        let data = std::path::Path::new(&md).join("data").join("mobs");
-        if std::env::set_current_dir(&data).is_err() {
-            eprintln!(
-                "AVERTISSEMENT: impossible de changer de répertoire vers {:?}",
-                data
-            );
-        }
-    } else {
-        eprintln!("AVERTISSEMENT: CARGO_MANIFEST_DIR absent, chemins des données non résolus");
-    }
-
     // Langue : initialisée par `--lang` (sinon fichier persisté), puis imposée
     // au C avant que le thread jeu ne démarre.
     let lang_mode = initial_lang_mode();

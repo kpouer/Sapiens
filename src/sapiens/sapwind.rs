@@ -13,6 +13,7 @@ use crate::audio;
 use crate::cbridge::{
     blackColor, bold, charCodeMask, everyEvent, helvetica, optionKey, watchCursor, whiteColor,
 };
+use crate::data::Brt;
 use crate::exchange::event_queue::GetNextEvent;
 use crate::exchange::{publish_window_frame, take_menu_command};
 use crate::langue::{langue_i16, set_langue};
@@ -498,29 +499,29 @@ impl Sapiens {
 
         self.LibereDataMobs();
         self.sapwind.mobBambou = 0;
-        nb = self.ChargeFichierBrt("WBAMBOU.BRT", self.sapwind.mobBambou + 1, 26, 0)?; /*0, 21 Mobs */
+        nb = self.ChargeFichierBrt(Brt::WBAMBOU, self.sapwind.mobBambou + 1, 26, 0)?; /*0, 21 Mobs */
         self.sapwind.mobFace = self.sapwind.mobBambou + nb;
-        nb = self.ChargeFichierBrt("WFACE.BRT", self.sapwind.mobFace + 1, 31, 0)?; /* Base 21,29 mobs */
+        nb = self.ChargeFichierBrt(Brt::WFACE, self.sapwind.mobFace + 1, 31, 0)?; /* Base 21,29 mobs */
         self.sapwind.mobFeuille = self.sapwind.mobFace + nb;
-        nb = self.ChargeFichierBrt("WFEUILLE.BRT", self.sapwind.mobFeuille + 1, 36, 11)?; /* Base 50 36 mobs */
+        nb = self.ChargeFichierBrt(Brt::WFEUILLE, self.sapwind.mobFeuille + 1, 36, 11)?; /* Base 50 36 mobs */
         self.sapwind.mobFleches = self.sapwind.mobFeuille + nb;
-        nb = self.ChargeFichierBrt("WFLECHES.BRT", self.sapwind.mobFleches + 1, 20, 0)?; /* Base 8618 mobs */
+        nb = self.ChargeFichierBrt(Brt::WFLECHES, self.sapwind.mobFleches + 1, 20, 0)?; /* Base 8618 mobs */
         self.sapwind.mobSapmob = self.sapwind.mobFleches + nb;
-        nb = self.ChargeFichierBrt("WSAPMOB.BRT", self.sapwind.mobSapmob + 1, 141, 0)?; /*Base 120+1,151 mobs */
+        nb = self.ChargeFichierBrt(Brt::WSAPMOB, self.sapwind.mobSapmob + 1, 141, 0)?; /*Base 120+1,151 mobs */
         self.sapwind.mobAvplan = self.sapwind.mobSapmob + nb;
-        nb = self.ChargeFichierBrt("WAVPLAN.BRT", self.sapwind.mobAvplan + 1, 9, 13)?;
+        nb = self.ChargeFichierBrt(Brt::WAVPLAN, self.sapwind.mobAvplan + 1, 9, 13)?;
         self.sapcomb.nbMobHerbes = nb;
         self.sapwind.mobAvplanSpec = self.sapwind.mobAvplan + nb;
-        nb = self.ChargeFichierBrt("WAVSPEC.BRT", self.sapwind.mobAvplanSpec + 1, 4, 0)?;
+        nb = self.ChargeFichierBrt(Brt::WAVSPEC, self.sapwind.mobAvplanSpec + 1, 4, 0)?;
         self.sapcomb.nbAvplanSpec = nb;
         self.sapwind.mobSilex = self.sapwind.mobAvplanSpec + nb;
-        nb = self.ChargeFichierBrt("WSILEX.BRT", self.sapwind.mobSilex + 1, 15, 0)?;
+        nb = self.ChargeFichierBrt(Brt::WSILEX, self.sapwind.mobSilex + 1, 15, 0)?;
         self.sapwind.mob3D = self.sapwind.mobSilex + nb;
-        nb = self.ChargeFichierBrt("W3D.BRT", self.sapwind.mob3D + 1, 38, 0)?;
+        nb = self.ChargeFichierBrt(Brt::W3D, self.sapwind.mob3D + 1, 38, 0)?;
         self.sapwind.Fonte14 = self.sapwind.mob3D + nb;
-        nb = self.ChargeFichierBrt("Geneva14.BRT", self.sapwind.Fonte14 + 1, 120, 0)?;
+        nb = self.ChargeFichierBrt(Brt::GENEVA14, self.sapwind.Fonte14 + 1, 120, 0)?;
         self.sapwind.Fonte10 = self.sapwind.Fonte14 + nb;
-        self.ChargeFichierBrt("Geneva10.BRT", self.sapwind.Fonte10 + 1, 120, 0)?;
+        self.ChargeFichierBrt(Brt::GENEVA10, self.sapwind.Fonte10 + 1, 120, 0)?;
         Ok(())
     }
 }
