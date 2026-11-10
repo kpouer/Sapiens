@@ -875,25 +875,27 @@ impl Sapiens {
         self.Frame3d((FAUX) as i16);
         self.efbadi();
         self.comment(67); /*d et o guillion*/
-        for mut i in 0..60 {
+        for i in 0..60 {
             let posTimer = self.sapwclav.sapiens_timer.load(Ordering::Relaxed);
             self.chrono(1);
             self.chrono(0);
             self.chrono(0);
             self.affich(self.sapglob.dzeta as u16);
             self.sapwind.ports.tfrima();
-            if (self.getkey(0) & (32 + 16)) > 0 {
-                i = 111;
-            }
+            /* En C, `i=111` sortait de la boucle (après la synchronisation). */
+            let touche = (self.getkey(0) & (32 + 16)) > 0;
             self.sapglob.flefba = 0;
-            if i == 25 {
+            if !touche && i == 25 {
                 self.comment(68);
             }
-            if i == 50 {
+            if !touche && i == 50 {
                 self.comment(69);
             }
             /* Synchronisation de la trame */
             while posTimer + 30 >= self.sapwclav.sapiens_timer.load(Ordering::Relaxed) {}
+            if touche {
+                break;
+            }
         }
         self.comment(70);
         self.FixeMenusComplet();
