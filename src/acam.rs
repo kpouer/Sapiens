@@ -824,56 +824,64 @@ impl Ports {
         if src_id.unwrap_or(self).pixels.is_empty() || dst_id.unwrap_or(self).pixels.is_empty() {
             return;
         }
-        /* La source peut être la destination (ScrollRect) : chaque ligne source
-        est d'abord recopiée dans un tampon. */
+        /* La source peut être la destination : les lignes déjà écrites ne
+        doivent pas être relues, on travaille alors sur un instantané. */
+        let same_port = matches!(
+            (&src_id, &dst_id),
+            (PortKind::PortId(a), PortKind::PortId(b)) if a == b
+        );
+        let snapshot: Option<Vec<u8>> = same_port.then(|| src_id.unwrap_or(self).pixels.clone());
         let mut tmp: Vec<u8> = Vec::new();
+        let load_row = |tmp: &mut Vec<u8>, ports: &Ports, range: std::ops::Range<usize>| {
+            tmp.clear();
+            match &snapshot {
+                Some(s) => tmp.extend_from_slice(&s[range]),
+                None => tmp.extend_from_slice(&src_id.unwrap_or(ports).pixels[range]),
+            }
+        };
+        /* Modes de transfert QuickDraw pour CopyBits : srcCopy (0), srcOr (1),
+        srcXor (2), srcBic (3). */
         let combine = |d: &mut u8, v: u8| {
             *d = match mode {
-                10 => *d ^ v,
-                9 => *d | v,
-                11 => *d & !v,
+                1 => *d | v,
+                2 => *d ^ v,
+                3 => *d & !v,
                 _ => v,
             }
         };
 
         // Cas identiques : copie par lignes.
         if sw == dw && sh == dh {
+            /* Portion horizontale : dclip limité aux colonnes dont le pixel
+            source existe. */
+            let mut start = dclip.left as i32;
+            let mut end = dclip.right as i32;
+            let dx_to_sx = sr.left as i32 - dr.left as i32;
+            start = start.max(sb.left as i32 - dx_to_sx);
+            end = end.min(sb.right as i32 - dx_to_sx);
+            if start >= end {
+                return;
+            }
+            let n = (end - start) as usize;
+            let srcx = (start + dx_to_sx - sb.left as i32) as usize;
+            let dstx = (start - ob.left as i32) as usize;
             for dy in dclip.top..dclip.bottom {
                 let sy = sr.top + (dy - dr.top);
-                if sy < sr.top || sy >= sr.bottom {
-                    continue;
-                }
                 if sy < sb.top || sy >= sb.bottom {
                     continue;
                 }
-                let start = dclip.left.max(dr.left);
-                let end = dclip.right.min(dr.right);
-                if start >= end {
-                    continue;
-                }
-                let srcx = sr.left + (start - dr.left);
-                if srcx < sb.left || srcx + (end - start) > sb.right {
-                    continue;
-                }
                 let dsty = dy - ob.top;
-                let srcy = sy - sb.top;
-                if dsty < 0 {
+                if dsty < 0 || dsty >= ob.bottom - ob.top {
                     continue;
                 }
-                let n = (end - start) as usize;
-                let so = (srcy as usize) * ws + (srcx - sb.left) as usize;
-                tmp.clear();
-                tmp.extend_from_slice(&src_id.unwrap_or(self).pixels[so..so + n]);
-                let doff = (dsty as usize) * wd + (start - ob.left) as usize;
+                let so = ((sy - sb.top) as usize) * ws + srcx;
+                load_row(&mut tmp, self, so..so + n);
+                let doff = (dsty as usize) * wd + dstx;
                 let dstrow = &mut dst_id.unwrap_mut_or(self).pixels[doff..doff + n];
-                if mode == 10 || mode == 9 || mode == 11 {
-                    dstrow
-                        .iter_mut()
-                        .zip(&tmp)
-                        .for_each(|(d, &v)| combine(d, v));
-                } else {
-                    dstrow.copy_from_slice(&tmp);
-                }
+                dstrow
+                    .iter_mut()
+                    .zip(&tmp)
+                    .for_each(|(d, &v)| combine(d, v));
             }
             return;
         }
@@ -893,8 +901,7 @@ impl Ports {
                 continue;
             }
             let so = (srcy as usize) * ws;
-            tmp.clear();
-            tmp.extend_from_slice(&src_id.unwrap_or(self).pixels[so..so + ws]);
+            load_row(&mut tmp, self, so..so + ws);
             let doff = (dsty as usize) * wd;
             let dstrow = &mut dst_id.unwrap_mut_or(self).pixels[doff..doff + wd];
             for dx in dclip.left..dclip.right {
@@ -1009,6 +1016,57 @@ impl Ports {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn motif(w: usize, h: usize) -> SapPort {
+        let mut p = port::create(Rect::new(0, 0, w as i16, h as i16), 8);
+        for y in 0..h {
+            for x in 0..w {
+                p.pixels[y * w + x] = (y * w + x) as u8;
+            }
+        }
+        p
+    }
+
+    #[test]
+    fn copybits_meme_port_vers_le_bas_ne_relit_pas_les_lignes_ecrites() {
+        let mut ports = Ports::default();
+        ports.debecr = motif(8, 8);
+        let avant = ports.debecr.pixels.clone();
+        // Copie des lignes 0..4 vers 2..6 : recouvrement.
+        ports.CopyBits(
+            PortId::Debecr,
+            PortId::Debecr,
+            &Rect::new(0, 0, 8, 4),
+            &Rect::new(0, 2, 8, 6),
+            0,
+        );
+        for y in 2..6usize {
+            for x in 0..8usize {
+                assert_eq!(ports.debecr.pixels[y * 8 + x], avant[(y - 2) * 8 + x]);
+            }
+        }
+    }
+
+    #[test]
+    fn copybits_source_partiellement_hors_bornes_copie_la_partie_valide() {
+        let mut ports = Ports::default();
+        ports.mainWindow = motif(4, 4);
+        ports.debecr = port::create(Rect::new(0, 0, 8, 8), 8);
+        ports.debecr.pixels.fill(0xEE);
+        // Source (2..6) déborde de la source (largeur 4) : colonnes 2..4 seules valides.
+        ports.CopyBits(
+            PortId::MainWindow,
+            PortId::Debecr,
+            &Rect::new(2, 0, 6, 4),
+            &Rect::new(0, 0, 4, 4),
+            0,
+        );
+        for y in 0..4usize {
+            assert_eq!(ports.debecr.pixels[y * 8], (y * 4 + 2) as u8);
+            assert_eq!(ports.debecr.pixels[y * 8 + 1], (y * 4 + 3) as u8);
+            assert_eq!(ports.debecr.pixels[y * 8 + 2], 0xEE);
+        }
+    }
 
     #[test]
     fn copybits_agrandit_sans_perdre_la_derniere_ligne() {
