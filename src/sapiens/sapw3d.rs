@@ -8,9 +8,9 @@
 // dégradés de palette en fonction de l'heure, ciel nocturne et étoiles,
 // sol en lignes successives, pluie et éclairs, visualisation des montagnes.
 
-use crate::Sapiens;
 use crate::acam::{Random, TickCount};
 use crate::port::{PortId, Ports};
+use crate::sapiens::Sapiens;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::{
     ECHELLE, FormeId, IndexColor, MontId, NB_DEGRADE_DISTANCE, NB_ETOILES, NB_LIGNES_CIEL,

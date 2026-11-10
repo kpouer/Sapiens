@@ -1,8 +1,8 @@
 /****************************************************************************
             Encadre et efface le message
 *****************************************************************************/
-use crate::Sapiens;
 use crate::port::PortId;
+use crate::sapiens::Sapiens;
 use crate::shared::Rect;
 use crate::stubs::CarboniseInvalRect;
 

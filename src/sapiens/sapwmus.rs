@@ -1,9 +1,9 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
-use crate::Sapiens;
 use crate::acam::{CarboniseSetCursorArrow, FAUX, GetCursor, SetCursor};
 use crate::audio;
 use crate::cbridge::watchCursor;
+use crate::sapiens::Sapiens;
 use crate::sapiens::TypeMuse;
 use crate::shared::Boolean;
 

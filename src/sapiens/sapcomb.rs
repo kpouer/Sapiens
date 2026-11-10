@@ -9,6 +9,7 @@ Quadra :             10010  20
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 
+use crate::DEBBEST;
 use crate::DEBCRANE;
 use crate::DEBTETE;
 use crate::MOB_ANIMAL_MORT;
@@ -23,6 +24,7 @@ use crate::MOB_SANG_A_TERRE;
 use crate::acam::{FAUX, VRAI};
 use crate::cbridge::{geneva, teJustLeft};
 use crate::port::PortId;
+use crate::sapiens::Sapiens;
 use crate::sapiens::sapglob::{
     AnimPtr, AnimTable, ListeId, SapId, Sapglob, bestagress, besthaut, bestlin, bestvie, hautlin,
     hautou, qtviande, tabinp, tribforce, tribvie,
@@ -34,7 +36,6 @@ use crate::sapiens::{
     NB_MAX_HERBE_AR_PLAN, NB_MAX_HERBE_AV_PLAN, SAGAIE, Vue, brin, sap,
 };
 use crate::shared::{Boolean, Point, Rect};
-use crate::{DEBBEST, Sapiens};
 use std::sync::atomic::Ordering;
 use strum::IntoEnumIterator;
 

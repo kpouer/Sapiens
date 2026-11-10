@@ -1,9 +1,9 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
 
-use crate::Sapiens;
 use crate::acam::FAUX;
 use crate::cbridge::strlen;
+use crate::sapiens::Sapiens;
 use crate::shared::Boolean;
 use log::warn;
 

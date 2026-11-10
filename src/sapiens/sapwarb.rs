@@ -1,7 +1,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
-use crate::Sapiens;
 use crate::port::PortId;
+use crate::sapiens::Sapiens;
 use crate::sapiens::sapw3d::{cosshort, sinshort};
 
 pub(crate) struct Sapwarb {

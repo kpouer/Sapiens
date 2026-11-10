@@ -38,6 +38,70 @@ pub(crate) mod sapwmess;
 pub(crate) mod sapwmus;
 pub(crate) mod sapwpref;
 
+use crate::acam::Random;
+use crate::pict::Pict;
+use crate::sapiens::sap3d::Sap3d;
+use crate::sapiens::sapcomb::Sapcomb;
+use crate::sapiens::sapenreg::Sapenreg;
+use crate::sapiens::sapgest::Sapgest;
+use crate::sapiens::sapglob::Sapglob;
+use crate::sapiens::saplist::Saplist;
+use crate::sapiens::saprel::Saprel;
+use crate::sapiens::saptxt::{SapLang, Saptxt};
+use crate::sapiens::sapw3d::Sapw3d;
+use crate::sapiens::sapwarb::Sapwarb;
+use crate::sapiens::sapwbrt::Sapwbrt;
+use crate::sapiens::sapwcar::Sapwcar;
+use crate::sapiens::sapwclav::{Sapwclav, Souris};
+use crate::sapiens::sapwcvt::Sapwcvt;
+use crate::sapiens::sapwind::SapWind;
+use crate::sapiens::sapwmess::Sapwmess;
+use crate::sapiens::sapwmus::Sapwmus;
+use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
+
+/// État complet du jeu : l'équivalent des variables globales des fichiers C,
+/// regroupées par fichier d'origine.
+#[derive(Default)]
+pub(crate) struct Sapiens {
+    souris: Souris,
+    sapwclav: Sapwclav,
+    sapwind: SapWind,
+    sapcomb: Sapcomb,
+    sapglob: Sapglob,
+    sap3d: Sap3d,
+    sapw3d: Sapw3d,
+    sapwbrt: Sapwbrt,
+    random: Random,
+    saplist: Saplist,
+    sapwmus: Sapwmus,
+    sapwarb: Sapwarb,
+    sapwcar: Sapwcar,
+    saprel: Saprel,
+    sapwmess: Sapwmess,
+    sapgest: Sapgest,
+    sapenreg: Sapenreg,
+    sapwcvt: Sapwcvt,
+    saptxt: Saptxt,
+    sap_lang: SapLang,
+    pict: Pict,
+}
+
+/// Point d'entrée du thread de jeu : construit l'état avec le zoom initial
+/// choisi et lance la boucle infinie du jeu original (`sapiens_main`).
+pub(crate) fn run(sapiens_timer: Arc<AtomicU64>, initial_zoom: f32) {
+    let mut sapwind = SapWind::default();
+    sapwind.set_zoom(initial_zoom);
+    // Pointeurs auto-référents de SAPGLOB.C (debban, peuple...).
+    let mut sapiens = Sapiens {
+        sapwclav: Sapwclav::with_sapiens_timer(sapiens_timer),
+        sapwind,
+        ..Default::default()
+    };
+    sapiens.init_glob();
+    sapiens.sapiens_main();
+}
+
 #[derive(Default, Debug, Copy, Clone)]
 pub(crate) struct liste {
     pub(crate) typeRef: TypeReference,

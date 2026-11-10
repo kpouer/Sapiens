@@ -22,7 +22,6 @@ pub(crate) mod shared;
 pub(crate) mod stubs;
 pub(crate) mod text;
 
-use crate::acam::Random;
 use crate::cbridge::{cmdKey, controlKey, keyDown, mouseDown, mouseUp, optionKey, shiftKey};
 use crate::dialogs::PreferencesState;
 use crate::exchange::{
@@ -35,24 +34,6 @@ use crate::langue::Langue;
 use crate::langue::{
     LangMode, effective_lang, langue, load_lang_mode, save_lang_mode, set_game_language,
 };
-use crate::pict::Pict;
-use crate::sapiens::sap3d::Sap3d;
-use crate::sapiens::sapcomb::Sapcomb;
-use crate::sapiens::sapenreg::Sapenreg;
-use crate::sapiens::sapgest::Sapgest;
-use crate::sapiens::sapglob::Sapglob;
-use crate::sapiens::saplist::Saplist;
-use crate::sapiens::saprel::Saprel;
-use crate::sapiens::saptxt::{SapLang, Saptxt};
-use crate::sapiens::sapw3d::Sapw3d;
-use crate::sapiens::sapwarb::Sapwarb;
-use crate::sapiens::sapwbrt::Sapwbrt;
-use crate::sapiens::sapwcar::Sapwcar;
-use crate::sapiens::sapwclav::{Sapwclav, Souris};
-use crate::sapiens::sapwcvt::Sapwcvt;
-use crate::sapiens::sapwind::SapWind;
-use crate::sapiens::sapwmess::Sapwmess;
-use crate::sapiens::sapwmus::Sapwmus;
 use eframe::egui;
 use egui::CursorIcon;
 use shared::{EventRecord, Point, lut_rgb};
@@ -182,18 +163,7 @@ fn spawn_game_thread(sapiens_timer: Arc<AtomicU64>, initial_zoom: f32) {
     std::thread::Builder::new()
         .name("sapiens_c".into())
         .stack_size(32 * 1024 * 1024)
-        .spawn(move || {
-            let mut sapwind = SapWind::default();
-            sapwind.set_zoom(initial_zoom);
-            // Pointeurs auto-référents de SAPGLOB.C (debban, peuple...).
-            let mut sapiens = Sapiens {
-                sapwclav: Sapwclav::with_sapiens_timer(sapiens_timer),
-                sapwind,
-                ..Default::default()
-            };
-            sapiens.init_glob();
-            sapiens.sapiens_main();
-        })
+        .spawn(move || sapiens::run(sapiens_timer, initial_zoom))
         .expect("échec du thread C");
 }
 
@@ -216,31 +186,6 @@ fn render_language_menu(ui: &mut egui::Ui, mode: &mut LangMode) {
             }
         }
     });
-}
-
-#[derive(Default)]
-struct Sapiens {
-    souris: Souris,
-    sapwclav: Sapwclav,
-    sapwind: SapWind,
-    sapcomb: Sapcomb,
-    sapglob: Sapglob,
-    sap3d: Sap3d,
-    sapw3d: Sapw3d,
-    sapwbrt: Sapwbrt,
-    random: Random,
-    saplist: Saplist,
-    sapwmus: Sapwmus,
-    sapwarb: Sapwarb,
-    sapwcar: Sapwcar,
-    saprel: Saprel,
-    sapwmess: Sapwmess,
-    sapgest: Sapgest,
-    sapenreg: Sapenreg,
-    sapwcvt: Sapwcvt,
-    saptxt: Saptxt,
-    sap_lang: SapLang,
-    pict: Pict,
 }
 
 struct SapiensApp {

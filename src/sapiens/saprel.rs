@@ -6,10 +6,10 @@
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
 
-use crate::Sapiens;
 use crate::acam::{FAUX, TickCount, VRAI};
 use crate::cbridge::whiteColor;
 use crate::port::PortId;
+use crate::sapiens::Sapiens;
 use crate::sapiens::c_str::ChaineC;
 use crate::sapiens::sapglob::{ListeId, SapId, Sapglob, tabprf, tenerv, tobje};
 use crate::sapiens::sapw3d::distance;

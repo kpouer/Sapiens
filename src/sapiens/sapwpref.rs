@@ -3,9 +3,9 @@
 /***********************************************************************
                         SauvePref / ChargePref
 ***********************************************************************/
-use crate::Sapiens;
 use crate::exchange::{PreferencesRequest, request_preferences};
 use crate::langue::{config_dir, effective_lang, langue_i16, set_langue};
+use crate::sapiens::Sapiens;
 use crate::sapiens::sapwind::FixeMenu;
 use crate::sapiens::{TypeMuse, saptxt::CvtDefaultLangRess};
 use crate::shared::Boolean;

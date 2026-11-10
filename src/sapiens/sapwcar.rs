@@ -1,9 +1,9 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
-use crate::Sapiens;
 use crate::langue::Langue::ES;
 use crate::langue::{Langue, langue};
 use crate::port::PortId;
+use crate::sapiens::Sapiens;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtCar, CvtCarLissage};
 use crate::sapiens::{POLICE_LISSAGE, STYLE_LISSAGE};

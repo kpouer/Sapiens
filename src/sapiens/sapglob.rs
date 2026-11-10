@@ -4,7 +4,7 @@
 ***********************************************************************/
 #![allow(non_upper_case_globals)]
 
-use crate::Sapiens;
+use crate::sapiens::Sapiens;
 use crate::sapiens::{
     CelluleId, IndexColor, ListeCle, NB_LIGNES_CIEL, SapCle, TypeMuse, TypeReference, Vue, cellule,
     liste, sap,

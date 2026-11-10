@@ -4,11 +4,11 @@
                         Module  # 5 gestion et autres
                            D G le 30 Janvier 1987
 ***********************************************************************/
-use crate::Sapiens;
 use crate::acam::{FAUX, TickCount, VRAI};
 use crate::cbridge::blackColor;
 use crate::exchange::{request_open_file, request_save_file};
 use crate::port::PortId;
+use crate::sapiens::Sapiens;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::sapglob::{ListeId, SapId, soma, tenerv};
 use crate::sapiens::saptxt::Saptxt;

@@ -4,11 +4,11 @@
                     FixeAireNoMouse
 Fixe l'aire dans laquelle il ne faut plus afficher la souris systeme
 **************************************************************************/
-use crate::Sapiens;
 use crate::acam::{CarboniseSetCursorArrow, FAUX, VRAI};
 use crate::exchange::set_cursor_hidden;
 use crate::port::PortId;
 use crate::sapiens::ECHELLE;
+use crate::sapiens::Sapiens;
 use crate::sapiens::sapwind::SapWind;
 use crate::shared::{Boolean, KeyMap, Rect};
 use crate::stubs::{Button, GetKeys};

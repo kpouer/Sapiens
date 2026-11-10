@@ -9,10 +9,10 @@ use std::io::{Read, Write};
 // Le moteur 3D : formes, objets 3D (ObjetsRef), décor (nuages, éclairs,
 // oiseaux, arbres, rochers) et animation finale.
 // Consommé par les autres modules du port (SAPGEST.C → sapgest.rs, etc.).
-use crate::Sapiens;
 use crate::acam::{CarboniseSetCursorArrow, FAUX, GetCursor, SetCursor, TickCount, VRAI};
 use crate::cbridge::watchCursor;
 use crate::port::PortId;
+use crate::sapiens::Sapiens;
 use crate::sapiens::sapw3d::distance;
 use crate::sapiens::sapwbrt::FileError;
 use crate::sapiens::sapwind::ValideUpdate;

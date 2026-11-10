@@ -1,10 +1,10 @@
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
 
-use crate::Sapiens;
 use crate::acam::SectRect;
 use crate::cbridge::{blackColor, whiteColor};
 use crate::port::PortId;
+use crate::sapiens::Sapiens;
 use crate::sapiens::sapwbrt::SapiensCreeOffscreen;
 use crate::sapiens::sapwclav::GetKeyMap;
 use crate::sapiens::{FormeId, Mont};

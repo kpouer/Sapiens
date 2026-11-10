@@ -8,13 +8,14 @@
 use crate::acam::{FAUX, TickCount, VRAI};
 use crate::langue::langue;
 use crate::port::PortId;
+use crate::sapiens::Sapiens;
 use crate::sapiens::sapglob::{
     ListeId, SapId, Sapglob, tccol, tclin, tcncol, tcnlin, tcolcdr, tposcur,
 };
 use crate::sapiens::sapwind::{cadreg, hires};
 use crate::sapiens::{ECHELLE, Vue, geminterv, gemnbrecad};
 use crate::shared::Rect;
-use crate::{DOWN, INCONNU, MOB_CADRE, SELECT, Sapiens, UP};
+use crate::{DOWN, INCONNU, MOB_CADRE, SELECT, UP};
 use log::warn;
 use std::cell::RefCell;
 use std::rc::Rc;

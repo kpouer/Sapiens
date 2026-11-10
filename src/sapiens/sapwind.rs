@@ -10,6 +10,7 @@ use crate::acam::{
     TickCount, VRAI,
 };
 use crate::audio;
+use crate::cbridge;
 use crate::cbridge::{
     blackColor, bold, charCodeMask, everyEvent, helvetica, optionKey, watchCursor, whiteColor,
 };
@@ -19,6 +20,7 @@ use crate::exchange::{publish_window_frame, take_menu_command};
 use crate::langue::{langue_i16, set_langue};
 use crate::port;
 use crate::port::{PortId, Ports};
+use crate::sapiens::Sapiens;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::CvtDefaultLangRess;
 use crate::sapiens::sapwbrt::FileError;
@@ -28,7 +30,6 @@ use crate::stubs::{
     CarboniseInvalRect, CarboniseValideUpdate, DragWindow, FindWindow, FrontWindow,
     InitDefautConfigSortieNumerique, SelectWindow, SystemClick, SystemTask,
 };
-use crate::{Sapiens, cbridge};
 use cbridge::*;
 use std::process::exit;
 /******************** Constantes (SAPIENS.H / acam.h) *******************/
