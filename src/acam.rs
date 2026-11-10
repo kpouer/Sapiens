@@ -913,18 +913,56 @@ impl Ports {
     }
 
     pub(crate) fn ScrollRect(&mut self, src: &Rect, dh: i16, dv: i16) {
-        let p = self.current_id();
-        if src.is_empty() {
+        let p = self.current_mut();
+        p.open_acc = p.open_acc.union(src);
+        /* Zone effectivement scrollée : src limitée au clip du port. */
+        let r = src.intersect(&p.clip);
+        if r.is_empty() || p.pixels.is_empty() {
             return;
         }
-        let mut dst = *src;
-        dst.left = dst.left.wrapping_add(dh);
-        dst.right = dst.right.wrapping_add(dh);
-        dst.top = dst.top.wrapping_add(dv);
-        dst.bottom = dst.bottom.wrapping_add(dv);
-        let clipped = src.intersect(&dst);
-        if !clipped.is_empty() {
-            self.CopyBits(p, p, &clipped, &clipped, 0);
+        /* Destination = r décalée de (dh, dv), restreinte à r. Les pixels
+        sources de dclip sont ceux de dclip décalé de (-dh, -dv). */
+        let shifted = Rect {
+            top: r.top.saturating_add(dv),
+            left: r.left.saturating_add(dh),
+            bottom: r.bottom.saturating_add(dv),
+            right: r.right.saturating_add(dh),
+        };
+        let dclip = r.intersect(&shifted);
+        let w = p.row_bytes as usize;
+        let back = p.back_index;
+
+        if !dclip.is_empty() {
+            let (dl, dr) = (dclip.left as usize, dclip.right as usize);
+            let sl = (dclip.left - dh) as usize;
+            let n = dr - dl;
+            /* Source et destination se recouvrent : on parcourt les lignes
+            dans le sens qui évite d'écraser une ligne avant de l'avoir lue. */
+            let mut copy_row = |dy: i16| {
+                let sy = (dy - dv) as usize;
+                let so = sy * w + sl;
+                let doff = dy as usize * w + dl;
+                p.pixels.copy_within(so..so + n, doff);
+            };
+            if dv > 0 {
+                (dclip.top..dclip.bottom).rev().for_each(&mut copy_row);
+            } else {
+                (dclip.top..dclip.bottom).for_each(&mut copy_row);
+            }
+        }
+
+        /* La zone libérée (r privée de dclip) est remplie avec la couleur de fond,
+        comme le ScrollRect de QuickDraw. */
+        let (rl, rr) = (r.left as usize, r.right as usize);
+        for y in r.top..r.bottom {
+            let start = y as usize * w;
+            let row = &mut p.pixels[start + rl..start + rr];
+            if dclip.is_empty() || y < dclip.top || y >= dclip.bottom {
+                row.fill(back);
+            } else {
+                row[..(dclip.left - r.left) as usize].fill(back);
+                row[(dclip.right - r.left) as usize..].fill(back);
+            }
         }
     }
 
