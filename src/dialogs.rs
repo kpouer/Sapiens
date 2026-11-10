@@ -122,6 +122,48 @@ fn open_with_system(path: &std::path::Path) -> bool {
         .unwrap_or(false)
 }
 
+/// Fichiers du manuel embarqués dans l'exécutable : (chemin relatif, contenu).
+/// Le navigateur système a besoin de vrais fichiers, ils sont donc extraits
+/// dans un dossier temporaire à l'ouverture.
+static MANUAL_FILES: &[(&str, &[u8])] = &[
+    (
+        "sapiens_fr.html",
+        include_bytes!("../data/docs/sapiens_fr.html"),
+    ),
+    (
+        "sapiens_es.html",
+        include_bytes!("../data/docs/sapiens_es.html"),
+    ),
+    (
+        "sapiens_gb.html",
+        include_bytes!("../data/docs/sapiens_gb.html"),
+    ),
+    (
+        "images/GoldMarble.bmp",
+        include_bytes!("../data/docs/images/GoldMarble.bmp"),
+    ),
+    (
+        "images/equipe1987.png",
+        include_bytes!("../data/docs/images/equipe1987.png"),
+    ),
+    (
+        "images/screen01.png",
+        include_bytes!("../data/docs/images/screen01.png"),
+    ),
+];
+
+/// Écrit le manuel embarqué dans `dir` (en écrasant l'existant).
+fn extract_manual(dir: &std::path::Path) -> std::io::Result<()> {
+    for (name, bytes) in MANUAL_FILES {
+        let path = dir.join(name);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(path, bytes)?;
+    }
+    Ok(())
+}
+
 /// Ouvre le manuel HTML dans le navigateur par défaut.
 pub(crate) fn open_manual(lang: Langue) -> bool {
     let name = match lang {
@@ -129,18 +171,12 @@ pub(crate) fn open_manual(lang: Langue) -> bool {
         Langue::ES => "sapiens_es.html",
         _ => "sapiens_gb.html",
     };
-    let mut candidates = Vec::new();
-    if let Ok(root) = std::env::var("CARGO_MANIFEST_DIR") {
-        candidates.push(std::path::Path::new(&root).join("data/docs").join(name));
+    let dir = std::env::temp_dir().join("sapiens_docs");
+    if let Err(e) = extract_manual(&dir) {
+        log::warn!("impossible d'extraire le manuel dans {dir:?} : {e}");
+        return false;
     }
-    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
-    candidates.push(cwd.join("data/docs").join(name));
-    candidates.push(cwd.join("../docs").join(name));
-    candidates.push(cwd.join("../../data/docs").join(name));
-    candidates
-        .iter()
-        .find(|path| path.is_file())
-        .is_some_and(|path| open_with_system(path))
+    open_with_system(&dir.join(name))
 }
 
 // ---------------------------------------------------------------------------
@@ -364,4 +400,20 @@ pub(crate) fn render_preferences(
         }
     });
     outcome
+}
+
+#[cfg(test)]
+mod manual_tests {
+    use super::*;
+
+    #[test]
+    fn manual_is_extracted_with_images() {
+        let dir = std::env::temp_dir().join("sapiens_test_manual");
+        let _ = std::fs::remove_dir_all(&dir);
+        extract_manual(&dir).unwrap();
+        for (name, bytes) in MANUAL_FILES {
+            assert_eq!(std::fs::read(dir.join(name)).unwrap(), *bytes, "{name}");
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
