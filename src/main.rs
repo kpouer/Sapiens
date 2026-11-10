@@ -22,6 +22,7 @@ pub(crate) mod stubs;
 pub(crate) mod text;
 
 use crate::acam::Random;
+use crate::cbridge::{cmdKey, controlKey, keyDown, mouseDown, mouseUp, optionKey, shiftKey};
 use crate::dialogs::PreferencesState;
 use crate::exchange::{
     AlertRequest, Cursor, INPUT, MOUSE_EVENT_SCALE, UiRequest, UiResponse, WindowFrame,
@@ -33,6 +34,7 @@ use crate::langue::Langue;
 use crate::langue::{
     LangMode, effective_lang, langue, load_lang_mode, save_lang_mode, set_game_language,
 };
+use crate::pict::Pict;
 use crate::sapiens::sap3d::Sap3d;
 use crate::sapiens::sapcomb::Sapcomb;
 use crate::sapiens::sapenreg::Sapenreg;
@@ -54,9 +56,7 @@ use eframe::egui;
 use egui::CursorIcon;
 use shared::{EventRecord, Point, lut_rgb};
 use std::sync::mpsc::Sender;
-
-use crate::cbridge::{cmdKey, controlKey, keyDown, mouseDown, mouseUp, optionKey, shiftKey};
-use crate::pict::Pict;
+use std::time::Instant;
 
 fn main() {
     // Le code C ouvre les fichiers relatifs (data/mobs/*.BRT) dans le répertoire
@@ -129,10 +129,42 @@ fn initial_lang_mode() -> LangMode {
     load_lang_mode()
 }
 
+/// Période du timer du jeu (`sapiensTimer`, SAPWCLAV.C).
+const TIMER_PERIOD: std::time::Duration = std::time::Duration::from_millis(11);
+
+/// Nombre de périodes `TIMER_PERIOD` entières contenues dans `elapsed`.
+fn timer_ticks(elapsed: std::time::Duration) -> u64 {
+    (elapsed.as_nanos() / TIMER_PERIOD.as_nanos()) as u64
+}
+
+/// Égrène `sapiensTimer`. La valeur est déduite du temps réel écoulé depuis le
+/// départ, et non du nombre de réveils : un `sleep` dure toujours un peu plus
+/// que demandé, et compter les réveils ferait prendre du retard au jeu.
 fn timer_loop(t: Arc<AtomicU64>) {
+    let start = Instant::now();
     loop {
-        std::thread::sleep(std::time::Duration::from_millis(11));
-        t.fetch_add(1, Ordering::Relaxed);
+        let ticks = timer_ticks(start.elapsed());
+        t.store(ticks, Ordering::Relaxed);
+        // Dort jusqu'à la prochaine échéance (pas une période fixe).
+        let next =
+            start + std::time::Duration::from_nanos((ticks + 1) * TIMER_PERIOD.as_nanos() as u64);
+        std::thread::sleep(next.saturating_duration_since(Instant::now()));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[test]
+    fn timer_ticks_compte_les_periodes_entieres() {
+        assert_eq!(timer_ticks(Duration::ZERO), 0);
+        assert_eq!(timer_ticks(Duration::from_millis(10)), 0);
+        assert_eq!(timer_ticks(Duration::from_millis(11)), 1);
+        assert_eq!(timer_ticks(Duration::from_millis(1100)), 100);
+        // Une heure : pas de dérive, 3 600 000 / 11 périodes.
+        assert_eq!(timer_ticks(Duration::from_secs(3600)), 327_272);
     }
 }
 
@@ -968,14 +1000,14 @@ fn mac_keycode(k: egui::Key) -> Option<u8> {
 /// fenêtre sous forme d'image PPM (lisible ensuite avec `sips`/`ffmpeg`).
 struct PortDumper {
     out: String,
-    then: std::time::Instant,
+    then: Instant,
 }
 
 impl PortDumper {
     fn from_env() -> Option<Self> {
         std::env::var("SAPIENS_DUMP").ok().map(|out| PortDumper {
             out,
-            then: std::time::Instant::now(),
+            then: Instant::now(),
         })
     }
 
@@ -984,7 +1016,7 @@ impl PortDumper {
         if self.then.elapsed() < INTERVAL {
             return;
         }
-        self.then = std::time::Instant::now();
+        self.then = Instant::now();
         let (w, h) = (f.w, f.h);
         let mut ppm = Vec::with_capacity(12 + w * h * 3);
         ppm.extend_from_slice(format!("P6\n{w} {h}\n255\n").as_bytes());
