@@ -260,7 +260,6 @@ pub(crate) struct sap {
     pub(crate) hauteur: u8,
     pub(crate) action: u8,
     pub(crate) vie: u8,
-    pub(crate) force: u8,
     pub(crate) agressivite: u8,
     pub(crate) souffle: u8,
     pub(crate) deltah: u8,

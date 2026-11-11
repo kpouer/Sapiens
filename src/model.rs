@@ -36,6 +36,7 @@ impl Rect {
         }
     }
 
+    #[allow(non_snake_case)]
     pub(crate) const fn OffsetRect(&mut self, dh: i16, dv: i16) {
         self.left = self.left.wrapping_add(dh);
         self.right = self.right.wrapping_add(dh);
@@ -43,6 +44,7 @@ impl Rect {
         self.bottom = self.bottom.wrapping_add(dv);
     }
 
+    #[allow(non_snake_case)]
     pub(crate) const fn InsetRect(&mut self, dh: i16, dv: i16) {
         self.left = self.left.wrapping_add(dh);
         self.right = self.right.wrapping_sub(dh);
