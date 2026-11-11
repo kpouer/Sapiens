@@ -4,13 +4,13 @@
 //! egui ne font que déposer des commandes dans un canal, sans jamais toucher
 //! au callback temps réel.
 //!
-//! Sur le web (wasm32), l'audio n'est pas encore branché : aucun flux n'est
-//! ouvert et toutes les commandes sont ignorées (jeu silencieux).
-
-#![cfg_attr(target_arch = "wasm32", allow(dead_code))]
+//! Sur le web (wasm32), le même mixeur alimente un `ScriptProcessorNode`
+//! (voir `web`) ; le son démarre au premier geste de l'utilisateur.
 
 mod music;
 mod sfx;
+#[cfg(target_arch = "wasm32")]
+mod web;
 
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
@@ -41,7 +41,14 @@ enum Cmd {
 }
 
 #[cfg(target_arch = "wasm32")]
-pub(crate) fn init() {}
+pub(crate) fn init() {
+    if STARTED.set(()).is_err() {
+        return;
+    }
+    let (tx, rx) = std::sync::mpsc::channel();
+    let _ = TX.set(tx);
+    web::start(rx);
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn init() {
