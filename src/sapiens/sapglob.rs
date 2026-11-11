@@ -11,9 +11,13 @@ use crate::sapiens::{
 };
 use crate::sapiens::{evt, gemcadre, gemnbrecad, h_chron};
 use bytemuck::bytes_of_mut;
+#[cfg(not(target_arch = "wasm32"))]
+use log::warn;
 use std::cell::RefCell;
 use std::rc::Rc;
 use strum::EnumIter;
+#[cfg(target_arch = "wasm32")]
+use web_sys::console::warn;
 
 pub(crate) static tabprf: [u8; 4] = [25, 33, 34, 35]; /*objet prefere*/
 pub(crate) static tobje: [[u8; 4]; 4] = [
@@ -1922,15 +1926,18 @@ impl Sapglob {
     }
 
     /// Octet courant de `ptranim`, puis avance d'un octet.
-    pub(crate) const fn anim_read(&mut self) -> i8 {
+    pub(crate) fn anim_read(&mut self) -> i8 {
         let v = self.anim_peek();
         self.anim_skip();
         v
     }
 
     /// Avance `ptranim` d'un octet.
-    pub(crate) const fn anim_skip(&mut self) {
-        self.ptranim.as_mut().expect("ptranim null").off += 1;
+    pub(crate) fn anim_skip(&mut self) {
+        match &mut self.ptranim {
+            Some(ptranim) => ptranim.off += 1,
+            None => warn!("ptranim is null"),
+        }
     }
 
     pub(crate) const fn sap(&self, sap_id: SapId) -> &sap {
