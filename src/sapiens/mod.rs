@@ -183,8 +183,6 @@ impl From<i16> for TypeMuse {
     }
 }
 
-pub(crate) const NOM_PREF: &[u8; 12] = b"Sapiens.cfg\0";
-
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum CelluleId {
     Soif,
