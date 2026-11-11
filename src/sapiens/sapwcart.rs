@@ -5,10 +5,10 @@ use crate::acam::SectRect;
 use crate::cbridge::{blackColor, whiteColor};
 use crate::model::Rect;
 use crate::port::PortId;
+use crate::sapiens::Mont;
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapwbrt::SapiensCreeOffscreen;
 use crate::sapiens::sapwclav::GetKeyMap;
-use crate::sapiens::{FormeId, Mont};
 use crate::shared::SapPort;
 
 const TAILLE_X_CARTE: i64 = 144;
@@ -82,9 +82,7 @@ impl Sapiens {
     ; <= Xc,Yc (Yc à 0 si montagne invisible)
     */
     fn calc_cart(&mut self, mont: &Mont, eltCart_index: usize) -> bool {
-        let Some(forme) = mont.forme.map(FormeId::forme) else {
-            return false;
-        };
+        let forme = mont.forme.forme();
         /* Position en ligne */
         let x = ((self.sapglob.yj as i64 - mont.posy as i64) / (self.sapglob.zoom as i64))
             + TAILLE_X_CARTE;
@@ -180,7 +178,7 @@ impl Sapiens {
             if j >= NB_OBJETS_MAX {
                 break;
             }
-            let visible = mont.forme.is_some_and(|id| id.forme().num_mob >= 0);
+            let visible = mont.forme.forme().num_mob >= 0;
             if visible && self.calc_cart(mont, j) {
                 j += 1;
             }

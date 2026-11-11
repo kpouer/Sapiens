@@ -2,6 +2,7 @@
                 Module de Gestion de la Trois D v 2.0
                 (C) God Le 4 Décembre 1986
 ***********************************************************************/
+use std::borrow::Cow;
 // Le moteur 3D : formes, objets 3D (ObjetsRef), décor (nuages, éclairs,
 // oiseaux, arbres, rochers) et animation finale.
 // Consommé par les autres modules du port (SAPGEST.C → sapgest.rs, etc.).
@@ -56,9 +57,10 @@ impl FormeAnimee {
 
     /// Copie de la forme avec l'image d'animation courante.
     fn forme(&self) -> Forme {
-        let mut f = self.base;
-        f.numMob3d = self.image.load(Ordering::Relaxed);
-        f
+        Forme {
+            numMob3d: self.image.load(Ordering::Relaxed),
+            ..self.base
+        }
     }
 
     /// Fixe l'image courante (fumée : valeur aléatoire).
@@ -502,36 +504,36 @@ impl FormeId {
     ///
     /// Retournée par valeur : il n'y a plus de `static mut` ni de pointeur
     /// brut, comme le faisait l'ancien `ptrforme`.
-    pub(crate) fn forme(self) -> Forme {
+    pub(crate) fn forme(self) -> Cow<'static, Forme> {
         match self {
-            FormeId::Forme1 => FORMES.forme1,
-            FormeId::Forme2 => FORMES.forme2,
-            FormeId::Forme4 => FORMES.forme4,
-            FormeId::Forme6 => FORMES.forme6,
-            FormeId::Forme7 => FORMES.forme7,
-            FormeId::Forme8 => FORMES.forme8.forme(),
-            FormeId::Nuage1 => FORMES.nuage1,
-            FormeId::Nuage2 => FORMES.nuage2,
-            FormeId::Nuage3 => FORMES.nuage3,
-            FormeId::Eclair => FORMES.eclair,
-            FormeId::ToucheEclair => FORMES.toucheEclair,
-            FormeId::Foudroye => FORMES.foudroye,
-            FormeId::Peupli => FORMES.peupli,
-            FormeId::Chene => FORMES.chene,
-            FormeId::Noiset => FORMES.noiset,
-            FormeId::Fontaine => FORMES.fontaine,
-            FormeId::Totem => FORMES.totem,
-            FormeId::Hutte => FORMES.hutte,
-            FormeId::Oiseau => FORMES.oiseau.forme(),
-            FormeId::Genevr => FORMES.genevr,
-            FormeId::Hetre => FORMES.hetre,
-            FormeId::Roc1 => FORMES.roc1,
-            FormeId::Roc2 => FORMES.roc2,
-            FormeId::Roc3 => FORMES.roc3,
-            FormeId::Fumee => FORMES.fumee.forme(),
-            FormeId::Foyer => FORMES.foyer,
-            FormeId::Building => FORMES.building,
-            FormeId::Rocher => FORMES.rocher,
+            FormeId::Forme1 => Cow::Borrowed(&FORMES.forme1),
+            FormeId::Forme2 => Cow::Borrowed(&FORMES.forme2),
+            FormeId::Forme4 => Cow::Borrowed(&FORMES.forme4),
+            FormeId::Forme6 => Cow::Borrowed(&FORMES.forme6),
+            FormeId::Forme7 => Cow::Borrowed(&FORMES.forme7),
+            FormeId::Forme8 => Cow::Owned(FORMES.forme8.forme()),
+            FormeId::Nuage1 => Cow::Borrowed(&FORMES.nuage1),
+            FormeId::Nuage2 => Cow::Borrowed(&FORMES.nuage2),
+            FormeId::Nuage3 => Cow::Borrowed(&FORMES.nuage3),
+            FormeId::Eclair => Cow::Borrowed(&FORMES.eclair),
+            FormeId::ToucheEclair => Cow::Borrowed(&FORMES.toucheEclair),
+            FormeId::Foudroye => Cow::Borrowed(&FORMES.foudroye),
+            FormeId::Peupli => Cow::Borrowed(&FORMES.peupli),
+            FormeId::Chene => Cow::Borrowed(&FORMES.chene),
+            FormeId::Noiset => Cow::Borrowed(&FORMES.noiset),
+            FormeId::Fontaine => Cow::Borrowed(&FORMES.fontaine),
+            FormeId::Totem => Cow::Borrowed(&FORMES.totem),
+            FormeId::Hutte => Cow::Borrowed(&FORMES.hutte),
+            FormeId::Oiseau => Cow::Owned(FORMES.oiseau.forme()),
+            FormeId::Genevr => Cow::Borrowed(&FORMES.genevr),
+            FormeId::Hetre => Cow::Borrowed(&FORMES.hetre),
+            FormeId::Roc1 => Cow::Borrowed(&FORMES.roc1),
+            FormeId::Roc2 => Cow::Borrowed(&FORMES.roc2),
+            FormeId::Roc3 => Cow::Borrowed(&FORMES.roc3),
+            FormeId::Fumee => Cow::Owned(FORMES.fumee.forme()),
+            FormeId::Foyer => Cow::Borrowed(&FORMES.foyer),
+            FormeId::Building => Cow::Borrowed(&FORMES.building),
+            FormeId::Rocher => Cow::Borrowed(&FORMES.rocher),
         }
     }
 }
@@ -539,235 +541,235 @@ impl FormeId {
 const NB_OBJ_REF: usize = 223;
 #[rustfmt::skip]
 static OBJETS_REF: [Mont; NB_OBJ_REF] = [
-    Mont { chaine: None, distance: 00, posx: 20000, posy: 1590, ign: 20, forme: Some(FormeId::Forme1) },
-    Mont { chaine: None, distance: 00, posx: 5120, posy: 53760, ign: 20, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00, posx: 26000, posy: 16000, ign: 100, forme: Some(FormeId::Forme4) },
-    Mont { chaine: None, distance: 00, posx: 9984, posy: 16860, ign: 140, forme: Some(FormeId::Forme6) },
-    Mont { chaine: None, distance: 00, posx: 36133, posy: 53402, ign: 200, forme: Some(FormeId::Forme7) },
-    Mont { chaine: None, distance: 00, posx: 50435, posy: 17637, ign: 80, forme: Some(FormeId::Forme8) },
+    Mont { chaine: None, distance: 00, posx: 20000, posy: 1590, ign: 20, forme: FormeId::Forme1 },
+    Mont { chaine: None, distance: 00, posx: 5120, posy: 53760, ign: 20, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00, posx: 26000, posy: 16000, ign: 100, forme: FormeId::Forme4 },
+    Mont { chaine: None, distance: 00, posx: 9984, posy: 16860, ign: 140, forme: FormeId::Forme6 },
+    Mont { chaine: None, distance: 00, posx: 36133, posy: 53402, ign: 200, forme: FormeId::Forme7 },
+    Mont { chaine: None, distance: 00, posx: 50435, posy: 17637, ign: 80, forme: FormeId::Forme8 },
                                                 /* Pieds agiles */
-    Mont { chaine: None, distance: 00, posx: 22656, posy: 21632, ign: 80, forme: Some(FormeId::Fumee) }, // 22672,21632
-    Mont { chaine: None, distance: 00, posx: 22656, posy: 21632, ign: 15, forme: Some(FormeId::Foyer) },
-    Mont { chaine: None, distance: 00, posx: 22704, posy: 21632, ign: 100, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None, distance: 00, posx: 22640, posy: 21632, ign: 100, forme: Some(FormeId::Hutte) },
+    Mont { chaine: None, distance: 00, posx: 22656, posy: 21632, ign: 80, forme: FormeId::Fumee }, // 22672,21632
+    Mont { chaine: None, distance: 00, posx: 22656, posy: 21632, ign: 15, forme: FormeId::Foyer },
+    Mont { chaine: None, distance: 00, posx: 22704, posy: 21632, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00, posx: 22640, posy: 21632, ign: 100, forme: FormeId::Hutte },
                                                 /* Camps 2 */
-    Mont { chaine: None, distance: 00, posx: 39680, posy: 14336, ign: 60, forme: Some(FormeId::Fumee) }, // 39680,14336
-    Mont { chaine: None, distance: 00, posx: 39680, posy: 14336, ign: 15, forme: Some(FormeId::Foyer) },
-    Mont { chaine: None, distance: 00, posx: 39744, posy: 14400, ign: 140, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None, distance: 00, posx: 39808, posy: 14432, ign: 100, forme: Some(FormeId::Hutte) }, 
-    Mont { chaine: None, distance: 00, posx: 39872, posy: 14432, ign: 100, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None, distance: 00, posx: 39808, posy: 14592, ign: 100, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None, distance: 00, posx: 39552, posy: 14592, ign: 100, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None, distance: 00, posx: 39552, posy: 14080, ign: 100, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None, distance: 00, posx: 39424, posy: 14400, ign: 100, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None, distance: 00, posx: 39424,posy: 14848,ign: 100, forme: Some(FormeId::Hutte) },
+    Mont { chaine: None, distance: 00, posx: 39680, posy: 14336, ign: 60, forme: FormeId::Fumee }, // 39680,14336
+    Mont { chaine: None, distance: 00, posx: 39680, posy: 14336, ign: 15, forme: FormeId::Foyer },
+    Mont { chaine: None, distance: 00, posx: 39744, posy: 14400, ign: 140, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00, posx: 39808, posy: 14432, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00, posx: 39872, posy: 14432, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00, posx: 39808, posy: 14592, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00, posx: 39552, posy: 14592, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00, posx: 39552, posy: 14080, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00, posx: 39424, posy: 14400, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00, posx: 39424,posy: 14848,ign: 100, forme: FormeId::Hutte },
 
-    Mont { chaine: None, distance: 00, posx: 12032, posy: 52992, ign: 60, forme: Some(FormeId::Fumee) },       // 12032,52992
-    Mont { chaine: None, distance: 00, posx: 12032, posy: 52992, ign: 15, forme: Some(FormeId::Foyer) },
-    Mont { chaine: None, distance: 00, posx: 11892, posy: 53082, ign: 100, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None, distance: 00, posx: 11992, posy: 53162, ign: 100, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None, distance: 00,posx: 11792, posy: 52992,ign: 100, forme: Some(FormeId::Hutte) },
+    Mont { chaine: None, distance: 00, posx: 12032, posy: 52992, ign: 60, forme: FormeId::Fumee },       // 12032,52992
+    Mont { chaine: None, distance: 00, posx: 12032, posy: 52992, ign: 15, forme: FormeId::Foyer },
+    Mont { chaine: None, distance: 00, posx: 11892, posy: 53082, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00, posx: 11992, posy: 53162, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00,posx: 11792, posy: 52992,ign: 100, forme: FormeId::Hutte },
                                                 /* Camps 4 : hyenes folles */
-Mont {chaine: None,distance: 00, posx: 49920, posy: 43520, ign: 70, forme: Some(FormeId::Fumee) },       // 49920,43520
-    Mont { chaine: None, distance: 00, posx: 49920, posy: 43520, ign: 15, forme: Some(FormeId::Foyer) },
-    Mont { chaine: None, distance: 00, posx: 50120, posy: 43720, ign: 100, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None,distance: 00, posx: 50220, posy: 43720, ign: 100, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None, distance: 00, posx: 50220,posy: 43820, ign: 100, forme: Some(FormeId::Hutte) },
-    Mont { chaine: None, distance: 00, posx: 49952, posy: 43520, ign: 15, forme: Some(FormeId::Totem) },
+Mont {chaine: None,distance: 00, posx: 49920, posy: 43520, ign: 70, forme: FormeId::Fumee },       // 49920,43520
+    Mont { chaine: None, distance: 00, posx: 49920, posy: 43520, ign: 15, forme: FormeId::Foyer },
+    Mont { chaine: None, distance: 00, posx: 50120, posy: 43720, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None,distance: 00, posx: 50220, posy: 43720, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00, posx: 50220,posy: 43820, ign: 100, forme: FormeId::Hutte },
+    Mont { chaine: None, distance: 00, posx: 49952, posy: 43520, ign: 15, forme: FormeId::Totem },
 
-    Mont { chaine: None, distance: 00, posx: 4000, posy: 4000, ign: 20, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00,posx: 9000, posy: 5000,ign: 33, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00, posx: 9000, posy: 5000, ign: 30, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00,posx: 13000, posy: 3500, ign: 16, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00, posx: 8000,posy: 1800, ign: 26, forme: Some(FormeId::Forme2) },
-    Mont {chaine: None, distance: 00,posx: 40000, posy: 5000, ign: 33, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00, posx: 25000,posy: 52000, ign: 30, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00, posx: 9000, posy: 5000, ign: 30, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00, posx: 37000,posy: 30000, ign: 16, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00, posx: 32000, posy: 32000, ign: 33, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00,posx: 43000,posy: 42000, ign: 25, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00,posx: 4000, posy: 50000, ign: 46, forme: Some(FormeId::Forme2) },
-    Mont { chaine: None, distance: 00, posx: 33000, posy: 8000, ign: 120, forme: Some(FormeId::Forme4) },
-    Mont { chaine: None, distance: 00, posx: 55000, posy: 5000, ign: 100, forme: Some(FormeId::Forme4) },
-    Mont { chaine: None, distance: 00, posx: 38000, posy: 23500, ign: 140, forme: Some(FormeId::Forme7) },
-    Mont { chaine: None, distance: 00, posx: 28000,posy: 26000,ign: 100,forme: Some(FormeId::Forme4) },
-    Mont { chaine: None, distance: 00,posx: 13000, posy: 37000, ign: 120, forme: Some(FormeId::Forme7) },
-    Mont { chaine: None, distance: 00, posx: 37000, posy: 37000, ign: 100, forme: Some(FormeId::Forme4) },
-    Mont { chaine: None, distance: 00, posx: 47000, posy: 35000, ign: 100, forme: Some(FormeId::Forme4) },
-    Mont {chaine: None,distance: 00, posx: 33000, posy: 8000, ign: 120,forme: Some(FormeId::Forme4) },
-    Mont { chaine: None, distance: 00, posx: 55000, posy: 42000,ign: 120, forme: Some(FormeId::Forme4) },
-    Mont { chaine: None, distance: 00,posx: 5000, posy: 32000,ign: 140, forme: Some(FormeId::Forme4) },
-    Mont { chaine: None, distance: 00, posx: 20000, posy: 30000, ign: 120, forme: Some(FormeId::Forme4) },
-    Mont { chaine: None, distance: 00, posx: 25000, posy: 40000, ign: 120, forme: Some(FormeId::Forme7) },
-    Mont { chaine: None, distance: 00, posx: 22656, posy: 21280, ign: 8, forme: Some(FormeId::Chene) },
-    Mont { chaine: None,distance: 00, posx: 22272, posy: 20992, ign: 8, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 22784, posy: 20992, ign: 8, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00, posx: 44000, posy: 45800, ign: 20, forme: Some(FormeId::Totem) },
-    Mont {chaine: None, distance: 00, posx: 44000, posy: 45900, ign: 20, forme: Some(FormeId::Totem) },
-    Mont { chaine: None, distance: 00,posx: 43900, posy: 45800, ign: 20, forme: Some(FormeId::Totem) },
-    Mont { chaine: None, distance: 00, posx: 25000, posy: 22500, ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 19000, posy: 24000, ign: 8, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 13000, posy: 42500, ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None,distance: 00, posx: 3000, posy: 30000, ign: 12, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 4500, posy: 46000, ign: 4, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 17000,posy: 44000, ign: 15, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 17500, posy: 49000, ign: 9, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 32000, posy: 45000, ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 19200, posy: 47200, ign: 12, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 9000, posy: 45000, ign: 7, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 32100, posy: 15050,ign: 15, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 32200, posy: 15200, ign: 12, forme: Some(FormeId::Chene) },
-    Mont { chaine: None,distance: 00,posx: 32300, posy: 15400, ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None,distance: 00, posx: 32400, posy: 15410, ign: 10,forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 32000, posy: 15600, ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 32050, posy: 15700, ign: 7, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 12000, posy: 50000, ign: 7, forme: Some(FormeId::Chene) },
-    Mont {chaine: None, distance: 00,posx: 32000,posy: 15800, ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00,posx: 31900, posy: 15900, ign: 15, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 32050, posy: 15700, ign: 7, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 33000, posy: 16000,ign: 17, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00,posx: 33500, posy: 16000, ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 31900, posy: 15900,ign: 15, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00,posx: 33000, posy: 13500, ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 38000, posy: 12000, ign: 7,forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 32000, posy: 15000, ign: 7, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 32800, posy: 18100, ign: 10,forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 33050, posy: 16500, ign: 9, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 32800, posy: 18200,ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 35000, posy: 16000, ign: 7, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 25000, posy: 21500, ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None,distance: 00,posx: 10900,posy: 28000,ign: 12, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 13000, posy: 31000, ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 15000,posy: 26000,ign: 10, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 29000, posy: 20500, ign: 9, forme: Some(FormeId::Chene) },
-    Mont {chaine: None, distance: 00, posx: 21700, posy: 8500, ign: 12, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00,posx: 23800, posy: 6000, ign: 9,forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 20000, posy: 5500,ign: 9, forme: Some(FormeId::Chene) },
-    Mont {chaine: None,distance: 00, posx: 24000, posy: 5000, ign: 9, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 26000, posy: 10000, ign: 9,forme: Some(FormeId::Chene) },
-    Mont {chaine: None,distance: 00, posx: 20000, posy: 9000, ign: 9, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 15000, posy: 6000, ign: 9, forme: Some(FormeId::Chene) },
-    Mont { chaine: None, distance: 00, posx: 15500,posy: 47000, ign: 15, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00, posx: 24000, posy: 48500, ign: 20, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00, posx: 20500, posy: 18000, ign: 12, forme: Some(FormeId::Peupli) },
-    Mont {chaine: None,distance: 00, posx: 40000, posy: 200, ign: 18, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00,posx: 34000, posy: 2000, ign: 16,forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00, posx: 32000, posy: 1000, ign: 12, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00,posx: 100, posy: 41000, ign: 12, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00, posx: 22000,posy: 25000, ign: 18, forme: Some(FormeId::Peupli) },
-    Mont {chaine: None, distance: 00,posx: 21000, posy: 21000, ign: 20, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00, posx: 13500, posy: 44000, ign: 12,forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00,posx: 33500, posy: 19000, ign: 12, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00, posx: 42000,posy: 17000, ign: 20, forme: Some(FormeId::Peupli) },
-    Mont {chaine: None, distance: 00, posx: 34000, posy: 17000, ign: 12, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00, posx: 38000, posy: 16000, ign: 9, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00, posx: 39050, posy: 14050,ign: 12, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00, posx: 21000, posy: 23000, ign: 14, forme: Some(FormeId::Peupli) },
-    Mont { chaine: None, distance: 00, posx: 12100, posy: 29050,ign: 12, forme: Some(FormeId::Peupli) },
-    Mont {chaine: None, distance: 00, posx: 11000, posy: 30000, ign: 20, forme: Some(FormeId::Peupli) },
-    Mont {chaine: None, distance: 00, posx: 13000, posy: 46000, ign: 10, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00,posx: 17500, posy: 45000, ign: 15, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 19000, posy: 47000, ign: 10,forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 19000, posy: 48500, ign: 18, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 22000, posy: 23000, ign: 10, forme: Some(FormeId::Hetre) },
-    Mont {chaine: None, distance: 00, posx: 13000, posy: 42500, ign: 15, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 3500, posy: 47000, ign: 10, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 7000, posy: 41000, ign: 11, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 32900, posy: 17000, ign: 15, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 40000, posy: 14000, ign: 11, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 40000, posy: 15000, ign: 8, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 39000, posy: 12200, ign: 11, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 32800, posy: 18000, ign: 15, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 42000,posy: 15000,ign: 18, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 41500, posy: 14000, ign: 15, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 42500, posy: 16000, ign: 15, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 31500, posy: 22000, ign: 15, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 12000, posy: 29000, ign: 17,forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00,posx: 11900, posy: 29100,ign: 15, forme: Some(FormeId::Hetre) },
-    Mont {chaine: None,distance: 00, posx: 12500, posy: 30000, ign: 15, forme: Some(FormeId::Hetre) },
-    Mont { chaine: None, distance: 00, posx: 5000, posy: 39000, ign: 10, forme: Some(FormeId::Genevr) },
-    Mont {chaine: None, distance: 00, posx: 19250, posy: 49200, ign: 15, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 35000, posy: 43000, ign: 4, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 41000,posy: 2000, ign: 2, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 4000, posy: 40000, ign: 6, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 14000, posy: 45000, ign: 2,forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00,posx: 14000, posy: 45000, ign: 12, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 19100, posy: 47050, ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00,posx: 31500, posy: 14500,ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 34000, posy: 15000, ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00,posx: 36000, posy: 17000, ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 40000,posy: 18000, ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 31000, posy: 19000, ign: 12,forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 14000,posy: 30000, ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 10000, posy: 29500, ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00,posx: 13000,posy: 27000, ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00,posx: 40000, posy: 42000,ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 41000, posy: 44000, ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 47000, posy: 45000,ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00,posx: 48000, posy: 44000, ign: 10, forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 48000,posy: 48000,ign: 10,forme: Some(FormeId::Genevr) },
-    Mont { chaine: None, distance: 00, posx: 21000,posy: 20000, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None, distance: 00, posx: 21000, posy: 20000, ign: 10,forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None, distance: 00, posx: 12400, posy: 28500, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None, distance: 00,posx: 12400,posy: 28500, ign: 10,forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None, distance: 00, posx: 48000, posy: 42000, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None, distance: 00, posx: 48000, posy: 42000,ign: 10, forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None, distance: 00, posx: 2000, posy: 2000, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None, distance: 00, posx: 2000, posy: 2000, ign: 10, forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None,distance: 00,posx: 39000, posy: 800,ign: 10,forme: Some(FormeId::Noiset) },
-    Mont { chaine: None,distance: 00, posx: 39000, posy: 800, ign: 10, forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None, distance: 00, posx: 16000, posy: 42000, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None, distance: 00, posx: 16000, posy: 42000, ign: 10, forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None, distance: 00, posx: 32000, posy: 16000, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None, distance: 00, posx: 32000,posy: 16000,ign: 10, forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None, distance: 00, posx: 45000, posy: 25500, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None, distance: 00, posx: 45000, posy: 25500, ign: 10, forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None, distance: 00, posx: 6000, posy: 45000, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None,distance: 00, posx: 6000, posy: 45000, ign: 10, forme: Some(FormeId::Fontaine) },
-    Mont {chaine: None, distance: 00, posx: 50000, posy: 50000, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None, distance: 00, posx: 50000, posy: 50000,ign: 5, forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None, distance: 00, posx: 24320,posy: 18944, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None, distance: 00,posx: 24320, posy: 18944, ign: 10, forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None,distance: 00, posx: 32768, posy: 17408, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None, distance: 00, posx: 32768, posy: 17408, ign: 5, forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None, distance: 00, posx: 40192, posy: 14336, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None, distance: 00, posx: 40192, posy: 14336, ign: 5, forme: Some(FormeId::Fontaine) },
-    Mont { chaine: None, distance: 00, posx: 43776, posy: 16896, ign: 10, forme: Some(FormeId::Noiset) },
-    Mont { chaine: None,distance: 00,posx: 43776, posy: 16896, ign: 5,forme: Some(FormeId::Fontaine) },
+    Mont { chaine: None, distance: 00, posx: 4000, posy: 4000, ign: 20, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00,posx: 9000, posy: 5000,ign: 33, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00, posx: 9000, posy: 5000, ign: 30, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00,posx: 13000, posy: 3500, ign: 16, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00, posx: 8000,posy: 1800, ign: 26, forme: FormeId::Forme2 },
+    Mont {chaine: None, distance: 00,posx: 40000, posy: 5000, ign: 33, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00, posx: 25000,posy: 52000, ign: 30, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00, posx: 9000, posy: 5000, ign: 30, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00, posx: 37000,posy: 30000, ign: 16, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00, posx: 32000, posy: 32000, ign: 33, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00,posx: 43000,posy: 42000, ign: 25, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00,posx: 4000, posy: 50000, ign: 46, forme: FormeId::Forme2 },
+    Mont { chaine: None, distance: 00, posx: 33000, posy: 8000, ign: 120, forme: FormeId::Forme4 },
+    Mont { chaine: None, distance: 00, posx: 55000, posy: 5000, ign: 100, forme: FormeId::Forme4 },
+    Mont { chaine: None, distance: 00, posx: 38000, posy: 23500, ign: 140, forme: FormeId::Forme7 },
+    Mont { chaine: None, distance: 00, posx: 28000,posy: 26000,ign: 100,forme: FormeId::Forme4 },
+    Mont { chaine: None, distance: 00,posx: 13000, posy: 37000, ign: 120, forme: FormeId::Forme7 },
+    Mont { chaine: None, distance: 00, posx: 37000, posy: 37000, ign: 100, forme: FormeId::Forme4 },
+    Mont { chaine: None, distance: 00, posx: 47000, posy: 35000, ign: 100, forme: FormeId::Forme4 },
+    Mont {chaine: None,distance: 00, posx: 33000, posy: 8000, ign: 120,forme: FormeId::Forme4 },
+    Mont { chaine: None, distance: 00, posx: 55000, posy: 42000,ign: 120, forme: FormeId::Forme4 },
+    Mont { chaine: None, distance: 00,posx: 5000, posy: 32000,ign: 140, forme: FormeId::Forme4 },
+    Mont { chaine: None, distance: 00, posx: 20000, posy: 30000, ign: 120, forme: FormeId::Forme4 },
+    Mont { chaine: None, distance: 00, posx: 25000, posy: 40000, ign: 120, forme: FormeId::Forme7 },
+    Mont { chaine: None, distance: 00, posx: 22656, posy: 21280, ign: 8, forme: FormeId::Chene },
+    Mont { chaine: None,distance: 00, posx: 22272, posy: 20992, ign: 8, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 22784, posy: 20992, ign: 8, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00, posx: 44000, posy: 45800, ign: 20, forme: FormeId::Totem },
+    Mont {chaine: None, distance: 00, posx: 44000, posy: 45900, ign: 20, forme: FormeId::Totem },
+    Mont { chaine: None, distance: 00,posx: 43900, posy: 45800, ign: 20, forme: FormeId::Totem },
+    Mont { chaine: None, distance: 00, posx: 25000, posy: 22500, ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 19000, posy: 24000, ign: 8, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 13000, posy: 42500, ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None,distance: 00, posx: 3000, posy: 30000, ign: 12, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 4500, posy: 46000, ign: 4, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 17000,posy: 44000, ign: 15, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 17500, posy: 49000, ign: 9, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 32000, posy: 45000, ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 19200, posy: 47200, ign: 12, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 9000, posy: 45000, ign: 7, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 32100, posy: 15050,ign: 15, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 32200, posy: 15200, ign: 12, forme: FormeId::Chene },
+    Mont { chaine: None,distance: 00,posx: 32300, posy: 15400, ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None,distance: 00, posx: 32400, posy: 15410, ign: 10,forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 32000, posy: 15600, ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 32050, posy: 15700, ign: 7, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 12000, posy: 50000, ign: 7, forme: FormeId::Chene },
+    Mont {chaine: None, distance: 00,posx: 32000,posy: 15800, ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00,posx: 31900, posy: 15900, ign: 15, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 32050, posy: 15700, ign: 7, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 33000, posy: 16000,ign: 17, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00,posx: 33500, posy: 16000, ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 31900, posy: 15900,ign: 15, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00,posx: 33000, posy: 13500, ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 38000, posy: 12000, ign: 7,forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 32000, posy: 15000, ign: 7, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 32800, posy: 18100, ign: 10,forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 33050, posy: 16500, ign: 9, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 32800, posy: 18200,ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 35000, posy: 16000, ign: 7, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 25000, posy: 21500, ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None,distance: 00,posx: 10900,posy: 28000,ign: 12, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 13000, posy: 31000, ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 15000,posy: 26000,ign: 10, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 29000, posy: 20500, ign: 9, forme: FormeId::Chene },
+    Mont {chaine: None, distance: 00, posx: 21700, posy: 8500, ign: 12, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00,posx: 23800, posy: 6000, ign: 9,forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 20000, posy: 5500,ign: 9, forme: FormeId::Chene },
+    Mont {chaine: None,distance: 00, posx: 24000, posy: 5000, ign: 9, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 26000, posy: 10000, ign: 9,forme: FormeId::Chene },
+    Mont {chaine: None,distance: 00, posx: 20000, posy: 9000, ign: 9, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 15000, posy: 6000, ign: 9, forme: FormeId::Chene },
+    Mont { chaine: None, distance: 00, posx: 15500,posy: 47000, ign: 15, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00, posx: 24000, posy: 48500, ign: 20, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00, posx: 20500, posy: 18000, ign: 12, forme: FormeId::Peupli },
+    Mont {chaine: None,distance: 00, posx: 40000, posy: 200, ign: 18, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00,posx: 34000, posy: 2000, ign: 16,forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00, posx: 32000, posy: 1000, ign: 12, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00,posx: 100, posy: 41000, ign: 12, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00, posx: 22000,posy: 25000, ign: 18, forme: FormeId::Peupli },
+    Mont {chaine: None, distance: 00,posx: 21000, posy: 21000, ign: 20, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00, posx: 13500, posy: 44000, ign: 12,forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00,posx: 33500, posy: 19000, ign: 12, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00, posx: 42000,posy: 17000, ign: 20, forme: FormeId::Peupli },
+    Mont {chaine: None, distance: 00, posx: 34000, posy: 17000, ign: 12, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00, posx: 38000, posy: 16000, ign: 9, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00, posx: 39050, posy: 14050,ign: 12, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00, posx: 21000, posy: 23000, ign: 14, forme: FormeId::Peupli },
+    Mont { chaine: None, distance: 00, posx: 12100, posy: 29050,ign: 12, forme: FormeId::Peupli },
+    Mont {chaine: None, distance: 00, posx: 11000, posy: 30000, ign: 20, forme: FormeId::Peupli },
+    Mont {chaine: None, distance: 00, posx: 13000, posy: 46000, ign: 10, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00,posx: 17500, posy: 45000, ign: 15, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 19000, posy: 47000, ign: 10,forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 19000, posy: 48500, ign: 18, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 22000, posy: 23000, ign: 10, forme: FormeId::Hetre },
+    Mont {chaine: None, distance: 00, posx: 13000, posy: 42500, ign: 15, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 3500, posy: 47000, ign: 10, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 7000, posy: 41000, ign: 11, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 32900, posy: 17000, ign: 15, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 40000, posy: 14000, ign: 11, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 40000, posy: 15000, ign: 8, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 39000, posy: 12200, ign: 11, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 32800, posy: 18000, ign: 15, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 42000,posy: 15000,ign: 18, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 41500, posy: 14000, ign: 15, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 42500, posy: 16000, ign: 15, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 31500, posy: 22000, ign: 15, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 12000, posy: 29000, ign: 17,forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00,posx: 11900, posy: 29100,ign: 15, forme: FormeId::Hetre },
+    Mont {chaine: None,distance: 00, posx: 12500, posy: 30000, ign: 15, forme: FormeId::Hetre },
+    Mont { chaine: None, distance: 00, posx: 5000, posy: 39000, ign: 10, forme: FormeId::Genevr },
+    Mont {chaine: None, distance: 00, posx: 19250, posy: 49200, ign: 15, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 35000, posy: 43000, ign: 4, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 41000,posy: 2000, ign: 2, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 4000, posy: 40000, ign: 6, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 14000, posy: 45000, ign: 2,forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00,posx: 14000, posy: 45000, ign: 12, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 19100, posy: 47050, ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00,posx: 31500, posy: 14500,ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 34000, posy: 15000, ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00,posx: 36000, posy: 17000, ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 40000,posy: 18000, ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 31000, posy: 19000, ign: 12,forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 14000,posy: 30000, ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 10000, posy: 29500, ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00,posx: 13000,posy: 27000, ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00,posx: 40000, posy: 42000,ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 41000, posy: 44000, ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 47000, posy: 45000,ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00,posx: 48000, posy: 44000, ign: 10, forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 48000,posy: 48000,ign: 10,forme: FormeId::Genevr },
+    Mont { chaine: None, distance: 00, posx: 21000,posy: 20000, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None, distance: 00, posx: 21000, posy: 20000, ign: 10,forme: FormeId::Fontaine },
+    Mont { chaine: None, distance: 00, posx: 12400, posy: 28500, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None, distance: 00,posx: 12400,posy: 28500, ign: 10,forme: FormeId::Fontaine },
+    Mont { chaine: None, distance: 00, posx: 48000, posy: 42000, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None, distance: 00, posx: 48000, posy: 42000,ign: 10, forme: FormeId::Fontaine },
+    Mont { chaine: None, distance: 00, posx: 2000, posy: 2000, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None, distance: 00, posx: 2000, posy: 2000, ign: 10, forme: FormeId::Fontaine },
+    Mont { chaine: None,distance: 00,posx: 39000, posy: 800,ign: 10,forme: FormeId::Noiset },
+    Mont { chaine: None,distance: 00, posx: 39000, posy: 800, ign: 10, forme: FormeId::Fontaine },
+    Mont { chaine: None, distance: 00, posx: 16000, posy: 42000, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None, distance: 00, posx: 16000, posy: 42000, ign: 10, forme: FormeId::Fontaine },
+    Mont { chaine: None, distance: 00, posx: 32000, posy: 16000, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None, distance: 00, posx: 32000,posy: 16000,ign: 10, forme: FormeId::Fontaine },
+    Mont { chaine: None, distance: 00, posx: 45000, posy: 25500, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None, distance: 00, posx: 45000, posy: 25500, ign: 10, forme: FormeId::Fontaine },
+    Mont { chaine: None, distance: 00, posx: 6000, posy: 45000, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None,distance: 00, posx: 6000, posy: 45000, ign: 10, forme: FormeId::Fontaine },
+    Mont {chaine: None, distance: 00, posx: 50000, posy: 50000, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None, distance: 00, posx: 50000, posy: 50000,ign: 5, forme: FormeId::Fontaine },
+    Mont { chaine: None, distance: 00, posx: 24320,posy: 18944, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None, distance: 00,posx: 24320, posy: 18944, ign: 10, forme: FormeId::Fontaine },
+    Mont { chaine: None,distance: 00, posx: 32768, posy: 17408, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None, distance: 00, posx: 32768, posy: 17408, ign: 5, forme: FormeId::Fontaine },
+    Mont { chaine: None, distance: 00, posx: 40192, posy: 14336, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None, distance: 00, posx: 40192, posy: 14336, ign: 5, forme: FormeId::Fontaine },
+    Mont { chaine: None, distance: 00, posx: 43776, posy: 16896, ign: 10, forme: FormeId::Noiset },
+    Mont { chaine: None,distance: 00,posx: 43776, posy: 16896, ign: 5,forme: FormeId::Fontaine },
 
-    Mont { chaine: None, distance: 00, posx: 100, posy: 39000, ign: 100, forme: Some(FormeId::Roc1) },
-    Mont { chaine: None, distance: 00, posx: 15000,posy: 46000, ign: 45, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 42000, posy: 16000, ign: 75, forme: Some(FormeId::Roc3) },
-    Mont {chaine: None, distance: 00, posx: 33050, posy: 17000, ign: 95, forme: Some(FormeId::Roc1) },
-    Mont { chaine: None, distance: 00, posx: 5000,posy: 38000,ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 7000, posy: 39000,ign: 150, forme: Some(FormeId::Roc3) },
-    Mont { chaine: None, distance: 00, posx: 4000, posy: 43000, ign: 110, forme: Some(FormeId::Roc1) },
-    Mont { chaine: None, distance: 00,posx: 7000, posy: 44000, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 10000, posy: 42000, ign: 150, forme: Some(FormeId::Roc1) },
-    Mont { chaine: None, distance: 00,posx: 15000, posy: 43000, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 15000, posy: 45000, ign: 140, forme: Some(FormeId::Roc1) },
-    Mont { chaine: None, distance: 00, posx: 18000, posy: 47000, ign: 98, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 19000, posy: 50000, ign: 100, forme: Some(FormeId::Roc1) },
-    Mont { chaine: None, distance: 00, posx: 42000, posy: 46000, ign: 100, forme: Some(FormeId::Roc1) },
-    Mont { chaine: None, distance: 00, posx: 44000,posy: 45000,ign: 200, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 46000, posy: 42000, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 38000, posy: 44000, ign: 90, forme: Some(FormeId::Roc1) },
-    Mont { chaine: None, distance: 00, posx: 35000, posy: 1000,ign: 110, forme: Some(FormeId::Roc2) },
-    Mont {chaine: None, distance: 00, posx: 37000, posy: 3000, ign: 100,forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00,posx: 36000, posy: 15000,ign: 110, forme: Some(FormeId::Roc2) },
-    Mont {chaine: None,distance: 00, posx: 37000, posy: 3000, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 39000, posy: 13000, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 41000, posy: 13000, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 36000, posy: 18000, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 39000,posy: 17000, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont {chaine: None,distance: 00, posx: 38000, posy: 12000, ign: 132, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 42000, posy: 15000, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00,posx: 20000, posy: 22000, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00,posx: 13000, posy: 28000, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 11000, posy: 32000,ign: 100, forme: Some(FormeId::Roc2) },
-    Mont { chaine: None, distance: 00, posx: 46000, posy: 47500, ign: 100, forme: Some(FormeId::Roc2) },
-    Mont {chaine: None, distance: 00, posx: 9500, posy: 50000, ign: 100, forme: Some(FormeId::Roc3) },
-    Mont { chaine: None, distance: 00,posx: 1,posy: 1, ign: 10, forme: Some(FormeId::Chene) },
+    Mont { chaine: None, distance: 00, posx: 100, posy: 39000, ign: 100, forme: FormeId::Roc1 },
+    Mont { chaine: None, distance: 00, posx: 15000,posy: 46000, ign: 45, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 42000, posy: 16000, ign: 75, forme: FormeId::Roc3 },
+    Mont {chaine: None, distance: 00, posx: 33050, posy: 17000, ign: 95, forme: FormeId::Roc1 },
+    Mont { chaine: None, distance: 00, posx: 5000,posy: 38000,ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 7000, posy: 39000,ign: 150, forme: FormeId::Roc3 },
+    Mont { chaine: None, distance: 00, posx: 4000, posy: 43000, ign: 110, forme: FormeId::Roc1 },
+    Mont { chaine: None, distance: 00,posx: 7000, posy: 44000, ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 10000, posy: 42000, ign: 150, forme: FormeId::Roc1 },
+    Mont { chaine: None, distance: 00,posx: 15000, posy: 43000, ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 15000, posy: 45000, ign: 140, forme: FormeId::Roc1 },
+    Mont { chaine: None, distance: 00, posx: 18000, posy: 47000, ign: 98, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 19000, posy: 50000, ign: 100, forme: FormeId::Roc1 },
+    Mont { chaine: None, distance: 00, posx: 42000, posy: 46000, ign: 100, forme: FormeId::Roc1 },
+    Mont { chaine: None, distance: 00, posx: 44000,posy: 45000,ign: 200, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 46000, posy: 42000, ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 38000, posy: 44000, ign: 90, forme: FormeId::Roc1 },
+    Mont { chaine: None, distance: 00, posx: 35000, posy: 1000,ign: 110, forme: FormeId::Roc2 },
+    Mont {chaine: None, distance: 00, posx: 37000, posy: 3000, ign: 100,forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00,posx: 36000, posy: 15000,ign: 110, forme: FormeId::Roc2 },
+    Mont {chaine: None,distance: 00, posx: 37000, posy: 3000, ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 39000, posy: 13000, ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 41000, posy: 13000, ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 36000, posy: 18000, ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 39000,posy: 17000, ign: 100, forme: FormeId::Roc2 },
+    Mont {chaine: None,distance: 00, posx: 38000, posy: 12000, ign: 132, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 42000, posy: 15000, ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00,posx: 20000, posy: 22000, ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00,posx: 13000, posy: 28000, ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 11000, posy: 32000,ign: 100, forme: FormeId::Roc2 },
+    Mont { chaine: None, distance: 00, posx: 46000, posy: 47500, ign: 100, forme: FormeId::Roc2 },
+    Mont {chaine: None, distance: 00, posx: 9500, posy: 50000, ign: 100, forme: FormeId::Roc3 },
+    Mont { chaine: None, distance: 00,posx: 1,posy: 1, ign: 10, forme: FormeId::Chene },
 ];
 
 pub(crate) struct Sap3d {
@@ -848,9 +850,8 @@ impl Sap3d {
     ***********************************************************************/
     fn EstDansMontagne(&self, x: u16, y: u16) -> Boolean {
         for p in &self.aigoual {
-            if let Some(forme) = p.forme.map(FormeId::forme)
-                && forme.hauteur == 0
-            {
+            let forme = &p.forme.forme();
+            if forme.hauteur == 0 {
                 let dx = (p.posx as i64 - x as i64).abs();
                 let dy = (p.posy as i64 - y as i64).abs();
                 let dist = distance(dx, dy);
@@ -943,9 +944,9 @@ impl Sapiens {
             mont.posy = (self.random.myRandom(0, 32767) * 2) as u16;
             mont.ign = self.random.myRandom(100, 200) as u16;
             match self.random.myRandom(0, 3) {
-                0 => mont.forme = Some(FormeId::Nuage1),
-                1 => mont.forme = Some(FormeId::Nuage2),
-                _ => mont.forme = Some(FormeId::Nuage3),
+                0 => mont.forme = FormeId::Nuage1,
+                1 => mont.forme = FormeId::Nuage2,
+                _ => mont.forme = FormeId::Nuage3,
             }
             self.sap3d.aigoual.push(mont);
         }
@@ -954,9 +955,9 @@ impl Sapiens {
             let nuage = self.sap3d.aigoual[i as usize]; //Copie du nuage associé
             mont = nuage;
             mont.ign = 0; //Altitude zéro inactif
-            mont.forme = Some(FormeId::Eclair);
+            mont.forme = FormeId::Eclair;
             // L'éclair est placé au centre de son nuage
-            let rayon = nuage.forme.expect("nuage").forme().rayon;
+            let rayon = nuage.forme.forme().rayon;
             mont.posx = (mont.posx as i64 + rayon as i64 / 2) as u16;
             mont.posy = (mont.posy as i64 + rayon as i64 / 2) as u16;
             self.sap3d.aigoual.push(mont);
@@ -968,7 +969,7 @@ impl Sapiens {
             mont.posx = (self.random.myRandom(0, 32767) * 2) as u16;
             mont.posy = (self.random.myRandom(0, 32767) * 2) as u16;
             mont.ign = 10;
-            mont.forme = Some(FormeId::Oiseau);
+            mont.forme = FormeId::Oiseau;
             self.sap3d.aigoual.push(mont);
         }
         /* On crée le tableau avec les objets de base */
@@ -984,9 +985,9 @@ impl Sapiens {
             }
             mont.ign = self.random.myRandom(5, 20) as u16;
             match self.random.myRandom(0, 3) {
-                0 => mont.forme = Some(FormeId::Genevr),
-                1 => mont.forme = Some(FormeId::Chene),
-                _ => mont.forme = Some(FormeId::Peupli),
+                0 => mont.forme = FormeId::Genevr,
+                1 => mont.forme = FormeId::Chene,
+                _ => mont.forme = FormeId::Peupli,
             }
             self.sap3d.aigoual.push(mont);
             if self.sap3d.PremArbre == 0 {
@@ -1003,8 +1004,8 @@ impl Sapiens {
                 }
             }
             mont.ign = self.random.myRandom(15, 60) as u16;
-            mont.forme = Some(FormeId::Rocher);
             self.sap3d.aigoual.push(mont);
+            mont.forme = FormeId::Rocher;
             if self.sap3d.PremRocher == 0 {
                 self.sap3d.PremRocher = self.sap3d.aigoual.len() as i64 - 1;
             }
@@ -1096,7 +1097,7 @@ impl Sapiens {
             /* Erosion des montagnes */
             for i in 0..self.sap3d.aigoual.len() {
                 let p = &mut self.sap3d.aigoual[i];
-                if p.forme.is_some_and(|id| id.forme().hauteur == 0) {
+                if p.forme.forme().hauteur == 0 {
                     /* C'est une montagne elle diminue */
                     if p.ign > 10 {
                         p.ign -= 10;
@@ -1171,7 +1172,7 @@ impl Sapiens {
                 }
             }
             mont.ign = self.random.myRandom(15, 60) as u16;
-            mont.forme = Some(FormeId::Building);
+            mont.forme = FormeId::Building;
             mont.posx = (self.sapglob.xj as i64 + self.random.myRandom(-750, 750)) as u16;
             mont.posy = (self.sapglob.yj as i64 + self.random.myRandom(-10000, -500)) as u16;
             self.sap3d.aigoual.push(mont);
@@ -1250,11 +1251,11 @@ impl Sapiens {
         for i in 0..self.sap3d.aigoual.len() {
             let mont = self.sap3d.aigoual[i];
             /* C'est un arbre et même coordonnée */
-            if mont.forme.is_some_and(|id| id.forme().hauteur == 1)
+            if mont.forme.forme().hauteur == 1
                 && distance(mont.posx as i64 - x as i64, mont.posy as i64 - y as i64)
                     < self.sap3d.DistMinFoudroie as i16
             {
-                self.sap3d.aigoual[i].forme = Some(FormeId::ToucheEclair);
+                self.sap3d.aigoual[i].forme = FormeId::ToucheEclair;
                 self.FoudroieJoueur(mont.posx, mont.posy);
                 return Some(i as MontId);
             }
@@ -1286,11 +1287,9 @@ impl Sap3d {
                 break;
             };
             for mont in self.aigoual.iter_mut() {
-                if mont.forme.is_some_and(|id| id.forme().hauteur == 1)
-                    && mont.posx == x as u16
-                    && mont.posy == y as u16
+                if mont.forme.forme().hauteur == 1 && mont.posx == x as u16 && mont.posy == y as u16
                 {
-                    mont.forme = Some(FormeId::Foudroye);
+                    mont.forme = FormeId::Foudroye;
                 }
             }
         }
@@ -1306,7 +1305,7 @@ impl Sap3d {
         f.write_all(b"\nMAGIC\n")?;
         for mont in self.aigoual.iter() {
             /* C'est un arbre et même coordonnée */
-            if mont.forme == Some(FormeId::Foudroye) {
+            if mont.forme == FormeId::Foudroye {
                 // c'est in format de sauvegarde il est pas dépendant de l'OS
                 #[allow(clippy::write_with_newline)]
                 write!(f, "Foudroye {} {}\n", mont.posx as i64, mont.posy as i64)?;
@@ -1359,7 +1358,7 @@ impl Sapiens {
             self.sap3d.FreqEclair += 4;
         }
         if let Some(id) = self.sap3d.ArbreFoudroye {
-            self.sap3d.aigoual[id as usize].forme = Some(FormeId::Foudroye);
+            self.sap3d.aigoual[id as usize].forme = FormeId::Foudroye;
             self.sap3d.ArbreFoudroye = None;
         }
         for suivant in (self.sap3d.PremEclair as usize..).take(self.sap3d.nbEclairs as usize) {
@@ -1376,10 +1375,7 @@ impl Sapiens {
                 #[cfg(debug_assertions)]
                 {
                     // if(suivant->ptrforme->numMob3d==7) Collapse("err");
-                    if self.sap3d.aigoual[suivant]
-                        .forme
-                        .is_some_and(|id| id.forme().numMob3d == 7)
-                    {
+                    if self.sap3d.aigoual[suivant].forme.forme().numMob3d == 7 {
                         self.Collapse("err");
                     }
                 }
@@ -1545,7 +1541,7 @@ mod tests_elts_decors_mobiles {
             s.aigoual.push(Mont {
                 posx: x,
                 posy: y,
-                forme: Some(id),
+                forme: id,
                 ..Mont::default()
             });
         }
@@ -1556,7 +1552,7 @@ mod tests_elts_decors_mobiles {
     fn sauve_puis_charge_arbres_foudroyes() {
         let id = arbre();
         let mut source = sap3d_avec_arbres(id);
-        source.aigoual[1].forme = Some(FormeId::Foudroye);
+        source.aigoual[1].forme = FormeId::Foudroye;
 
         let dir = std::env::temp_dir().join("sapiens_test_elts_decors");
         std::fs::create_dir_all(&dir).unwrap();
@@ -1574,9 +1570,9 @@ mod tests_elts_decors_mobiles {
         cible.ChargeEltsDecorsMobiles(&mut f).unwrap();
         let _ = std::fs::remove_file(&path);
 
-        assert_eq!(cible.aigoual[0].forme, Some(id));
-        assert_eq!(cible.aigoual[1].forme, Some(FormeId::Foudroye));
-        assert_eq!(cible.aigoual[2].forme, Some(id));
+        assert_eq!(cible.aigoual[0].forme, id);
+        assert_eq!(cible.aigoual[1].forme, FormeId::Foudroye);
+        assert_eq!(cible.aigoual[2].forme, id);
     }
 
     #[test]
@@ -1587,7 +1583,7 @@ mod tests_elts_decors_mobiles {
             s.ChargeEltsDecorsMobiles(&mut c),
             Err(FileError::BadHeader)
         ));
-        assert!(s.aigoual.iter().all(|m| m.forme != Some(FormeId::Foudroye)));
+        assert!(s.aigoual.iter().all(|m| m.forme != FormeId::Foudroye));
     }
 
     #[test]
@@ -1599,7 +1595,7 @@ mod tests_elts_decors_mobiles {
         );
         let mut c = Cursor::new(b"\nMAGIC\n".to_vec());
         s.ChargeEltsDecorsMobiles(&mut c).unwrap();
-        assert!(s.aigoual.iter().all(|m| m.forme != Some(FormeId::Foudroye)));
+        assert!(s.aigoual.iter().all(|m| m.forme != FormeId::Foudroye));
     }
 
     #[test]
@@ -1607,7 +1603,7 @@ mod tests_elts_decors_mobiles {
         let mut s = sap3d_avec_arbres(arbre());
         let mut c = Cursor::new(b"\nMAGIC\nFoudroye 10 20\nFoudroye 30".to_vec());
         s.ChargeEltsDecorsMobiles(&mut c).unwrap();
-        assert_eq!(s.aigoual[0].forme, Some(FormeId::Foudroye));
-        assert_ne!(s.aigoual[1].forme, Some(FormeId::Foudroye));
+        assert_eq!(s.aigoual[0].forme, FormeId::Foudroye);
+        assert_ne!(s.aigoual[1].forme, FormeId::Foudroye);
     }
 }

@@ -565,7 +565,7 @@ macro_rules! MOB_AIDE {
 }
 
 #[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Default, Clone)]
 pub(crate) struct Forme {
     pub(crate) nbrdisk: u8,
     pub(crate) relief: u8,
@@ -578,8 +578,9 @@ pub(crate) struct Forme {
 }
 
 /// Identifie une des formes statiques du décor 3d (voir `sap3d.rs`).
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub(crate) enum FormeId {
+    #[default]
     Forme1,
     Forme2,
     Forme4,
@@ -619,7 +620,7 @@ pub(crate) struct Mont {
     pub(crate) posx: u16,
     pub(crate) posy: u16,
     pub(crate) ign: u16,
-    pub(crate) forme: Option<FormeId>,
+    pub(crate) forme: FormeId,
 }
 
 pub(crate) type MontId = u32;

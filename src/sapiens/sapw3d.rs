@@ -14,8 +14,8 @@ use crate::port::{PortId, Ports};
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::{
-    ECHELLE, FormeId, IndexColor, MontId, NB_DEGRADE_DISTANCE, NB_ETOILES, NB_LIGNES_CIEL,
-    NB_LIGNES_TERRE, h_chron,
+    ECHELLE, IndexColor, MontId, NB_DEGRADE_DISTANCE, NB_ETOILES, NB_LIGNES_CIEL, NB_LIGNES_TERRE,
+    h_chron,
 };
 
 const LARGEUR_ECRAN: i32 = 512;
@@ -784,12 +784,11 @@ impl Sapiens {
                                     Calcule l'altitude d'un point du plan
     ***************************************************************************************/
     fn CalculeAltitude(&self, _x: i16, _y: i16) -> i16 {
-        let mut z: i32 = 40;
+        let mut z = 40;
 
         for mont in &self.sap3d.aigoual {
-            if let Some(forme) = mont.forme.map(FormeId::forme)
-                && forme.hauteur == 0
-            {
+            let forme = mont.forme.forme();
+            if forme.hauteur == 0 {
                 let d = distance(
                     self.sapglob.xj as i64 - mont.posx as i64,
                     self.sapglob.yj as i64 - mont.posy as i64,
@@ -817,9 +816,7 @@ impl Sapiens {
         let sa = (-angle).sin() as f32;
 
         for m in self.sap3d.chaine() {
-            let Some(forme) = m.forme.map(FormeId::forme) else {
-                continue;
-            };
+            let forme = m.forme.forme();
             if let Some((x, y, dist)) = CalcPoint3D(
                 self.sapglob.xj as i64,
                 self.sapglob.yj as i64,
@@ -877,16 +874,11 @@ impl Sapiens {
     ;<= 1 si chainage 0 sinon
     */
     pub(crate) fn ChaineObjet(&mut self, idx: MontId) -> bool {
-        let mut poschaine: Option<MontId> = None;
-        let mut balaye: Option<MontId>;
-
         /* On calcule la distance de la montagne au joueur*/
         if self.sap3d.aigoual[idx as usize].ign == 0 {
             return false;
         }
-        let Some(forme) = self.sap3d.aigoual[idx as usize].forme.map(FormeId::forme) else {
-            return false;
-        };
+        let forme = self.sap3d.aigoual[idx as usize].forme.forme();
         let dist = distance(
             self.sap3d.aigoual[idx as usize].posx as i64 - self.sapglob.xj as i64,
             self.sap3d.aigoual[idx as usize].posy as i64 - self.sapglob.yj as i64,
@@ -931,7 +923,8 @@ impl Sapiens {
             }
         }
         /* Premier element de la chaine */
-        balaye = self.sap3d.aigoual[0].chaine;
+        let mut balaye = self.sap3d.aigoual[0].chaine;
+        let mut poschaine: Option<MontId> = None;
         while let Some(b) = balaye {
             if self.sap3d.aigoual[b as usize].distance > dist as u16 {
                 poschaine = Some(b);
