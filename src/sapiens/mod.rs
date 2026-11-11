@@ -290,6 +290,7 @@ pub(crate) struct brin {
     pub(crate) col: u16,
     pub(crate) sens: u16,
 }
+
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub(crate) struct h_chron {
@@ -299,6 +300,7 @@ pub(crate) struct h_chron {
     pub(crate) TabCouleursCiel: [IndexColor; NB_LIGNES_CIEL],
     pub(crate) TabPaletteDistance: Vec<Vec<i16>>,
 }
+
 impl Default for h_chron {
     fn default() -> Self {
         Self {
@@ -310,6 +312,7 @@ impl Default for h_chron {
         }
     }
 }
+
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct evt {
@@ -321,6 +324,7 @@ pub(crate) struct evt {
     pub(crate) evt: u8,
     pub(crate) message: u8,
 }
+
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct gemcadre {
@@ -329,12 +333,14 @@ pub(crate) struct gemcadre {
     pub(crate) haut: i16,
     pub(crate) larg: i16,
 }
+
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub(crate) struct IndexColor {
     pub(crate) index: i16,
     pub(crate) rgb: RGBColor,
 }
+
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum Vue {
@@ -570,6 +576,7 @@ pub(crate) struct Forme {
     pub(crate) num_mob: i16,
     pub(crate) numMob3d: i16,
 }
+
 /// Identifie une des formes statiques du décor 3d (voir `sap3d.rs`).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub(crate) enum FormeId {
@@ -614,6 +621,7 @@ pub(crate) struct Mont {
     pub(crate) ign: u16,
     pub(crate) forme: Option<FormeId>,
 }
+
 pub(crate) type MontId = u32;
 
 pub(crate) const FREQ_ORAGE: u32 = 9990;

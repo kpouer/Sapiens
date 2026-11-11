@@ -1,0 +1,15 @@
+#define XCODE 1 
+#define MAC_CARBON 1
+#define TARGET_API_MAC_CARBON 1
+#define _ANSI_SOURCE 1
+#define MAC 1
+#define TARGET_APPEARANCE 2
+#define EXTERNC
+#include <carbon.h>  
+#include "MacCvtNewHeaders.h"
+#include "CarbonEmulePrint.h"
+#include "ExtendedTextEdit.h"
+#include "Sapiens.h"
+char * PtoCstr(unsigned char * str);
+unsigned char * CtoPstr	(char * str);
+#define InsMenuItem(theMenu, itemString, afterItem) InsertMenuItem(theMenu, itemString, afterItem)
