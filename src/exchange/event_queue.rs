@@ -3,13 +3,14 @@
 //! Le contrat (`EventQueue`) ne parle que d'`EventRecord` : aucune API macOS,
 //! Windows ou web n'y entre. Deux implémentations suffisent :
 //!
-//! - `NativeEventQueue` : `Mutex<VecDeque<_>>`, pour macOS/Windows/Linux où le
-//!   jeu et egui vivent sur deux threads ;
-//! - `LocalEventQueue` : `thread_local! + RefCell`, pour un wasm32 mono-thread.
+//! - `NativeEventQueue` : `Mutex<VecDeque<_>>`, le jeu et egui vivant sur deux
+//!   threads (y compris sur le web : le jeu tourne dans un Web Worker, et le
+//!   verrou est alors celui de `platform::sync`) ;
+//! - `LocalEventQueue` : `thread_local! + RefCell`, pour un hôte mono-thread
+//!   (seulement testée aujourd'hui).
 //!
 //! Le backend est choisi à la compilation par `PlatformEventQueue` : pas de
-//! `dyn`, pas d'allocation ni de branche à l'exécution. Le jour où wasm passe
-//! en multi-thread, seul le type alias est à revoir.
+//! `dyn`, pas d'allocation ni de branche à l'exécution.
 
 use crate::shared::EventRecord;
 use std::collections::VecDeque;
@@ -50,24 +51,21 @@ fn event_matches(mask: i16, what: i16) -> bool {
 }
 
 // ---------------------------------------------------------------------------
-// Backend natif (macOS / Windows / Linux)
+// Backend partagé entre deux threads
 // ---------------------------------------------------------------------------
 
-#[cfg(not(target_arch = "wasm32"))]
 pub(crate) struct NativeEventQueue {
-    queue: std::sync::Mutex<VecDeque<EventRecord>>,
+    queue: crate::platform::sync::Mutex<VecDeque<EventRecord>>,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl NativeEventQueue {
     pub(crate) const fn new() -> Self {
         Self {
-            queue: std::sync::Mutex::new(VecDeque::new()),
+            queue: crate::platform::sync::Mutex::new(VecDeque::new()),
         }
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl EventQueue for NativeEventQueue {
     fn push(&self, event: EventRecord) {
         let mut queue = self.queue.lock().unwrap_or_else(|e| e.into_inner());
@@ -85,28 +83,28 @@ impl EventQueue for NativeEventQueue {
 }
 
 // ---------------------------------------------------------------------------
-// Backend wasm mono-thread
+// Backend mono-thread
 // ---------------------------------------------------------------------------
 
 /// Handle vide : le stockage réel est thread-local, donc pas besoin d'atomics
-/// ni de verrou pour un wasm32 sans threads.
-#[cfg(any(target_arch = "wasm32", test))]
+/// ni de verrou pour un hôte mono-thread.
+#[cfg(test)]
 pub(crate) struct LocalEventQueue;
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(test)]
 impl LocalEventQueue {
     pub(crate) const fn new() -> Self {
         Self
     }
 }
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(test)]
 std::thread_local! {
     static LOCAL_QUEUE: std::cell::RefCell<VecDeque<EventRecord>> =
         const { std::cell::RefCell::new(VecDeque::new()) };
 }
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(test)]
 impl EventQueue for LocalEventQueue {
     fn push(&self, event: EventRecord) {
         LOCAL_QUEUE.with(|queue| push_bounded(&mut queue.borrow_mut(), event));
@@ -125,11 +123,7 @@ impl EventQueue for LocalEventQueue {
 // Façade utilisée par le reste du portage
 // ---------------------------------------------------------------------------
 
-#[cfg(not(target_arch = "wasm32"))]
 pub(crate) type PlatformEventQueue = NativeEventQueue;
-
-#[cfg(target_arch = "wasm32")]
-pub(crate) type PlatformEventQueue = LocalEventQueue;
 
 static EVENTS: PlatformEventQueue = PlatformEventQueue::new();
 

@@ -14,11 +14,11 @@ use crate::cbridge::watchCursor;
 use crate::exchange::{Cursor, request_alert, set_cursor_shape, set_title};
 use crate::langue::{Langue, langue};
 use crate::model::{Point, RGBColor, Rect};
+use crate::platform::Instant;
+use crate::platform::sync::Mutex;
 use crate::port;
 use crate::port::{PortId, Ports};
 use crate::shared::*;
-use std::sync::Mutex;
-use std::time::Instant;
 
 pub(crate) const VRAI: bool = true;
 pub(crate) const FAUX: bool = false;

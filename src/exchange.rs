@@ -17,14 +17,15 @@ pub(crate) mod event_queue;
 pub(crate) use event_queue::{clear_events, push_event};
 
 use crate::langue::LangMode;
+use crate::platform::Instant;
+use crate::platform::sync::Mutex;
 use crate::shared::{KeyMap, SapPort};
 use log::{error, info};
 use std::fmt::Display;
 use std::path::PathBuf;
-use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU8, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 // ---------------------------------------------------------------------------
 // Curseur (thread C → egui)
 // ---------------------------------------------------------------------------

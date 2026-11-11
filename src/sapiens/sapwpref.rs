@@ -4,7 +4,7 @@
                         SauvePref / ChargePref
 ***********************************************************************/
 use crate::exchange::{PreferencesRequest, request_preferences};
-use crate::langue::{config_dir, effective_lang, langue_i16, set_langue};
+use crate::langue::{effective_lang, langue_i16, set_langue};
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapwind::FixeMenu;
 use crate::sapiens::{TypeMuse, saptxt::CvtDefaultLangRess};
@@ -16,9 +16,8 @@ const VERSION_PREF: &[u8] = b"Sapiens Preferences 2.0.0\0";
 pub(crate) const JOUEUR2_AUTONOME: i16 = 0;
 const JOUEUR2_CLAVIER: i16 = 1;
 
-fn pref_path() -> std::path::PathBuf {
-    config_dir().join("Sapiens.cfg")
-}
+/// Clé de stockage (fichier `Sapiens.cfg` sous `config_dir` en natif).
+const PREF_KEY: &str = "Sapiens.cfg";
 
 fn read_i16(r: &mut impl Read) -> Option<i16> {
     let mut b = [0u8; 2];
@@ -37,11 +36,7 @@ impl Sapiens {
         // Comme le code C d'origine : un `float` complet (4 octets).
         out.extend_from_slice(&self.sapwind.SapZoom.to_le_bytes());
 
-        let path = pref_path();
-        if let Some(dir) = path.parent() {
-            let _ = std::fs::create_dir_all(dir);
-        }
-        if let Err(e) = std::fs::write(&path, &out) {
+        if let Err(e) = crate::platform::storage::write(PREF_KEY, &out) {
             self.Collapse(format!("Error writing preferences: {e}"));
         }
     }
@@ -51,7 +46,7 @@ impl Sapiens {
     <= VRAI si first init
     ***********************************************************************/
     pub(crate) fn ChargePref(&mut self) -> Boolean {
-        let Ok(bytes) = std::fs::read(pref_path()) else {
+        let Some(bytes) = crate::platform::storage::read(PREF_KEY) else {
             return true;
         };
         let mut cur = std::io::Cursor::new(bytes);

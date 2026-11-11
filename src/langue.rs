@@ -146,6 +146,7 @@ pub(crate) fn effective_lang(mode: LangMode) -> Langue {
 // ---------------------------------------------------------------------------
 
 /// Dossier de configuration utilisateur (préférences, langue).
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn config_dir() -> std::path::PathBuf {
     let home = std::env::var("HOME")
         .or_else(|_| std::env::var("USERPROFILE"))
@@ -157,23 +158,17 @@ pub(crate) fn config_dir() -> std::path::PathBuf {
     }
 }
 
-fn lang_path() -> std::path::PathBuf {
-    config_dir().join("lang")
-}
+/// Clé de stockage (fichier `lang` sous `config_dir` en natif).
+const LANG_KEY: &str = "lang";
 
 pub(crate) fn load_lang_mode() -> LangMode {
-    match std::fs::read_to_string(lang_path()) {
-        Ok(s) => LangMode::from_arg(s.trim()).unwrap_or(LangMode::Auto),
-        Err(_) => LangMode::Auto,
-    }
+    crate::platform::storage::read(LANG_KEY)
+        .and_then(|bytes| LangMode::from_arg(String::from_utf8_lossy(&bytes).trim()))
+        .unwrap_or(LangMode::Auto)
 }
 
 pub(crate) fn save_lang_mode(mode: LangMode) {
-    let p = lang_path();
-    if let Some(dir) = p.parent() {
-        let _ = std::fs::create_dir_all(dir);
-    }
-    let _ = std::fs::write(&p, mode.as_str());
+    let _ = crate::platform::storage::write(LANG_KEY, mode.as_str().as_bytes());
 }
 
 // ---------------------------------------------------------------------------

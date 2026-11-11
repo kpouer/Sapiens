@@ -7,7 +7,6 @@ edition = "2024"
 ab_glyph = "0.2.32"
 bytemuck = { version = "1.25", features = ["min_const_generics"] }
 byteorder = "1.5.0"
-cpal = { version = "0.18.2", default-features = false }
 eframe = "0.37"
 egui = "0.37"
 log = "0.4.34"
@@ -15,6 +14,31 @@ rfd = "0.18"
 strum = { version = "0.28", features = ["derive"] }
 sys-locale = "0.3.2"
 thiserror = "2.0"
+web-time = "1.1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+cpal = { version = "0.18.2", default-features = false }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1"
+js-sys = "0.3"
+spin = "0.12"
+sys-locale = { version = "0.3.2", features = ["js"] }
+wasm-bindgen = "0.2.129"
+wasm-bindgen-futures = "0.4"
+wasm_thread = "0.3.3"
+web-sys = { version = "0.3", features = [
+    "Blob",
+    "BlobPropertyBag",
+    "Document",
+    "HtmlAnchorElement",
+    "HtmlCanvasElement",
+    "Location",
+    "Storage",
+    "Url",
+    "UrlSearchParams",
+    "Window",
+] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 muda = { version = "0.21", default-features = false }

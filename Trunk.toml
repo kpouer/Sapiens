@@ -1,0 +1,15 @@
+# Version web : `RUSTUP_TOOLCHAIN=nightly CARGO_UNSTABLE_BUILD_STD=std,panic_abort trunk serve`
+# (voir AGENTS.md). Le jeu tourne dans un Web Worker à mémoire partagée, ce qui
+# exige une page « cross-origin isolated » : d'où les deux en-têtes ci-dessous.
+
+[build]
+target = "index.html"
+dist = "target/web"
+
+[serve]
+addresses = ["127.0.0.1"]
+port = 8080
+
+[serve.headers]
+"Cross-Origin-Opener-Policy" = "same-origin"
+"Cross-Origin-Embedder-Policy" = "require-corp"

@@ -8,6 +8,7 @@ use crate::acam::{FAUX, TickCount, VRAI};
 use crate::cbridge::blackColor;
 use crate::exchange::{request_open_file, request_save_file};
 use crate::model::{Point, RGBColor, Rect};
+use crate::platform;
 use crate::port::PortId;
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
@@ -22,7 +23,6 @@ use crate::sapiens::{
 use crate::shared::Boolean;
 use crate::stubs::CarboniseInvalRect;
 use byteorder::{ReadBytesExt, WriteBytesExt};
-use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -1555,7 +1555,7 @@ impl Sapiens {
         };
         chemin.set_extension("sap");
         self.sapgest.dernier_fichier = Some(chemin.clone());
-        let Ok(mut fichier) = File::create(&chemin) else {
+        let Ok(mut fichier) = platform::fs::create(&chemin) else {
             self.sapglob.flefba = 0;
             self.comment(92); /*erreur*/
             return;
@@ -1576,7 +1576,7 @@ impl Sapiens {
         ecriture_ok &= fichier.flush().is_ok();
         drop(fichier);
 
-        let Ok(mut fichier) = File::open(&chemin) else {
+        let Ok(mut fichier) = platform::fs::open(&chemin) else {
             self.sapglob.flefba = 0;
             self.comment(92); /*erreur*/
             return;
@@ -1602,7 +1602,7 @@ impl Sapiens {
         let path = PathBuf::from(&chemin);
         self.sapgest.dernier_fichier = Some(chemin);
         self.sapglob.flefba = 0;
-        let Ok(mut fichier) = File::open(path) else {
+        let Ok(mut fichier) = platform::fs::open(&path) else {
             self.comment(92);
             return;
         };

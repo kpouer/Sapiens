@@ -17,6 +17,7 @@ mod model;
 #[cfg(target_os = "macos")]
 mod native_menu;
 pub(crate) mod pict;
+pub(crate) mod platform;
 pub(crate) mod port;
 pub(crate) mod sapiens;
 pub(crate) mod shared;
@@ -38,10 +39,11 @@ use crate::langue::{
 use eframe::egui;
 use egui::CursorIcon;
 use model::Point;
+use platform::Instant;
 use shared::{EventRecord, lut_rgb};
 use std::sync::mpsc::Sender;
-use std::time::Instant;
 
+#[cfg(not(target_arch = "wasm32"))]
 fn main() {
     // Langue : initialisée par `--lang` (sinon fichier persisté), puis imposée
     // au C avant que le thread jeu ne démarre.
@@ -52,10 +54,7 @@ fn main() {
 
     // Compteur 11 ms pour sapiensTimer (SAPWCLAV.C).
     let sapiens_timer = Arc::new(AtomicU64::new(0));
-    std::thread::spawn({
-        let t = sapiens_timer.clone();
-        move || timer_loop(t)
-    });
+    spawn_timer_thread(&sapiens_timer);
 
     // Le thread C est lancé depuis `SapiensApp::update`, une fois la taille du
     // moniteur connue (choix du zoom initial).
@@ -78,10 +77,63 @@ fn main() {
     std::process::exit(0);
 }
 
+/// Point d'entrée web : egui sur le thread principal du navigateur, le jeu et
+/// son timer dans des Web Workers (cf. `platform`).
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    use wasm_bindgen::JsCast;
+
+    console_error_panic_hook::set_once();
+    let _ = eframe::WebLogger::init(log::LevelFilter::Info);
+    // `localStorage` n'est lisible que d'ici : on le charge avant tout.
+    platform::web::preload_storage();
+
+    let lang_mode = initial_lang_mode();
+    set_game_language(effective_lang(lang_mode));
+    audio::init();
+
+    let sapiens_timer = Arc::new(AtomicU64::new(0));
+    spawn_timer_thread(&sapiens_timer);
+
+    wasm_bindgen_futures::spawn_local(async move {
+        let Some(canvas) = web_sys::window()
+            .and_then(|w| w.document())
+            .and_then(|d| d.get_element_by_id("sapiens"))
+            .and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok())
+        else {
+            log::error!("canvas #sapiens introuvable");
+            return;
+        };
+        let result = eframe::WebRunner::new()
+            .start(
+                canvas,
+                eframe::WebOptions::default(),
+                Box::new(move |_cc| Ok(Box::new(SapiensApp::new(lang_mode, sapiens_timer)))),
+            )
+            .await;
+        if let Err(e) = result {
+            log::error!("eframe : {e:?}");
+        }
+    });
+}
+
+/// Lance le thread qui égrène `sapiensTimer`.
+fn spawn_timer_thread(sapiens_timer: &Arc<AtomicU64>) {
+    let t = sapiens_timer.clone();
+    platform::spawn("sapiens_timer", 256 * 1024, move || timer_loop(t));
+}
+
 /// Mode de langue initial, déterminé par `--lang <auto|fr|en|es>` (ou
 /// `--lang=<...>`). Sans argument, on relit le fichier persisté, sinon `Auto`.
 /// En cas de valeur invalide, on signale l'usage et on retombe sur le fichier.
 fn initial_lang_mode() -> LangMode {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(v) = platform::web::query_param("lang") {
+        match LangMode::from_arg(&v) {
+            Some(mode) => return mode,
+            None => log::warn!("?lang= attendu : auto|fr|en|es (reçu « {v} »)"),
+        }
+    }
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         let value = if arg == "--lang" {
@@ -162,11 +214,9 @@ fn startup_zoom(monitor: egui::Vec2) -> f32 {
 
 /// Lance le code C (boucle infinie du jeu original) avec le zoom initial choisi.
 fn spawn_game_thread(sapiens_timer: Arc<AtomicU64>, initial_zoom: f32) {
-    std::thread::Builder::new()
-        .name("sapiens_c".into())
-        .stack_size(32 * 1024 * 1024)
-        .spawn(move || sapiens::run(sapiens_timer, initial_zoom))
-        .expect("échec du thread C");
+    platform::spawn("sapiens_c", 32 * 1024 * 1024, move || {
+        sapiens::run(sapiens_timer, initial_zoom)
+    });
 }
 
 /// Sous-menu « Fichier → Langue » : Auto / Français / Anglais / Espagnol.
@@ -178,13 +228,13 @@ fn render_language_menu(ui: &mut egui::Ui, mode: &mut LangMode) {
         Langue::ES => "Idioma",
         _ => "Language",
     };
-    egui::menu::menu_button(ui, title, |ui| {
+    ui.menu_button(title, |ui| {
         for opt in [LangMode::Auto, LangMode::Fr, LangMode::En, LangMode::Es] {
             if ui.selectable_label(*mode == opt, opt.label(lang)).clicked() {
                 *mode = opt;
                 set_game_language(effective_lang(opt));
                 save_lang_mode(opt);
-                ui.close_menu();
+                ui.close();
             }
         }
     });
@@ -194,6 +244,7 @@ struct SapiensApp {
     tex: Option<egui::TextureHandle>,
     dump: Option<PortDumper>,
     lang_mode: LangMode,
+    #[cfg(not(target_arch = "wasm32"))]
     last_save_dir: Option<std::path::PathBuf>,
     active_dialog: Option<ActiveDialog>,
     sapiens_timer: Arc<AtomicU64>,
@@ -226,6 +277,7 @@ impl SapiensApp {
             tex: None,
             dump: PortDumper::from_env(),
             lang_mode,
+            #[cfg(not(target_arch = "wasm32"))]
             last_save_dir: None,
             active_dialog: None,
             sapiens_timer,
@@ -251,13 +303,23 @@ impl SapiensApp {
         };
         let lang = langue();
         match request {
+            #[cfg(not(target_arch = "wasm32"))]
             UiRequest::OpenFile(request) => {
                 let path = dialogs::pick_open_file(&mut self.last_save_dir, &request, lang);
                 let _ = reply.send(UiResponse::File(path));
             }
+            #[cfg(not(target_arch = "wasm32"))]
             UiRequest::SaveFile(request) => {
                 let path = dialogs::pick_save_file(&mut self.last_save_dir, &request, lang);
                 let _ = reply.send(UiResponse::File(path));
+            }
+            // Web : la réponse arrive de façon asynchrone (sélecteur du
+            // navigateur) ; le thread du jeu reste bloqué sur `recv` d'ici là.
+            #[cfg(target_arch = "wasm32")]
+            UiRequest::OpenFile(request) => dialogs::pick_open_file(request, lang, reply),
+            #[cfg(target_arch = "wasm32")]
+            UiRequest::SaveFile(request) => {
+                let _ = reply.send(UiResponse::File(dialogs::save_file_name(&request)));
             }
             UiRequest::Alert(request) => {
                 self.active_dialog = Some(ActiveDialog::Alert {
@@ -277,7 +339,7 @@ impl SapiensApp {
     /// Barre de menus native macOS : les raccourcis Cmd sont des équivalents
     /// clavier du `NSMenu`, qui les intercepte avant egui.
     #[cfg(target_os = "macos")]
-    fn render_menu_bar(&mut self, _ctx: &egui::Context) -> Option<i32> {
+    fn render_menu_bar(&mut self, _ui: &mut egui::Ui) -> Option<i32> {
         match native_menu::NativeMenuBar::sync(&mut self.native_menu, self.lang_mode)? {
             native_menu::MenuAction::Command(r) => Some(r),
             native_menu::MenuAction::Lang(opt) => {
@@ -293,20 +355,20 @@ impl SapiensApp {
 
     /// Barre de menus egui (Windows/Linux) et raccourcis clavier associés.
     #[cfg(not(target_os = "macos"))]
-    fn render_menu_bar(&mut self, ctx: &egui::Context) -> Option<i32> {
+    fn render_menu_bar(&mut self, ui: &mut egui::Ui) -> Option<i32> {
         // Raccourcis clavier (équivalents MenuKey) avant la barre de menus.
         if self.active_dialog.is_none() {
-            handle_shortcuts(ctx);
+            handle_shortcuts(ui.ctx());
         }
 
         // Barre de menus Mac reconstituée (modèle → src/acam.rs).
         let menus = acam::menus_snapshot();
         let mut command: Option<i32> = None;
-        let panel = egui::TopBottomPanel::top("menus").show(ctx, |ui| {
-            egui::menu::bar(ui, |ui| {
+        let panel = egui::Panel::top("menus").show(ui, |ui| {
+            egui::MenuBar::new().ui(ui, |ui| {
                 for menu in &menus {
                     if menu.enabled {
-                        egui::menu::menu_button(ui, &menu.title, |ui| {
+                        ui.menu_button(&menu.title, |ui| {
                             for item in &menu.items {
                                 if item.sep {
                                     // Dans le menu Fichier, insère le choix de
@@ -329,7 +391,7 @@ impl SapiensApp {
                                         .clicked()
                                     {
                                         command = Some(menu_result(menu.id, item.index));
-                                        ui.close_menu();
+                                        ui.close();
                                     }
                                 }
                             }
@@ -421,9 +483,23 @@ impl eframe::App for SapiensApp {
         // Le thread C a besoin de la taille du moniteur pour choisir le zoom
         // initial ; on le lance dès que l'information est disponible (repli sur
         // 100 % si la plateforme ne la fournit pas).
-        let ctx = ui.ctx();
+        let ctx = &ui.ctx().clone();
+        // Web : persistance, téléchargements, onglets demandés par le jeu.
+        #[cfg(target_arch = "wasm32")]
+        {
+            platform::web::run_actions();
+            if platform::web::QUIT.load(Ordering::SeqCst) {
+                render_quit_screen(ui);
+                return;
+            }
+        }
         if !self.game_started {
-            if let Some(monitor) = ctx.input(|i| i.viewport().monitor_size) {
+            // Sur le web, pas de moniteur : c'est la page qui borne la taille.
+            #[cfg(target_arch = "wasm32")]
+            let monitor = Some(ctx.content_rect().size() + egui::Vec2::splat(STARTUP_MARGIN));
+            #[cfg(not(target_arch = "wasm32"))]
+            let monitor = ctx.input(|i| i.viewport().monitor_size);
+            if let Some(monitor) = monitor {
                 spawn_game_thread(self.sapiens_timer.clone(), startup_zoom(monitor));
                 self.game_started = true;
             } else {
@@ -445,7 +521,12 @@ impl eframe::App for SapiensApp {
         });
         // Titre posé par `SetWTitle` (thread C), appliqué une seule fois.
         if let Some(title) = take_title() {
+            #[cfg(not(target_arch = "wasm32"))]
             ctx.send_viewport_cmd(egui::ViewportCommand::Title(title));
+            #[cfg(target_arch = "wasm32")]
+            if let Some(document) = web_sys::window().and_then(|w| w.document()) {
+                document.set_title(&title);
+            }
         }
         // Requête bloquante du thread C (alerte, fichier, préférences).
         self.dispatch_ui_request();
@@ -457,7 +538,7 @@ impl eframe::App for SapiensApp {
             set_game_language(effective);
         }
 
-        let command = self.render_menu_bar(ctx);
+        let command = self.render_menu_bar(ui);
         if self.active_dialog.is_none()
             && let Some(r) = command
         {
@@ -481,7 +562,12 @@ impl eframe::App for SapiensApp {
         if let Some(f) = window {
             // La fenêtre egui suit la taille réelle du port (menu « Échelle »).
             let (w, h) = (f.w, f.h);
-            if w > 0 && h > 0 && self.last_port_size != Some((w, h)) {
+            // Sur le web, c'est la page qui fixe la taille du canvas.
+            if !cfg!(target_arch = "wasm32")
+                && w > 0
+                && h > 0
+                && self.last_port_size != Some((w, h))
+            {
                 self.last_port_size = Some((w, h));
                 let menu_h = self.menu_h;
                 ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(
@@ -526,6 +612,22 @@ impl eframe::App for SapiensApp {
         // Rafraîchissement permanent (boucle de jeu C).
         ctx.request_repaint();
     }
+}
+
+/// Web : écran affiché après « Quitter » (pas de processus à terminer).
+#[cfg(target_arch = "wasm32")]
+fn render_quit_screen(ui: &mut egui::Ui) {
+    egui::CentralPanel::default()
+        .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
+        .show(ui, |ui| {
+            ui.centered_and_justified(|ui| {
+                if ui.button("Sapiens — relancer").clicked()
+                    && let Some(w) = web_sys::window()
+                {
+                    let _ = w.location().reload();
+                }
+            });
+        });
 }
 
 /// Convertit l'image d'indices du port fenêtre en image egui (via la LUT), à

@@ -19,7 +19,6 @@ use crate::sapiens::{
     NB_OISEAUX_MAX, NB_ROCHERS, NB_ROCHERS_MAX,
 };
 use crate::shared::Boolean;
-use std::fs::File;
 use std::io::{Read, Write};
 use std::sync::atomic::{AtomicI16, Ordering};
 
@@ -1303,7 +1302,7 @@ impl Sap3d {
     Sauve dans le fichier aventure en entrée les éléments variables du décor :
     arbres foudroyés...
     **********************************************************************/
-    pub(crate) fn SauveEltsDecorsMobiles(&self, f: &mut File) -> Result<(), std::io::Error> {
+    pub(crate) fn SauveEltsDecorsMobiles(&self, f: &mut impl Write) -> Result<(), std::io::Error> {
         f.write_all(b"\nMAGIC\n")?;
         for mont in self.aigoual.iter() {
             /* C'est un arbre et même coordonnée */
@@ -1524,6 +1523,7 @@ impl Sapiens {
 #[cfg(test)]
 mod tests_elts_decors_mobiles {
     use super::*;
+    use std::fs::File;
     use std::io::{Cursor, Seek};
 
     fn arbre() -> FormeId {

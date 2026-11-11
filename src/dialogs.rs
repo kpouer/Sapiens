@@ -5,6 +5,7 @@
 use crate::exchange::{AlertRequest, FileRequest, PreferencesResult};
 use crate::langue::{LangMode, Langue};
 
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn documents_dir() -> std::path::PathBuf {
     let home = std::env::var("HOME")
         .or_else(|_| std::env::var("USERPROFILE"))
@@ -14,6 +15,7 @@ pub(crate) fn documents_dir() -> std::path::PathBuf {
         .join("sapiens")
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn absolute(path: std::path::PathBuf) -> std::path::PathBuf {
     if path.is_absolute() {
         path
@@ -24,6 +26,7 @@ fn absolute(path: std::path::PathBuf) -> std::path::PathBuf {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn start_dir(last_dir: &Option<std::path::PathBuf>) -> std::path::PathBuf {
     if let Some(dir) = last_dir
         && dir.is_dir()
@@ -35,6 +38,7 @@ fn start_dir(last_dir: &Option<std::path::PathBuf>) -> std::path::PathBuf {
     dir
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn with_extension(mut path: std::path::PathBuf, extension: &str) -> std::path::PathBuf {
     if !extension.is_empty() {
         path.set_extension(extension);
@@ -53,6 +57,7 @@ fn file_title(lang: Langue, save: bool) -> &'static str {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Sélecteur de fichier pour `Charger…`. Le chemin retourné est absolu.
 pub(crate) fn pick_open_file(
     last_dir: &mut Option<std::path::PathBuf>,
@@ -71,6 +76,7 @@ pub(crate) fn pick_open_file(
     Some(path)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Sélecteur de fichier pour `Sauver…`. Force l'extension `.sap`.
 pub(crate) fn pick_save_file(
     last_dir: &mut Option<std::path::PathBuf>,
@@ -78,14 +84,7 @@ pub(crate) fn pick_save_file(
     lang: Langue,
 ) -> Option<std::path::PathBuf> {
     let dir = start_dir(last_dir);
-    let mut name = request.default_name.clone();
-    if name.is_empty() {
-        name = "Torgan".to_string();
-    }
-    if !request.extension.is_empty() && !name.ends_with(&format!(".{}", request.extension)) {
-        name.push('.');
-        name.push_str(&request.extension);
-    }
+    let name = save_name(request);
     let mut dialog = rfd::FileDialog::new()
         .set_title(file_title(lang, true))
         .set_directory(&dir)
@@ -99,9 +98,64 @@ pub(crate) fn pick_save_file(
 }
 
 // ---------------------------------------------------------------------------
+// Sélecteurs de fichiers (web)
+// ---------------------------------------------------------------------------
+
+/// Nom du fichier `.sap` à sauver (`Torgan.sap` par défaut).
+fn save_name(request: &FileRequest) -> String {
+    let mut name = request.default_name.clone();
+    if name.is_empty() {
+        name = "Torgan".to_string();
+    }
+    if !request.extension.is_empty() && !name.ends_with(&format!(".{}", request.extension)) {
+        name.push('.');
+        name.push_str(&request.extension);
+    }
+    name
+}
+
+/// Web : pas de boîte « Enregistrer sous » ; le fichier écrit par le jeu est
+/// téléchargé par le navigateur sous ce nom (cf. `platform::fs::Writer`).
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn save_file_name(request: &FileRequest) -> Option<std::path::PathBuf> {
+    Some(std::path::PathBuf::from(save_name(request)))
+}
+
+/// Web : sélecteur du navigateur. Le contenu est déposé dans le système de
+/// fichiers en mémoire (`platform::fs`) sous un nom en `.sap`, puis la
+/// réponse part vers le thread du jeu.
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn pick_open_file(
+    request: FileRequest,
+    lang: Langue,
+    reply: std::sync::mpsc::Sender<crate::exchange::UiResponse>,
+) {
+    use crate::exchange::UiResponse;
+    let mut dialog = rfd::AsyncFileDialog::new().set_title(file_title(lang, false));
+    if !request.extension.is_empty() {
+        dialog = dialog.add_filter("Sapiens", &[request.extension.as_str()]);
+    }
+    wasm_bindgen_futures::spawn_local(async move {
+        let path = match dialog.pick_file().await {
+            Some(handle) => {
+                let mut path = std::path::PathBuf::from(handle.file_name());
+                if !request.extension.is_empty() {
+                    path.set_extension(&request.extension);
+                }
+                crate::platform::fs::insert(&path, handle.read().await);
+                Some(path)
+            }
+            None => None,
+        };
+        let _ = reply.send(UiResponse::File(path));
+    });
+}
+
+// ---------------------------------------------------------------------------
 // Documentation
 // ---------------------------------------------------------------------------
 
+#[cfg(not(target_arch = "wasm32"))]
 fn open_with_system(path: &std::path::Path) -> bool {
     let mut command = if cfg!(target_os = "macos") {
         let mut c = std::process::Command::new("open");
@@ -122,6 +176,7 @@ fn open_with_system(path: &std::path::Path) -> bool {
         .unwrap_or(false)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Fichiers du manuel embarqués dans l'exécutable : (chemin relatif, contenu).
 /// Le navigateur système a besoin de vrais fichiers, ils sont donc extraits
 /// dans un dossier temporaire à l'ouverture.
@@ -152,6 +207,7 @@ static MANUAL_FILES: &[(&str, &[u8])] = &[
     ),
 ];
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Écrit le manuel embarqué dans `dir` (en écrasant l'existant).
 fn extract_manual(dir: &std::path::Path) -> std::io::Result<()> {
     for (name, bytes) in MANUAL_FILES {
@@ -164,6 +220,7 @@ fn extract_manual(dir: &std::path::Path) -> std::io::Result<()> {
     Ok(())
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Ouvre le manuel HTML dans le navigateur par défaut.
 pub(crate) fn open_manual(lang: Langue) -> bool {
     let name = match lang {
@@ -177,6 +234,21 @@ pub(crate) fn open_manual(lang: Langue) -> bool {
         return false;
     }
     open_with_system(&dir.join(name))
+}
+
+/// Web : le manuel est publié à côté de l'application (`docs/`, copié par
+/// Trunk) ; l'UI l'ouvre dans un nouvel onglet.
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn open_manual(lang: Langue) -> bool {
+    let name = match lang {
+        Langue::FR => "sapiens_fr.html",
+        Langue::ES => "sapiens_es.html",
+        _ => "sapiens_gb.html",
+    };
+    crate::platform::web::push_action(crate::platform::web::WebAction::OpenUrl(format!(
+        "docs/{name}"
+    )));
+    true
 }
 
 // ---------------------------------------------------------------------------

@@ -32,7 +32,6 @@ use crate::stubs::{
     InitDefautConfigSortieNumerique, SelectWindow, SystemClick, SystemTask,
 };
 use cbridge::*;
-use std::process::exit;
 /******************** Constantes (SAPIENS.H / acam.h) *******************/
 const ALRT_VERSION: i16 = 133;
 
@@ -923,5 +922,5 @@ impl SapWind {
 ********************************************************************/
 pub(crate) fn SapiensExit(code: i32) {
     audio::stop_music();
-    exit(code);
+    crate::platform::quit(code);
 }

@@ -3,16 +3,24 @@
 //! Un thread dédié possède le flux `cpal` (CoreAudio). Le thread du jeu et
 //! egui ne font que déposer des commandes dans un canal, sans jamais toucher
 //! au callback temps réel.
+//!
+//! Sur le web (wasm32), l'audio n'est pas encore branché : aucun flux n'est
+//! ouvert et toutes les commandes sont ignorées (jeu silencieux).
+
+#![cfg_attr(target_arch = "wasm32", allow(dead_code))]
 
 mod music;
 mod sfx;
 
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, OnceLock};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
+use crate::platform::Instant;
+#[cfg(not(target_arch = "wasm32"))]
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+#[cfg(not(target_arch = "wasm32"))]
 use cpal::{FromSample, SampleFormat, SizedSample, StreamConfig};
 
 use music::MusicPlayer;
@@ -32,11 +40,15 @@ enum Cmd {
     StopMusic,
 }
 
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn init() {}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn init() {
     if STARTED.set(()).is_err() {
         return;
     }
-    let (tx, rx) = mpsc::channel();
+    let (tx, rx) = std::sync::mpsc::channel();
     let _ = TX.set(tx);
     if let Err(e) = std::thread::Builder::new()
         .name("sapiens_audio".into())
@@ -84,6 +96,7 @@ pub(crate) fn is_music_finished() -> bool {
     MUSIC_FINISHED.load(Ordering::Acquire)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn audio_thread(rx: Receiver<Cmd>) {
     match build_stream(rx) {
         Ok(stream) => {
@@ -100,6 +113,7 @@ fn audio_thread(rx: Receiver<Cmd>) {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn build_stream(rx: Receiver<Cmd>) -> Result<cpal::Stream, String> {
     let host = cpal::default_host();
     let device = host
@@ -126,6 +140,7 @@ fn build_stream(rx: Receiver<Cmd>) -> Result<cpal::Stream, String> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn build<T>(
     device: &cpal::Device,
     config: StreamConfig,
@@ -250,7 +265,7 @@ mod tests {
 
     #[test]
     fn mixage_sfx_et_musique() {
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = std::sync::mpsc::channel();
         let mut mixer = Mixer::new(48_000.0, rx);
         SFX_ACTIVE.store(1, Ordering::Release);
         tx.send(Cmd::Sfx(6)).unwrap();
