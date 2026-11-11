@@ -7,6 +7,7 @@
 #![allow(non_snake_case)]
 
 use crate::exchange::{INPUT, MOUSE_EVENT_SCALE};
+use crate::model::{Point, Rect};
 use crate::port;
 use crate::port::{PortId, Ports};
 use crate::shared::*;

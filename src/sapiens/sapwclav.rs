@@ -6,11 +6,12 @@ Fixe l'aire dans laquelle il ne faut plus afficher la souris systeme
 **************************************************************************/
 use crate::acam::{CarboniseSetCursorArrow, FAUX, VRAI};
 use crate::exchange::set_cursor_hidden;
+use crate::model::Rect;
 use crate::port::PortId;
 use crate::sapiens::ECHELLE;
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapwind::SapWind;
-use crate::shared::{Boolean, KeyMap, Rect};
+use crate::shared::{Boolean, KeyMap};
 use crate::stubs::{Button, GetKeys};
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
@@ -484,7 +485,7 @@ impl Sapiens {
 #[cfg(test)]
 mod tests {
     use super::difference_rects;
-    use crate::shared::Rect;
+    use crate::model::Rect;
 
     fn area(r: &Rect) -> i32 {
         if r.is_empty() {

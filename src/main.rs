@@ -13,6 +13,7 @@ pub mod data;
 mod dialogs;
 pub(crate) mod exchange;
 pub(crate) mod langue;
+mod model;
 #[cfg(target_os = "macos")]
 mod native_menu;
 pub(crate) mod pict;
@@ -36,7 +37,8 @@ use crate::langue::{
 };
 use eframe::egui;
 use egui::CursorIcon;
-use shared::{EventRecord, Point, lut_rgb};
+use model::Point;
+use shared::{EventRecord, lut_rgb};
 use std::sync::mpsc::Sender;
 use std::time::Instant;
 

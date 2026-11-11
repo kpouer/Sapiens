@@ -8,6 +8,7 @@ use std::sync::atomic::Ordering;
 
 use crate::acam::{FAUX, TickCount, VRAI};
 use crate::cbridge::whiteColor;
+use crate::model::Rect;
 use crate::port::PortId;
 use crate::sapiens::Sapiens;
 use crate::sapiens::c_str::ChaineC;
@@ -15,7 +16,6 @@ use crate::sapiens::sapglob::{ListeId, SapId, Sapglob, tabprf, tenerv, tobje};
 use crate::sapiens::sapw3d::distance;
 use crate::sapiens::sapwmus::attends_bruit;
 use crate::sapiens::{NBREVTDESTINE, NBREVTHEURE, Vue};
-use crate::shared::Rect;
 
 const ECHELLE: i16 = 2;
 

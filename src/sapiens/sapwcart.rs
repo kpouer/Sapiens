@@ -3,12 +3,13 @@
 
 use crate::acam::SectRect;
 use crate::cbridge::{blackColor, whiteColor};
+use crate::model::Rect;
 use crate::port::PortId;
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapwbrt::SapiensCreeOffscreen;
 use crate::sapiens::sapwclav::GetKeyMap;
 use crate::sapiens::{FormeId, Mont};
-use crate::shared::{Rect, SapPort};
+use crate::shared::SapPort;
 
 const TAILLE_X_CARTE: i64 = 144;
 const TAILLE_Y_CARTE: i64 = 80;

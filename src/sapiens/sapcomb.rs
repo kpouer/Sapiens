@@ -23,6 +23,7 @@ use crate::MOB_MORT;
 use crate::MOB_SANG_A_TERRE;
 use crate::acam::{FAUX, VRAI};
 use crate::cbridge::{geneva, teJustLeft};
+use crate::model::{Point, Rect};
 use crate::port::PortId;
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapglob::{
@@ -35,7 +36,7 @@ use crate::sapiens::{
     ECHELLE, FormeVue, NB_ARBRES_LATERAL, NB_ARBRES_LATERAL_MAX, NB_HERBE_ARR_PLAN,
     NB_MAX_HERBE_AR_PLAN, NB_MAX_HERBE_AV_PLAN, SAGAIE, Vue, brin, sap,
 };
-use crate::shared::{Boolean, Point, Rect};
+use crate::shared::Boolean;
 use std::sync::atomic::Ordering;
 use strum::IntoEnumIterator;
 

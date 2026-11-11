@@ -5,13 +5,14 @@ use crate::acam::SectRect;
 use crate::cbridge::{blackColor, patOr, srcCopy, whiteColor};
 use crate::data::Brt;
 use crate::langue::Langue::GB;
+use crate::model::{RGBColor, Rect};
 use crate::port;
 use crate::port::{PortId, Ports};
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtDefaultLangRess, CvtLangRess};
 use crate::sapiens::{DEFAULT_MOB, DEFAULT_PALCOUL, ECHELLE, IndexColor, Mob, NB_MAX_MOB, PalCoul};
-use crate::shared::{RGBColor, Rect, SapPort};
+use crate::shared::SapPort;
 use crate::stubs::{
     CarboniseSetPatGray, CarboniseValideUpdate, ConvertPNGFileToOffscreen, GetRectFilePng,
 };

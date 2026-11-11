@@ -7,8 +7,8 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 
+use crate::model::RGBColor;
 use crate::sapiens::sapglob::{AnimPtr, ListeId, SapId};
-use crate::shared::RGBColor;
 use std::cell::RefCell;
 use std::rc::Rc;
 

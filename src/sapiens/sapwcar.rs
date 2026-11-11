@@ -2,12 +2,13 @@
 #![allow(non_snake_case)]
 use crate::langue::Langue::ES;
 use crate::langue::{Langue, langue};
+use crate::model::{Point, RGBColor, Rect};
 use crate::port::PortId;
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::{CvtCar, CvtCarLissage};
 use crate::sapiens::{POLICE_LISSAGE, STYLE_LISSAGE};
-use crate::shared::{Boolean, Point, RGBColor, Rect};
+use crate::shared::Boolean;
 use crate::stubs::CarboniseSetPatBlack;
 
 const ECHELLE: i16 = 2;

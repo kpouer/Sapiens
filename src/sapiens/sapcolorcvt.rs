@@ -6,7 +6,7 @@ la conversion HSL sur la palette standard 8 bits.
 Repasse en comparaison simple precedente sur le delta rvb
 *****************************************************************/
 use crate::acam::Color2Index;
-use crate::shared::RGBColor;
+use crate::model::RGBColor;
 
 pub(crate) fn SapColor2Index(rgb: &RGBColor) -> i16 {
     Color2Index(rgb)

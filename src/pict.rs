@@ -5,8 +5,9 @@
 //! de couleurs. Les ressources viennent de `c_code/Rsrc/sapiens.rsrc` ; elles
 //! sont extraites dans `data/pict/` et embarquées dans l'exécutable.
 
+use crate::model::Rect;
 use crate::port::Ports;
-use crate::shared::{Pic, Rect, rgb_to_index};
+use crate::shared::{Pic, rgb_to_index};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 

@@ -7,6 +7,7 @@
 
 use crate::acam::{FAUX, TickCount, VRAI};
 use crate::langue::langue;
+use crate::model::Rect;
 use crate::port::PortId;
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapglob::{
@@ -14,7 +15,6 @@ use crate::sapiens::sapglob::{
 };
 use crate::sapiens::sapwind::{cadreg, hires};
 use crate::sapiens::{ECHELLE, Vue, geminterv, gemnbrecad};
-use crate::shared::Rect;
 use crate::{DOWN, INCONNU, MOB_CADRE, SELECT, UP};
 use log::warn;
 use std::cell::RefCell;

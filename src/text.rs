@@ -17,6 +17,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, LazyLock, Mutex};
 
 use crate::acam::plot;
+use crate::model::Rect;
 use crate::port::Ports;
 use crate::shared::*;
 
@@ -600,6 +601,7 @@ impl Ports {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::Point;
     use crate::port::PortId;
 
     struct TestPort {

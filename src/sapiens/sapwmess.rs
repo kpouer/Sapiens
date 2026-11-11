@@ -1,9 +1,9 @@
 /****************************************************************************
             Encadre et efface le message
 *****************************************************************************/
+use crate::model::Rect;
 use crate::port::PortId;
 use crate::sapiens::Sapiens;
-use crate::shared::Rect;
 use crate::stubs::CarboniseInvalRect;
 
 pub(crate) struct Sapwmess {

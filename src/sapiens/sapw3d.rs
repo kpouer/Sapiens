@@ -9,6 +9,7 @@
 // sol en lignes successives, pluie et éclairs, visualisation des montagnes.
 
 use crate::acam::{Random, TickCount};
+use crate::model::{RGBColor, Rect};
 use crate::port::{PortId, Ports};
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
@@ -16,7 +17,6 @@ use crate::sapiens::{
     ECHELLE, FormeId, IndexColor, MontId, NB_DEGRADE_DISTANCE, NB_ETOILES, NB_LIGNES_CIEL,
     NB_LIGNES_TERRE, h_chron,
 };
-use crate::shared::{RGBColor, Rect};
 
 const LARGEUR_ECRAN: i32 = 512;
 const HAUTEUR_ECRAN: i32 = 256;

@@ -13,6 +13,7 @@
 use crate::cbridge::watchCursor;
 use crate::exchange::{Cursor, request_alert, set_cursor_shape, set_title};
 use crate::langue::{Langue, langue};
+use crate::model::{Point, RGBColor, Rect};
 use crate::port;
 use crate::port::{PortId, Ports};
 use crate::shared::*;

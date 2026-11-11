@@ -10,10 +10,11 @@
 //! mis à l'échelle par le port courant, ceux vers un hors-écran jamais.
 
 use crate::acam::NewCWindow;
+use crate::model::Rect;
 use crate::sapiens::ECHELLE;
 use crate::sapiens::sapwbrt::SapiensCreeOffscreen;
 use crate::sapiens::sapwcart::Sapwcart;
-use crate::shared::{Rect, SapPort};
+use crate::shared::SapPort;
 use std::cell::Cell;
 use std::ops::{Index, IndexMut};
 use std::rc::Rc;
@@ -175,8 +176,8 @@ pub(crate) fn create(bounds: Rect, depth: i16) -> SapPort {
         row_bytes: w as i16,
         depth,
         pixels: vec![0; w * h],
-        pen_loc: crate::shared::Point { v: 0, h: 0 },
-        pen_size: crate::shared::Point { v: 1, h: 1 },
+        pen_loc: crate::model::Point { v: 0, h: 0 },
+        pen_size: crate::model::Point { v: 1, h: 1 },
         pen_mode: crate::shared::PAT_COPY,
         fore_index: 0,
         back_index: 255,

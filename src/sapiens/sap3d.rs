@@ -4,13 +4,12 @@
 ***********************************************************************/
 #![allow(non_snake_case)]
 
-use std::fs::File;
-use std::io::{Read, Write};
 // Le moteur 3D : formes, objets 3D (ObjetsRef), décor (nuages, éclairs,
 // oiseaux, arbres, rochers) et animation finale.
 // Consommé par les autres modules du port (SAPGEST.C → sapgest.rs, etc.).
 use crate::acam::{CarboniseSetCursorArrow, FAUX, GetCursor, SetCursor, TickCount, VRAI};
 use crate::cbridge::watchCursor;
+use crate::model::RGBColor;
 use crate::port::PortId;
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapw3d::distance;
@@ -21,7 +20,9 @@ use crate::sapiens::{
     NB_HERBE_AV_PLAN, NB_HOMMES, NB_MAX_HERBE_AV_PLAN, NB_NUAGES, NB_NUAGES_MAX, NB_OISEAUX,
     NB_OISEAUX_MAX, NB_ROCHERS, NB_ROCHERS_MAX,
 };
-use crate::shared::{Boolean, RGBColor};
+use crate::shared::Boolean;
+use std::fs::File;
+use std::io::{Read, Write};
 use std::sync::atomic::{AtomicI16, Ordering};
 
 const VITESSE_DEPLACEMENT_OISEAUX: u16 = 10;

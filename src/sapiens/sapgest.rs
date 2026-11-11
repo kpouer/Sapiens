@@ -7,6 +7,7 @@
 use crate::acam::{FAUX, TickCount, VRAI};
 use crate::cbridge::blackColor;
 use crate::exchange::{request_open_file, request_save_file};
+use crate::model::{Point, RGBColor, Rect};
 use crate::port::PortId;
 use crate::sapiens::Sapiens;
 use crate::sapiens::sapcolorcvt::SapColor2Index;
@@ -18,7 +19,7 @@ use crate::sapiens::{
     ECHELLE, FormeVue, NB_ARBRES_MAX, NB_MAX_HERBE_AV_PLAN, NB_NUAGES_MAX, NB_OISEAUX_MAX,
     NB_ROCHERS_MAX, PRECISION_SILEX, Vue,
 };
-use crate::shared::{Boolean, Point, RGBColor, Rect};
+use crate::shared::Boolean;
 use crate::stubs::CarboniseInvalRect;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::fs::File;
@@ -445,13 +446,12 @@ impl Sapiens {
         let mut yact: u16;
         let mut calc: u16;
         let mut tfr: u16;
-        let mut cass: u16;
         let mut okbruit: u16 = 0;
         let mut trav1: u16;
         let paslec: i16;
         let mut distact: i16;
 
-        cass = 0;
+        let mut cass: u16 = 0;
         posxf_l *= ECHELLE as i16;
         posyf_l *= ECHELLE as i16;
         /* Le point d'impact est-il sur le nucleus si non on sort*/

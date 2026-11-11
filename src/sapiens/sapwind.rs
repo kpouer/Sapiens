@@ -18,6 +18,7 @@ use crate::data::Brt;
 use crate::exchange::event_queue::GetNextEvent;
 use crate::exchange::{publish_window_frame, take_menu_command};
 use crate::langue::{langue_i16, set_langue};
+use crate::model::{RGBColor, Rect};
 use crate::port;
 use crate::port::{PortId, Ports};
 use crate::sapiens::Sapiens;
@@ -25,7 +26,7 @@ use crate::sapiens::sapcolorcvt::SapColor2Index;
 use crate::sapiens::saptxt::CvtDefaultLangRess;
 use crate::sapiens::sapwbrt::FileError;
 use crate::sapiens::{ECHELLE, STR_VRAC, Vue};
-use crate::shared::{Boolean, EventRecord, RGBColor, Rect};
+use crate::shared::{Boolean, EventRecord};
 use crate::stubs::{
     CarboniseInvalRect, CarboniseValideUpdate, DragWindow, FindWindow, FrontWindow,
     InitDefautConfigSortieNumerique, SelectWindow, SystemClick, SystemTask,
