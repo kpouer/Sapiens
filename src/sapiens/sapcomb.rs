@@ -105,11 +105,11 @@ impl Sapglob {
     /***********************************************************************
                     POSAN:
     ***********************************************************************/
-    pub(crate) fn posan(&mut self, sap_id: SapId, mut anim: i16) {
+    pub(crate) fn posan(&mut self, sap_id: SapId, mut anim: usize) {
         anim -= 1;
         for i in 0..14 {
-            if self.debban[anim as usize][i].is_some() {
-                self.sap_mut(sap_id).sapanim[i] = self.debban[anim as usize][i];
+            if self.debban[anim][i].is_some() {
+                self.sap_mut(sap_id).sapanim[i] = self.debban[anim][i];
             }
         }
     }
@@ -119,9 +119,8 @@ impl Sapglob {
     ***********************************************************************/
     pub(crate) fn arret(&mut self, sap_id: SapId) {
         let sapiens = self.sap_mut(sap_id);
-        if (sapiens.vitesse & 2) == 0
-        /*pas arret*/
-        {
+        if (sapiens.vitesse & 2) == 0 {
+            /*pas arret*/
             sapiens.vitesse = (sapiens.vitesse ^ 3) & 3;
         }
     }
@@ -146,7 +145,7 @@ impl Sapiens {
                 self.sapglob.posan(sap_id, 1);
             }
             let objet = self.sapglob.sap(sap_id).objet;
-            self.sapglob.posan(sap_id, objet as i16 + 6);
+            self.sapglob.posan(sap_id, objet as usize + 6);
             return;
         }
         let hauteur = self.sapglob.sap(sap_id).hauteur;
@@ -166,8 +165,10 @@ impl Sapiens {
                 let sapiens = self.sapglob.sap(sap_id);
                 (sapiens.vitesse, sapiens.sens)
             };
-            self.sapglob
-                .posan(sap_id, (((vitesse - 1) / 2) as i16 ^ sens as i16) + 12);
+            self.sapglob.posan(
+                sap_id,
+                ((((vitesse - 1) / 2) as i16 ^ sens as i16) + 12) as usize,
+            );
             let sapiens = self.sapglob.sap_mut(sap_id);
             sapiens.vitesse = sapiens.sens + 2;
         }
@@ -192,7 +193,7 @@ impl Sapglob {
         {
             self.pogne(sap_id); /*recursif*/
         } else {
-            self.posan(sap_id, objet as i16 + 6); /*positionne animation*/
+            self.posan(sap_id, objet as usize + 6); /*positionne animation*/
         }
     }
 
@@ -736,9 +737,9 @@ impl Sapiens {
             }
             (sapiens.hauteur, sapiens.objet)
         };
-        self.sapglob.posan(sap_id, hauteur as i16 + 8);
+        self.sapglob.posan(sap_id, hauteur as usize + 8);
         self.sapglob.arret(sap_id);
-        self.sapglob.posan(sap_id, objet as i16 + 6);
+        self.sapglob.posan(sap_id, objet as usize + 6);
     }
 
     /***********************************************************************
@@ -1184,9 +1185,9 @@ impl Sapiens {
                 s.hauteur = hauteur; /*donc on le fait*/
                 s.action = 0;
             }
-            self.sapglob.posan(sap_id, hauteur as i16 + 8);
+            self.sapglob.posan(sap_id, hauteur as usize + 8);
             self.sapglob.arret(sap_id);
-            self.sapglob.posan(sap_id, objet as i16 + 6);
+            self.sapglob.posan(sap_id, objet as usize + 6);
         }
     }
 
@@ -1225,7 +1226,7 @@ impl Sapiens {
                 } /*si objet =sagaie*/
                 s.objet
             };
-            self.sapglob.posan(sap_id, objet as i16 + 3);
+            self.sapglob.posan(sap_id, objet as usize + 3);
         } /*si souffle correct*/
     }
 
@@ -1340,12 +1341,12 @@ impl Sapiens {
                                         self.sapglob.arret(sap_id);
                                         let hauteur = self.sapglob.sap(sap_id).hauteur;
                                         if hauteur != 0 {
-                                            self.sapglob.posan(sap_id, hauteur as i16 + 8);
+                                            self.sapglob.posan(sap_id, hauteur as usize + 8);
                                         } else {
                                             self.sapglob.posan(sap_id, 2);
                                         }
                                         let objet = self.sapglob.sap(sap_id).objet;
-                                        self.sapglob.posan(sap_id, objet as i16 + 6);
+                                        self.sapglob.posan(sap_id, objet as usize + 6);
                                         self.sapglob.sap_mut(sap_id).action &= 127;
                                         return 1; /*on le refait*/
                                     }
