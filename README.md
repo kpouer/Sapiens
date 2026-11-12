@@ -7,6 +7,44 @@ dans un navigateur (WebAssembly).
 Toutes les données du jeu (graphismes, polices, musiques, manuel) sont
 embarquées dans l'exécutable : il n'y a rien à installer à côté.
 
+## Le jeu
+
+Il y a cent mille ans, la tribu des Pieds-Légers est affamée : sécheresse,
+gibier disparu, maladies, loups et ours rôdent. Vous incarnez **Torgan**, un
+jeune guerrier envoyé explorer des territoires inconnus pour trouver de quoi
+nourrir les siens et survivre dans un monde hostile.
+
+Le jeu se déroule en vue subjective, au fil d'un paysage préhistorique, et se
+pilote à la souris avec un menu d'actions : **Sapiens**, **État**, **Prendre**,
+**Poser**, **Dire**, **Donner**… Au détour d'une piste, on peut croiser
+d'autres hommes : on engage alors la conversation (« Qui es-tu ? », « Que
+veux-tu ? », « Accompagne-moi »…), on échange, on s'allie ou on se soumet.
+Le manuel complet (situation, repères historiques, maniement, astuces) est
+accessible depuis le jeu, en français, anglais et espagnol.
+
+Référence : [page du jeu Sapiens sur Myriad](https://www.myriad-online.com/fr/products/sapiens.htm).
+
+### Captures d'écran
+
+![Paysage : « Une odeur d'Homme. »](media/paysage.png)
+
+*En chemin, dans la plaine : l'odeur d'un autre homme est dans l'air.*
+
+![Rencontre avec d'autres hommes](media/rencontre.png)
+
+*Une rencontre : le menu d'actions et les phrases du dialogue.*
+
+## À propos de ce portage
+
+Ce dépôt est une réécriture en **Rust pur** du code C d'origine : il n'y a plus
+de FFI ni de compilation C. Les appels à la Toolbox Mac / QuickDraw que le
+code d'origine utilisait sont réimplémentés, et l'affichage, les entrées et le
+son passent par [egui/eframe](https://github.com/emilk/egui) et `cpal`.
+Les sauvegardes `.sap` restent compatibles entre les versions native et web.
+
+Ce portage est le fruit d'un travail personnel de l'auteur, en partie assisté
+par intelligence artificielle.
+
 ## Prérequis communs
 
 - [Rust](https://rustup.rs/) **stable** (édition 2024, donc Rust ≥ 1.85).
