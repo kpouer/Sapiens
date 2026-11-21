@@ -1,0 +1,43 @@
+name: Deploy web
+
+# Lancé uniquement à la demande (onglet Actions -> Deploy web -> Run workflow).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo install --locked trunk
+      - run: trunk build --release --public-url /Sapiens/
+        env:
+          RUSTUP_TOOLCHAIN: nightly
+          CARGO_UNSTABLE_BUILD_STD: std,panic_abort
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
