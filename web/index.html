@@ -11,11 +11,36 @@
     <!-- Manuel HTML, ouvert dans un onglet par le menu Aide. -->
     <link data-trunk rel="copy-dir" href="../data/docs" />
     <style>
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+        html, body { margin: 0; padding: 0; background: #1b1b1b; color: #ddd;
+            font: 16px/1.5 system-ui, sans-serif; }
+        main { max-width: 900px; margin: 0 auto; padding: 24px 16px 40px; }
+        h1 { margin: 0 0 8px; font-size: 2rem; }
+        a { color: #8ec5ff; }
+        .game { width: 100%; max-width: 640px; aspect-ratio: 640 / 422; margin: 20px auto;
+            background: #000; border: 2px solid #444; border-radius: 4px; overflow: hidden; }
         #sapiens { display: block; width: 100%; height: 100%; }
+        footer { font-size: .9rem; color: #aaa; }
     </style>
 </head>
 <body>
-    <canvas id="sapiens"></canvas>
+<main>
+    <h1>Sapiens</h1>
+    <p>
+        <strong>Sapiens</strong> est un jeu de simulation préhistorique sorti sur Thomson MO5 en 1986,
+        puis décliné sur Mac OS classique en 1996. Il y a cent mille ans, la tribu des Pieds-Légers
+        est affamée : vous incarnez Torgan, un jeune guerrier envoyé explorer des territoires inconnus
+        pour trouver de quoi nourrir les siens et survivre dans un monde hostile. Le jeu se déroule
+        en vue subjective et se pilote à la souris.
+    </p>
+    <div class="game"><canvas id="sapiens"></canvas></div>
+    <footer>
+        <p>
+            Portage en Rust (WebAssembly) de la version Mac OS passée en open source en 2017,
+            distribuée sous licence <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>.
+            Page originale :
+            <a href="https://www.myriad-online.com/fr/products/sapiensopensource.htm">myriad-online.com</a>.
+        </p>
+    </footer>
+</main>
 </body>
 </html>
