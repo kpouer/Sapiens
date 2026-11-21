@@ -11,13 +11,10 @@ use crate::sapiens::{
 };
 use crate::sapiens::{evt, gemcadre, gemnbrecad, h_chron};
 use bytemuck::bytes_of_mut;
-#[cfg(not(target_arch = "wasm32"))]
 use log::warn;
 use std::cell::RefCell;
 use std::rc::Rc;
 use strum::EnumIter;
-#[cfg(target_arch = "wasm32")]
-use web_sys::console::warn;
 
 pub(crate) static tabprf: [u8; 4] = [25, 33, 34, 35]; /*objet prefere*/
 pub(crate) static tobje: [[u8; 4]; 4] = [
