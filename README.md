@@ -1,8 +1,9 @@
 # Sapiens
 
-Portage en Rust de **Sapiens**, jeu de simulation préhistorique écrit en C en
-1996 pour Mac OS classique. Le jeu tourne en natif (macOS, Windows, Linux) et
-dans un navigateur (WebAssembly).
+Portage en Rust de **Sapiens**, jeu de simulation préhistorique sorti initialement
+sur Thomson MO5 en 1986 puis dérivé sur Mac OS classique en 1996.
+C'est la version Mac OS passée opensource en 2017 qui a servi de base à ce portage.
+Le jeu tourne en natif (macOS, Windows, Linux) et dans un navigateur (WebAssembly).
 
 Toutes les données du jeu (graphismes, polices, musiques, manuel) sont
 embarquées dans l'exécutable : il n'y a rien à installer à côté.
