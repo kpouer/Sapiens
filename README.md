@@ -148,7 +148,7 @@ $env:RUSTUP_TOOLCHAIN="nightly"; $env:CARGO_UNSTABLE_BUILD_STD="std,panic_abort"
 RUSTUP_TOOLCHAIN=nightly CARGO_UNSTABLE_BUILD_STD=std,panic_abort trunk build --release
 ```
 
-Le site statique est produit dans `target/web/` (page, `.js`, `.wasm` et le
+La page source est `web/index.html`. Le site statique est produit dans `target/web/` (page, `.js`, `.wasm` et le
 manuel dans `docs/`). Le serveur doit envoyer sur toutes ces ressources :
 
 ```

@@ -3,7 +3,7 @@
 # exige une page « cross-origin isolated » : d'où les deux en-têtes ci-dessous.
 
 [build]
-target = "index.html"
+target = "web/index.html"
 dist = "target/web"
 
 [serve]
