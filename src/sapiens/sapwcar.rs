@@ -15,6 +15,7 @@ const ECHELLE: i16 = 2;
 
 /* Etat mutable de SAPWCAR.C, ex-`static mut`, regroupe dans cette
 structure, champ de `Sapiens`. */
+#[derive(Default)]
 pub(crate) struct Sapwcar {
     /* ex-`LissagePolice` */
     pub(crate) lissage_police: Boolean,
@@ -28,19 +29,6 @@ pub(crate) struct Sapwcar {
     index_gray: i16,
     /* ex-`ptEcrCar` */
     pt_ecr_car: Point,
-}
-
-impl Default for Sapwcar {
-    fn default() -> Self {
-        Self {
-            lissage_police: true,
-            index_white: 0,
-            index_black: 0,
-            index_brown: 0,
-            index_gray: 0,
-            pt_ecr_car: Point { v: 0, h: 0 },
-        }
-    }
 }
 
 static rgbWhite: RGBColor = RGBColor {
