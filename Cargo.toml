@@ -1,6 +1,6 @@
 [package]
 name = "Sapiens"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 
 [dependencies]
@@ -9,7 +9,7 @@ bytemuck = { version = "1.25", features = ["min_const_generics"] }
 byteorder = "1.5.0"
 eframe = "0.37"
 egui = "0.37"
-log = "0.4.34"
+log = "0.4"
 rfd = "0.18"
 strum = { version = "0.28", features = ["derive"] }
 sys-locale = "0.3.2"
