@@ -275,11 +275,18 @@ impl Sapiens {
         let _g = self.sapwind.ports.on(PortId::MainWindow);
 
         let mut menu = GetMHandle(CvtDefaultLangRess(129)); /* menuFichier */
-        if self.sapwind.MenuReduit {
-            DisableItem(menu, 0);
-        } else {
-            EnableItem(menu, 0);
+        /* Le menu Fichier reste actif : en mode réduit, seules les
+        actions liées à la partie sont grisées (Préférences/Quitter restent disponibles). */
+        EnableItem(menu, 0);
+        for item in [itemNouveau, itemCharger, itemSauver] {
+            if self.sapwind.MenuReduit {
+                DisableItem(menu, item);
+            } else {
+                EnableItem(menu, item);
+            }
         }
+        EnableItem(menu, itemPreferences);
+        EnableItem(menu, itemQuitter);
 
         menu = GetMHandle(CvtDefaultLangRess(130)); /* menuVoir */
         if self.sapwind.MenuReduit || self.sapglob.mort == 0 {

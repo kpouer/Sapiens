@@ -12,15 +12,13 @@ use muda::accelerator::Accelerator;
 use muda::{CheckMenuItem, Menu, MenuEvent, MenuId, PredefinedMenuItem, Submenu};
 
 use crate::acam::{self, MenuSnapshot};
-use crate::langue::{LangMode, Langue, langue};
+use crate::langue::{Langue, langue};
 
 /// Action déclenchée par un item natif.
 #[derive(Clone, Copy)]
 pub(crate) enum MenuAction {
     /// `menuID<<16|item` à passer à `DoMenuCommand`.
     Command(i32),
-    /// Choix « Fichier → Langue ».
-    Lang(LangMode),
 }
 
 struct NativeMenu {
@@ -35,7 +33,6 @@ pub(crate) struct NativeMenuBar {
     _menu: Menu,
     lang: Langue,
     menus: Vec<NativeMenu>,
-    lang_items: Vec<(LangMode, CheckMenuItem)>,
     actions: HashMap<MenuId, MenuAction>,
 }
 
@@ -53,23 +50,14 @@ fn accelerator(base_id: i16, item: i16) -> Option<Accelerator> {
     format!("Cmd+{key}").parse().ok()
 }
 
-fn lang_title(lang: Langue) -> &'static str {
-    match lang {
-        Langue::FR => "Langue",
-        Langue::ES => "Idioma",
-        _ => "Language",
-    }
-}
-
 impl NativeMenuBar {
     /// Construit la barre et l'installe comme menu principal de l'application.
     /// À appeler depuis le thread principal, une fois `NSApp` créé (premier
     /// `update` d'eframe).
-    pub(crate) fn new(snapshot: &[MenuSnapshot], lang_mode: LangMode) -> Self {
+    pub(crate) fn new(snapshot: &[MenuSnapshot]) -> Self {
         let lang = langue();
         let menu = Menu::new();
         let mut menus = Vec::with_capacity(snapshot.len());
-        let mut lang_items = Vec::new();
         let mut actions = HashMap::new();
 
         for m in snapshot {
@@ -77,20 +65,6 @@ impl NativeMenuBar {
             let mut items = Vec::with_capacity(m.items.len());
             for item in &m.items {
                 if item.sep {
-                    // Dans le menu Fichier, le choix de langue s'insère entre
-                    // « Préférences… » et « Quitter » (comme la barre egui).
-                    if m.base_id == 129 && item.index == 6 {
-                        let _ = submenu.append(&PredefinedMenuItem::separator());
-                        let langs = Submenu::new(lang_title(lang), true);
-                        for opt in [LangMode::Auto, LangMode::Fr, LangMode::En, LangMode::Es] {
-                            let it =
-                                CheckMenuItem::new(opt.label(lang), true, opt == lang_mode, None);
-                            actions.insert(it.id().clone(), MenuAction::Lang(opt));
-                            let _ = langs.append(&it);
-                            lang_items.push((opt, it));
-                        }
-                        let _ = submenu.append(&langs);
-                    }
                     let _ = submenu.append(&PredefinedMenuItem::separator());
                     items.push(None);
                 } else {
@@ -121,14 +95,13 @@ impl NativeMenuBar {
             _menu: menu,
             lang,
             menus,
-            lang_items,
             actions,
         }
     }
 
     /// Met la barre native en phase avec le modèle et renvoie l'action
     /// éventuellement choisie par l'utilisateur depuis la frame précédente.
-    pub(crate) fn sync(slot: &mut Option<Self>, lang_mode: LangMode) -> Option<MenuAction> {
+    pub(crate) fn sync(slot: &mut Option<Self>) -> Option<MenuAction> {
         let snapshot = acam::menus_snapshot();
         let stale = match slot {
             Some(bar) => bar.lang != langue() || bar.menus.len() != snapshot.len(),
@@ -138,10 +111,10 @@ impl NativeMenuBar {
             // Les anciens items sont détruits : leurs événements en attente
             // portent des IDs inconnus, on les jette.
             while MenuEvent::receiver().try_recv().is_ok() {}
-            *slot = Some(Self::new(&snapshot, lang_mode));
+            *slot = Some(Self::new(&snapshot));
         }
         let bar = slot.as_mut()?;
-        bar.update_state(&snapshot, lang_mode);
+        bar.update_state(&snapshot);
 
         let mut action = None;
         while let Ok(event) = MenuEvent::receiver().try_recv() {
@@ -152,12 +125,12 @@ impl NativeMenuBar {
         // Un `CheckMenuItem` bascule tout seul au clic : on réimpose l'état du
         // modèle pour que la coche reste celle décidée par le C.
         if action.is_some() {
-            bar.update_state(&snapshot, lang_mode);
+            bar.update_state(&snapshot);
         }
         action
     }
 
-    fn update_state(&self, snapshot: &[MenuSnapshot], lang_mode: LangMode) {
+    fn update_state(&self, snapshot: &[MenuSnapshot]) {
         for (native, m) in self.menus.iter().zip(snapshot) {
             if native.id != m.id {
                 continue;
@@ -172,12 +145,6 @@ impl NativeMenuBar {
                         it.set_checked(item.checked);
                     }
                 }
-            }
-        }
-        for (opt, it) in &self.lang_items {
-            let checked = *opt == lang_mode;
-            if it.is_checked() != checked {
-                it.set_checked(checked);
             }
         }
     }

@@ -219,27 +219,6 @@ fn spawn_game_thread(sapiens_timer: Arc<AtomicU64>, initial_zoom: f32) {
     });
 }
 
-/// Sous-menu « Fichier → Langue » : Auto / Français / Anglais / Espagnol.
-#[cfg(not(target_os = "macos"))]
-fn render_language_menu(ui: &mut egui::Ui, mode: &mut LangMode) {
-    let lang = langue();
-    let title = match lang {
-        Langue::FR => "Langue",
-        Langue::ES => "Idioma",
-        _ => "Language",
-    };
-    ui.menu_button(title, |ui| {
-        for opt in [LangMode::Auto, LangMode::Fr, LangMode::En, LangMode::Es] {
-            if ui.selectable_label(*mode == opt, opt.label(lang)).clicked() {
-                *mode = opt;
-                set_game_language(effective_lang(opt));
-                save_lang_mode(opt);
-                ui.close();
-            }
-        }
-    });
-}
-
 struct SapiensApp {
     tex: Option<egui::TextureHandle>,
     dump: Option<PortDumper>,
@@ -340,16 +319,8 @@ impl SapiensApp {
     /// clavier du `NSMenu`, qui les intercepte avant egui.
     #[cfg(target_os = "macos")]
     fn render_menu_bar(&mut self, _ui: &mut egui::Ui) -> Option<i32> {
-        match native_menu::NativeMenuBar::sync(&mut self.native_menu, self.lang_mode)? {
+        match native_menu::NativeMenuBar::sync(&mut self.native_menu)? {
             native_menu::MenuAction::Command(r) => Some(r),
-            native_menu::MenuAction::Lang(opt) => {
-                if self.active_dialog.is_none() {
-                    self.lang_mode = opt;
-                    set_game_language(effective_lang(opt));
-                    save_lang_mode(opt);
-                }
-                None
-            }
         }
     }
 
@@ -371,15 +342,7 @@ impl SapiensApp {
                         ui.menu_button(&menu.title, |ui| {
                             for item in &menu.items {
                                 if item.sep {
-                                    // Dans le menu Fichier, insère le choix de
-                                    // langue entre « Préférences… » et « Quitter ».
-                                    if menu.base_id == 129 && item.index == 6 {
-                                        ui.separator();
-                                        render_language_menu(ui, &mut self.lang_mode);
-                                        ui.separator();
-                                    } else {
-                                        ui.separator();
-                                    }
+                                    ui.separator();
                                 } else {
                                     let label = if item.checked {
                                         format!("✓ {}", item.text)
